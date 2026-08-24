@@ -71,6 +71,15 @@ public static class Strings
         ["RemoveRuleConfirm"] = ("Are you sure you want to remove this app from the firewall list? It will re-appear if it accesses the network again.", "¿Estás seguro de que deseas eliminar esta aplicación de la lista del firewall? Volverá a aparecer si intenta acceder a la red nuevamente."),
         ["Ok"] = ("OK", "Aceptar"),
         ["Cancel"] = ("Cancel", "Cancelar"),
+        ["OpenCyberWall"] = ("Open CyberWall", "Abrir CyberWall"),
+        ["ExitApp"] = ("Exit CyberWall", "Salir de CyberWall"),
+        ["Exit"] = ("Exit", "Salir"),
+        ["Show"] = ("Show", "Mostrar"),
+        ["Hide"] = ("Hide", "Ocultar"),
+        ["Maximize"] = ("Maximize", "Maximizar"),
+        ["Restore"] = ("Restore", "Restaurar"),
+        ["Minimize"] = ("Minimize", "Minimizar"),
+        ["Close"] = ("Close", "Cerrar"),
     };
 
     public static string T(string key, params object[] args)

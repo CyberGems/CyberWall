@@ -35,9 +35,11 @@ public partial class MainWindow : Window
         UpdateStatus();
         var isAdmin = new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent()).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
         if (!isAdmin) StatusText.Text += "  ⚠️ " + (Strings.Current == Lang.Es ? "Ejecuta como Admin para filtrado real" : "Run as Admin for kernel filtering");
-        _tray = new TrayService(this);
+        _tray = new TrayService(this, _svc);
         Closing += (_, _) => { App.Settings.FirewallEnabled = _svc.IsMasterOn; App.Settings.FirewallMode = (int)_svc.Mode; App.Settings.Save(); _svc.Dispose(); };
         Closed += (_, _) => _tray?.Dispose();
+        StateChanged += (_, _) => UpdateMaximizeButtonIcon();
+        UpdateMaximizeButtonIcon();
         _loading = false;
     }
 
@@ -60,6 +62,34 @@ public partial class MainWindow : Window
         ModeBox.Items.Add(new ComboBoxItem { Content = Strings.T("ModeBlockAll") });
         ModeBox.SelectedIndex = m;
         _loading = false;
+        UpdateMaximizeButtonIcon();
+    }
+
+    private void UpdateMaximizeButtonIcon()
+    {
+        if (MaximizeBtn == null || MaximizeIconPath == null) return;
+        if (WindowState == WindowState.Maximized)
+        {
+            MaximizeBtn.ToolTip = Strings.T("Restore");
+            // Inward arrows (pointing toward center for Restore)
+            MaximizeIconPath.Data = Geometry.Parse("M 6 2 L 6 6 L 2 6 M 6 6 L 2.5 2.5 M 8 12 L 8 8 L 12 8 M 8 8 L 11.5 11.5");
+        }
+        else
+        {
+            MaximizeBtn.ToolTip = Strings.T("Maximize");
+            // Outward arrows (pointing toward corners for Maximize)
+            MaximizeIconPath.Data = Geometry.Parse("M 2 8 L 2 2 L 8 2 M 2 2 L 6 6 M 12 6 L 12 12 L 6 12 M 12 12 L 8 8");
+        }
+    }
+
+    public void RefreshStatusFromExternal()
+    {
+        UpdateStatus();
+    }
+
+    public void ExitApplication()
+    {
+        _tray?.RequestExit();
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

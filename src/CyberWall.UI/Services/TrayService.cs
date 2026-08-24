@@ -1,4 +1,6 @@
 using System.Windows;
+using CyberWall.Service.Engine;
+using CyberWall.UI.Tray;
 using WF = System.Windows.Forms;
 
 namespace CyberWall.UI.Services;
@@ -6,40 +8,87 @@ namespace CyberWall.UI.Services;
 public sealed class TrayService : IDisposable
 {
     private readonly WF.NotifyIcon _icon;
-    private readonly Window _win;
+    private readonly MainWindow _win;
+    private readonly FirewallService _svc;
     private bool _exit;
 
-    public TrayService(Window win)
+    public TrayService(MainWindow win, FirewallService svc)
     {
         _win = win;
+        _svc = svc;
         _icon = new WF.NotifyIcon
         {
             Visible = true,
             Text = "CyberWall — Firewall por programa",
-            Icon = AppIconHelper.CreateShieldIcon(32)
+            Icon = AppIconHelper.CreateShieldIcon(32),
+            ContextMenuStrip = null // Using custom premium WPF menu
         };
-        var menu = new WF.ContextMenuStrip();
-        menu.Items.Add("Mostrar", null, (_, _) => Show());
-        menu.Items.Add("Salir", null, (_, _) => { _exit = true; _win.Close(); });
-        _icon.ContextMenuStrip = menu;
-        _icon.DoubleClick += (_, _) => Show();
+
+        _icon.MouseClick += (s, e) =>
+        {
+            if (e.Button == WF.MouseButtons.Left)
+            {
+                ToggleVisibility();
+            }
+            else if (e.Button == WF.MouseButtons.Right)
+            {
+                ShowContextMenu();
+            }
+        };
+
         _win.StateChanged += OnState;
         _win.Closing += OnClosing;
     }
 
+    public void ToggleVisibility()
+    {
+        if (_win.IsVisible && _win.WindowState != WindowState.Minimized)
+        {
+            _win.Hide();
+        }
+        else
+        {
+            _win.Show();
+            _win.WindowState = WindowState.Normal;
+            _win.Activate();
+        }
+    }
+
+    private void ShowContextMenu()
+    {
+        var pt = WF.Cursor.Position;
+        var menu = new TrayContextMenuWindow(_win, _svc, pt);
+        menu.Show();
+    }
+
+    public void RequestExit()
+    {
+        _exit = true;
+        _win.Close();
+    }
+
     private void OnState(object? _, EventArgs __)
     {
-        if (_win.WindowState == WindowState.Minimized) { _win.Hide(); _icon.ShowBalloonTip(1200, "CyberWall", "Minizado a bandeja", WF.ToolTipIcon.Info); }
+        if (_win.WindowState == WindowState.Minimized)
+        {
+            _win.Hide();
+        }
     }
 
     private void OnClosing(object? _, System.ComponentModel.CancelEventArgs e)
     {
-        if (_exit) { _icon.Visible = false; return; }
+        if (_exit)
+        {
+            _icon.Visible = false;
+            return;
+        }
         e.Cancel = true;
         _win.Hide();
-        _icon.ShowBalloonTip(1000, "CyberWall", "Sigue activo en bandeja", WF.ToolTipIcon.Info);
     }
 
-    private void Show() { _win.Show(); _win.WindowState = WindowState.Normal; _win.Activate(); }
-    public void Dispose() { _icon.Visible = false; _icon.Dispose(); }
+    public void Dispose()
+    {
+        _icon.Visible = false;
+        _icon.Dispose();
+    }
 }

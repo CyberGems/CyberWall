@@ -23,5 +23,29 @@
         <SolidColorBrush x:Key="InputBgBrush" Color="#0A1220"/>
         <SolidColorBrush x:Key="SwitchActiveBrush" Color="#00E5FF"/>
         <SolidColorBrush x:Key="SwitchTrackBrush" Color="#1C2E4A"/>
+
+        <!-- Global Premium Themed ToolTip Style -->
+        <Style TargetType="ToolTip">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontFamily" Value="Segoe UI, -apple-system, BlinkMacSystemFont, Roboto, sans-serif"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="HasDropShadow" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToolTip">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <Border.Effect>
+                                <DropShadowEffect Color="Black" Opacity="0.45" BlurRadius="10" ShadowDepth="2"/>
+                            </Border.Effect>
+                            <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Application.Resources>
 </Application>

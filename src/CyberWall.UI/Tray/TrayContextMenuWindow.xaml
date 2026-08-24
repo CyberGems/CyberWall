@@ -1,0 +1,201 @@
+<Window x:Class="CyberWall.UI.Tray.TrayContextMenuWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="CyberWall Menu" WindowStyle="None" AllowsTransparency="True" ShowInTaskbar="False"
+        Topmost="True" ResizeMode="NoResize" Background="Transparent" Width="280" SizeToContent="Height"
+        UseLayoutRounding="True" SnapsToDevicePixels="True" ShowActivated="True"
+        Loaded="Window_Loaded" Deactivated="Window_Deactivated"
+        TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="ClearType"
+        FontFamily="Segoe UI, -apple-system, BlinkMacSystemFont, Roboto, sans-serif">
+
+    <Window.Resources>
+        <!-- Menu Action Button Style -->
+        <Style x:Key="MenuActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Danger Action Button Style (Exit) -->
+        <Style x:Key="MenuDangerButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#25EF4444"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#40EF4444"/>
+                                <Setter Property="Foreground" Value="#FF6B6B"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#40EF4444"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Toggle Switch -->
+        <Style x:Key="MenuToggleSwitch" TargetType="CheckBox">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Grid>
+                            <Border x:Name="Track" Width="40" Height="22" CornerRadius="11" Background="{DynamicResource SwitchTrackBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1.2"/>
+                            <Ellipse x:Name="Thumb" Width="16" Height="16" Fill="#CBD5E1" HorizontalAlignment="Left" Margin="3,0,0,0">
+                                <Ellipse.Effect>
+                                    <DropShadowEffect Color="Black" Opacity="0.3" BlurRadius="3" ShadowDepth="1"/>
+                                </Ellipse.Effect>
+                            </Ellipse>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Track" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/>
+                                <Setter TargetName="Thumb" Property="Margin" Value="0,0,3,0"/>
+                                <Setter TargetName="Thumb" Property="Fill" Value="#FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border Margin="10" CornerRadius="14" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1.5" SnapsToDevicePixels="True">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Opacity="0.65" BlurRadius="20" ShadowDepth="5"/>
+        </Border.Effect>
+        <Grid Margin="12,12,12,10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- 1. Header: Brand Logo, App Name, Status Badge, Close '✕' -->
+            <Grid Grid.Row="0" Margin="2,0,2,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Shield Icon -->
+                <Border Width="26" Height="26" CornerRadius="7" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,8,0">
+                    <Path Data="M 12 2 L 2 6 L 2 13 C 2 19 6.5 24.5 12 26 C 17.5 24.5 22 19 22 13 L 22 6 Z" Width="12" Height="14" Stretch="Uniform" Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="CyberWall" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    <Border Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="5" Padding="5,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="WFP" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                    </Border>
+                </StackPanel>
+
+                <Button Grid.Column="2" Content="✕" Width="22" Height="22" Background="Transparent" Foreground="{DynamicResource SubTextBrush}" BorderThickness="0" Cursor="Hand" Click="CloseButton_Click"/>
+            </Grid>
+
+            <!-- 2. Protection Card with Master Switch -->
+            <Border Grid.Row="1" CornerRadius="10" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12,10" Margin="0,0,0,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse x:Name="StatusDot" Width="7.5" Height="7.5" Fill="#4ADE80" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="ProtectionStatusText" Text="PROTECCIÓN ACTIVA" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock x:Name="ProtectionModeText" Text="Preguntar para conectar" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}" Margin="14,2,0,0"/>
+                    </StackPanel>
+
+                    <CheckBox x:Name="MasterSwitch" Grid.Column="1" Style="{StaticResource MenuToggleSwitch}" VerticalAlignment="Center" Checked="MasterSwitch_Changed" Unchecked="MasterSwitch_Changed"/>
+                </Grid>
+            </Border>
+
+            <!-- 3. Action Items -->
+            <StackPanel Grid.Row="2">
+                <!-- Open CyberWall -->
+                <Button x:Name="OpenAppBtn" Style="{StaticResource MenuActionButtonStyle}" Click="OpenApp_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="M 3 3 L 15 3 L 15 13 L 3 13 Z M 3 6 L 15 6" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.3" Width="14" Height="14" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="OpenAppText" Text="Abrir CyberWall" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Settings -->
+                <Button x:Name="SettingsBtn" Style="{StaticResource MenuActionButtonStyle}" Click="Settings_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="M 12 15 C 10.3 15 9 13.7 9 12 C 9 10.3 10.3 9 12 9 C 13.7 9 15 10.3 15 12 C 15 13.7 13.7 15 12 15 Z M 19.4 13 C 19.5 12.7 19.5 12.3 19.5 12 C 19.5 11.7 19.5 11.3 19.4 11 L 21.5 9.4 C 21.7 9.2 21.8 8.9 21.6 8.7 L 19.6 5.2 C 19.5 5 19.2 4.9 19 5 L 16.5 6 C 16 5.6 15.4 5.3 14.8 5.1 L 14.4 2.4 C 14.4 2.2 14.2 2 13.9 2 L 10.1 2 C 9.8 2 9.6 2.2 9.6 2.4 L 9.2 5.1 C 8.6 5.3 8 5.6 7.5 6 L 5 5 C 4.8 4.9 4.5 5 4.4 5.2 L 2.4 8.7 C 2.2 8.9 2.3 9.2 2.5 9.4 L 4.6 11 C 4.5 11.3 4.5 11.7 4.5 12 C 4.5 12.3 4.5 12.7 4.6 13 L 2.5 14.6 C 2.3 14.8 2.2 15.1 2.4 15.3 L 4.4 18.8 C 4.5 19 4.8 19.1 5 19 L 7.5 18 C 8 18.4 8.6 18.7 9.2 18.9 L 9.6 21.6 C 9.6 21.8 9.8 22 10.1 22 L 13.9 22 C 14.2 22 14.4 21.8 14.4 21.6 L 14.8 18.9 C 15.4 18.7 16 18.4 16.5 18 L 19 19 C 19.2 19.1 19.5 19 19.6 18.8 L 21.6 15.3 C 21.8 15.1 21.7 14.8 21.5 14.6 L 19.4 13 Z" Fill="{DynamicResource SubTextBrush}" Width="13" Height="13" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="SettingsText" Text="Configuración" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Blocked Log -->
+                <Button x:Name="LogBtn" Style="{StaticResource MenuActionButtonStyle}" Click="Log_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="M 4 2 L 14 2 L 18 6 L 18 20 L 4 20 Z M 13 2 L 13 7 L 18 7 M 7 11 L 15 11 M 7 14 L 15 14 M 7 17 L 12 17" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" Width="13" Height="14" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="LogText" Text="Registro de bloqueos" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- 4. Separator -->
+            <Border Grid.Row="3" Height="1" Background="{DynamicResource BorderBrush}" Margin="4,4,4,4"/>
+
+            <!-- 5. Exit App -->
+            <StackPanel Grid.Row="4">
+                <Button x:Name="ExitBtn" Style="{StaticResource MenuDangerButtonStyle}" Click="Exit_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="M 10 2 L 10 10 M 4.93 4.93 C 2.5 7.36 2.5 11.28 4.93 13.71 C 7.36 16.14 11.28 16.14 13.71 13.71 C 16.14 11.28 16.14 7.36 13.71 4.93" Stroke="#EF4444" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="ExitText" Text="Salir de CyberWall" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
