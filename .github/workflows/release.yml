@@ -1,0 +1,122 @@
+name: Build and Release CyberWall
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Publish Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            10.0.x
+            9.0.x
+
+      - name: Restore Dependencies
+        run: dotnet restore CyberWall.slnx
+
+      - name: Build Solution
+        run: dotnet build CyberWall.slnx --configuration Release --no-restore
+
+      - name: Publish Win-x64 Application
+        run: |
+          dotnet publish src/CyberWall.UI/CyberWall.UI.csproj -c Release -r win-x64 --self-contained true -o ./publish-win64
+          dotnet publish src/CyberWall.Service/CyberWall.Service.csproj -c Release -r win-x64 --self-contained true -o ./publish-win64
+
+      - name: Copy Extra Installer Assets
+        shell: powershell
+        run: |
+          if (Test-Path installer/install.ps1) {
+            Copy-Item installer/install.ps1 ./publish-win64/
+          }
+
+      - name: Zip Published Output (Portable)
+        shell: powershell
+        run: |
+          Compress-Archive -Path ./publish-win64/* -DestinationPath ./CyberWall-${{ github.ref_name }}-Portable-win-x64.zip
+
+      - name: Compile Inno Setup Installer
+        shell: powershell
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAppVersion="${{ github.ref_name }}" CyberWall.iss
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+        with:
+          name: "CyberWall ${{ github.ref_name }}"
+          files: |
+            ./CyberWall-${{ github.ref_name }}-Portable-win-x64.zip
+            ./CyberWall-Setup-${{ github.ref_name }}.exe
+          draft: true
+          prerelease: false
+          body: |
+            ## 🛡️ CyberWall ${{ github.ref_name }} — Release Notes
+
+            Welcome to the official **CyberWall ${{ github.ref_name }}** release! CyberWall is a high-performance, real-time application-layer firewall powered by the Windows Filtering Platform (WFP) kernel engine.
+
+            ---
+
+            ### ✨ Key Features & Highlights
+
+            - 🎨 **Modern Fluent UI & Multi-Theme Engine**:
+              - 🌌 **CyberWall**: Signature Cyber Navy with radiant Neon Cyan accents.
+              - 🌑 **Dark**: Neutral Charcoal with deep Indigo tones.
+              - ☀️ **Light**: Crisp Slate with Royal Blue accents.
+              - ⚡ Real-time theme switching with live interactive preview cards.
+
+            - 🪟 **Native Windows 11 Acrylic Chrome**:
+              - Pure DWM anti-aliased curved borders with zero halo or flicker artifacts.
+              - Native window snapping, clean minimize/maximize/restore animations, and custom title bars.
+
+            - ⚡ **WFP Kernel-Level Per-App Filtering**:
+              - Real-time network interception with ultra-low latency.
+              - Strict Block & Interactive Prompt modes.
+
+            - 🔔 **GlassWire-Style Toast Alerts**:
+              - "First Network Activity" notification toasts for new connections.
+              - Graphic direction indicators with color-coded badges (`↑ Outbound` / `↓ Inbound`).
+
+            - 📋 **Dedicated Connection Log Viewer**:
+              - Real-time event log with instant filtering by app name, IP, port, and PID.
+              - One-click copy, log clearing, and direct file access.
+
+            - 🔄 **Built-in Seamless Auto-Update System**:
+              - Integrated GitHub Releases checker with real-time download progress bar.
+              - One-click silent installer launch and update workflow.
+
+            - ℹ️ **Dedicated About & Community Modal**:
+              - Live product details, version tracker, update settings, and direct links to GitHub, issues, and CyberGems website.
+
+            - 🌐 **100% Bilingual Interface**:
+              - Full native support for **English** and **Spanish**.
+
+            ---
+
+            ### 📦 Downloads & Packages
+
+            | File | Description | Platform |
+            | :--- | :--- | :--- |
+            | **`CyberWall-Setup-${{ github.ref_name }}.exe`** | 🚀 **Recommended Installer** (Inno Setup with Start Menu, Desktop & Auto-Startup options) | Windows 10 / 11 (x64) |
+            | **`CyberWall-${{ github.ref_name }}-Portable-win-x64.zip`** | 💼 **Portable Archive** (Extract and run with Administrator privileges) | Windows 10 / 11 (x64) |
+
+            ---
+
+            *Crafted with precision by [CyberGems](https://cybergems.org)*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
