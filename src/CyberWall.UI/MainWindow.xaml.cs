@@ -38,7 +38,7 @@ public partial class MainWindow : Window
         var isAdmin = new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent()).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
         if (!isAdmin) StatusText.Text += "  ⚠️ " + (Strings.Current == Lang.Es ? "Ejecuta como Admin para filtrado real" : "Run as Admin for kernel filtering");
         _tray = new TrayService(this, _svc);
-        Closing += (_, _) => { App.Settings.FirewallEnabled = _svc.IsMasterOn; App.Settings.FirewallMode = (int)_svc.Mode; App.Settings.Save(); _svc.Dispose(); };
+        Closed += (_, _) => { App.Settings.FirewallEnabled = _svc.IsMasterOn; App.Settings.FirewallMode = (int)_svc.Mode; App.Settings.Save(); _svc.Dispose(); };
         StateChanged += (_, _) => UpdateMaximizeButtonIcon();
         UpdateMaximizeButtonIcon();
         Loaded += (_, _) => CheckForUpdatesOnStartup();
