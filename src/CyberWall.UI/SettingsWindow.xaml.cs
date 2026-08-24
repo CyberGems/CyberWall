@@ -22,6 +22,7 @@ public partial class SettingsWindow : Window
     public SettingsWindow(AppSettings s)
     {
         InitializeComponent();
+        Icon = AppIconHelper.CreateShieldImageSource(64);
         _s = s;
         _loading = true;
         LangBox.SelectedIndex = s.Language == Lang.Es ? 0 : 1;

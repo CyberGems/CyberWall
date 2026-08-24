@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        Icon = AppIconHelper.CreateShieldImageSource(64);
         _loading = true;
         Strings.Current = App.Settings.Language;
         ThemeManager.Apply(App.Settings.Theme);

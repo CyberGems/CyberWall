@@ -3,6 +3,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using CyberWall.Common.I18n;
 using CyberWall.UI.Converters;
+using CyberWall.UI.Services;
 
 namespace CyberWall.UI.Dialogs;
 
@@ -13,6 +14,7 @@ public partial class ConfirmDialog : Window
     public ConfirmDialog(string appName, string appPath)
     {
         InitializeComponent();
+        Icon = AppIconHelper.CreateShieldImageSource(64);
 
         AppTitleLbl.Text = string.IsNullOrWhiteSpace(appName) ? System.IO.Path.GetFileNameWithoutExtension(appPath) : appName;
         MessageLbl.Text = Strings.T("RemoveRuleConfirm");

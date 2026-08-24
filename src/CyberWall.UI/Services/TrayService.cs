@@ -16,7 +16,7 @@ public sealed class TrayService : IDisposable
         {
             Visible = true,
             Text = "CyberWall — Firewall por programa",
-            Icon = System.Drawing.SystemIcons.Shield
+            Icon = AppIconHelper.CreateShieldIcon(32)
         };
         var menu = new WF.ContextMenuStrip();
         menu.Items.Add("Mostrar", null, (_, _) => Show());
