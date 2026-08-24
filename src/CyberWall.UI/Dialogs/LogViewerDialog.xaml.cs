@@ -40,10 +40,10 @@ public partial class LogViewerDialog : Window
     {
         TitleLbl.Text = Strings.T("LogViewerTitle");
         SearchPlaceholder.Text = Strings.T("SearchLog");
-        RefreshBtn.Content = "🔄 " + Strings.T("Refresh");
-        CopyBtn.Content = "📋 " + Strings.T("CopyAll");
-        ClearBtn.Content = "🗑️ " + Strings.T("ClearLog");
-        OpenFileBtn.Content = "📂 " + Strings.T("OpenFile");
+        RefreshBtnText.Text = Strings.T("Refresh");
+        CopyBtnText.Text = Strings.T("CopyAll");
+        ClearBtnText.Text = Strings.T("ClearLog");
+        OpenFileBtnText.Text = Strings.T("OpenFile");
         CloseBtn.Content = Strings.T("Close");
         EmptyMsg.Text = Strings.T("NoLogs");
         PathInfoText.Text = BlockedLog.LogPath;

@@ -78,10 +78,10 @@ public partial class MainWindow : Window
     public void RefreshLanguage()
     {
         TitleText.Text = "CyberWall";
-        SettingsBtn.Content = "⚙ " + Strings.T("Settings");
+        SettingsBtnText.Text = Strings.T("Settings");
         ModeLbl.Text = Strings.T("Mode");
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
-        ViewLogBtn.Content = "📋 " + Strings.T("ViewLog");
+        ViewLogBtnText.Text = Strings.T("ViewLog");
 
         var progHdr = Strings.T("Program") + (_sortBy == "DisplayName" ? (_sortAsc ? " ▾" : " ▴") : "");
         var pathHdr = Strings.T("Path") + (_sortBy == "AppPath" ? (_sortAsc ? " ▾" : " ▴") : "");
