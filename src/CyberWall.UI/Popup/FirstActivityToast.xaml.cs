@@ -24,7 +24,7 @@ public partial class FirstActivityToast : Window
         {
             var pos = App.Settings.NotificationPosition;
             var mon = App.Settings.NotificationMonitor;
-            PositionToast(pos, mon);
+            PopupWindowHelper.PositionWindow(this, pos, mon);
         };
 
         TitleLbl.Text = Strings.T("FirstNetworkActivity");
@@ -82,37 +82,6 @@ public partial class FirstActivityToast : Window
             _activeToasts.Add(toast);
             toast.Show();
         });
-    }
-
-    private void PositionToast(Common.Settings.PopupPosition position, int monitorIndex)
-    {
-        var screens = PopupWindowHelper.GetSortedScreens();
-        var screen = (monitorIndex >= 0 && monitorIndex < screens.Length)
-            ? screens[monitorIndex]
-            : System.Windows.Forms.Screen.FromPoint(System.Windows.Forms.Cursor.Position);
-
-        var phys = screen.WorkingArea;
-        var wa = screen.Primary ? SystemParameters.WorkArea : new Rect(screen.Bounds.X, screen.Bounds.Y, screen.WorkingArea.Width, screen.WorkingArea.Height);
-
-        int index = _activeToasts.IndexOf(this);
-        if (index < 0) index = 0;
-
-        const double marginX = 20;
-        const double marginY = 20;
-        const double gap = 8;
-        double width = Width > 0 ? Width : 436;
-        double height = Height > 0 ? Height : 156;
-
-        double left = wa.Right - width - marginX;
-        double top = wa.Bottom - height - marginY - index * (height + gap);
-
-        if (left < wa.Left) left = wa.Left;
-        if (left + width > wa.Right) left = wa.Right - width;
-        if (top < wa.Top) top = wa.Top;
-        if (top + height > wa.Bottom) top = wa.Bottom - height;
-
-        Left = left;
-        Top = top;
     }
 
     private void Close_Click(object s, RoutedEventArgs e)

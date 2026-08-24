@@ -125,7 +125,6 @@ public partial class ConnectionPopup : Window
         ResultVerdict = Verdict.Allow;
         if (IsPreview) { DismissPreview(); return; }
         Close();
-        ClosedWithVerdict?.Invoke(this);
     }
 
     private void Block_Click(object s, RoutedEventArgs e)
@@ -133,7 +132,6 @@ public partial class ConnectionPopup : Window
         ResultVerdict = Verdict.Block;
         if (IsPreview) { DismissPreview(); return; }
         Close();
-        ClosedWithVerdict?.Invoke(this);
     }
 
     private void Close_Click(object s, RoutedEventArgs e)
@@ -141,13 +139,17 @@ public partial class ConnectionPopup : Window
         ResultVerdict = Verdict.Block;
         if (IsPreview) { DismissPreview(); return; }
         Close();
-        ClosedWithVerdict?.Invoke(this);
     }
 
     protected override void OnClosed(EventArgs e)
     {
         base.OnClosed(e);
         if (_activePreview == this) _activePreview = null;
-        if (!IsPreview) ClosedWithVerdict?.Invoke(this);
+        if (!IsPreview)
+        {
+            var handler = ClosedWithVerdict;
+            ClosedWithVerdict = null;
+            handler?.Invoke(this);
+        }
     }
 }

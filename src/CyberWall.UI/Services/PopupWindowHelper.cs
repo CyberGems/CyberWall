@@ -52,6 +52,11 @@ public static class PopupWindowHelper
 
     public static void PositionPopup(ConnectionPopup popup, PopupPosition position, int monitorIndex = -1, int? explicitStackIndex = null)
     {
+        PositionWindow(popup, position, monitorIndex, explicitStackIndex);
+    }
+
+    public static void PositionWindow(Window window, PopupPosition position, int monitorIndex = -1, int? explicitStackIndex = null)
+    {
         // 1. Get the target monitor
         var screens = GetSortedScreens();
         var screen = (monitorIndex >= 0 && monitorIndex < screens.Length)
@@ -61,7 +66,7 @@ public static class PopupWindowHelper
         var phys = screen.WorkingArea;
 
         // 2. Move window to the target monitor physically first so Windows/WPF switches DPI context
-        var hwnd = new WindowInteropHelper(popup).Handle;
+        var hwnd = new WindowInteropHelper(window).Handle;
         if (hwnd != IntPtr.Zero)
         {
             SetWindowPos(hwnd, IntPtr.Zero, phys.X, phys.Y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
@@ -71,14 +76,14 @@ public static class PopupWindowHelper
         Rect wa;
         try
         {
-            if (popup.IsLoaded && hwnd != IntPtr.Zero)
+            if (window.IsLoaded && hwnd != IntPtr.Zero)
             {
-                var topLeft = popup.PointFromScreen(new System.Windows.Point(phys.Left, phys.Top));
-                var bottomRight = popup.PointFromScreen(new System.Windows.Point(phys.Right, phys.Bottom));
+                var topLeft = window.PointFromScreen(new System.Windows.Point(phys.Left, phys.Top));
+                var bottomRight = window.PointFromScreen(new System.Windows.Point(phys.Right, phys.Bottom));
 
                 wa = new Rect(
-                    popup.Left + topLeft.X,
-                    popup.Top + topLeft.Y,
+                    window.Left + topLeft.X,
+                    window.Top + topLeft.Y,
                     Math.Max(100, bottomRight.X - topLeft.X),
                     Math.Max(100, bottomRight.Y - topLeft.Y));
             }
@@ -100,8 +105,8 @@ public static class PopupWindowHelper
         else
         {
             var existing = System.Windows.Application.Current.Windows
-                .OfType<ConnectionPopup>()
-                .Where(w => w != popup && w.IsVisible && !w.IsPreview)
+                .OfType<Window>()
+                .Where(w => w != window && w.IsVisible && (w is ConnectionPopup cp && !cp.IsPreview || w is FirstActivityToast))
                 .ToList();
             stackIndex = existing.Count;
         }
@@ -110,8 +115,8 @@ public static class PopupWindowHelper
         const double marginY = 20;
         const double gap = 10;
 
-        double width = popup.Width > 0 ? popup.Width : 440;
-        double height = popup.Height > 0 ? popup.Height : 220;
+        double width = window.Width > 0 ? window.Width : 440;
+        double height = window.Height > 0 ? window.Height : 220;
 
         double left;
         double top;
@@ -166,7 +171,7 @@ public static class PopupWindowHelper
         if (top < wa.Top) top = wa.Top;
         if (top + height > wa.Bottom) top = wa.Bottom - height;
 
-        popup.Left = left;
-        popup.Top = top;
+        window.Left = left;
+        window.Top = top;
     }
 }
