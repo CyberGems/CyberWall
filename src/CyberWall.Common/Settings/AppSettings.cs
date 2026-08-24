@@ -6,12 +6,26 @@ namespace CyberWall.Common.Settings;
 
 public enum AppTheme { CyberWall, Dark, Light }
 
+public enum PopupPosition
+{
+    TopLeft,
+    TopCenter,
+    TopRight,
+    Left,
+    Right,
+    BottomLeft,
+    BottomCenter,
+    BottomRight
+}
+
 public sealed class AppSettings
 {
     public Lang Language { get; set; } = Lang.Es;
     public AppTheme Theme { get; set; } = AppTheme.CyberWall;
     public bool FirewallEnabled { get; set; } = true;
     public int FirewallMode { get; set; } = 2;
+    public PopupPosition NotificationPosition { get; set; } = PopupPosition.BottomRight;
+    public int NotificationMonitor { get; set; } = -1; // -1 = Active monitor under cursor
 
     private static string Path => System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "CyberWall", "settings.json");
 

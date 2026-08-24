@@ -1,42 +1,136 @@
 using System.Windows;
+using System.Windows.Threading;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
+using CyberWall.Common.Settings;
+using CyberWall.UI.Services;
 
 namespace CyberWall.UI.Popup;
 
 public partial class ConnectionPopup : Window
 {
+    private static ConnectionPopup? _activePreview;
+    private static DispatcherTimer? _previewTimer;
+
     public ConnectionEvent Event { get; }
     public Verdict ResultVerdict { get; private set; } = Verdict.Block;
     public bool Remember => RememberChk.IsChecked == true;
+    public bool IsPreview { get; }
     public event Action<ConnectionPopup>? ClosedWithVerdict;
 
-    public ConnectionPopup(ConnectionEvent ev)
+    public ConnectionPopup(ConnectionEvent ev, bool isPreview = false)
     {
         InitializeComponent();
         Event = ev;
+        IsPreview = isPreview;
         DataContext = this;
-        Loaded += (_, _) => PositionBottomRight();
-        TitleLbl.Text = Strings.T("NewConnection");
+
+        SourceInitialized += (_, _) => PopupWindowHelper.ApplyNoActivateChrome(this);
+        Loaded += (_, _) =>
+        {
+            var pos = App.Settings.NotificationPosition;
+            var mon = App.Settings.NotificationMonitor;
+            PopupWindowHelper.PositionPopup(this, pos, mon, isPreview ? 0 : null);
+        };
+
+        TitleLbl.Text = isPreview
+            ? (Strings.Current == Lang.Es ? "Vista Previa de Alerta" : "Alert Preview")
+            : Strings.T("NewConnection");
         AppLbl.Text = Strings.T("AppWantsToConnect", ev.DisplayName);
         BlockBtn.Content = Strings.T("Block");
         AllowBtn.Content = Strings.T("Allow");
         RememberChk.Content = Strings.T("Remember");
+        if (isPreview)
+        {
+            RememberChk.Visibility = Visibility.Collapsed;
+        }
+
         DetailLbl.Text = $"{(ev.Direction == Direction.Inbound ? Strings.T("Inbound") : Strings.T("Outbound"))} • {ev.Protocol} • {ev.RemoteAddress}:{ev.RemotePort} • PID {ev.ProcessId}";
         PathLbl.Text = ev.AppPath;
         MouseLeftButtonDown += (_, _) => DragMove();
     }
 
-    private void PositionBottomRight()
+    public static void ShowPreview(PopupPosition position, int monitorIndex)
     {
-        var wa = SystemParameters.WorkArea;
-        var open = System.Windows.Application.Current.Windows.OfType<ConnectionPopup>().Count(w => w.IsVisible && w != this);
-        Left = wa.Right - Width - 20;
-        Top = wa.Bottom - Height - 20 - open * (Height + 10);
+        DismissPreview();
+
+        var ev = new ConnectionEvent
+        {
+            AppPath = @"C:\Program Files\Demo\DemoApp.exe",
+            RemoteAddress = "142.250.190.46",
+            RemotePort = 443,
+            Protocol = "TCP",
+            Direction = Direction.Outbound,
+            ProcessId = 1337
+        };
+
+        var popup = new ConnectionPopup(ev, isPreview: true);
+        _activePreview = popup;
+
+        popup.Loaded += (_, _) =>
+        {
+            PopupWindowHelper.PositionPopup(popup, position, monitorIndex, explicitStackIndex: 0);
+        };
+
+        popup.Show();
+
+        _previewTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(3.5)
+        };
+        _previewTimer.Tick += (_, _) =>
+        {
+            DismissPreview();
+        };
+        _previewTimer.Start();
     }
 
-    private void Allow_Click(object s, RoutedEventArgs e) { ResultVerdict = Verdict.Allow; Close(); ClosedWithVerdict?.Invoke(this); }
-    private void Block_Click(object s, RoutedEventArgs e) { ResultVerdict = Verdict.Block; Close(); ClosedWithVerdict?.Invoke(this); }
-    private void Close_Click(object s, RoutedEventArgs e) { ResultVerdict = Verdict.Block; Close(); ClosedWithVerdict?.Invoke(this); }
-    protected override void OnClosed(EventArgs e) { base.OnClosed(e); ClosedWithVerdict?.Invoke(this); }
+    public static void DismissPreview()
+    {
+        if (_previewTimer != null)
+        {
+            _previewTimer.Stop();
+            _previewTimer = null;
+        }
+        if (_activePreview != null)
+        {
+            try
+            {
+                _activePreview.Close();
+            }
+            catch { }
+            _activePreview = null;
+        }
+    }
+
+    private void Allow_Click(object s, RoutedEventArgs e)
+    {
+        ResultVerdict = Verdict.Allow;
+        if (IsPreview) { DismissPreview(); return; }
+        Close();
+        ClosedWithVerdict?.Invoke(this);
+    }
+
+    private void Block_Click(object s, RoutedEventArgs e)
+    {
+        ResultVerdict = Verdict.Block;
+        if (IsPreview) { DismissPreview(); return; }
+        Close();
+        ClosedWithVerdict?.Invoke(this);
+    }
+
+    private void Close_Click(object s, RoutedEventArgs e)
+    {
+        ResultVerdict = Verdict.Block;
+        if (IsPreview) { DismissPreview(); return; }
+        Close();
+        ClosedWithVerdict?.Invoke(this);
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        base.OnClosed(e);
+        if (_activePreview == this) _activePreview = null;
+        if (!IsPreview) ClosedWithVerdict?.Invoke(this);
+    }
 }

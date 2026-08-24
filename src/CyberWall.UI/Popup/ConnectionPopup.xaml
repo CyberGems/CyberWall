@@ -8,7 +8,64 @@
         FontFamily="Segoe UI, -apple-system, BlinkMacSystemFont, Roboto, sans-serif">
     <Window.Resources>
         <conv:PathToIconConverter x:Key="PathToIconConverter"/>
+
+        <!-- Primary Action Button -->
+        <Style x:Key="PopupPrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentFgBrush}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Block Action Button -->
+        <Style x:Key="PopupBlockButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource BadgeBlockFgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#FF5555"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
+
     <Border CornerRadius="14" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1.5" Padding="0">
         <Border.Effect>
             <DropShadowEffect Color="Black" Opacity="0.65" BlurRadius="22" ShadowDepth="6"/>
@@ -27,13 +84,25 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Border Width="40" Height="40" CornerRadius="10" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-                    <Grid>
-                        <Image Source="{Binding Event.AppPath, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource PathToIconConverter}}" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        <!-- Fallback symbol if icon is null -->
-                        <TextBlock Text="🛡️" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Grid>
-                </Border>
+
+                <!-- App Icon Container with Elegant Top-Right Security Shield Badge -->
+                <Grid Width="46" Height="46">
+                    <!-- Main Icon Card -->
+                    <Border Width="40" Height="40" CornerRadius="10" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                        <Grid>
+                            <Image Source="{Binding Event.AppPath, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource PathToIconConverter}}" Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Mini Security Shield Badge (Top-Right) -->
+                    <Border Width="18" Height="18" CornerRadius="9" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1.5" HorizontalAlignment="Right" VerticalAlignment="Top">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" Opacity="0.45" BlurRadius="4" ShadowDepth="1"/>
+                        </Border.Effect>
+                        <Path Data="M 6 1.5 L 1.5 3.5 L 1.5 7.5 C 1.5 10.5 4 13.2 6 14 C 8 13.2 10.5 10.5 10.5 7.5 L 10.5 3.5 Z" Width="9" Height="10" Stretch="Uniform" Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </Grid>
+
                 <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
                     <TextBlock x:Name="TitleLbl" Text="Nueva Solicitud de Conexión" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
                     <TextBlock x:Name="AppLbl" Text="demo.exe quiere acceder a la red" Foreground="{DynamicResource AccentBrush}" FontWeight="SemiBold" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
@@ -54,20 +123,8 @@
 
             <!-- Buttons -->
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                <Button x:Name="BlockBtn" Content="Bloquear" Width="110" Height="34" Background="{DynamicResource CardSecondaryBrush}" Foreground="{DynamicResource BadgeBlockFgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" FontWeight="SemiBold" FontSize="12" Cursor="Hand" Click="Block_Click">
-                    <Button.Resources>
-                        <Style TargetType="Border">
-                            <Setter Property="CornerRadius" Value="8"/>
-                        </Style>
-                    </Button.Resources>
-                </Button>
-                <Button x:Name="AllowBtn" Content="Permitir" Width="110" Height="34" Margin="10,0,0,0" Background="{DynamicResource AccentBrush}" Foreground="{DynamicResource AccentFgBrush}" BorderThickness="0" FontWeight="Bold" FontSize="12" Cursor="Hand" Click="Allow_Click">
-                    <Button.Resources>
-                        <Style TargetType="Border">
-                            <Setter Property="CornerRadius" Value="8"/>
-                        </Style>
-                    </Button.Resources>
-                </Button>
+                <Button x:Name="BlockBtn" Content="Bloquear" Width="110" Height="34" Style="{StaticResource PopupBlockButton}" Click="Block_Click"/>
+                <Button x:Name="AllowBtn" Content="Permitir" Width="110" Height="34" Margin="10,0,0,0" Style="{StaticResource PopupPrimaryButton}" Click="Allow_Click"/>
             </StackPanel>
         </Grid>
     </Border>

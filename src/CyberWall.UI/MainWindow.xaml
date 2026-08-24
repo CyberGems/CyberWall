@@ -64,6 +64,32 @@
             </Setter>
         </Style>
 
+        <!-- Row Delete Quick Button Style -->
+        <Style x:Key="RowDeleteButton" TargetType="Button">
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="5" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#40E81123"/>
+                                <Setter Property="Foreground" Value="#FF5555"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Custom Dark Themed ComboBox Style -->
         <ControlTemplate x:Key="ComboBoxToggleButton" TargetType="ToggleButton">
             <Border x:Name="TemplateRoot" Background="{DynamicResource InputBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8">
@@ -148,23 +174,23 @@
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="12,6"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="14,6"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
-                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Opacity" Value="0.85"/>
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -178,23 +204,22 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
-                        <Grid VerticalAlignment="Center">
-                            <Border x:Name="Track" Width="54" Height="30" CornerRadius="15" Background="{DynamicResource SwitchTrackBrush}" BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1.5">
+                        <Grid>
+                            <Border x:Name="Track" Width="52" Height="28" CornerRadius="14" Background="{DynamicResource SwitchTrackBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1.5">
                                 <Border.Effect>
                                     <DropShadowEffect Color="Black" Opacity="0.3" BlurRadius="6" ShadowDepth="1"/>
                                 </Border.Effect>
                             </Border>
-                            <Ellipse x:Name="Thumb" Width="22" Height="22" Fill="#E2E8F0" HorizontalAlignment="Left" Margin="4,0,0,0">
+                            <Ellipse x:Name="Thumb" Width="20" Height="20" Fill="#CBD5E1" HorizontalAlignment="Left" Margin="4,0,0,0">
                                 <Ellipse.Effect>
-                                    <DropShadowEffect Color="Black" Opacity="0.4" BlurRadius="5" ShadowDepth="2"/>
+                                    <DropShadowEffect Color="Black" Opacity="0.3" BlurRadius="4" ShadowDepth="1"/>
                                 </Ellipse.Effect>
                             </Ellipse>
-                            <ContentPresenter Margin="64,0,0,0" VerticalAlignment="Center"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Track" Property="Background" Value="{DynamicResource SwitchActiveBrush}"/>
-                                <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource SwitchActiveBrush}"/>
+                                <Setter TargetName="Track" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
                                 <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/>
                                 <Setter TargetName="Thumb" Property="Margin" Value="0,0,4,0"/>
                                 <Setter TargetName="Thumb" Property="Fill" Value="#FFFFFF"/>
@@ -233,7 +258,7 @@
             </Setter>
         </Style>
 
-        <!-- DataGrid Styles -->
+        <!-- DataGrid Styles with Polished Row Hover Highlight -->
         <Style TargetType="DataGridRow">
             <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
             <Setter Property="MinHeight" Value="40"/>
@@ -301,8 +326,7 @@
 
                 <!-- Right: Action Buttons & Window Controls -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button x:Name="SettingsBtn" Content="⚙ Configuración" Style="{StaticResource ModernButton}" Margin="0,0,8,0" Click="Settings_Click"/>
-                    <Button x:Name="TestPopupBtn" Content="⚡ Probar popup" Style="{StaticResource ModernButton}" Margin="0,0,14,0" Click="TestPopup_Click"/>
+                    <Button x:Name="SettingsBtn" Content="⚙ Configuración" Style="{StaticResource ModernButton}" Margin="0,0,14,0" Click="Settings_Click"/>
 
                     <!-- Minimize, Maximize, Close Buttons -->
                     <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="2">
@@ -359,25 +383,22 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Filter & Actions Bar -->
-                    <DockPanel Grid.Row="0">
-                        <Border Width="300" Height="34" CornerRadius="8" Background="{DynamicResource SearchBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center">
-                            <Grid Margin="10,0">
+                    <!-- Filter & Actions Bar (Clean, uncluttered search row) -->
+                    <Grid Grid.Row="0">
+                        <Border Width="340" Height="36" HorizontalAlignment="Left" CornerRadius="8" Background="{DynamicResource SearchBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center">
+                            <Grid Margin="12,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="🔍" FontSize="11" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBox x:Name="SearchBox" Grid.Column="1" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" VerticalAlignment="Center" FontSize="12" TextChanged="SearchBox_TextChanged"/>
+                                <TextBlock Text="🔍" FontSize="12" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <Grid Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock x:Name="SearchPlaceholder" Text="Buscar programa o ruta..." Foreground="{DynamicResource SubTextBrush}" FontSize="12" VerticalAlignment="Center" IsHitTestVisible="False" Opacity="0.55"/>
+                                    <TextBox x:Name="SearchBox" Background="Transparent" Foreground="{DynamicResource TextBrush}" CaretBrush="{DynamicResource AccentBrush}" BorderThickness="0" VerticalAlignment="Center" FontSize="12" TextChanged="SearchBox_TextChanged"/>
+                                </Grid>
                             </Grid>
                         </Border>
-
-                        <TextBlock x:Name="HintText" Text="Reglas por programa — cada .exe nuevo dispara un aviso en tiempo real" Foreground="{DynamicResource SubTextBrush}" FontSize="11" VerticalAlignment="Center" Margin="14,0,0,0"/>
-
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right">
-                            <Button x:Name="RemoveBtn" Content="Quitar regla" Style="{StaticResource ModernButton}" Click="Remove_Click"/>
-                        </StackPanel>
-                    </DockPanel>
+                    </Grid>
 
                     <!-- Table Column Header Row -->
                     <Border Grid.Row="1" Margin="0,12,0,0" Background="{DynamicResource HeaderBgBrush}" CornerRadius="8" Height="34" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
@@ -414,16 +435,30 @@
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
 
-                                            <!-- Program Name + Icon -->
+                                            <!-- Program Name + Icon + Inline Delete Button on Hover -->
                                             <DataGridTemplateColumn Width="1.4*" SortMemberPath="DisplayName" CanUserSort="True">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0">
+                                                        <Grid Margin="12,0">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
                                                             <Border Width="22" Height="22" CornerRadius="5" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,10,0">
                                                                 <Image Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="15" Height="15" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                             </Border>
-                                                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                                        </StackPanel>
+                                                            <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                            <Button x:Name="QuickRemoveBtn" Grid.Column="2" Content="✕" Style="{StaticResource RowDeleteButton}" ToolTip="Eliminar regla" Tag="{Binding}" Click="QuickRemove_Click" Margin="6,0,0,0"/>
+                                                        </Grid>
+                                                        <DataTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding Path=IsMouseOver, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="False">
+                                                                <Setter TargetName="QuickRemoveBtn" Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Path=IsMouseOver, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                                                <Setter TargetName="QuickRemoveBtn" Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </DataTemplate.Triggers>
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
@@ -482,16 +517,30 @@
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
 
-                                            <!-- Program Name + Icon -->
+                                            <!-- Program Name + Icon + Inline Delete Button on Hover -->
                                             <DataGridTemplateColumn Width="1.4*" SortMemberPath="DisplayName" CanUserSort="True">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0">
+                                                        <Grid Margin="12,0">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
                                                             <Border Width="22" Height="22" CornerRadius="5" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,10,0">
                                                                 <Image Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="15" Height="15" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                             </Border>
-                                                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                                        </StackPanel>
+                                                            <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                            <Button x:Name="QuickRemoveBtn" Grid.Column="2" Content="✕" Style="{StaticResource RowDeleteButton}" ToolTip="Eliminar regla" Tag="{Binding}" Click="QuickRemove_Click" Margin="6,0,0,0"/>
+                                                        </Grid>
+                                                        <DataTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding Path=IsMouseOver, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="False">
+                                                                <Setter TargetName="QuickRemoveBtn" Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Path=IsMouseOver, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                                                <Setter TargetName="QuickRemoveBtn" Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </DataTemplate.Triggers>
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>

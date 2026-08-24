@@ -6,6 +6,7 @@ using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Common.Settings;
 using CyberWall.Service.Engine;
+using CyberWall.UI.Dialogs;
 using CyberWall.UI.Popup;
 using CyberWall.UI.Services;
 
@@ -43,10 +44,8 @@ public partial class MainWindow : Window
     {
         TitleText.Text = "CyberWall";
         SettingsBtn.Content = "⚙ " + Strings.T("Settings");
-        TestPopupBtn.Content = "⚡ " + Strings.T("TestPopup");
         ModeLbl.Text = Strings.T("Mode");
-        HintText.Text = Strings.T("HintRules");
-        RemoveBtn.Content = Strings.T("RemoveRule");
+        SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
         HdrProg.Text = Strings.T("Program") + (_sortBy == "DisplayName" ? (_sortAsc ? " ▾" : " ▴") : "");
         HdrPath.Text = Strings.T("Path") + (_sortBy == "AppPath" ? (_sortAsc ? " ▾" : " ▴") : "");
         HdrVerd.Text = Strings.T("Verdict");
@@ -159,12 +158,23 @@ public partial class MainWindow : Window
         UpdateStatus();
     }
 
-    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e) => RefreshRules(SearchBox.Text);
-    private void Remove_Click(object sender, RoutedEventArgs e)
+    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        var r = (BlockedGrid.SelectedItem as AppRule) ?? (AllowedGrid.SelectedItem as AppRule);
-        if (r != null) { _svc.RemoveRule(r.AppPath); RefreshRules(SearchBox.Text); }
+        SearchPlaceholder.Visibility = string.IsNullOrEmpty(SearchBox.Text) ? Visibility.Visible : Visibility.Collapsed;
+        RefreshRules(SearchBox.Text);
     }
+
+    private void QuickRemove_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement btn || btn.Tag is not AppRule r) return;
+        var dlg = new ConfirmDialog(r.DisplayName, r.AppPath) { Owner = this };
+        if (dlg.ShowDialog() == true)
+        {
+            _svc.RemoveRule(r.AppPath);
+            RefreshRules(SearchBox.Text);
+        }
+    }
+
     private void RuleToggle_Click(object sender, RoutedEventArgs e)
     {
         if (sender is System.Windows.Controls.CheckBox cb && cb.DataContext is AppRule r)
@@ -174,7 +184,7 @@ public partial class MainWindow : Window
             RefreshRules(SearchBox.Text);
         }
     }
-    private void TestPopup_Click(object sender, RoutedEventArgs e) { var ev = new ConnectionEvent { AppPath = $@"C:\Program Files\Demo\demo{Random.Shared.Next(1000)}.exe", RemoteAddress = "142.250.0.1", RemotePort = 443, Direction = Direction.Outbound, ProcessId = Random.Shared.Next(1000, 9999) }; OnAskConnection(ev); }
+
     private void Settings_Click(object sender, RoutedEventArgs e) { var w = new SettingsWindow(App.Settings) { Owner = this }; w.ShowDialog(); RefreshLanguage(); UpdateStatus(); }
     private void OpenLog_Click(object sender, MouseButtonEventArgs e) { try { var p = BlockedLog.LogPath; if (System.IO.File.Exists(p)) System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(p) { UseShellExecute = true }); else System.Windows.MessageBox.Show((Strings.Current == Lang.Es ? $"Aún sin bloqueos.\n{p}" : $"No blocked connections yet.\n{p}")); LogPathText.Text = p; } catch { } }
 }

@@ -2,9 +2,15 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using CyberWall.Common.I18n;
+using CyberWall.Common.Models;
 using CyberWall.Common.Settings;
 using CyberWall.UI.Controls;
+using CyberWall.UI.Popup;
 using CyberWall.UI.Services;
+using WpfBrush = System.Windows.Media.Brush;
+using WpfBrushes = System.Windows.Media.Brushes;
+using WpfColor = System.Windows.Media.Color;
+using SolidColorBrush = System.Windows.Media.SolidColorBrush;
 
 namespace CyberWall.UI;
 
@@ -33,7 +39,10 @@ public partial class SettingsWindow : Window
                 break;
         }
 
+        SelectPositionUi(s.NotificationPosition);
+        PopulateMonitors();
         UpdateTexts();
+        Closing += (_, _) => ConnectionPopup.DismissPreview();
         _loading = false;
     }
 
@@ -43,6 +52,87 @@ public partial class SettingsWindow : Window
         {
             DragMove();
         }
+    }
+
+    private void SelectPositionUi(PopupPosition position)
+    {
+        var accentBrush = (WpfBrush)FindResource("AccentBrush");
+        var activeBg = (WpfBrush)FindResource("CardSecondaryBrush");
+        var defaultBorderBrush = WpfBrushes.Transparent;
+        var defaultBg = WpfBrushes.Transparent;
+
+        var dotActiveBrush = accentBrush;
+        var dotInactiveBrush = new SolidColorBrush(WpfColor.FromArgb(64, 128, 128, 128));
+
+        var blocks = new[]
+        {
+            (PosBlock_TopLeft, PosDot_TopLeft, PopupPosition.TopLeft),
+            (PosBlock_TopCenter, PosDot_TopCenter, PopupPosition.TopCenter),
+            (PosBlock_TopRight, PosDot_TopRight, PopupPosition.TopRight),
+            (PosBlock_Left, PosDot_Left, PopupPosition.Left),
+            (PosBlock_Right, PosDot_Right, PopupPosition.Right),
+            (PosBlock_BottomLeft, PosDot_BottomLeft, PopupPosition.BottomLeft),
+            (PosBlock_BottomCenter, PosDot_BottomCenter, PopupPosition.BottomCenter),
+            (PosBlock_BottomRight, PosDot_BottomRight, PopupPosition.BottomRight)
+        };
+
+        foreach (var (block, dot, pos) in blocks)
+        {
+            if (block is null || dot is null) continue;
+            if (pos == position)
+            {
+                block.BorderBrush = accentBrush;
+                block.Background = activeBg;
+                dot.Background = dotActiveBrush;
+            }
+            else
+            {
+                block.BorderBrush = defaultBorderBrush;
+                block.Background = defaultBg;
+                dot.Background = dotInactiveBrush;
+            }
+        }
+    }
+
+    private void PositionBlock_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement el || el.Tag is not string tag) return;
+        if (!Enum.TryParse<PopupPosition>(tag, out var selected)) return;
+
+        _s.NotificationPosition = selected;
+        _s.Save();
+        SelectPositionUi(selected);
+        TriggerPreviewPopup();
+    }
+
+    private void PopulateMonitors()
+    {
+        _loading = true;
+        MonBox.Items.Clear();
+        MonBox.Items.Add(new ComboBoxItem { Content = Strings.T("AutomaticMonitor"), Tag = -1 });
+
+        var screens = PopupWindowHelper.GetSortedScreens();
+        for (int i = 0; i < screens.Length; i++)
+        {
+            var scr = screens[i];
+            var label = scr.Primary
+                ? $"{Strings.T("PrimaryMonitor")} ({scr.Bounds.Width}x{scr.Bounds.Height})"
+                : $"{string.Format(Strings.T("MonitorN"), i + 1)} ({scr.Bounds.Width}x{scr.Bounds.Height})";
+
+            MonBox.Items.Add(new ComboBoxItem { Content = label, Tag = i });
+        }
+
+        int targetIndex = 0;
+        for (int i = 0; i < MonBox.Items.Count; i++)
+        {
+            if (MonBox.Items[i] is ComboBoxItem cbi && cbi.Tag is int tag && tag == _s.NotificationMonitor)
+            {
+                targetIndex = i;
+                break;
+            }
+        }
+        MonBox.SelectedIndex = targetIndex;
+        _loading = false;
     }
 
     private void UpdateTexts()
@@ -59,7 +149,27 @@ public partial class SettingsWindow : Window
         LightCard.RefreshCaption(es ? "Claro" : "Light");
 
         InstantChangeLbl.Text = es ? "Se aplica al instante sin necesidad de reiniciar la aplicación." : "Applied instantly without needing to restart the app.";
+        LocationHdrLbl.Text = Strings.T("LocationSection");
+        PosTitleLbl.Text = Strings.T("NotificationPosition");
+        PosDescLbl.Text = Strings.T("PosDesc");
+        MonTitleLbl.Text = Strings.T("NotificationMonitor");
+        MonDescLbl.Text = Strings.T("MonDesc");
+        TestTitleLbl.Text = Strings.T("TestNotification");
+        TestDescLbl.Text = Strings.T("TestNotifDesc");
+        PreviewBtn.Content = Strings.T("PreviewPopup");
         CloseBtn.Content = es ? "Cerrar" : "Close";
+
+        PopulateMonitors();
+    }
+
+    private void TriggerPreviewPopup()
+    {
+        ConnectionPopup.ShowPreview(_s.NotificationPosition, _s.NotificationMonitor);
+    }
+
+    private void PreviewBtn_Click(object sender, RoutedEventArgs e)
+    {
+        TriggerPreviewPopup();
     }
 
     private void Lang_Changed(object sender, SelectionChangedEventArgs e)
@@ -83,6 +193,18 @@ public partial class SettingsWindow : Window
             _s.Theme = card.ThemeMode;
             ThemeManager.Apply(_s.Theme);
             _s.Save();
+            SelectPositionUi(_s.NotificationPosition);
+        }
+    }
+
+    private void MonBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loading) return;
+        if (MonBox.SelectedItem is ComboBoxItem cbi && cbi.Tag is int mon)
+        {
+            _s.NotificationMonitor = mon;
+            _s.Save();
+            TriggerPreviewPopup();
         }
     }
 
