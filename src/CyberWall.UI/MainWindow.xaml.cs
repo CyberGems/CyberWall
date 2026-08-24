@@ -15,16 +15,6 @@ namespace CyberWall.UI;
 
 public partial class MainWindow : Window
 {
-    private const int WM_NCHITTEST = 0x0084;
-    private const int HTLEFT = 10;
-    private const int HTRIGHT = 11;
-    private const int HTTOP = 12;
-    private const int HTTOPLEFT = 13;
-    private const int HTTOPRIGHT = 14;
-    private const int HTBOTTOM = 15;
-    private const int HTBOTTOMLEFT = 16;
-    private const int HTBOTTOMRIGHT = 17;
-
     private readonly FirewallService _svc = new();
     private List<AppRule> _all = new();
     private bool _loading;
@@ -34,6 +24,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        CyberWallWindowChrome.Apply(this, 10);
         Icon = AppIconHelper.CreateShieldImageSource(64);
         _loading = true;
         Strings.Current = App.Settings.Language;
@@ -52,43 +43,6 @@ public partial class MainWindow : Window
         StateChanged += (_, _) => UpdateMaximizeButtonIcon();
         UpdateMaximizeButtonIcon();
         _loading = false;
-    }
-
-    protected override void OnSourceInitialized(EventArgs e)
-    {
-        base.OnSourceInitialized(e);
-        var source = PresentationSource.FromVisual(this) as HwndSource;
-        source?.AddHook(WndProc);
-    }
-
-    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-    {
-        if (msg == WM_NCHITTEST && WindowState == WindowState.Normal)
-        {
-            int x = lParam.ToInt32() & 0xffff;
-            int y = (lParam.ToInt32() >> 16) & 0xffff;
-            if (x > 32767) x -= 65536;
-            if (y > 32767) y -= 65536;
-
-            var pt = PointFromScreen(new System.Windows.Point(x, y));
-            const int margin = 12;
-            const int b = 8;
-
-            bool left = pt.X <= margin + b;
-            bool right = pt.X >= ActualWidth - margin - b;
-            bool top = pt.Y <= margin + b;
-            bool bottom = pt.Y >= ActualHeight - margin - b;
-
-            if (top && left) { handled = true; return (IntPtr)HTTOPLEFT; }
-            if (top && right) { handled = true; return (IntPtr)HTTOPRIGHT; }
-            if (bottom && left) { handled = true; return (IntPtr)HTBOTTOMLEFT; }
-            if (bottom && right) { handled = true; return (IntPtr)HTBOTTOMRIGHT; }
-            if (left) { handled = true; return (IntPtr)HTLEFT; }
-            if (right) { handled = true; return (IntPtr)HTRIGHT; }
-            if (top) { handled = true; return (IntPtr)HTTOP; }
-            if (bottom) { handled = true; return (IntPtr)HTBOTTOM; }
-        }
-        return IntPtr.Zero;
     }
 
     public void RefreshLanguage()
