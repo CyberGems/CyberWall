@@ -43,6 +43,7 @@ public partial class SettingsWindow : Window
 
         SelectPositionUi(s.NotificationPosition);
         PopulateMonitors();
+        StartupToggle.IsChecked = StartupHelper.IsStartupEnabled();
         UpdateTexts();
         Closing += (_, _) => ConnectionPopup.DismissPreview();
         _loading = false;
@@ -158,11 +159,23 @@ public partial class SettingsWindow : Window
         MonDescLbl.Text = Strings.T("MonDesc");
         TestTitleLbl.Text = Strings.T("TestNotification");
         TestDescLbl.Text = Strings.T("TestNotifDesc");
+        SystemHdrLbl.Text = Strings.T("SystemHeader");
+        StartupTitleLbl.Text = Strings.T("RunAtStartup");
+        StartupDescLbl.Text = Strings.T("RunAtStartupDesc");
         PreviewBtn.Content = Strings.T("PreviewPopup");
         AboutBtn.Content = Strings.T("About");
         CloseBtn.Content = es ? "Cerrar" : "Close";
 
         PopulateMonitors();
+    }
+
+    private void StartupToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        var enabled = StartupToggle.IsChecked == true;
+        _s.RunAtStartup = enabled;
+        StartupHelper.SetStartupEnabled(enabled);
+        _s.Save();
     }
 
     private void TriggerPreviewPopup()

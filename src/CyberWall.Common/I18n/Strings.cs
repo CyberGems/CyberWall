@@ -123,6 +123,9 @@ public static class Strings
         ["DownloadCompleteDesc"] = ("The update has been successfully downloaded. CyberWall will now close to continue the installation.", "La actualización se descargó correctamente. CyberWall se cerrará ahora para continuar la instalación."),
         ["Current"] = ("Current:", "Actual:"),
         ["Latest"] = ("Latest:", "Reciente:"),
+        ["SystemHeader"] = ("System", "Sistema"),
+        ["RunAtStartup"] = ("Run CyberWall when Windows starts", "Ejecutar CyberWall al iniciar Windows"),
+        ["RunAtStartupDesc"] = ("Starts CyberWall minimized in the system tray when you power on your PC.", "Inicia CyberWall minimizado en la bandeja del sistema al encender el equipo."),
     };
 
     public static string T(string key, params object[] args)
