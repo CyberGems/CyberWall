@@ -47,6 +47,11 @@ public partial class LogViewerDialog : Window
         CloseBtn.Content = Strings.T("Close");
         EmptyMsg.Text = Strings.T("NoLogs");
         PathInfoText.Text = BlockedLog.LogPath;
+        ColTime.Header = Strings.T("DateTime");
+        ColAction.Header = Strings.T("Action");
+        ColDir.Header = Strings.T("Direction");
+        ColProg.Header = Strings.T("Program");
+        ColDest.Header = Strings.T("Destination");
     }
 
     private void LoadLogs()

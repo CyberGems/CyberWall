@@ -4,9 +4,10 @@
         xmlns:conv="clr-namespace:CyberWall.UI.Converters"
         Title="CyberWall — Connection Log" Height="560" Width="880" MinHeight="420" MinWidth="650"
         WindowStartupLocation="CenterOwner" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
-        ResizeMode="CanResize"
-        TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="ClearType"
-        FontFamily="Segoe UI, -apple-system, BlinkMacSystemFont, Roboto, sans-serif">
+        ResizeMode="NoResize"
+        TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        FontFamily="Segoe UI Variable Text, Segoe UI, -apple-system, BlinkMacSystemFont, Roboto, sans-serif">
 
     <Window.Resources>
         <conv:PathToIconConverter x:Key="PathToIconConverter"/>
@@ -192,7 +193,7 @@
         </Style>
     </Window.Resources>
 
-    <!-- Custom Modal Window Container -->
+    <!-- Custom Modal Window Container with Clean Border -->
     <Border CornerRadius="12" Background="{DynamicResource BgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1.5" SnapsToDevicePixels="True">
         <Grid Margin="0">
             <Grid.RowDefinitions>
@@ -271,7 +272,7 @@
                             </DataGrid.ColumnHeaderStyle>
                             <DataGrid.Columns>
                                 <!-- Timestamp -->
-                                <DataGridTextColumn Header="Fecha / Hora" Binding="{Binding Timestamp}" Width="145" CanUserSort="True" SortMemberPath="Timestamp">
+                                <DataGridTextColumn x:Name="ColTime" Header="Fecha / Hora" Binding="{Binding Timestamp}" Width="145" CanUserSort="True" SortMemberPath="Timestamp">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Margin" Value="10,0"/>
@@ -283,7 +284,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- Action Badge (Permitir / Bloquear) -->
-                                <DataGridTemplateColumn Header="Acción" Width="95" CanUserSort="True" SortMemberPath="Verdict">
+                                <DataGridTemplateColumn x:Name="ColAction" Header="Acción" Width="95" CanUserSort="True" SortMemberPath="Verdict">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Border CornerRadius="5" Height="20" Padding="7,1" Margin="6,0" VerticalAlignment="Center" HorizontalAlignment="Left">
@@ -315,7 +316,7 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Direction -->
-                                <DataGridTemplateColumn Header="Dirección" Width="85" CanUserSort="True" SortMemberPath="Direction">
+                                <DataGridTemplateColumn x:Name="ColDir" Header="Dirección" Width="85" CanUserSort="True" SortMemberPath="Direction">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Border Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="5" Height="20" Padding="5,1" Margin="4,0" VerticalAlignment="Center" HorizontalAlignment="Left">
@@ -326,7 +327,7 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Program Name + Icon -->
-                                <DataGridTemplateColumn Header="Programa" Width="1.3*" CanUserSort="True" SortMemberPath="DisplayName">
+                                <DataGridTemplateColumn x:Name="ColProg" Header="Programa" Width="1.3*" CanUserSort="True" SortMemberPath="DisplayName">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" Margin="8,0" VerticalAlignment="Center">
@@ -338,7 +339,7 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Destination (IP:Port) -->
-                                <DataGridTextColumn Header="Destino" Binding="{Binding RemoteEndpoint}" Width="150" CanUserSort="True" SortMemberPath="RemoteEndpoint">
+                                <DataGridTextColumn x:Name="ColDest" Header="Destino" Binding="{Binding RemoteEndpoint}" Width="150" CanUserSort="True" SortMemberPath="RemoteEndpoint">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Margin" Value="8,0"/>

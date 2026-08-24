@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
@@ -14,6 +15,16 @@ namespace CyberWall.UI;
 
 public partial class MainWindow : Window
 {
+    private const int WM_NCHITTEST = 0x0084;
+    private const int HTLEFT = 10;
+    private const int HTRIGHT = 11;
+    private const int HTTOP = 12;
+    private const int HTTOPLEFT = 13;
+    private const int HTTOPRIGHT = 14;
+    private const int HTBOTTOM = 15;
+    private const int HTBOTTOMLEFT = 16;
+    private const int HTBOTTOMRIGHT = 17;
+
     private readonly FirewallService _svc = new();
     private List<AppRule> _all = new();
     private bool _loading;
@@ -43,17 +54,68 @@ public partial class MainWindow : Window
         _loading = false;
     }
 
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        var source = PresentationSource.FromVisual(this) as HwndSource;
+        source?.AddHook(WndProc);
+    }
+
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == WM_NCHITTEST && WindowState == WindowState.Normal)
+        {
+            int x = lParam.ToInt32() & 0xffff;
+            int y = (lParam.ToInt32() >> 16) & 0xffff;
+            if (x > 32767) x -= 65536;
+            if (y > 32767) y -= 65536;
+
+            var pt = PointFromScreen(new System.Windows.Point(x, y));
+            const int b = 7;
+
+            bool left = pt.X <= b;
+            bool right = pt.X >= ActualWidth - b;
+            bool top = pt.Y <= b;
+            bool bottom = pt.Y >= ActualHeight - b;
+
+            if (top && left) { handled = true; return (IntPtr)HTTOPLEFT; }
+            if (top && right) { handled = true; return (IntPtr)HTTOPRIGHT; }
+            if (bottom && left) { handled = true; return (IntPtr)HTBOTTOMLEFT; }
+            if (bottom && right) { handled = true; return (IntPtr)HTBOTTOMRIGHT; }
+            if (left) { handled = true; return (IntPtr)HTLEFT; }
+            if (right) { handled = true; return (IntPtr)HTRIGHT; }
+            if (top) { handled = true; return (IntPtr)HTTOP; }
+            if (bottom) { handled = true; return (IntPtr)HTBOTTOM; }
+        }
+        return IntPtr.Zero;
+    }
+
     public void RefreshLanguage()
     {
         TitleText.Text = "CyberWall";
         SettingsBtn.Content = "⚙ " + Strings.T("Settings");
         ModeLbl.Text = Strings.T("Mode");
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
-        HdrProg.Text = Strings.T("Program") + (_sortBy == "DisplayName" ? (_sortAsc ? " ▾" : " ▴") : "");
-        HdrPath.Text = Strings.T("Path") + (_sortBy == "AppPath" ? (_sortAsc ? " ▾" : " ▴") : "");
-        HdrVerd.Text = Strings.T("Action");
-        HdrDir.Text = Strings.T("Direction");
-        OpenLogLink.Text = Strings.T("OpenLog");
+        ViewLogBtn.Content = "📋 " + Strings.T("ViewLog");
+
+        var progHdr = Strings.T("Program") + (_sortBy == "DisplayName" ? (_sortAsc ? " ▾" : " ▴") : "");
+        var pathHdr = Strings.T("Path") + (_sortBy == "AppPath" ? (_sortAsc ? " ▾" : " ▴") : "");
+        var actHdr = Strings.T("Action");
+        var dirHdr = Strings.T("Direction");
+        var stateHdr = Strings.Current == Lang.Es ? "Estado" : "State";
+
+        AllowColState.Header = stateHdr;
+        AllowColProg.Header = progHdr;
+        AllowColPath.Header = pathHdr;
+        AllowColAction.Header = actHdr;
+        AllowColDir.Header = dirHdr;
+
+        BlockColState.Header = stateHdr;
+        BlockColProg.Header = progHdr;
+        BlockColPath.Header = pathHdr;
+        BlockColAction.Header = actHdr;
+        BlockColDir.Header = dirHdr;
+
         AllowedExpander.Header = $"{Strings.T("Allowed")} ({_all.Count(r => r.Verdict == Verdict.Allow)})";
         BlockedExpander.Header = $"{Strings.T("Blocked")} ({_all.Count(r => r.Verdict == Verdict.Block)})";
         var m = _svc.Mode == FirewallMode.BlockAll ? 1 : 0;
@@ -143,18 +205,6 @@ public partial class MainWindow : Window
         RefreshLanguage();
     }
 
-    private void SortProg_Click(object sender, MouseButtonEventArgs e)
-    {
-        if (_sortBy == "DisplayName") _sortAsc = !_sortAsc; else { _sortBy = "DisplayName"; _sortAsc = true; }
-        RefreshRules(SearchBox.Text);
-    }
-
-    private void SortPath_Click(object sender, MouseButtonEventArgs e)
-    {
-        if (_sortBy == "AppPath") _sortAsc = !_sortAsc; else { _sortBy = "AppPath"; _sortAsc = true; }
-        RefreshRules(SearchBox.Text);
-    }
-
     private void UpdateStatus()
     {
         var on = _svc.IsMasterOn;
@@ -217,7 +267,7 @@ public partial class MainWindow : Window
 
     private void Settings_Click(object sender, RoutedEventArgs e) { var w = new SettingsWindow(App.Settings) { Owner = this }; w.ShowDialog(); RefreshLanguage(); UpdateStatus(); }
     
-    private void OpenLog_Click(object sender, MouseButtonEventArgs e)
+    private void OpenLog_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new LogViewerDialog { Owner = this };
         dlg.ShowDialog();

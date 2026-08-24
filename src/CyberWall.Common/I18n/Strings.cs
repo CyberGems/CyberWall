@@ -1,6 +1,6 @@
 namespace CyberWall.Common.I18n;
 
-public enum Lang { En, Es }
+public enum Lang { Es, En }
 
 public static class Strings
 {
@@ -43,9 +43,12 @@ public static class Strings
         ["Path"] = ("Path", "Ruta"),
         ["Verdict"] = ("Action", "Acción"),
         ["Action"] = ("Action", "Acción"),
+        ["DateTime"] = ("Date / Time", "Fecha / Hora"),
+        ["Destination"] = ("Destination", "Destino"),
         ["Mode"] = ("Mode:", "Modo:"),
         ["HintRules"] = ("Per-program rules — each new .exe triggers a real-time prompt", "Reglas por programa — cada .exe nuevo dispara un aviso en tiempo real"),
         ["OpenLog"] = ("Connection Log", "Registro de conexiones"),
+        ["ViewLog"] = ("Connection Log", "Registro de conexiones"),
         ["ThemeCyberWall"] = ("CyberWall — Cyber Navy & Neon Cyan", "CyberWall — Azul Cyber y Cyan Neón"),
         ["ThemeDark"] = ("Dark — Neutral Charcoal & Indigo", "Dark — Carbón Neutro e Índigo"),
         ["ThemeLight"] = ("Light — Slate & Royal Blue", "Light — Pizarra y Azul Real"),
