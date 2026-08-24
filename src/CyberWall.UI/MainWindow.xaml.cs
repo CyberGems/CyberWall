@@ -71,12 +71,13 @@ public partial class MainWindow : Window
             if (y > 32767) y -= 65536;
 
             var pt = PointFromScreen(new System.Windows.Point(x, y));
-            const int b = 7;
+            const int margin = 12;
+            const int b = 8;
 
-            bool left = pt.X <= b;
-            bool right = pt.X >= ActualWidth - b;
-            bool top = pt.Y <= b;
-            bool bottom = pt.Y >= ActualHeight - b;
+            bool left = pt.X <= margin + b;
+            bool right = pt.X >= ActualWidth - margin - b;
+            bool top = pt.Y <= margin + b;
+            bool bottom = pt.Y >= ActualHeight - margin - b;
 
             if (top && left) { handled = true; return (IntPtr)HTTOPLEFT; }
             if (top && right) { handled = true; return (IntPtr)HTTOPRIGHT; }
