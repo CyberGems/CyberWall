@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CyberWall.Common/CyberWall.Common.csproj" />
+    <Project Path="src/CyberWall.Service/CyberWall.Service.csproj" />
+    <Project Path="src/CyberWall.UI/CyberWall.UI.csproj" />
+  </Folder>
+</Solution>

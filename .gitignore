@@ -1,0 +1,14 @@
+bin/
+obj/
+publish/
+out/
+.vs/
+*.user
+*.suo
+TestResults/
+artifacts/
+AGENTS.md
+CLAUDE.md
+.cursor/
+.cursorrules
+.github/copilot-instructions.md
