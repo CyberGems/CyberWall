@@ -94,6 +94,9 @@ public static class Strings
         ["EntriesCount"] = ("{0} entries", "{0} registros"),
         ["ClearLogConfirm"] = ("Are you sure you want to clear the connection log?", "¿Estás seguro de que deseas vaciar el registro de conexiones?"),
         ["CopiedToClipboard"] = ("Copied to clipboard", "Copiado al portapapeles"),
+        ["FirstNetworkActivity"] = ("First Network Activity", "Primera Actividad de Red"),
+        ["FirstNetworkActivityDesc"] = ("First network connection initiated by {0}", "Primera conexión a la red iniciada por {0}"),
+        ["Now"] = ("Just now", "Ahora mismo"),
     };
 
     public static string T(string key, params object[] args)

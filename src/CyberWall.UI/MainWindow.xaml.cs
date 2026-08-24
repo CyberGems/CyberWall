@@ -24,7 +24,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        CyberWallWindowChrome.Apply(this, 10);
+        CyberWallWindowChrome.Apply(this, 12);
         Icon = AppIconHelper.CreateShieldImageSource(64);
         _loading = true;
         Strings.Current = App.Settings.Language;
@@ -135,8 +135,13 @@ public partial class MainWindow : Window
             p.ClosedWithVerdict += popup =>
             {
                 _pendingPopups.Remove(key);
+                bool isFirstTime = !_svc.Store.TryGet(popup.Event.AppPath, out _);
                 _svc.SetVerdict(popup.Event.AppPath, popup.ResultVerdict, popup.Remember, popup.Event);
                 if (popup.Remember) RefreshRules(SearchBox.Text);
+                if (isFirstTime && popup.ResultVerdict == Verdict.Allow)
+                {
+                    FirstActivityToast.ShowToast(popup.Event);
+                }
             };
             p.Closed += (_, _) => _pendingPopups.Remove(key);
             p.Show();

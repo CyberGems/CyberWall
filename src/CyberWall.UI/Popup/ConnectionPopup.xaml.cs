@@ -45,7 +45,24 @@ public partial class ConnectionPopup : Window
             RememberChk.Visibility = Visibility.Collapsed;
         }
 
-        DetailLbl.Text = $"{(ev.Direction == Direction.Inbound ? Strings.T("Inbound") : Strings.T("Outbound"))} • {ev.Protocol} • {ev.RemoteAddress}:{ev.RemotePort} • PID {ev.ProcessId}";
+        if (ev.Direction == Direction.Inbound)
+        {
+            DirectionPill.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(45, 168, 85, 247));
+            DirectionPill.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(90, 168, 85, 247));
+            DirectionPill.BorderThickness = new Thickness(1);
+            DirectionPillText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(192, 132, 252));
+            DirectionPillText.Text = "↓ " + Strings.T("Inbound");
+        }
+        else
+        {
+            DirectionPill.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(40, 0, 229, 255));
+            DirectionPill.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(80, 0, 229, 255));
+            DirectionPill.BorderThickness = new Thickness(1);
+            DirectionPillText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 229, 255));
+            DirectionPillText.Text = "↑ " + Strings.T("Outbound");
+        }
+
+        DetailLbl.Text = $"{ev.Protocol} • {ev.RemoteAddress}:{ev.RemotePort} • PID {ev.ProcessId}";
         PathLbl.Text = ev.AppPath;
         MouseLeftButtonDown += (_, _) => DragMove();
     }

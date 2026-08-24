@@ -22,6 +22,7 @@ public partial class SettingsWindow : Window
     public SettingsWindow(AppSettings s)
     {
         InitializeComponent();
+        CyberWallWindowChrome.Apply(this, 12);
         Icon = AppIconHelper.CreateShieldImageSource(64);
         _s = s;
         _loading = true;
