@@ -51,8 +51,9 @@ public partial class MainWindow : Window
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
         HdrProg.Text = Strings.T("Program") + (_sortBy == "DisplayName" ? (_sortAsc ? " ▾" : " ▴") : "");
         HdrPath.Text = Strings.T("Path") + (_sortBy == "AppPath" ? (_sortAsc ? " ▾" : " ▴") : "");
-        HdrVerd.Text = Strings.T("Verdict");
+        HdrVerd.Text = Strings.T("Action");
         HdrDir.Text = Strings.T("Direction");
+        OpenLogLink.Text = Strings.T("OpenLog");
         AllowedExpander.Header = $"{Strings.T("Allowed")} ({_all.Count(r => r.Verdict == Verdict.Allow)})";
         BlockedExpander.Header = $"{Strings.T("Blocked")} ({_all.Count(r => r.Verdict == Verdict.Block)})";
         var m = _svc.Mode == FirewallMode.BlockAll ? 1 : 0;
@@ -71,13 +72,11 @@ public partial class MainWindow : Window
         if (WindowState == WindowState.Maximized)
         {
             MaximizeBtn.ToolTip = Strings.T("Restore");
-            // Inward arrows (pointing toward center for Restore)
             MaximizeIconPath.Data = Geometry.Parse("M 6 2 L 6 6 L 2 6 M 6 6 L 2.5 2.5 M 8 12 L 8 8 L 12 8 M 8 8 L 11.5 11.5");
         }
         else
         {
             MaximizeBtn.ToolTip = Strings.T("Maximize");
-            // Outward arrows (pointing toward corners for Maximize)
             MaximizeIconPath.Data = Geometry.Parse("M 2 8 L 2 2 L 8 2 M 2 2 L 6 6 M 12 6 L 12 12 L 6 12 M 12 12 L 8 8");
         }
     }
@@ -217,7 +216,12 @@ public partial class MainWindow : Window
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e) { var w = new SettingsWindow(App.Settings) { Owner = this }; w.ShowDialog(); RefreshLanguage(); UpdateStatus(); }
-    private void OpenLog_Click(object sender, MouseButtonEventArgs e) { try { var p = BlockedLog.LogPath; if (System.IO.File.Exists(p)) System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(p) { UseShellExecute = true }); else System.Windows.MessageBox.Show((Strings.Current == Lang.Es ? $"Aún sin bloqueos.\n{p}" : $"No blocked connections yet.\n{p}")); LogPathText.Text = p; } catch { } }
+    
+    private void OpenLog_Click(object sender, MouseButtonEventArgs e)
+    {
+        var dlg = new LogViewerDialog { Owner = this };
+        dlg.ShowDialog();
+    }
 
     private void DataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {

@@ -211,19 +211,14 @@ public partial class TrayContextMenuWindow : Window
     private void Log_Click(object sender, RoutedEventArgs e)
     {
         CloseMenu();
-        try
+        _mainWindow.Dispatcher.Invoke(() =>
         {
-            var p = BlockedLog.LogPath;
-            if (File.Exists(p))
-            {
-                Process.Start(new ProcessStartInfo(p) { UseShellExecute = true });
-            }
-            else
-            {
-                System.Windows.MessageBox.Show(Strings.Current == Lang.Es ? $"Aún sin bloqueos.\n{p}" : $"No blocked connections yet.\n{p}");
-            }
-        }
-        catch { }
+            _mainWindow.Show();
+            _mainWindow.WindowState = WindowState.Normal;
+            _mainWindow.Activate();
+            var dlg = new Dialogs.LogViewerDialog { Owner = _mainWindow };
+            dlg.ShowDialog();
+        });
     }
 
     private void Exit_Click(object sender, RoutedEventArgs e)
