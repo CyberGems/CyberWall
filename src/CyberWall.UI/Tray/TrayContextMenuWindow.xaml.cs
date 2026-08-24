@@ -69,72 +69,77 @@ public partial class TrayContextMenuWindow : Window
             var physWork = screen.WorkingArea;
             var physBounds = screen.Bounds;
 
-            // Get accurate monitor DPI scale factor
+            var hwnd = new WindowInteropHelper(this).EnsureHandle();
+
+            // Measure layout to get accurate DIP dimensions
+            Measure(new System.Windows.Size(Width, double.PositiveInfinity));
+            double dipWidth = DesiredSize.Width > 0 ? DesiredSize.Width : (ActualWidth > 0 ? ActualWidth : Width);
+            if (dipWidth <= 0) dipWidth = 280;
+            double dipHeight = DesiredSize.Height > 0 ? DesiredSize.Height : (ActualHeight > 0 ? ActualHeight : 330);
+            if (dipHeight <= 0) dipHeight = 330;
+
             var dpi = VisualTreeHelper.GetDpi(this);
             double scaleX = dpi.DpiScaleX > 0 ? dpi.DpiScaleX : 1.0;
             double scaleY = dpi.DpiScaleY > 0 ? dpi.DpiScaleY : 1.0;
 
-            double workLeft = physWork.Left / scaleX;
-            double workTop = physWork.Top / scaleY;
-            double workRight = physWork.Right / scaleX;
-            double workBottom = physWork.Bottom / scaleY;
-            double workWidth = physWork.Width / scaleX;
-            double workHeight = physWork.Height / scaleY;
+            int physicalWidth = (int)Math.Ceiling(dipWidth * scaleX);
+            int physicalHeight = (int)Math.Ceiling(dipHeight * scaleY);
 
-            double screenLeft = physBounds.Left / scaleX;
-            double screenRight = physBounds.Right / scaleX;
-            double screenTop = physBounds.Top / scaleY;
+            int gap = (int)Math.Round(10 * scaleX);
+            int eps = (int)Math.Round(4 * scaleX);
 
-            double cursorX = physicalCursor.X / scaleX;
-            double cursorY = physicalCursor.Y / scaleY;
+            bool taskbarLeft = physWork.Left > physBounds.Left + eps;
+            bool taskbarRight = physWork.Right < physBounds.Right - eps;
+            bool taskbarTop = physWork.Top > physBounds.Top + eps;
 
-            UpdateLayout();
-            double windowWidth = ActualWidth > 0 ? ActualWidth : Width;
-            double windowHeight = ActualHeight > 0 ? ActualHeight : 260;
-
-            const double gap = 8;
-            const double eps = 2;
-            double left;
-            double top;
-
-            bool taskbarLeft = workLeft > screenLeft + eps;
-            bool taskbarRight = workRight < screenRight - eps;
-            bool taskbarTop = workTop > screenTop + eps;
+            int physX;
+            int physY;
 
             if (taskbarLeft)
             {
-                left = workLeft + gap;
-                top = cursorY - (windowHeight / 2);
+                // Left taskbar: place menu to the right of taskbar, aligned vertically near cursor
+                physX = physWork.Left + gap;
+                physY = physicalCursor.Y - (physicalHeight / 2);
             }
             else if (taskbarRight)
             {
-                left = workRight - windowWidth - gap;
-                top = cursorY - (windowHeight / 2);
+                // Right taskbar: place menu to the left of taskbar, aligned vertically near cursor
+                physX = physWork.Right - physicalWidth - gap;
+                physY = physicalCursor.Y - (physicalHeight / 2);
             }
             else if (taskbarTop)
             {
-                left = cursorX - (windowWidth / 2);
-                top = workTop + gap;
+                // Top taskbar: place menu below taskbar, aligned horizontally near cursor
+                physX = physicalCursor.X - (physicalWidth / 2);
+                physY = physWork.Top + gap;
             }
             else
             {
-                left = cursorX - (windowWidth / 2);
-                top = workBottom - windowHeight - gap;
+                // Bottom taskbar (default): place menu above taskbar, aligned horizontally near cursor
+                physX = physicalCursor.X - (physicalWidth / 2);
+                physY = physWork.Bottom - physicalHeight - gap;
             }
 
-            double minLeft = workLeft + gap;
-            double maxLeft = workRight - windowWidth - gap;
-            double minTop = workTop + gap;
-            double maxTop = workBottom - windowHeight - gap;
+            // Strictly clamp so the entire window is 100% inside the monitor's work area
+            int minX = physWork.Left + gap;
+            int maxX = physWork.Right - physicalWidth - gap;
+            int minY = physWork.Top + gap;
+            int maxY = physWork.Bottom - physicalHeight - gap;
 
-            if (maxLeft < minLeft) left = workLeft + (workWidth - windowWidth) / 2;
-            else left = Math.Clamp(left, minLeft, maxLeft);
+            if (maxX < minX) physX = physWork.Left + (physWork.Width - physicalWidth) / 2;
+            else physX = Math.Clamp(physX, minX, maxX);
 
-            if (maxTop < minTop) top = workTop + (workHeight - windowHeight) / 2;
-            else top = Math.Clamp(top, minTop, maxTop);
+            if (maxY < minY) physY = physWork.Top + (physWork.Height - physicalHeight) / 2;
+            else physY = Math.Clamp(physY, minY, maxY);
 
-            Left = left;
-            Top = top;
+            // Set both Win32 HWND position and WPF Left/Top
+            if (hwnd != IntPtr.Zero)
+            {
+                SetWindowPos(hwnd, IntPtr.Zero, physX, physY, physicalWidth, physicalHeight, SWP_NOZORDER | SWP_NOACTIVATE);
+            }
+
+            Left = physX / scaleX;
+            Top = physY / scaleY;
 
             Activate();
             Focus();
