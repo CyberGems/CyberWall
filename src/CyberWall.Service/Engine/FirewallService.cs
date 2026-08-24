@@ -26,7 +26,11 @@ public sealed class FirewallService : IDisposable
         return ok;
     }
 
-    public void Disable() => Wfp.Disable();
+    public void Disable()
+    {
+        Monitor.Stop();
+        Wfp.Disable();
+    }
     public bool IsMasterOn => IsEnabled;
 
     public void SetMode(FirewallMode mode)

@@ -17,7 +17,7 @@ public partial class ConnectionPopup : Window
         Event = ev;
         Loaded += (_, _) => PositionBottomRight();
         TitleLbl.Text = Strings.T("NewConnection");
-        AppLbl.Text = Strings.T("AppWantsToConnect", ev.AppName);
+        AppLbl.Text = Strings.T("AppWantsToConnect", ev.DisplayName);
         RememberChk.Content = Strings.T("Remember");
         DetailLbl.Text = $"{(ev.Direction == Direction.Inbound ? Strings.T("Inbound") : Strings.T("Outbound"))}  \u2022  {ev.Protocol}  \u2022  {ev.RemoteAddress}:{ev.RemotePort}  \u2022  PID {ev.ProcessId}";
         PathLbl.Text = ev.AppPath;

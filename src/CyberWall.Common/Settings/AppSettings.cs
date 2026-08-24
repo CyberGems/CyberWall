@@ -10,6 +10,8 @@ public sealed class AppSettings
 {
     public Lang Language { get; set; } = Lang.Es;
     public AppTheme Theme { get; set; } = AppTheme.CyberWall;
+    public bool FirewallEnabled { get; set; } = true;
+    public int FirewallMode { get; set; } = 2;
 
     private static string Path => System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "CyberWall", "settings.json");
 

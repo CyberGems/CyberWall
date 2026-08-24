@@ -21,16 +21,17 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _loading = true;
-        MasterToggle.IsChecked = true;
+        Strings.Current = App.Settings.Language;
         _svc.OnAskConnection += OnAskConnection;
-        _svc.Enable(FirewallMode.Ask);
+        if (App.Settings.FirewallEnabled)
+            _svc.Enable((FirewallMode)App.Settings.FirewallMode);
         RefreshRules();
         RefreshLanguage();
         UpdateStatus();
         var isAdmin = new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent()).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
         if (!isAdmin) StatusText.Text += "  \u26a0 Ejecuta como Admin para bloqueo real (ahora simulado)";
         _tray = new TrayService(this);
-        Closing += (_, _) => _svc.Dispose();
+        Closing += (_, _) => { App.Settings.FirewallEnabled = _svc.IsMasterOn; App.Settings.FirewallMode = (int)_svc.Mode; App.Settings.Save(); _svc.Dispose(); };
         Closed += (_, _) => _tray?.Dispose();
         _loading = false;
     }
@@ -73,7 +74,6 @@ public partial class MainWindow : Window
             };
             p.Closed += (_, _) => _pendingPopups.Remove(key);
             p.Show();
-            Activate();
         });
     }
 
@@ -123,6 +123,9 @@ public partial class MainWindow : Window
         if (_loading) return;
         if (MasterToggle.IsChecked == true) { var m = ModeBox.SelectedIndex == 1 ? FirewallMode.BlockAll : FirewallMode.Ask; _svc.Enable(m); }
         else _svc.Disable();
+        App.Settings.FirewallEnabled = _svc.IsMasterOn;
+        App.Settings.FirewallMode = (int)_svc.Mode;
+        App.Settings.Save();
         UpdateStatus();
     }
 
@@ -131,6 +134,8 @@ public partial class MainWindow : Window
         if (_loading || !_svc.IsMasterOn) return;
         var m = ModeBox.SelectedIndex == 1 ? FirewallMode.BlockAll : FirewallMode.Ask;
         _svc.SetMode(m);
+        App.Settings.FirewallMode = (int)m;
+        App.Settings.Save();
         UpdateStatus();
     }
 

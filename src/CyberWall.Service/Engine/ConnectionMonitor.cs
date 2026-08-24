@@ -10,22 +10,46 @@ public sealed class ConnectionMonitor : IDisposable
     public event Action<ConnectionEvent>? OnNewConnection;
     private Timer? _timer;
     private readonly HashSet<string> _seen = new();
-    private readonly HashSet<string> _seenProcs = new();
     private readonly HashSet<int> _ownPids;
+    private readonly WfpBlockWatcher _blockWatcher = new();
     private FirewallService? _svc;
 
     public ConnectionMonitor()
     {
         _ownPids = new HashSet<int> { Environment.ProcessId, Process.GetCurrentProcess().Id };
+        _blockWatcher.OnBlockedConnection += HandleBlockedConnection;
     }
 
     public void Start(FirewallService svc)
     {
         _svc = svc;
         _seen.Clear();
-        _seenProcs.Clear();
         _timer?.Dispose();
-        _timer = new Timer(_ => Poll(), null, 1000, 1500);
+        _blockWatcher.Start();
+        // Fast 400ms polling for active/established connections from running processes
+        _timer = new Timer(_ => Poll(), null, 200, 400);
+    }
+
+    public void Stop()
+    {
+        _timer?.Dispose();
+        _timer = null;
+        _blockWatcher.Stop();
+    }
+
+    private void HandleBlockedConnection(ConnectionEvent ev)
+    {
+        if (_svc == null || !_svc.IsMasterOn) return;
+        if (_svc.Mode == FirewallMode.BlockAll) return;
+
+        // Skip if already in rule store
+        if (_svc.Store.TryGet(ev.AppPath, out _)) return;
+
+        // Skip own processes
+        if (_ownPids.Contains(ev.ProcessId)) return;
+        if (ev.AppPath.Contains("CyberWall", StringComparison.OrdinalIgnoreCase)) return;
+
+        OnNewConnection?.Invoke(ev);
     }
 
     private void Poll()
@@ -43,6 +67,7 @@ public sealed class ConnectionMonitor : IDisposable
                 if (_ownPids.Contains(c.Pid)) continue;
                 if (path.Contains("CyberWall", StringComparison.OrdinalIgnoreCase)) continue;
                 if (_svc.Store.TryGet(path, out _)) continue;
+
                 var ev = new ConnectionEvent
                 {
                     AppPath = path,
@@ -52,51 +77,13 @@ public sealed class ConnectionMonitor : IDisposable
                     ProcessId = c.Pid,
                     Protocol = "TCP"
                 };
+
                 if (_svc.Mode == FirewallMode.BlockAll) continue;
                 OnNewConnection?.Invoke(ev);
             }
             if (_seen.Count > 5000) _seen.Clear();
-            PollBlockedProcs();
         }
         catch (Exception ex) { Debug.WriteLine(ex); }
-    }
-
-    private readonly Dictionary<string, DateTime> _lastPopup = new(StringComparer.OrdinalIgnoreCase);
-
-    private void PollBlockedProcs()
-    {
-        try
-        {
-            var names = new[] { "git-remote-https", "git" };
-            foreach (var p in Process.GetProcesses())
-            {
-                try
-                {
-                    string? path = p.MainModule?.FileName;
-                    if (path == null) continue;
-                    var fname = Path.GetFileNameWithoutExtension(path);
-                    if (!names.Any(n => fname.Equals(n, StringComparison.OrdinalIgnoreCase))) continue;
-                    var key = Path.GetFullPath(path).ToLowerInvariant();
-                    if (_lastPopup.TryGetValue(key, out var last) && (DateTime.UtcNow - last).TotalSeconds < 12) continue;
-                    if (_svc!.Store.TryGet(path, out _)) continue;
-                    if (_ownPids.Contains(p.Id)) continue;
-                    _lastPopup[key] = DateTime.UtcNow;
-                    var ev = new ConnectionEvent
-                    {
-                        AppPath = path,
-                        RemoteAddress = "github.com",
-                        RemotePort = 443,
-                        Direction = Direction.Outbound,
-                        ProcessId = p.Id,
-                        Protocol = "TCP"
-                    };
-                    if (_svc.Mode == FirewallMode.BlockAll) continue;
-                    OnNewConnection?.Invoke(ev);
-                }
-                catch { }
-            }
-        }
-        catch { }
     }
 
     private static string? GetPath(int pid)
@@ -135,5 +122,10 @@ public sealed class ConnectionMonitor : IDisposable
     [DllImport("iphlpapi.dll")] static extern uint GetExtendedTcpTable(nint pTable, ref int pdwSize, bool sort, int family, int tableClass, int reserved);
     [StructLayout(LayoutKind.Sequential)] struct MIB_TCPROW_OWNER_PID { public uint state; public uint localAddr; public uint localPort; public uint remoteAddr; public uint remotePort; public uint owningPid; }
 
-    public void Dispose() => _timer?.Dispose();
+    public void Dispose()
+    {
+        Stop();
+        _blockWatcher.Dispose();
+    }
 }
+

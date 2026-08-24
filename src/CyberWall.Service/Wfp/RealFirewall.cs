@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace CyberWall.Service.Wfp;
@@ -39,6 +40,15 @@ internal static class RealFirewall
     public static void AllowApp(string appPath)
     {
         if (!IsAdmin) return;
+        var paths = GetCompanionBinaries(appPath);
+        foreach (var p in paths)
+        {
+            ApplySingleAllow(p);
+        }
+    }
+
+    private static void ApplySingleAllow(string appPath)
+    {
         try
         {
             var baseName = Path.GetFileNameWithoutExtension(appPath);
@@ -56,6 +66,15 @@ internal static class RealFirewall
     public static void BlockApp(string appPath)
     {
         if (!IsAdmin) return;
+        var paths = GetCompanionBinaries(appPath);
+        foreach (var p in paths)
+        {
+            ApplySingleBlock(p);
+        }
+    }
+
+    private static void ApplySingleBlock(string appPath)
+    {
         try
         {
             var name = $"CyberWall-Allow-{Path.GetFileNameWithoutExtension(appPath)}";
@@ -72,14 +91,85 @@ internal static class RealFirewall
 
     public static void RemoveApp(string appPath)
     {
+        var paths = GetCompanionBinaries(appPath);
+        foreach (var p in paths)
+        {
+            try
+            {
+                var baseName = Path.GetFileNameWithoutExtension(p);
+                RunNetsh($"advfirewall firewall delete rule name=\"CyberWall-Allow-{baseName}\"");
+                RunNetsh($"advfirewall firewall delete rule name=\"CyberWall-Allow-{baseName}-in\"");
+                RunNetsh($"advfirewall firewall delete rule name=\"CyberWall-Block-{baseName}\"");
+                RunNetsh($"advfirewall firewall delete rule name=\"CyberWall-Block-{baseName}-in\"");
+            }
+            catch { }
+        }
+    }
+
+    private static List<string> GetCompanionBinaries(string appPath)
+    {
+        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { appPath };
         try
         {
-            var baseName = Path.GetFileNameWithoutExtension(appPath);
-            RunNetsh($"advfirewall firewall delete rule name=\"CyberWall-Allow-{baseName}\"");
-            RunNetsh($"advfirewall firewall delete rule name=\"CyberWall-Allow-{baseName}-in\"");
-            RunNetsh($"advfirewall firewall delete rule name=\"CyberWall-Block-{baseName}\"");
+            var fileName = Path.GetFileNameWithoutExtension(appPath);
+            bool isGit = fileName.StartsWith("git", StringComparison.OrdinalIgnoreCase) ||
+                         appPath.Contains(@"\Git\", StringComparison.OrdinalIgnoreCase) ||
+                         appPath.Contains(@"/Git/", StringComparison.OrdinalIgnoreCase);
+
+            if (isGit)
+            {
+                // Find Git root directory
+                var dir = Path.GetDirectoryName(appPath);
+                var cur = dir != null ? new DirectoryInfo(dir) : null;
+                DirectoryInfo? gitRoot = null;
+
+                while (cur != null && cur.Parent != null)
+                {
+                    if (cur.Name.Equals("Git", StringComparison.OrdinalIgnoreCase) ||
+                        Directory.Exists(Path.Combine(cur.FullName, "cmd")) && Directory.Exists(Path.Combine(cur.FullName, "mingw64")) ||
+                        Directory.Exists(Path.Combine(cur.FullName, "libexec", "git-core")))
+                    {
+                        gitRoot = cur;
+                        break;
+                    }
+                    cur = cur.Parent;
+                }
+
+                if (gitRoot != null)
+                {
+                    var candidates = new[]
+                    {
+                        Path.Combine(gitRoot.FullName, "cmd", "git.exe"),
+                        Path.Combine(gitRoot.FullName, "bin", "git.exe"),
+                        Path.Combine(gitRoot.FullName, "mingw64", "bin", "git.exe"),
+                        Path.Combine(gitRoot.FullName, "mingw64", "bin", "curl.exe"),
+                        Path.Combine(gitRoot.FullName, "mingw64", "libexec", "git-core", "git-remote-https.exe"),
+                        Path.Combine(gitRoot.FullName, "mingw64", "libexec", "git-core", "git-remote-http.exe"),
+                        Path.Combine(gitRoot.FullName, "mingw64", "libexec", "git-core", "git-remote-ftp.exe"),
+                        Path.Combine(gitRoot.FullName, "mingw64", "libexec", "git-core", "git-remote-ftps.exe"),
+                        Path.Combine(gitRoot.FullName, "usr", "bin", "ssh.exe"),
+                        Path.Combine(gitRoot.FullName, "usr", "bin", "curl.exe"),
+                    };
+
+                    foreach (var c in candidates)
+                    {
+                        if (File.Exists(c)) result.Add(c);
+                    }
+                }
+                else if (dir != null)
+                {
+                    // Fallback: search sibling executables in same directory
+                    var gitCoreSiblings = new[] { "git.exe", "git-remote-https.exe", "git-remote-http.exe", "ssh.exe" };
+                    foreach (var s in gitCoreSiblings)
+                    {
+                        var candidate = Path.Combine(dir, s);
+                        if (File.Exists(candidate)) result.Add(candidate);
+                    }
+                }
+            }
         }
         catch { }
+        return result.ToList();
     }
 
     private static bool RunNetsh(string args)
@@ -94,3 +184,4 @@ internal static class RealFirewall
         catch { return false; }
     }
 }
+
