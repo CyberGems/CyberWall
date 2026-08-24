@@ -5,7 +5,7 @@
 #define AppName "CyberWall"
 #define AppPublisher "CyberGems"
 #define AppURL "https://cybergems.org"
-#define AppExeName "CyberWall.UI.exe"
+#define AppExeName "CyberWall.exe"
 
 [Setup]
 AppId={{C8B1E9A4-5A2C-4F71-9F3D-7E8B8B8B8B8B}}
@@ -20,6 +20,7 @@ DefaultGroupName={#AppName}
 AllowNoIcons=yes
 OutputDir=.
 OutputBaseFilename=CyberWall-Setup-{#AppVersion}
+SetupIconFile=.\src\CyberWall.UI\Assets\CyberWall.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -51,10 +52,10 @@ Name: "startup"; Description: "{cm:RunAtStartup}"; GroupDescription: "{cm:Option
 Source: ".\publish-win64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"
+Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"; IconFilename: "{app}\Assets\CyberWall.ico"
 Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
-Name: "{userstartup}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: startup
+Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon; IconFilename: "{app}\Assets\CyberWall.ico"
+Name: "{userstartup}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: startup; IconFilename: "{app}\Assets\CyberWall.ico"
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall

@@ -69,34 +69,24 @@ public partial class TrayContextMenuWindow : Window
             var physWork = screen.WorkingArea;
             var physBounds = screen.Bounds;
 
-            // HWND Monitor migration
-            try
-            {
-                var hwnd = new WindowInteropHelper(this).EnsureHandle();
-                if (hwnd != IntPtr.Zero)
-                {
-                    SetWindowPos(hwnd, IntPtr.Zero, physWork.X, physWork.Y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
-                }
-            }
-            catch { }
+            // Get accurate monitor DPI scale factor
+            var dpi = VisualTreeHelper.GetDpi(this);
+            double scaleX = dpi.DpiScaleX > 0 ? dpi.DpiScaleX : 1.0;
+            double scaleY = dpi.DpiScaleY > 0 ? dpi.DpiScaleY : 1.0;
 
-            Rect PhysicalToWindowDips(System.Drawing.Rectangle r)
-            {
-                var tl = PointFromScreen(new WpfPoint(r.Left, r.Top));
-                var br = PointFromScreen(new WpfPoint(r.Right, r.Bottom));
-                return new Rect(
-                    Left + tl.X,
-                    Top + tl.Y,
-                    Math.Max(0, br.X - tl.X),
-                    Math.Max(0, br.Y - tl.Y));
-            }
+            double workLeft = physWork.Left / scaleX;
+            double workTop = physWork.Top / scaleY;
+            double workRight = physWork.Right / scaleX;
+            double workBottom = physWork.Bottom / scaleY;
+            double workWidth = physWork.Width / scaleX;
+            double workHeight = physWork.Height / scaleY;
 
-            var workArea = PhysicalToWindowDips(physWork);
-            var screenArea = PhysicalToWindowDips(physBounds);
+            double screenLeft = physBounds.Left / scaleX;
+            double screenRight = physBounds.Right / scaleX;
+            double screenTop = physBounds.Top / scaleY;
 
-            var cursorLocal = PointFromScreen(new WpfPoint(physicalCursor.X, physicalCursor.Y));
-            double cursorX = Left + cursorLocal.X;
-            double cursorY = Top + cursorLocal.Y;
+            double cursorX = physicalCursor.X / scaleX;
+            double cursorY = physicalCursor.Y / scaleY;
 
             UpdateLayout();
             double windowWidth = ActualWidth > 0 ? ActualWidth : Width;
@@ -107,40 +97,40 @@ public partial class TrayContextMenuWindow : Window
             double left;
             double top;
 
-            bool taskbarLeft = workArea.Left > screenArea.Left + eps;
-            bool taskbarRight = workArea.Right < screenArea.Right - eps;
-            bool taskbarTop = workArea.Top > screenArea.Top + eps;
+            bool taskbarLeft = workLeft > screenLeft + eps;
+            bool taskbarRight = workRight < screenRight - eps;
+            bool taskbarTop = workTop > screenTop + eps;
 
             if (taskbarLeft)
             {
-                left = workArea.Left + gap;
+                left = workLeft + gap;
                 top = cursorY - (windowHeight / 2);
             }
             else if (taskbarRight)
             {
-                left = workArea.Right - windowWidth - gap;
+                left = workRight - windowWidth - gap;
                 top = cursorY - (windowHeight / 2);
             }
             else if (taskbarTop)
             {
                 left = cursorX - (windowWidth / 2);
-                top = workArea.Top + gap;
+                top = workTop + gap;
             }
             else
             {
                 left = cursorX - (windowWidth / 2);
-                top = workArea.Bottom - windowHeight - gap;
+                top = workBottom - windowHeight - gap;
             }
 
-            double minLeft = workArea.Left + gap;
-            double maxLeft = workArea.Right - windowWidth - gap;
-            double minTop = workArea.Top + gap;
-            double maxTop = workArea.Bottom - windowHeight - gap;
+            double minLeft = workLeft + gap;
+            double maxLeft = workRight - windowWidth - gap;
+            double minTop = workTop + gap;
+            double maxTop = workBottom - windowHeight - gap;
 
-            if (maxLeft < minLeft) left = workArea.Left + (workArea.Width - windowWidth) / 2;
+            if (maxLeft < minLeft) left = workLeft + (workWidth - windowWidth) / 2;
             else left = Math.Clamp(left, minLeft, maxLeft);
 
-            if (maxTop < minTop) top = workArea.Top + (workArea.Height - windowHeight) / 2;
+            if (maxTop < minTop) top = workTop + (workHeight - windowHeight) / 2;
             else top = Math.Clamp(top, minTop, maxTop);
 
             Left = left;

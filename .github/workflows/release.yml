@@ -44,6 +44,13 @@ jobs:
           if (Test-Path installer/install.ps1) {
             Copy-Item installer/install.ps1 ./publish-win64/
           }
+          if (-not (Test-Path ./publish-win64/Assets)) {
+            New-Item -ItemType Directory -Force -Path ./publish-win64/Assets | Out-Null
+          }
+          if (Test-Path src/CyberWall.UI/Assets/CyberWall.ico) {
+            Copy-Item src/CyberWall.UI/Assets/CyberWall.ico ./publish-win64/Assets/
+            Copy-Item src/CyberWall.UI/Assets/CyberWall.ico ./publish-win64/
+          }
 
       - name: Zip Published Output (Portable)
         shell: powershell

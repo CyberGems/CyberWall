@@ -444,7 +444,7 @@
 
                             <!-- Startup Power Icon -->
                             <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,12,0">
-                                <Path Data="M 12 2 L 12 12 M 4.93 4.93 C 2.5 7.36 2.5 11.28 4.93 13.71 C 7.36 16.14 11.28 16.14 13.71 13.71 C 16.14 11.28 16.14 7.36 13.71 4.93" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="14" Height="14" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Path Data="M 12 2 V 10 M 18.36 5.64 A 9 9 0 1 1 5.64 5.64" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="14" Height="14" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
