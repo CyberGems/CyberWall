@@ -44,6 +44,7 @@ public partial class SettingsWindow : Window
         SelectPositionUi(s.NotificationPosition);
         PopulateMonitors();
         StartupToggle.IsChecked = StartupHelper.IsStartupEnabled();
+        MinimizeToTrayToggle.IsChecked = s.MinimizeToTrayOnClose;
         UpdateTexts();
         Closing += (_, _) => ConnectionPopup.DismissPreview();
         _loading = false;
@@ -162,6 +163,8 @@ public partial class SettingsWindow : Window
         SystemHdrLbl.Text = Strings.T("SystemHeader");
         StartupTitleLbl.Text = Strings.T("RunAtStartup");
         StartupDescLbl.Text = Strings.T("RunAtStartupDesc");
+        MinimizeToTrayTitleLbl.Text = Strings.T("MinimizeToTrayOnClose");
+        MinimizeToTrayDescLbl.Text = Strings.T("MinimizeToTrayOnCloseDesc");
         PreviewBtn.Content = Strings.T("PreviewPopup");
         AboutBtn.Content = Strings.T("About");
         CloseBtn.Content = es ? "Cerrar" : "Close";
@@ -176,6 +179,17 @@ public partial class SettingsWindow : Window
         _s.RunAtStartup = enabled;
         StartupHelper.SetStartupEnabled(enabled);
         _s.Save();
+    }
+
+    private void MinimizeToTrayToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        _s.MinimizeToTrayOnClose = MinimizeToTrayToggle.IsChecked == true;
+        _s.Save();
+        if (Owner is MainWindow mw)
+        {
+            mw.UpdateCloseButtonTooltip();
+        }
     }
 
     private void TriggerPreviewPopup()

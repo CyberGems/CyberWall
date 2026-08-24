@@ -36,7 +36,6 @@ public sealed class TrayService : IDisposable
             }
         };
 
-        _win.StateChanged += OnState;
         _win.Closing += OnClosing;
     }
 
@@ -67,14 +66,6 @@ public sealed class TrayService : IDisposable
         _win.Close();
     }
 
-    private void OnState(object? _, EventArgs __)
-    {
-        if (_win.WindowState == WindowState.Minimized)
-        {
-            _win.Hide();
-        }
-    }
-
     private void OnClosing(object? _, System.ComponentModel.CancelEventArgs e)
     {
         if (_exit)
@@ -82,8 +73,16 @@ public sealed class TrayService : IDisposable
             _icon.Visible = false;
             return;
         }
-        e.Cancel = true;
-        _win.Hide();
+
+        if (App.Settings.MinimizeToTrayOnClose)
+        {
+            e.Cancel = true;
+            _win.Hide();
+        }
+        else
+        {
+            _icon.Visible = false;
+        }
     }
 
     public void Dispose()

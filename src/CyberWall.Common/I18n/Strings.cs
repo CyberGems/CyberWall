@@ -126,6 +126,10 @@ public static class Strings
         ["SystemHeader"] = ("System", "Sistema"),
         ["RunAtStartup"] = ("Run CyberWall when Windows starts", "Ejecutar CyberWall al iniciar Windows"),
         ["RunAtStartupDesc"] = ("Starts CyberWall minimized in the system tray when you power on your PC.", "Inicia CyberWall minimizado en la bandeja del sistema al encender el equipo."),
+        ["MinimizeToTrayOnClose"] = ("Send to tray on close", "Enviar a la bandeja al cerrar"),
+        ["MinimizeToTrayOnCloseDesc"] = ("Hides the window in the system tray when closing instead of exiting.", "Oculta la ventana en la bandeja del sistema al presionar cerrar en lugar de salir."),
+        ["CloseToTray"] = ("Close to tray", "Cerrar en la bandeja"),
+        ["CloseApp"] = ("Close application", "Cerrar aplicación"),
     };
 
     public static string T(string key, params object[] args)

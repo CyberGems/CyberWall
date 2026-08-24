@@ -111,6 +111,15 @@ public partial class MainWindow : Window
         ModeBox.SelectedIndex = m;
         _loading = false;
         UpdateMaximizeButtonIcon();
+        UpdateCloseButtonTooltip();
+    }
+
+    public void UpdateCloseButtonTooltip()
+    {
+        if (CloseBtn == null) return;
+        bool toTray = App.Settings.MinimizeToTrayOnClose;
+        CloseBtn.ToolTip = Strings.T(toTray ? "CloseToTray" : "CloseApp");
+        if (MinimizeBtn != null) MinimizeBtn.ToolTip = Strings.T("Minimize");
     }
 
     private void UpdateMaximizeButtonIcon()
@@ -131,6 +140,7 @@ public partial class MainWindow : Window
     public void RefreshStatusFromExternal()
     {
         UpdateStatus();
+        UpdateCloseButtonTooltip();
     }
 
     public void ExitApplication()
