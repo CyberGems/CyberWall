@@ -1,4 +1,15 @@
-# CyberWall — Per-App Windows Firewall (WFP)
+<p align="center">
+  <img src="src/CyberWall.UI/Assets/CyberWall.png" width="140" alt="CyberWall logo" />
+</p>
+
+# <p align="center">CyberWall — Per-App Windows Firewall (WFP)</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License" />
+  <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D4.svg?logo=windows&logoColor=white" alt="Platform" />
+  <img src="https://img.shields.io/badge/.NET-10.0-512BD4.svg?logo=dotnet&logoColor=white" alt=".NET" />
+  <img src="https://img.shields.io/badge/version-1.1.1-00F0FF.svg" alt="Version" />
+</p>
 
 A modern, ultra-fast, and lightweight application-layer firewall for Windows, powered by the **Windows Filtering Platform (WFP)**. Built on a strict **default-deny (whitelist)** architecture, CyberWall intercepts unknown network connections and displays interactive real-time prompts per **application executable** — turning your PC into an impenetrable network fortress.
 

@@ -65,6 +65,7 @@ public static class UpdateService
 
         try
         {
+            CyberWall.Service.Wfp.RealFirewall.EnsureSelfAllowed();
             var json = await GitHubHttp.GetStringAsync(
                 $"https://api.github.com/repos/{RepoOwner}/{RepoName}/releases/latest",
                 cancellationToken).ConfigureAwait(false);

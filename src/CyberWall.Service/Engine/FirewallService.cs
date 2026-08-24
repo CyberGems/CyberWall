@@ -22,7 +22,11 @@ public sealed class FirewallService : IDisposable
     {
         Mode = mode == FirewallMode.Disabled ? FirewallMode.Ask : mode;
         var ok = Wfp.TryEnable();
-        if (ok) Monitor.Start(this);
+        if (ok)
+        {
+            RealFirewall.EnsureSelfAllowed();
+            Monitor.Start(this);
+        }
         return ok;
     }
 

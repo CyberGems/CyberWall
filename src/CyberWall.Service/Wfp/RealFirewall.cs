@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace CyberWall.Service.Wfp;
 
-internal static class RealFirewall
+public static class RealFirewall
 {
     public static bool IsAdmin => new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent()).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
 
@@ -21,9 +21,39 @@ internal static class RealFirewall
             policy.DefaultInboundAction[4] = 0;
             policy.DefaultInboundAction[1] = 0;
             RunNetsh("advfirewall set allprofiles firewallpolicy blockinbound,blockoutbound");
+            EnsureSelfAllowed();
             return true;
         }
-        catch (Exception ex) { Debug.WriteLine(ex); return RunNetsh("advfirewall set allprofiles firewallpolicy blockinbound,blockoutbound"); }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex);
+            var ok = RunNetsh("advfirewall set allprofiles firewallpolicy blockinbound,blockoutbound");
+            EnsureSelfAllowed();
+            return ok;
+        }
+    }
+
+    public static void EnsureSelfAllowed()
+    {
+        if (!IsAdmin) return;
+        try
+        {
+            var selfExe = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
+            if (!string.IsNullOrEmpty(selfExe) && File.Exists(selfExe))
+            {
+                ApplySingleAllow(selfExe);
+            }
+
+            var dir = AppDomain.CurrentDomain.BaseDirectory;
+            if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+            {
+                foreach (var exe in Directory.GetFiles(dir, "CyberWall*.exe"))
+                {
+                    ApplySingleAllow(exe);
+                }
+            }
+        }
+        catch { }
     }
 
     public static bool Disable()
