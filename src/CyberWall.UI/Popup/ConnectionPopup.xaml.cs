@@ -28,7 +28,7 @@ public partial class ConnectionPopup : Window
     {
         var wa = SystemParameters.WorkArea;
         var offset = 16 + (Owner is Window ? 0 : 0);
-        var open = Application.Current.Windows.OfType<ConnectionPopup>().Count(w => w.IsVisible && w != this);
+        var open = System.Windows.Application.Current.Windows.OfType<ConnectionPopup>().Count(w => w.IsVisible && w != this);
         Left = wa.Right - Width - 16;
         Top = wa.Bottom - Height - 16 - open * (Height + 8);
     }

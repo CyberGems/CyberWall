@@ -44,8 +44,9 @@ public sealed class FirewallService : IDisposable
         return Mode == FirewallMode.Ask ? Verdict.Ask : Verdict.Block;
     }
 
-    public void SetVerdict(string appPath, Verdict verdict, bool permanent)
+    public void SetVerdict(string appPath, Verdict verdict, bool permanent, ConnectionEvent? ev = null)
     {
+        if (ev != null) BlockedLog.Append(ev, verdict);
         if (!permanent) return;
         if (verdict == Verdict.Allow) { Store.Upsert(new AppRule { AppPath = appPath, Verdict = verdict }); Wfp.AllowApp(appPath); }
         else if (verdict == Verdict.Block) { Store.Upsert(new AppRule { AppPath = appPath, Verdict = verdict }); Wfp.BlockApp(appPath); }

@@ -101,6 +101,10 @@
                 </DataGrid>
             </Grid>
         </Border>
-        <TextBlock Grid.Row="3" Margin="0,10,0,0" Foreground="#484F58" FontSize="11" Text="Windows 10/11 • WFP • Instalador con Servicio (SYSTEM) • Requiere Admin para activar filtros • Filtros persistentes"/>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,10,0,0">
+            <TextBlock Foreground="#484F58" FontSize="11" Text="Windows 10/11 • WFP • Instalador con Servicio (SYSTEM) • Requiere Admin • Filtros persistentes"/>
+            <TextBlock Margin="12,0,0,0" Foreground="#1F6FEB" FontSize="11" Cursor="Hand" Text="Abrir log" MouseLeftButtonDown="OpenLog_Click"/>
+            <TextBlock x:Name="LogPathText" Margin="8,0,0,0" Foreground="#484F58" FontSize="11" Text=""/>
+        </StackPanel>
     </Grid>
 </Window>

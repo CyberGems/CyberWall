@@ -4,6 +4,7 @@ using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Service.Engine;
 using CyberWall.UI.Popup;
+using CyberWall.UI.Services;
 
 namespace CyberWall.UI;
 
@@ -13,6 +14,7 @@ public partial class MainWindow : Window
     private List<AppRule> _all = new();
     private bool _loading;
     private readonly HashSet<string> _pendingPopups = new();
+    private TrayService? _tray;
 
     public MainWindow()
     {
@@ -26,7 +28,9 @@ public partial class MainWindow : Window
         RefreshRules();
         UpdateStatus();
         if (!isAdmin) StatusText.Text += "  \u26a0 Ejecuta como Admin para bloqueo real (ahora simulado)";
+        _tray = new TrayService(this);
         Closing += (_, _) => _svc.Dispose();
+        Closed += (_, _) => _tray?.Dispose();
     }
 
     private void OnAskConnection(ConnectionEvent ev)
@@ -41,8 +45,8 @@ public partial class MainWindow : Window
                 _pendingPopups.Remove(key);
                 if (popup.ResultVerdict == Verdict.Allow || popup.ResultVerdict == Verdict.Block)
                 {
-                    if (popup.Remember) { _svc.SetVerdict(popup.Event.AppPath, popup.ResultVerdict, true); RefreshRules(SearchBox.Text); }
-                    else if (popup.ResultVerdict == Verdict.Block && _svc.Mode == FirewallMode.BlockAll) _svc.SetVerdict(ev.AppPath, Verdict.Block, true);
+                    _svc.SetVerdict(popup.Event.AppPath, popup.ResultVerdict, popup.Remember, popup.Event);
+                    if (popup.Remember) RefreshRules(SearchBox.Text);
                 }
             };
             p.Closed += (_, _) => _pendingPopups.Remove(key);
@@ -106,5 +110,10 @@ public partial class MainWindow : Window
         ModeBox.SelectedIndex = _svc.Mode == FirewallMode.BlockAll ? 1 : 0;
         _loading = false;
         UpdateStatus();
+    }
+
+    private void OpenLog_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        try { var p = BlockedLog.LogPath; if (System.IO.File.Exists(p)) System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(p) { UseShellExecute = true }); else System.Windows.MessageBox.Show($"Aún sin bloqueos.\n{p}"); LogPathText.Text = p; } catch { }
     }
 }
