@@ -1,16 +1,27 @@
-﻿<Application x:Class="CyberWall.UI.App"
+<Application x:Class="CyberWall.UI.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <SolidColorBrush x:Key="BgBrush" Color="#0A0F14"/>
-        <SolidColorBrush x:Key="CardBrush" Color="#141B22"/>
-        <SolidColorBrush x:Key="BorderBrush" Color="#243040"/>
-        <SolidColorBrush x:Key="TextBrush" Color="#E6EDF3"/>
-        <SolidColorBrush x:Key="SubTextBrush" Color="#8B949E"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#1F6FEB"/>
-        <SolidColorBrush x:Key="AccentFgBrush" Color="#FFFFFF"/>
-        <SolidColorBrush x:Key="GridAltBrush" Color="#101820"/>
-        <SolidColorBrush x:Key="HeaderBgBrush" Color="#1A2532"/>
+        <SolidColorBrush x:Key="BgBrush" Color="#070B12"/>
+        <SolidColorBrush x:Key="CardBrush" Color="#0E1726"/>
+        <SolidColorBrush x:Key="CardSecondaryBrush" Color="#131F33"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="#1C2E4A"/>
+        <SolidColorBrush x:Key="BorderLightBrush" Color="#2A436A"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#F0F6FC"/>
+        <SolidColorBrush x:Key="SubTextBrush" Color="#8BA2C4"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#00E5FF"/>
+        <SolidColorBrush x:Key="AccentGlowBrush" Color="#3300E5FF"/>
+        <SolidColorBrush x:Key="AccentFgBrush" Color="#070B12"/>
+        <SolidColorBrush x:Key="GridAltBrush" Color="#0A111D"/>
+        <SolidColorBrush x:Key="HeaderBgBrush" Color="#111C2E"/>
+        <SolidColorBrush x:Key="BadgeAllowBgBrush" Color="#0A2E24"/>
+        <SolidColorBrush x:Key="BadgeAllowFgBrush" Color="#00F5A0"/>
+        <SolidColorBrush x:Key="BadgeBlockBgBrush" Color="#3B121E"/>
+        <SolidColorBrush x:Key="BadgeBlockFgBrush" Color="#FF4D6D"/>
+        <SolidColorBrush x:Key="SearchBgBrush" Color="#0A1220"/>
+        <SolidColorBrush x:Key="InputBgBrush" Color="#0A1220"/>
+        <SolidColorBrush x:Key="SwitchActiveBrush" Color="#00E5FF"/>
+        <SolidColorBrush x:Key="SwitchTrackBrush" Color="#1C2E4A"/>
     </Application.Resources>
 </Application>

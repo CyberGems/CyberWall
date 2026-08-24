@@ -1,5 +1,7 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Common.Settings;
@@ -22,6 +24,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         _loading = true;
         Strings.Current = App.Settings.Language;
+        ThemeManager.Apply(App.Settings.Theme);
         _svc.OnAskConnection += OnAskConnection;
         if (App.Settings.FirewallEnabled)
             _svc.Enable((FirewallMode)App.Settings.FirewallMode);
@@ -29,7 +32,7 @@ public partial class MainWindow : Window
         RefreshLanguage();
         UpdateStatus();
         var isAdmin = new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent()).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
-        if (!isAdmin) StatusText.Text += "  \u26a0 Ejecuta como Admin para bloqueo real (ahora simulado)";
+        if (!isAdmin) StatusText.Text += "  ⚠️ " + (Strings.Current == Lang.Es ? "Ejecuta como Admin para filtrado real" : "Run as Admin for kernel filtering");
         _tray = new TrayService(this);
         Closing += (_, _) => { App.Settings.FirewallEnabled = _svc.IsMasterOn; App.Settings.FirewallMode = (int)_svc.Mode; App.Settings.Save(); _svc.Dispose(); };
         Closed += (_, _) => _tray?.Dispose();
@@ -38,18 +41,18 @@ public partial class MainWindow : Window
 
     public void RefreshLanguage()
     {
-        var es = Strings.Current == Lang.Es;
-        TitleText.Text = Strings.T("AppTitle");
-        SettingsBtn.Content = es ? "\u2699 Configuraci\u00f3n" : "\u2699 Settings";
-        ModeLbl.Text = es ? "Modo:" : "Mode:";
-        HintText.Text = es ? "  Reglas por programa \u2014 cada .exe nuevo dispara popup (no por IP)" : "  Per-program rules \u2014 each new .exe triggers popup (not per IP)";
-        RemoveBtn.Content = es ? "Quitar regla" : "Remove rule";
-        HdrProg.Text = (es ? "Programa" : "Program") + (_sortBy == "DisplayName" ? (_sortAsc ? " \u25BE" : " \u25B4") : "");
-        HdrPath.Text = es ? "Ruta" : "Path";
-        HdrVerd.Text = es ? "Veredicto" : "Verdict";
-        HdrDir.Text = es ? "Direcci\u00f3n" : "Direction";
-        AllowedExpander.Header = $"{(es ? "Permitidas" : "Allowed")} ({_all.Count(r => r.Verdict == Verdict.Allow)})";
-        BlockedExpander.Header = $"{(es ? "Bloqueadas" : "Blocked")} ({_all.Count(r => r.Verdict == Verdict.Block)})";
+        TitleText.Text = "CyberWall";
+        SettingsBtn.Content = "⚙ " + Strings.T("Settings");
+        TestPopupBtn.Content = "⚡ " + Strings.T("TestPopup");
+        ModeLbl.Text = Strings.T("Mode");
+        HintText.Text = Strings.T("HintRules");
+        RemoveBtn.Content = Strings.T("RemoveRule");
+        HdrProg.Text = Strings.T("Program") + (_sortBy == "DisplayName" ? (_sortAsc ? " ▾" : " ▴") : "");
+        HdrPath.Text = Strings.T("Path") + (_sortBy == "AppPath" ? (_sortAsc ? " ▾" : " ▴") : "");
+        HdrVerd.Text = Strings.T("Verdict");
+        HdrDir.Text = Strings.T("Direction");
+        AllowedExpander.Header = $"{Strings.T("Allowed")} ({_all.Count(r => r.Verdict == Verdict.Allow)})";
+        BlockedExpander.Header = $"{Strings.T("Blocked")} ({_all.Count(r => r.Verdict == Verdict.Block)})";
         var m = _svc.Mode == FirewallMode.BlockAll ? 1 : 0;
         _loading = true;
         ModeBox.Items.Clear();
@@ -58,6 +61,23 @@ public partial class MainWindow : Window
         ModeBox.SelectedIndex = m;
         _loading = false;
     }
+
+    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2)
+        {
+            WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+            return;
+        }
+        if (e.ButtonState == MouseButtonState.Pressed)
+        {
+            DragMove();
+        }
+    }
+
+    private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+    private void Maximize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
     private void OnAskConnection(ConnectionEvent ev)
     {
@@ -94,13 +114,13 @@ public partial class MainWindow : Window
         RefreshLanguage();
     }
 
-    private void SortProg_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    private void SortProg_Click(object sender, MouseButtonEventArgs e)
     {
         if (_sortBy == "DisplayName") _sortAsc = !_sortAsc; else { _sortBy = "DisplayName"; _sortAsc = true; }
         RefreshRules(SearchBox.Text);
     }
 
-    private void SortPath_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    private void SortPath_Click(object sender, MouseButtonEventArgs e)
     {
         if (_sortBy == "AppPath") _sortAsc = !_sortAsc; else { _sortBy = "AppPath"; _sortAsc = true; }
         RefreshRules(SearchBox.Text);
@@ -110,10 +130,10 @@ public partial class MainWindow : Window
     {
         var on = _svc.IsMasterOn;
         MasterToggle.IsChecked = on;
-        MasterLabel.Text = on ? Strings.T("MasterOn") : Strings.T("MasterOff");
-        MasterLabel.Foreground = on ? System.Windows.Media.Brushes.LightGreen : System.Windows.Media.Brushes.IndianRed;
+        MasterLabel.Text = on ? Strings.T("ProtectionActive") : Strings.T("ProtectionDisabled");
+        StatusDot.Fill = on ? new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0xDE, 0x80)) : new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xEF, 0x44, 0x44));
         ModeBox.IsEnabled = on;
-        var real = _svc.Wfp.IsRealBlock ? " \u2022 WFP real" : " \u2022 simulado";
+        var real = _svc.Wfp.IsRealBlock ? " • WFP Real" : " • Simulado";
         if (!on) StatusText.Text = Strings.T("StatusDisabled") + real;
         else StatusText.Text = (_svc.Mode == FirewallMode.Ask ? Strings.T("StatusEnabledAsk") : Strings.T("StatusEnabledBlock")) + real;
     }
@@ -156,5 +176,5 @@ public partial class MainWindow : Window
     }
     private void TestPopup_Click(object sender, RoutedEventArgs e) { var ev = new ConnectionEvent { AppPath = $@"C:\Program Files\Demo\demo{Random.Shared.Next(1000)}.exe", RemoteAddress = "142.250.0.1", RemotePort = 443, Direction = Direction.Outbound, ProcessId = Random.Shared.Next(1000, 9999) }; OnAskConnection(ev); }
     private void Settings_Click(object sender, RoutedEventArgs e) { var w = new SettingsWindow(App.Settings) { Owner = this }; w.ShowDialog(); RefreshLanguage(); UpdateStatus(); }
-    private void OpenLog_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) { try { var p = BlockedLog.LogPath; if (System.IO.File.Exists(p)) System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(p) { UseShellExecute = true }); else System.Windows.MessageBox.Show($"A\u00fan sin bloqueos.\n{p}"); LogPathText.Text = p; } catch { } }
+    private void OpenLog_Click(object sender, MouseButtonEventArgs e) { try { var p = BlockedLog.LogPath; if (System.IO.File.Exists(p)) System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(p) { UseShellExecute = true }); else System.Windows.MessageBox.Show((Strings.Current == Lang.Es ? $"Aún sin bloqueos.\n{p}" : $"No blocked connections yet.\n{p}")); LogPathText.Text = p; } catch { } }
 }
