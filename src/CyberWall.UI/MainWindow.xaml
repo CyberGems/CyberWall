@@ -13,6 +13,54 @@
         <conv:VerdictDisplayConverter x:Key="VerdictDisplayConverter"/>
         <conv:DirectionDisplayConverter x:Key="DirectionDisplayConverter"/>
 
+        <!-- Themed Modern ScrollBar Styles -->
+        <Style x:Key="CustomScrollThumbStyle" TargetType="{x:Type Thumb}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Opacity" Value="0.4"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Border CornerRadius="3" Background="{DynamicResource SubTextBrush}" Margin="1,2,2,2"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.8"/>
+                </Trigger>
+                <Trigger Property="IsDragging" Value="True">
+                    <Setter Property="Opacity" Value="1"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="CustomScrollBarStyle" TargetType="{x:Type ScrollBar}">
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Grid Background="Transparent" Width="{TemplateBinding Width}">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True" Margin="0,4,0,4">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand" Background="Transparent" BorderThickness="0" Focusable="False" IsTabStop="False"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource CustomScrollThumbStyle}"/>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand" Background="Transparent" BorderThickness="0" Focusable="False" IsTabStop="False"/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource CustomScrollBarStyle}"/>
+
         <!-- Title Bar Window Control Button Styles -->
         <Style x:Key="TitleWindowButton" TargetType="Button">
             <Setter Property="Width" Value="42"/>
@@ -442,13 +490,13 @@
                         </Grid>
                     </Border>
 
-                    <!-- Rules List -->
-                    <ScrollViewer Grid.Row="2" Margin="0,6,0,0" VerticalScrollBarVisibility="Auto">
+                    <!-- Rules List with Smooth Wheel Scrolling & Disabled Horizontal Overflow -->
+                    <ScrollViewer x:Name="RulesScrollViewer" Grid.Row="2" Margin="0,6,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel>
                             <!-- Allowed Section -->
                             <Border CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,10">
-                                <Expander x:Name="AllowedExpander" Header="Permitidas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="10,6">
-                                    <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0,4,0,0">
+                                <Expander x:Name="AllowedExpander" Header="Permitidas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="10,6" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0,4,0,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel">
                                         <DataGrid.Columns>
                                             <!-- Switch Column -->
                                             <DataGridTemplateColumn Width="64" CanUserSort="False">
@@ -459,7 +507,7 @@
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
 
-                                            <!-- Program Name + Icon + Inline Delete Button on Hover -->
+                                            <!-- Program Name + Clean Bare Icon + Inline Delete Button on Hover -->
                                             <DataGridTemplateColumn Width="1.4*" SortMemberPath="DisplayName" CanUserSort="True">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
@@ -469,9 +517,7 @@
                                                                 <ColumnDefinition Width="*"/>
                                                                 <ColumnDefinition Width="Auto"/>
                                                             </Grid.ColumnDefinitions>
-                                                            <Border Width="22" Height="22" CornerRadius="5" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,10,0">
-                                                                <Image Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="15" Height="15" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            </Border>
+                                                            <Image Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="20" Height="20" Margin="0,0,10,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
                                                             <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                                             <Button x:Name="QuickRemoveBtn" Grid.Column="2" Content="✕" Style="{StaticResource RowDeleteButton}" ToolTip="Eliminar regla" Tag="{Binding}" Click="QuickRemove_Click" Margin="6,0,0,0"/>
                                                         </Grid>
@@ -529,8 +575,8 @@
 
                             <!-- Blocked Section -->
                             <Border CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-                                <Expander x:Name="BlockedExpander" Header="Bloqueadas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="10,6">
-                                    <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0,4,0,0">
+                                <Expander x:Name="BlockedExpander" Header="Bloqueadas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="10,6" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0,4,0,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel">
                                         <DataGrid.Columns>
                                             <!-- Switch Column -->
                                             <DataGridTemplateColumn Width="64" CanUserSort="False">
@@ -541,7 +587,7 @@
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
 
-                                            <!-- Program Name + Icon + Inline Delete Button on Hover -->
+                                            <!-- Program Name + Clean Bare Icon + Inline Delete Button on Hover -->
                                             <DataGridTemplateColumn Width="1.4*" SortMemberPath="DisplayName" CanUserSort="True">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
@@ -551,9 +597,7 @@
                                                                 <ColumnDefinition Width="*"/>
                                                                 <ColumnDefinition Width="Auto"/>
                                                             </Grid.ColumnDefinitions>
-                                                            <Border Width="22" Height="22" CornerRadius="5" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,10,0">
-                                                                <Image Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="15" Height="15" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            </Border>
+                                                            <Image Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="20" Height="20" Margin="0,0,10,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
                                                             <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                                             <Button x:Name="QuickRemoveBtn" Grid.Column="2" Content="✕" Style="{StaticResource RowDeleteButton}" ToolTip="Eliminar regla" Tag="{Binding}" Click="QuickRemove_Click" Margin="6,0,0,0"/>
                                                         </Grid>

@@ -188,4 +188,10 @@ public partial class MainWindow : Window
 
     private void Settings_Click(object sender, RoutedEventArgs e) { var w = new SettingsWindow(App.Settings) { Owner = this }; w.ShowDialog(); RefreshLanguage(); UpdateStatus(); }
     private void OpenLog_Click(object sender, MouseButtonEventArgs e) { try { var p = BlockedLog.LogPath; if (System.IO.File.Exists(p)) System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(p) { UseShellExecute = true }); else System.Windows.MessageBox.Show((Strings.Current == Lang.Es ? $"Aún sin bloqueos.\n{p}" : $"No blocked connections yet.\n{p}")); LogPathText.Text = p; } catch { } }
+
+    private void DataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        RulesScrollViewer.ScrollToVerticalOffset(RulesScrollViewer.VerticalOffset - (e.Delta / 2.0));
+        e.Handled = true;
+    }
 }
