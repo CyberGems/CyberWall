@@ -1,12 +1,17 @@
 ﻿<Window x:Class="CyberWall.UI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="CyberWall" Height="660" Width="1020" WindowStartupLocation="CenterScreen" Background="#0D1117">
+        xmlns:conv="clr-namespace:CyberWall.UI.Converters"
+        Title="CyberWall" Height="660" Width="1020" WindowStartupLocation="CenterScreen" Background="{DynamicResource BgBrush}">
     <Window.Resources>
+        <conv:VerdictToToggleConverter x:Key="VerdictToToggleConverter"/>
+        <conv:PathToIconConverter x:Key="PathToIconConverter"/>
+        <conv:VerdictDisplayConverter x:Key="VerdictDisplayConverter"/>
+        <conv:DirectionDisplayConverter x:Key="DirectionDisplayConverter"/>
         <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#21262D"/>
-            <Setter Property="Foreground" Value="#E6EDF3"/>
-            <Setter Property="BorderBrush" Value="#30363D"/>
+            <Setter Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
             <Setter Property="Padding" Value="8,8"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -14,16 +19,18 @@
         </Style>
         <Style TargetType="DataGridCell">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#C9D1D9"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Padding" Value="0"/>
         </Style>
         <Style TargetType="DataGridRow">
-            <Setter Property="Background" Value="#161B22"/>
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="MinHeight" Value="38"/>
+            <Setter Property="Margin" Value="0,1"/>
             <Style.Triggers>
-                <Trigger Property="AlternationIndex" Value="1"><Setter Property="Background" Value="#1A1F29"/></Trigger>
-                <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#21262D"/></Trigger>
-                <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#1F6FEB"/><Setter Property="Foreground" Value="White"/></Trigger>
+                <Trigger Property="AlternationIndex" Value="1"><Setter Property="Background" Value="{DynamicResource GridAltBrush}"/></Trigger>
+                <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="{DynamicResource HeaderBgBrush}"/></Trigger>
+                <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{DynamicResource AccentBrush}"/><Setter Property="Foreground" Value="{DynamicResource AccentFgBrush}"/></Trigger>
             </Style.Triggers>
         </Style>
         <Style x:Key="ToggleSwitch" TargetType="CheckBox">
@@ -31,48 +38,81 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
                         <Grid>
-                            <Border x:Name="Track" Width="52" Height="28" CornerRadius="14" Background="#21262D" BorderBrush="#30363D" BorderThickness="1"/>
-                            <Ellipse x:Name="Thumb" Width="20" Height="20" Fill="#8B949E" HorizontalAlignment="Left" Margin="4,0,0,0"/>
+                            <Border x:Name="Track" Width="52" Height="28" CornerRadius="14" Background="#2A3441" BorderBrush="#3A4A5E" BorderThickness="1">
+                                <Border.Effect><DropShadowEffect Color="Black" Opacity="0.25" BlurRadius="6" ShadowDepth="1"/></Border.Effect>
+                            </Border>
+                            <Ellipse x:Name="Thumb" Width="20" Height="20" Fill="White" HorizontalAlignment="Left" Margin="4,0,0,0">
+                                <Ellipse.Effect><DropShadowEffect Color="Black" Opacity="0.35" BlurRadius="4" ShadowDepth="1"/></Ellipse.Effect>
+                            </Ellipse>
                             <ContentPresenter Margin="60,0,0,0" VerticalAlignment="Center"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Track" Property="Background" Value="#1F6FEB"/>
-                                <Setter TargetName="Track" Property="BorderBrush" Value="#1F6FEB"/>
-                                <Setter TargetName="Thumb" Property="Fill" Value="White"/>
+                                <Setter TargetName="Track" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
                                 <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/>
                                 <Setter TargetName="Thumb" Property="Margin" Value="0,0,4,0"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="False">
+                                <Setter TargetName="Thumb" Property="Fill" Value="#C9D1D9"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style x:Key="MiniToggle" TargetType="CheckBox">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Grid>
+                            <Border x:Name="Track" Width="36" Height="20" CornerRadius="10" Background="#3A3F47" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"/>
+                            <Ellipse x:Name="Thumb" Width="14" Height="14" Fill="White" HorizontalAlignment="Left" Margin="3,0,0,0"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Track" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/>
+                                <Setter TargetName="Thumb" Property="Margin" Value="0,0,3,0"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="GroupExpander" TargetType="Expander">
+            <Setter Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
     </Window.Resources>
     <Grid Margin="20">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <DockPanel>
-            <TextBlock x:Name="TitleText" Text="CyberWall" FontSize="22" FontWeight="Bold" Foreground="#E6EDF3" VerticalAlignment="Center"/>
+            <TextBlock x:Name="TitleText" Text="CyberWall" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <ComboBox x:Name="LangBox" Width="120" Height="28" SelectionChanged="LangBox_SelectionChanged">
-                    <ComboBoxItem Content="Español"/><ComboBoxItem Content="English"/>
-                </ComboBox>
-                <Button Content="Probar popup" Margin="8,0,0,0" Padding="10,6" Background="#21262D" Foreground="#E6EDF3" BorderThickness="1" BorderBrush="#30363D" Click="TestPopup_Click"/>
+                <Button x:Name="SettingsBtn" Content="⚙ Configuración" Padding="10,6" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Click="Settings_Click"/>
+                <Button Content="Probar popup" Margin="8,0,0,0" Padding="10,6" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" Click="TestPopup_Click"/>
             </StackPanel>
         </DockPanel>
 
-        <Border Grid.Row="1" CornerRadius="12" Background="#161B22" BorderBrush="#30363D" BorderThickness="1" Padding="16" Margin="0,16,0,0">
+        <Border Grid.Row="1" CornerRadius="12" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="16" Margin="0,16,0,0">
             <Grid>
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <CheckBox x:Name="MasterToggle" Style="{StaticResource ToggleSwitch}" Checked="MasterToggle_Changed" Unchecked="MasterToggle_Changed"/>
-                    <TextBlock x:Name="MasterLabel" Text="Firewall ACTIVADO" Foreground="#E6EDF3" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    <TextBlock x:Name="MasterLabel" Text="Firewall ACTIVADO" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center" Margin="8,0,0,0"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Margin="24,0,0,0" VerticalAlignment="Center">
-                    <TextBlock x:Name="StatusText" Foreground="#8B949E" FontSize="12" TextWrapping="Wrap" Text="Activado — preguntando por apps desconocidas (bloqueo por defecto)"/>
+                    <TextBlock x:Name="StatusText" Foreground="{DynamicResource SubTextBrush}" FontSize="12" TextWrapping="Wrap" Text="Activado — preguntando por apps desconocidas (bloqueo por defecto)"/>
                 </StackPanel>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Modo:" Foreground="#8B949E" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock x:Name="ModeLbl" Text="Modo:" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <ComboBox x:Name="ModeBox" Width="200" Height="30" SelectionChanged="ModeBox_SelectionChanged">
                         <ComboBoxItem Content="Preguntar para conectar"/>
                         <ComboBoxItem Content="Bloquear todo"/>
@@ -81,30 +121,112 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="2" CornerRadius="12" Background="#161B22" BorderBrush="#30363D" BorderThickness="1" Padding="12" Margin="0,12,0,0">
+        <Border Grid.Row="2" CornerRadius="12" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,12,0,0">
             <Grid>
-                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
                 <DockPanel>
-                    <TextBox x:Name="SearchBox" Width="260" Height="30" VerticalAlignment="Center" Background="#0D1117" Foreground="#E6EDF3" BorderBrush="#30363D" TextChanged="SearchBox_TextChanged"/>
-                    <TextBlock Text="  Reglas por programa — cada .exe nuevo dispara popup (no por IP)" Foreground="#6E7681" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    <TextBox x:Name="SearchBox" Width="260" Height="30" VerticalAlignment="Center" Background="{DynamicResource BgBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" TextChanged="SearchBox_TextChanged"/>
+                    <TextBlock x:Name="HintText" Text="  Reglas por programa — cada .exe nuevo dispara popup (no por IP)" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Margin="8,0,0,0"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right">
-                        <Button Content="Quitar regla" Padding="10,6" Background="#21262D" Foreground="#E6EDF3" BorderBrush="#30363D" BorderThickness="1" Click="Remove_Click"/>
+                        <Button x:Name="RemoveBtn" Content="Quitar regla" Padding="10,6" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Click="Remove_Click"/>
                     </StackPanel>
                 </DockPanel>
-                <DataGrid x:Name="RulesGrid" Grid.Row="1" Margin="0,10,0,0" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" Background="#161B22" Foreground="#E6EDF3" RowBackground="#161B22" AlternatingRowBackground="#1A1F29" BorderBrush="#30363D" GridLinesVisibility="None">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Programa" Binding="{Binding DisplayName}" Width="*"/>
-                        <DataGridTextColumn Header="Ruta" Binding="{Binding AppPath}" Width="2*"/>
-                        <DataGridTextColumn Header="Veredicto" Binding="{Binding Verdict}" Width="110"/>
-                        <DataGridTextColumn Header="Dirección" Binding="{Binding Direction}" Width="110"/>
-                    </DataGrid.Columns>
-                </DataGrid>
+                <Grid Grid.Row="1" Margin="0,10,0,0" Background="{DynamicResource HeaderBgBrush}" Height="36">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="56"/><ColumnDefinition Width="1.2*"/><ColumnDefinition Width="2*"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions>
+                    <TextBlock x:Name="HdrOn" Text="On" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" FontSize="12"/>
+                    <TextBlock x:Name="HdrProg" Grid.Column="1" Text="Programa ▾" VerticalAlignment="Center" Margin="8,0" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" FontSize="12" Cursor="Hand" MouseLeftButtonDown="SortProg_Click"/>
+                    <TextBlock x:Name="HdrPath" Grid.Column="2" Text="Ruta" VerticalAlignment="Center" Margin="8,0" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" FontSize="12" Cursor="Hand" MouseLeftButtonDown="SortPath_Click"/>
+                    <TextBlock x:Name="HdrVerd" Grid.Column="3" Text="Veredicto" VerticalAlignment="Center" Margin="8,0" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" FontSize="12"/>
+                    <TextBlock x:Name="HdrDir" Grid.Column="4" Text="Dirección" VerticalAlignment="Center" Margin="8,0" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" FontSize="12"/>
+                </Grid>
+                <ScrollViewer Grid.Row="2" Margin="0,6,0,0" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Expander x:Name="AllowedExpander" Header="Allowed (0)" Style="{StaticResource GroupExpander}" IsExpanded="True">
+                            <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" RowBackground="{DynamicResource CardBrush}" AlternatingRowBackground="{DynamicResource GridAltBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" RowHeight="38" CanUserSortColumns="True">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="On" Width="56" CanUserSort="False">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox IsChecked="{Binding Verdict, Converter={StaticResource VerdictToToggleConverter}, Mode=TwoWay}" Style="{StaticResource MiniToggle}" HorizontalAlignment="Center" VerticalAlignment="Center" Click="RuleToggle_Click"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Programa" Width="1.2*" SortMemberPath="DisplayName" CanUserSort="True">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
+                                                    <Image Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="18" Height="18" Margin="0,0,8,0"/>
+                                                    <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Ruta" Binding="{Binding AppPath}" Width="2*" CanUserSort="True" SortMemberPath="AppPath">
+                                        <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="Margin" Value="8,0"/><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="TextTrimming" Value="CharacterEllipsis"/></Style></DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTemplateColumn Header="Veredicto" Width="90" CanUserSort="True" SortMemberPath="Verdict">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Verdict, Converter={StaticResource VerdictDisplayConverter}}" VerticalAlignment="Center" Margin="8,0"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Dirección" Width="90" CanUserSort="True" SortMemberPath="Direction">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Direction, Converter={StaticResource DirectionDisplayConverter}}" VerticalAlignment="Center" Margin="8,0"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Expander>
+                        <Expander x:Name="BlockedExpander" Header="Blocked (0)" Style="{StaticResource GroupExpander}" IsExpanded="True" Margin="0,8,0,0">
+                            <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="{DynamicResource CardBrush}" Foreground="{DynamicResource TextBrush}" RowBackground="{DynamicResource CardBrush}" AlternatingRowBackground="{DynamicResource GridAltBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" RowHeight="38" CanUserSortColumns="True">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="On" Width="56" CanUserSort="False">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox IsChecked="{Binding Verdict, Converter={StaticResource VerdictToToggleConverter}, Mode=TwoWay}" Style="{StaticResource MiniToggle}" HorizontalAlignment="Center" VerticalAlignment="Center" Click="RuleToggle_Click"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Programa" Width="1.2*" SortMemberPath="DisplayName" CanUserSort="True">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
+                                                    <Image Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="18" Height="18" Margin="0,0,8,0"/>
+                                                    <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Ruta" Binding="{Binding AppPath}" Width="2*" CanUserSort="True" SortMemberPath="AppPath"/>
+                                    <DataGridTemplateColumn Header="Veredicto" Width="90" CanUserSort="True" SortMemberPath="Verdict">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Verdict, Converter={StaticResource VerdictDisplayConverter}}" VerticalAlignment="Center" Margin="8,0"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Dirección" Width="90" CanUserSort="True" SortMemberPath="Direction">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Direction, Converter={StaticResource DirectionDisplayConverter}}" VerticalAlignment="Center" Margin="8,0"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Expander>
+                    </StackPanel>
+                </ScrollViewer>
             </Grid>
         </Border>
         <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,10,0,0">
-            <TextBlock Foreground="#484F58" FontSize="11" Text="Windows 10/11 • WFP • Instalador con Servicio (SYSTEM) • Requiere Admin • Filtros persistentes"/>
-            <TextBlock Margin="12,0,0,0" Foreground="#1F6FEB" FontSize="11" Cursor="Hand" Text="Abrir log" MouseLeftButtonDown="OpenLog_Click"/>
-            <TextBlock x:Name="LogPathText" Margin="8,0,0,0" Foreground="#484F58" FontSize="11" Text=""/>
+            <TextBlock Foreground="{DynamicResource SubTextBrush}" FontSize="11" Text="Windows 10/11 • WFP • Instalador con Servicio (SYSTEM) • Requiere Admin • Filtros persistentes"/>
+            <TextBlock Margin="12,0,0,0" Foreground="{DynamicResource AccentBrush}" FontSize="11" Cursor="Hand" Text="Abrir log" MouseLeftButtonDown="OpenLog_Click"/>
+            <TextBlock x:Name="LogPathText" Margin="8,0,0,0" Foreground="{DynamicResource SubTextBrush}" FontSize="11" Text=""/>
         </StackPanel>
     </Grid>
 </Window>

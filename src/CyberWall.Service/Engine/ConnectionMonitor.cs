@@ -10,6 +10,7 @@ public sealed class ConnectionMonitor : IDisposable
     public event Action<ConnectionEvent>? OnNewConnection;
     private Timer? _timer;
     private readonly HashSet<string> _seen = new();
+    private readonly HashSet<string> _seenProcs = new();
     private readonly HashSet<int> _ownPids;
     private FirewallService? _svc;
 
@@ -21,6 +22,9 @@ public sealed class ConnectionMonitor : IDisposable
     public void Start(FirewallService svc)
     {
         _svc = svc;
+        _seen.Clear();
+        _seenProcs.Clear();
+        _timer?.Dispose();
         _timer = new Timer(_ => Poll(), null, 1000, 1500);
     }
 
@@ -52,8 +56,47 @@ public sealed class ConnectionMonitor : IDisposable
                 OnNewConnection?.Invoke(ev);
             }
             if (_seen.Count > 5000) _seen.Clear();
+            PollBlockedProcs();
         }
         catch (Exception ex) { Debug.WriteLine(ex); }
+    }
+
+    private readonly Dictionary<string, DateTime> _lastPopup = new(StringComparer.OrdinalIgnoreCase);
+
+    private void PollBlockedProcs()
+    {
+        try
+        {
+            var names = new[] { "git-remote-https", "git" };
+            foreach (var p in Process.GetProcesses())
+            {
+                try
+                {
+                    string? path = p.MainModule?.FileName;
+                    if (path == null) continue;
+                    var fname = Path.GetFileNameWithoutExtension(path);
+                    if (!names.Any(n => fname.Equals(n, StringComparison.OrdinalIgnoreCase))) continue;
+                    var key = Path.GetFullPath(path).ToLowerInvariant();
+                    if (_lastPopup.TryGetValue(key, out var last) && (DateTime.UtcNow - last).TotalSeconds < 12) continue;
+                    if (_svc!.Store.TryGet(path, out _)) continue;
+                    if (_ownPids.Contains(p.Id)) continue;
+                    _lastPopup[key] = DateTime.UtcNow;
+                    var ev = new ConnectionEvent
+                    {
+                        AppPath = path,
+                        RemoteAddress = "github.com",
+                        RemotePort = 443,
+                        Direction = Direction.Outbound,
+                        ProcessId = p.Id,
+                        Protocol = "TCP"
+                    };
+                    if (_svc.Mode == FirewallMode.BlockAll) continue;
+                    OnNewConnection?.Invoke(ev);
+                }
+                catch { }
+            }
+        }
+        catch { }
     }
 
     private static string? GetPath(int pid)

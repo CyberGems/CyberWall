@@ -41,8 +41,12 @@ internal static class RealFirewall
         if (!IsAdmin) return;
         try
         {
-            var name = $"CyberWall-Allow-{Path.GetFileNameWithoutExtension(appPath)}";
+            var baseName = Path.GetFileNameWithoutExtension(appPath);
+            RunNetsh($"advfirewall firewall delete rule name=\"CyberWall-Block-{baseName}\"");
+            RunNetsh($"advfirewall firewall delete rule name=\"CyberWall-Block-{baseName}-in\"");
+            var name = $"CyberWall-Allow-{baseName}";
             RunNetsh($"advfirewall firewall delete rule name=\"{name}\"");
+            RunNetsh($"advfirewall firewall delete rule name=\"{name}-in\"");
             RunNetsh($"advfirewall firewall add rule name=\"{name}\" dir=out action=allow program=\"{appPath}\" enable=yes profile=any");
             RunNetsh($"advfirewall firewall add rule name=\"{name}-in\" dir=in action=allow program=\"{appPath}\" enable=yes profile=any");
         }
@@ -59,7 +63,9 @@ internal static class RealFirewall
             RunNetsh($"advfirewall firewall delete rule name=\"{name}-in\"");
             var bname = $"CyberWall-Block-{Path.GetFileNameWithoutExtension(appPath)}";
             RunNetsh($"advfirewall firewall delete rule name=\"{bname}\"");
+            RunNetsh($"advfirewall firewall delete rule name=\"{bname}-in\"");
             RunNetsh($"advfirewall firewall add rule name=\"{bname}\" dir=out action=block program=\"{appPath}\" enable=yes profile=any");
+            RunNetsh($"advfirewall firewall add rule name=\"{bname}-in\" dir=in action=block program=\"{appPath}\" enable=yes profile=any");
         }
         catch (Exception ex) { Debug.WriteLine(ex); }
     }

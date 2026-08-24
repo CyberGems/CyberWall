@@ -1,39 +1,44 @@
-# CyberWall — Firewall Windows por programa (WFP)
+# CyberWall — Per-App Windows Firewall (WFP)
 
-Scaffolding robusto + simplificado inspirado en simplewall. Solo Windows. Bloqueo por defecto (whitelist), popup por cada **programa nuevo** (no por IP).
+Robust yet minimal firewall inspired by simplewall. Windows-only. Default-deny (whitelist), popup per **new program** (not per IP).
 
-## Stack elegido (Windows-only)
-- **.NET 10 + WPF** (UI nativa) + `fwpuclnt.dll` (WFP) vía P/Invoke
-- **Servicio/Engine** en `CyberWall.Service` (requiere Admin) + **UI** en `CyberWall.UI`
-- **Reglas por app** en `%ProgramData%\CyberWall\rules.json` — filtros persistentes como simplewall
-- **Bilingüe** ES/EN (`CyberWall.Common/I18n/Strings.cs`)
-- **IPC** Named Pipe `CyberWall_Engine` (preparado para separar UI↔Service)
+## Stack (Windows-only)
+- **.NET 10 + WPF** (native UI) + `fwpuclnt.dll` (WFP) via P/Invoke
+- **Service/Engine** in `CyberWall.Service` (requires Admin) + **UI** in `CyberWall.UI`
+- **Per-app rules** in `%ProgramData%\CyberWall\rules.json` — persistent filters like simplewall
+- **Bilingual** EN/ES (`CyberWall.Common/I18n/Strings.cs`)
+- **IPC** Named Pipe `CyberWall_Engine` (ready for UI↔Service split)
 
-## Estructura
+## Structure
 ```
-CyberWall.sln
-src/CyberWall.Common  -> modelos AppRule, ConnectionEvent, i18n, pipe protocol
+CyberWall.slnx
+src/CyberWall.Common  -> AppRule, ConnectionEvent, i18n, pipe protocol
 src/CyberWall.Service -> WfpEngine, RuleStore, FirewallService, PipeServer
-src/CyberWall.UI      -> MainWindow (lista reglas) + ConnectionPopup (allow/block)
+src/CyberWall.UI      -> MainWindow (rules list) + ConnectionPopup (allow/block)
 ```
 
-## Ejecutar
+## Run
 ```ps
 dotnet build
-dotnet run --project src/CyberWall.UI      # UI (WPF)
-dotnet run --project src/CyberWall.Service # engine (admin para WFP real)
+.\dev.ps1              # dev UI (embedded engine, 1 terminal)
+.\dev-admin.ps1        # dev UI as Admin (real WFP filtering)
+dotnet run --project src/CyberWall.Service # engine only
 ```
 
-> WFP real requiere ejecutar como Administrador. Sin admin corre en modo simulado (Classify → Ask).
+> Real WFP filtering requires Administrator. Without it, runs in simulated mode (Classify → Ask).
 
-## Flujo popup por programa
-1. `WfpEngine.Classify(appPath)` → si no hay regla → `Verdict.Ask`
-2. `ConnectionPopup` muestra `app.exe quiere conectarse — Outbound TCP 1.2.3.4:443`
-3. Usuario elige Permitir/Bloquear (+ Recordar) → `RuleStore.Upsert()`
-4. Próxima conexión del mismo exe ya no pregunta.
+## Popup flow per program
+1. `WfpEngine.Classify(appPath)` → no rule → `Verdict.Ask`
+2. `ConnectionPopup` shows `app.exe wants to connect — Outbound TCP 1.2.3.4:443`
+3. User picks Allow/Block (+ Remember) → `RuleStore.Upsert()` + `netsh advfirewall` rule
+4. Next connection from same exe no longer asks.
 
-## Próximos pasos
-- Callout driver real + `FwpmFilterAdd0` por app (hash/path)
-- Tray icon + autostart + modo temporal/permanente como simplewall
-- Log de paquetes bloqueados/permitidos
-- Instalador MSIX
+## Features
+- Master toggle ON/OFF + mode: `Ask to connect` vs `Block all` (silent)
+- Custom frameless popup (bottom-right, stacked, like CyberFeeds)
+- System tray + minimize to tray
+- Blocked log at `%ProgramData%\CyberWall\blocked.log`
+- Installer with Windows Service (`installer/install.ps1`)
+
+## Known limitation
+Blocked outbound connections never reach TCP table, so the poller may miss some and not show a popup. Allow `git.exe` / `git-remote-https.exe` manually if needed, or watch `blocked.log`.

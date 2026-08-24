@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
+using CyberWall.Common.Settings;
 using CyberWall.Service.Engine;
 using CyberWall.UI.Popup;
 using CyberWall.UI.Services;
@@ -19,18 +20,42 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        LangBox.SelectedIndex = Strings.Current == Lang.Es ? 0 : 1;
-        ModeBox.SelectedIndex = 0;
+        _loading = true;
         MasterToggle.IsChecked = true;
-        var isAdmin = new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent()).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
         _svc.OnAskConnection += OnAskConnection;
         _svc.Enable(FirewallMode.Ask);
         RefreshRules();
+        RefreshLanguage();
         UpdateStatus();
+        var isAdmin = new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent()).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
         if (!isAdmin) StatusText.Text += "  \u26a0 Ejecuta como Admin para bloqueo real (ahora simulado)";
         _tray = new TrayService(this);
         Closing += (_, _) => _svc.Dispose();
         Closed += (_, _) => _tray?.Dispose();
+        _loading = false;
+    }
+
+    public void RefreshLanguage()
+    {
+        var es = Strings.Current == Lang.Es;
+        TitleText.Text = Strings.T("AppTitle");
+        SettingsBtn.Content = es ? "\u2699 Configuraci\u00f3n" : "\u2699 Settings";
+        ModeLbl.Text = es ? "Modo:" : "Mode:";
+        HintText.Text = es ? "  Reglas por programa \u2014 cada .exe nuevo dispara popup (no por IP)" : "  Per-program rules \u2014 each new .exe triggers popup (not per IP)";
+        RemoveBtn.Content = es ? "Quitar regla" : "Remove rule";
+        HdrProg.Text = (es ? "Programa" : "Program") + (_sortBy == "DisplayName" ? (_sortAsc ? " \u25BE" : " \u25B4") : "");
+        HdrPath.Text = es ? "Ruta" : "Path";
+        HdrVerd.Text = es ? "Veredicto" : "Verdict";
+        HdrDir.Text = es ? "Direcci\u00f3n" : "Direction";
+        AllowedExpander.Header = $"{(es ? "Permitidas" : "Allowed")} ({_all.Count(r => r.Verdict == Verdict.Allow)})";
+        BlockedExpander.Header = $"{(es ? "Bloqueadas" : "Blocked")} ({_all.Count(r => r.Verdict == Verdict.Block)})";
+        var m = _svc.Mode == FirewallMode.BlockAll ? 1 : 0;
+        _loading = true;
+        ModeBox.Items.Clear();
+        ModeBox.Items.Add(new ComboBoxItem { Content = Strings.T("ModeAsk") });
+        ModeBox.Items.Add(new ComboBoxItem { Content = Strings.T("ModeBlockAll") });
+        ModeBox.SelectedIndex = m;
+        _loading = false;
     }
 
     private void OnAskConnection(ConnectionEvent ev)
@@ -43,11 +68,8 @@ public partial class MainWindow : Window
             p.ClosedWithVerdict += popup =>
             {
                 _pendingPopups.Remove(key);
-                if (popup.ResultVerdict == Verdict.Allow || popup.ResultVerdict == Verdict.Block)
-                {
-                    _svc.SetVerdict(popup.Event.AppPath, popup.ResultVerdict, popup.Remember, popup.Event);
-                    if (popup.Remember) RefreshRules(SearchBox.Text);
-                }
+                _svc.SetVerdict(popup.Event.AppPath, popup.ResultVerdict, popup.Remember, popup.Event);
+                if (popup.Remember) RefreshRules(SearchBox.Text);
             };
             p.Closed += (_, _) => _pendingPopups.Remove(key);
             p.Show();
@@ -55,11 +77,33 @@ public partial class MainWindow : Window
         });
     }
 
+    private string _sortBy = "DisplayName";
+    private bool _sortAsc = true;
+
     private void RefreshRules(string? filter = null)
     {
         _all = _svc.Store.All.ToList();
         var q = string.IsNullOrWhiteSpace(filter) ? _all : _all.Where(r => r.DisplayName.Contains(filter!, StringComparison.OrdinalIgnoreCase) || r.AppPath.Contains(filter!, StringComparison.OrdinalIgnoreCase)).ToList();
-        RulesGrid.ItemsSource = q;
+        Func<AppRule, object> key = _sortBy == "AppPath" ? r => r.AppPath : r => r.DisplayName;
+        var blocked = q.Where(r => r.Verdict == Verdict.Block);
+        var allowed = q.Where(r => r.Verdict == Verdict.Allow);
+        blocked = _sortAsc ? blocked.OrderBy(key) : blocked.OrderByDescending(key);
+        allowed = _sortAsc ? allowed.OrderBy(key) : allowed.OrderByDescending(key);
+        BlockedGrid.ItemsSource = blocked.ToList();
+        AllowedGrid.ItemsSource = allowed.ToList();
+        RefreshLanguage();
+    }
+
+    private void SortProg_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (_sortBy == "DisplayName") _sortAsc = !_sortAsc; else { _sortBy = "DisplayName"; _sortAsc = true; }
+        RefreshRules(SearchBox.Text);
+    }
+
+    private void SortPath_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (_sortBy == "AppPath") _sortAsc = !_sortAsc; else { _sortBy = "AppPath"; _sortAsc = true; }
+        RefreshRules(SearchBox.Text);
     }
 
     private void UpdateStatus()
@@ -72,7 +116,6 @@ public partial class MainWindow : Window
         var real = _svc.Wfp.IsRealBlock ? " \u2022 WFP real" : " \u2022 simulado";
         if (!on) StatusText.Text = Strings.T("StatusDisabled") + real;
         else StatusText.Text = (_svc.Mode == FirewallMode.Ask ? Strings.T("StatusEnabledAsk") : Strings.T("StatusEnabledBlock")) + real;
-        TitleText.Text = Strings.T("AppTitle");
     }
 
     private void MasterToggle_Changed(object sender, RoutedEventArgs e)
@@ -92,28 +135,21 @@ public partial class MainWindow : Window
     }
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e) => RefreshRules(SearchBox.Text);
-    private void Remove_Click(object sender, RoutedEventArgs e) { if (RulesGrid.SelectedItem is AppRule r) { _svc.RemoveRule(r.AppPath); RefreshRules(SearchBox.Text); } }
-
-    private void TestPopup_Click(object sender, RoutedEventArgs e)
+    private void Remove_Click(object sender, RoutedEventArgs e)
     {
-        var ev = new ConnectionEvent { AppPath = $@"C:\Program Files\Demo\demo{Random.Shared.Next(1000)}.exe", RemoteAddress = "142.250.0.1", RemotePort = 443, Direction = Direction.Outbound, ProcessId = Random.Shared.Next(1000, 9999) };
-        OnAskConnection(ev);
+        var r = (BlockedGrid.SelectedItem as AppRule) ?? (AllowedGrid.SelectedItem as AppRule);
+        if (r != null) { _svc.RemoveRule(r.AppPath); RefreshRules(SearchBox.Text); }
     }
-
-    private void LangBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void RuleToggle_Click(object sender, RoutedEventArgs e)
     {
-        Strings.Current = LangBox.SelectedIndex == 0 ? Lang.Es : Lang.En;
-        _loading = true;
-        ModeBox.Items.Clear();
-        ModeBox.Items.Add(new ComboBoxItem { Content = Strings.T("ModeAsk") });
-        ModeBox.Items.Add(new ComboBoxItem { Content = Strings.T("ModeBlockAll") });
-        ModeBox.SelectedIndex = _svc.Mode == FirewallMode.BlockAll ? 1 : 0;
-        _loading = false;
-        UpdateStatus();
+        if (sender is System.Windows.Controls.CheckBox cb && cb.DataContext is AppRule r)
+        {
+            var allow = cb.IsChecked == true;
+            _svc.SetVerdict(r.AppPath, allow ? Verdict.Allow : Verdict.Block, true, null);
+            RefreshRules(SearchBox.Text);
+        }
     }
-
-    private void OpenLog_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
-    {
-        try { var p = BlockedLog.LogPath; if (System.IO.File.Exists(p)) System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(p) { UseShellExecute = true }); else System.Windows.MessageBox.Show($"Aún sin bloqueos.\n{p}"); LogPathText.Text = p; } catch { }
-    }
+    private void TestPopup_Click(object sender, RoutedEventArgs e) { var ev = new ConnectionEvent { AppPath = $@"C:\Program Files\Demo\demo{Random.Shared.Next(1000)}.exe", RemoteAddress = "142.250.0.1", RemotePort = 443, Direction = Direction.Outbound, ProcessId = Random.Shared.Next(1000, 9999) }; OnAskConnection(ev); }
+    private void Settings_Click(object sender, RoutedEventArgs e) { var w = new SettingsWindow(App.Settings) { Owner = this }; w.ShowDialog(); RefreshLanguage(); UpdateStatus(); }
+    private void OpenLog_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) { try { var p = BlockedLog.LogPath; if (System.IO.File.Exists(p)) System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(p) { UseShellExecute = true }); else System.Windows.MessageBox.Show($"A\u00fan sin bloqueos.\n{p}"); LogPathText.Text = p; } catch { } }
 }
