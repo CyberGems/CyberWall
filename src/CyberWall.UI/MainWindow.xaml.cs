@@ -39,10 +39,40 @@ public partial class MainWindow : Window
         if (!isAdmin) StatusText.Text += "  ⚠️ " + (Strings.Current == Lang.Es ? "Ejecuta como Admin para filtrado real" : "Run as Admin for kernel filtering");
         _tray = new TrayService(this, _svc);
         Closing += (_, _) => { App.Settings.FirewallEnabled = _svc.IsMasterOn; App.Settings.FirewallMode = (int)_svc.Mode; App.Settings.Save(); _svc.Dispose(); };
-        Closed += (_, _) => _tray?.Dispose();
         StateChanged += (_, _) => UpdateMaximizeButtonIcon();
         UpdateMaximizeButtonIcon();
+        Loaded += (_, _) => CheckForUpdatesOnStartup();
         _loading = false;
+    }
+
+    private async void CheckForUpdatesOnStartup()
+    {
+        if (!App.Settings.AutoCheckForUpdates) return;
+        try
+        {
+            await Task.Delay(3000);
+            var result = await UpdateService.CheckForUpdatesAsync();
+            if (result.IsUpdateAvailable)
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    var choice = ConfirmDialog.Show(
+                        this,
+                        Strings.T("UpdateAvailable", result.LatestVersionLabel),
+                        $"{result.StatusMessage}\n\n{Strings.T("Current")} {UpdateService.GetCurrentVersionLabel()}\n{Strings.T("Latest")} {result.LatestVersionLabel}\n\n{Strings.T("UpdatePrompt")}",
+                        Strings.T("Download"),
+                        Strings.T("Later"));
+
+                    if (choice)
+                    {
+                        var about = new AboutWindow(App.Settings) { Owner = this };
+                        about.Show();
+                        _ = about.StartUpdateDownloadAsync(result);
+                    }
+                });
+            }
+        }
+        catch { }
     }
 
     public void RefreshLanguage()

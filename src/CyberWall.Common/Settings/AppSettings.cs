@@ -26,6 +26,7 @@ public sealed class AppSettings
     public int FirewallMode { get; set; } = 2;
     public PopupPosition NotificationPosition { get; set; } = PopupPosition.BottomRight;
     public int NotificationMonitor { get; set; } = -1; // -1 = Active monitor under cursor
+    public bool AutoCheckForUpdates { get; set; } = true;
 
     private static string Path => System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "CyberWall", "settings.json");
 

@@ -404,7 +404,10 @@
 
             <!-- Footer -->
             <Border Grid.Row="2" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,11,11" Padding="20,12">
-                <Button x:Name="CloseBtn" Content="Cerrar" Width="110" Height="34" HorizontalAlignment="Right" Style="{StaticResource PrimaryButtonStyle}" Click="Close_Click"/>
+                <Grid>
+                    <Button x:Name="AboutBtn" Content="Acerca de CyberWall" HorizontalAlignment="Left" Height="34" Padding="14,0" Style="{StaticResource SecondaryButtonStyle}" Click="About_Click"/>
+                    <Button x:Name="CloseBtn" Content="Cerrar" Width="110" Height="34" HorizontalAlignment="Right" Style="{StaticResource PrimaryButtonStyle}" Click="Close_Click"/>
+                </Grid>
             </Border>
         </Grid>
     </Border>

@@ -14,6 +14,7 @@ public partial class ConfirmDialog : Window
     public ConfirmDialog(string appName, string appPath)
     {
         InitializeComponent();
+        CyberWallWindowChrome.Apply(this, 12);
         Icon = AppIconHelper.CreateShieldImageSource(64);
 
         AppTitleLbl.Text = string.IsNullOrWhiteSpace(appName) ? System.IO.Path.GetFileNameWithoutExtension(appPath) : appName;
@@ -33,6 +34,37 @@ public partial class ConfirmDialog : Window
             AppIconImg.Visibility = Visibility.Collapsed;
             FlamePath.Visibility = Visibility.Visible;
         }
+    }
+
+    public ConfirmDialog(string title, string message, string okText, string? cancelText = null)
+    {
+        InitializeComponent();
+        CyberWallWindowChrome.Apply(this, 12);
+        Icon = AppIconHelper.CreateShieldImageSource(64);
+
+        AppTitleLbl.Text = title;
+        MessageLbl.Text = message;
+        OkBtn.Content = string.IsNullOrWhiteSpace(okText) ? Strings.T("Ok") : okText;
+
+        if (string.IsNullOrWhiteSpace(cancelText))
+        {
+            CancelBtn.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            CancelBtn.Content = cancelText;
+            CancelBtn.Visibility = Visibility.Visible;
+        }
+
+        AppIconImg.Visibility = Visibility.Collapsed;
+        FlamePath.Visibility = Visibility.Visible;
+    }
+
+    public static bool Show(Window? owner, string title, string message, string okText, string? cancelText = null)
+    {
+        var dlg = new ConfirmDialog(title, message, okText, cancelText);
+        if (owner != null) dlg.Owner = owner;
+        return dlg.ShowDialog() == true;
     }
 
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
