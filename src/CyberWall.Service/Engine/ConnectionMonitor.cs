@@ -55,7 +55,11 @@ public sealed class ConnectionMonitor : IDisposable
         if (ShouldSkipPrompt(ev.AppPath, ev.ProcessId)) return;
 
         _svc.HoldPending(ev);
-        if (_svc.Mode == FirewallMode.BlockAll) return;
+        if (_svc.Mode == FirewallMode.BlockAll)
+        {
+            _svc.NotifyUnknownBlocked(ev);
+            return;
+        }
         try
         {
             OnNewConnection?.Invoke(ev);
@@ -102,7 +106,11 @@ public sealed class ConnectionMonitor : IDisposable
                 };
 
                 _svc.HoldPending(ev);
-                if (_svc.Mode == FirewallMode.BlockAll) continue;
+                if (_svc.Mode == FirewallMode.BlockAll)
+                {
+                    _svc.NotifyUnknownBlocked(ev);
+                    continue;
+                }
                 OnNewConnection?.Invoke(ev);
             }
             if (_seen.Count > 5000) _seen.Clear();

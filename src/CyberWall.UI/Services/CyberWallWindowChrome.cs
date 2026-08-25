@@ -10,6 +10,7 @@ public static class CyberWallWindowChrome
     private const double DefaultCornerRadius = 12;
 
     private const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
+    private const int DWMWCP_DONOTROUND = 1;
     private const int DWMWCP_ROUND = 2;
 
     [DllImport("dwmapi.dll")]
@@ -36,6 +37,8 @@ public static class CyberWallWindowChrome
         });
 
         ApplyRoundedCorners(window, radius);
+        if (window.ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip)
+            WorkAreaMaximize.Attach(window);
     }
 
     public static void ApplyRoundedCorners(Window window, double radius)
@@ -47,8 +50,14 @@ public static class CyberWallWindowChrome
 
             if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000))
             {
-                int pref = DWMWCP_ROUND;
+                int pref = WorkAreaMaximize.IsFilled(window) ? DWMWCP_DONOTROUND : DWMWCP_ROUND;
                 DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref pref, sizeof(int));
+                return;
+            }
+
+            if (WorkAreaMaximize.IsFilled(window))
+            {
+                SetWindowRgn(hwnd, IntPtr.Zero, true);
                 return;
             }
 

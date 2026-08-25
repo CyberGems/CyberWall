@@ -1,4 +1,5 @@
 using System.Windows;
+using CyberWall.Common.I18n;
 using CyberWall.Service.Engine;
 using CyberWall.UI.Tray;
 using WF = System.Windows.Forms;
@@ -37,6 +38,22 @@ public sealed class TrayService : IDisposable
         };
 
         _win.Closing += OnClosing;
+        _icon.BalloonTipClicked += (_, _) =>
+        {
+            _win.ShowNotifications();
+        };
+    }
+
+    public void NotifyAutoBlock(string appName)
+    {
+        try
+        {
+            _icon.BalloonTipTitle = Strings.T("AutoBlockedTitle");
+            _icon.BalloonTipText = Strings.T("AutoBlockedDesc", appName);
+            _icon.BalloonTipIcon = WF.ToolTipIcon.Warning;
+            _icon.ShowBalloonTip(8000);
+        }
+        catch { }
     }
 
     public void ToggleVisibility()

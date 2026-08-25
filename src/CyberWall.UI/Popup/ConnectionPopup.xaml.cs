@@ -31,6 +31,7 @@ public partial class ConnectionPopup : Window
 
     public ConnectionEvent Event { get; }
     public PopupDecision Decision { get; private set; } = PopupDecision.None;
+    public bool TimedOut { get; private set; }
     public bool IsPreview { get; }
     public event Action<ConnectionPopup>? ClosedWithVerdict;
 
@@ -234,6 +235,7 @@ public partial class ConnectionPopup : Window
         _remaining--;
         if (_remaining <= 0)
         {
+            TimedOut = true;
             Complete(PopupDecision.BlockAlways);
             return;
         }

@@ -140,6 +140,7 @@ public partial class TrayContextMenuWindow : Window
     private void LoadLocalizedStrings()
     {
         OpenAppText.Text = Strings.T("OpenCyberWall");
+        NotifMenuText.Text = Strings.T("Notifications");
         SettingsText.Text = Strings.T("Settings");
         LogText.Text = Strings.T("OpenLog");
         AboutText.Text = Strings.T("About");
@@ -208,6 +209,12 @@ public partial class TrayContextMenuWindow : Window
             _mainWindow.WindowState = WindowState.Normal;
             _mainWindow.Activate();
         });
+    }
+
+    private void Notifications_Click(object sender, RoutedEventArgs e)
+    {
+        CloseMenu();
+        _mainWindow.Dispatcher.Invoke(() => _mainWindow.ShowNotifications());
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e)

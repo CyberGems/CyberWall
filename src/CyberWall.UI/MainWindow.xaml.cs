@@ -6,6 +6,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
+using CyberWall.Common.Notifications;
 using CyberWall.Common.Settings;
 using CyberWall.Service.Engine;
 using CyberWall.UI.Dialogs;
@@ -17,8 +18,10 @@ namespace CyberWall.UI;
 public partial class MainWindow : Window
 {
     private readonly FirewallService _svc = new();
+    private readonly NotificationStore _notifications = new();
     private List<AppRule> _all = new();
     private bool _loading;
+    private bool _notifOpen;
     private readonly HashSet<string> _pendingPopups = new();
     private TrayService? _tray;
 
@@ -31,6 +34,8 @@ public partial class MainWindow : Window
         Strings.Current = App.Settings.Language;
         ThemeManager.Apply(App.Settings.Theme);
         _svc.OnAskConnection += OnAskConnection;
+        _svc.OnUnknownBlocked += OnUnknownBlocked;
+        _notifications.Changed += () => Dispatcher.BeginInvoke(UpdateNotifBadge);
         if (App.Settings.FirewallEnabled)
             _svc.Enable((FirewallMode)App.Settings.FirewallMode);
         RefreshRules();
@@ -40,9 +45,13 @@ public partial class MainWindow : Window
         if (!isAdmin) StatusText.Text += "  ⚠️ " + (Strings.Current == Lang.Es ? "Ejecuta como Admin para filtrado real" : "Run as Admin for kernel filtering");
         _tray = new TrayService(this, _svc);
         Closed += (_, _) => { App.Settings.FirewallEnabled = _svc.IsMasterOn; App.Settings.FirewallMode = (int)_svc.Mode; App.Settings.Save(); _svc.Dispose(); };
-        StateChanged += (_, _) => UpdateMaximizeButtonIcon();
+        StateChanged += (_, _) => Dispatcher.InvokeAsync(UpdateMaximizeButtonIcon);
         UpdateMaximizeButtonIcon();
-        Loaded += (_, _) => CheckForUpdatesOnStartup();
+        Loaded += (_, _) =>
+        {
+            UpdateNotifBadge();
+            CheckForUpdatesOnStartup();
+        };
         _loading = false;
     }
 
@@ -57,6 +66,7 @@ public partial class MainWindow : Window
             {
                 Dispatcher.Invoke(() =>
                 {
+                    _notifications.Add(AppNotificationKind.UpdateAvailable, detail: result.LatestVersionLabel);
                     var choice = ConfirmDialog.Show(
                         this,
                         Strings.T("UpdateAvailable", result.LatestVersionLabel),
@@ -66,6 +76,7 @@ public partial class MainWindow : Window
 
                     if (choice)
                     {
+                        _notifications.MarkRelatedRead(AppNotificationKind.UpdateAvailable, null);
                         var about = new AboutWindow(App.Settings) { Owner = this };
                         about.Show();
                         _ = about.StartUpdateDownloadAsync(result);
@@ -80,6 +91,7 @@ public partial class MainWindow : Window
     {
         TitleText.Text = "CyberWall";
         SettingsBtnText.Text = Strings.T("Settings");
+        NotifBtn.ToolTip = Strings.T("Notifications");
         ModeLbl.Text = Strings.T("Mode");
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
         ViewLogBtnText.Text = Strings.T("ViewLog");
@@ -126,7 +138,7 @@ public partial class MainWindow : Window
     private void UpdateMaximizeButtonIcon()
     {
         if (MaximizeBtn == null || MaximizeIconPath == null) return;
-        if (WindowState == WindowState.Maximized)
+        if (WorkAreaMaximize.IsFilled(this) || WindowState == WindowState.Maximized)
         {
             MaximizeBtn.ToolTip = Strings.T("Restore");
             MaximizeIconPath.Data = Geometry.Parse("M 6 2 L 6 6 L 2 6 M 6 6 L 2.5 2.5 M 8 12 L 8 8 L 12 8 M 8 8 L 11.5 11.5");
@@ -153,17 +165,27 @@ public partial class MainWindow : Window
     {
         if (e.ClickCount == 2)
         {
-            WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+            WorkAreaMaximize.Toggle(this);
+            UpdateMaximizeButtonIcon();
             return;
         }
         if (e.ButtonState == MouseButtonState.Pressed)
         {
+            if (WorkAreaMaximize.IsFilled(this))
+            {
+                WorkAreaMaximize.Restore(this);
+                UpdateMaximizeButtonIcon();
+            }
             DragMove();
         }
     }
 
     private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
-    private void Maximize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    private void Maximize_Click(object sender, RoutedEventArgs e)
+    {
+        WorkAreaMaximize.Toggle(this);
+        UpdateMaximizeButtonIcon();
+    }
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
     private void OnAskConnection(ConnectionEvent ev)
@@ -175,6 +197,7 @@ public partial class MainWindow : Window
             {
                 key = AppRule.Normalize(ev.AppPath);
                 if (!_pendingPopups.Add(key)) return;
+                AutoBlockToast.CloseAll();
                 var p = new ConnectionPopup(ev);
                 p.ClosedWithVerdict += popup =>
                 {
@@ -191,6 +214,10 @@ public partial class MainWindow : Window
                         case PopupDecision.BlockAlways:
                             _svc.SetVerdict(popup.Event.AppPath, Verdict.Block, true, popup.Event);
                             RefreshRules(SearchBox.Text);
+                            if (popup.TimedOut)
+                            {
+                                RecordAutoBlock(popup.Event);
+                            }
                             break;
                         default:
                             _svc.SetVerdict(popup.Event.AppPath, Verdict.Block, false, popup.Event);
@@ -207,6 +234,89 @@ public partial class MainWindow : Window
             }
         });
     }
+
+    private void OnUnknownBlocked(ConnectionEvent ev)
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            _notifications.Add(AppNotificationKind.SilentBlock, ev.AppPath, ev.DisplayName,
+                string.IsNullOrEmpty(ev.RemoteAddress) ? null : $"{ev.RemoteAddress}:{ev.RemotePort}");
+        });
+    }
+
+    private void RecordAutoBlock(ConnectionEvent ev)
+    {
+        _notifications.Add(AppNotificationKind.AutoBlocked, ev.AppPath, ev.DisplayName,
+            string.IsNullOrEmpty(ev.RemoteAddress) ? null : $"{ev.RemoteAddress}:{ev.RemotePort}");
+        _tray?.NotifyAutoBlock(ev.DisplayName);
+        AutoBlockToast.ShowToast(ev, () =>
+        {
+            _svc.SetVerdict(ev.AppPath, Verdict.Allow, true, ev);
+            _notifications.MarkRelatedRead(AppNotificationKind.AutoBlocked, ev.AppPath);
+            RefreshRules(SearchBox.Text);
+        });
+    }
+
+    private void UpdateNotifBadge()
+    {
+        if (NotifBadge == null || NotifBadgeText == null) return;
+        var count = _notifications.UnreadCount;
+        if (count <= 0)
+        {
+            NotifBadge.Visibility = Visibility.Collapsed;
+            return;
+        }
+        NotifBadgeText.Text = count > 99 ? "99+" : count.ToString();
+        NotifBadge.Visibility = Visibility.Visible;
+    }
+
+    public void ShowNotifications()
+    {
+        Show();
+        if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+        Activate();
+        if (_notifOpen) return;
+        _notifOpen = true;
+        try
+        {
+            var dlg = new NotificationsDialog(
+                _notifications,
+                path =>
+                {
+                    _svc.SetVerdict(path, Verdict.Allow, true);
+                    RefreshRules(SearchBox.Text);
+                },
+                () =>
+                {
+                    if (MasterToggle.IsChecked != true)
+                        MasterToggle.IsChecked = true;
+                },
+                OpenUpdateFromNotification)
+            { Owner = this };
+            dlg.ShowDialog();
+        }
+        finally
+        {
+            _notifOpen = false;
+            UpdateNotifBadge();
+        }
+    }
+
+    private async void OpenUpdateFromNotification()
+    {
+        try
+        {
+            var result = await UpdateService.CheckForUpdatesAsync();
+            if (!result.IsUpdateAvailable) return;
+            _notifications.MarkRelatedRead(AppNotificationKind.UpdateAvailable, null);
+            var about = new AboutWindow(App.Settings) { Owner = this };
+            about.Show();
+            await about.StartUpdateDownloadAsync(result);
+        }
+        catch { }
+    }
+
+    private void Notifications_Click(object sender, RoutedEventArgs e) => ShowNotifications();
 
     private string _sortBy = "DisplayName";
     private bool _sortAsc = true;
@@ -240,8 +350,17 @@ public partial class MainWindow : Window
     private void MasterToggle_Changed(object sender, RoutedEventArgs e)
     {
         if (_loading) return;
-        if (MasterToggle.IsChecked == true) { var m = ModeBox.SelectedIndex == 1 ? FirewallMode.BlockAll : FirewallMode.Ask; _svc.Enable(m); }
-        else _svc.Disable();
+        if (MasterToggle.IsChecked == true)
+        {
+            var m = ModeBox.SelectedIndex == 1 ? FirewallMode.BlockAll : FirewallMode.Ask;
+            _svc.Enable(m);
+            _notifications.MarkRelatedRead(AppNotificationKind.ProtectionOff, null);
+        }
+        else
+        {
+            _svc.Disable();
+            _notifications.Add(AppNotificationKind.ProtectionOff);
+        }
         App.Settings.FirewallEnabled = _svc.IsMasterOn;
         App.Settings.FirewallMode = (int)_svc.Mode;
         App.Settings.Save();

@@ -106,7 +106,10 @@ public static class PopupWindowHelper
         {
             var existing = System.Windows.Application.Current.Windows
                 .OfType<Window>()
-                .Where(w => w != window && w.IsVisible && (w is ConnectionPopup cp && !cp.IsPreview || w is FirstActivityToast))
+                .Where(w => w != window && w.IsVisible && (
+                    w is ConnectionPopup cp && !cp.IsPreview ||
+                    w is FirstActivityToast ||
+                    (window is AutoBlockToast && w is AutoBlockToast)))
                 .ToList();
             stackIndex = existing.Count;
         }
@@ -173,5 +176,19 @@ public static class PopupWindowHelper
 
         window.Left = left;
         window.Top = top;
+    }
+
+    public static bool HasOpenPermissionPopup()
+    {
+        try
+        {
+            return System.Windows.Application.Current?.Windows
+                .OfType<ConnectionPopup>()
+                .Any(p => p.IsVisible && !p.IsPreview) == true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

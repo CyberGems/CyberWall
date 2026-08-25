@@ -167,6 +167,13 @@
                     </StackPanel>
                 </Button>
 
+                <Button x:Name="NotifMenuBtn" Style="{StaticResource MenuActionButtonStyle}" Click="Notifications_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="M 6,8 C 6,4.7 8.7,2 12,2 C 15.3,2 18,4.7 18,8 L 18,13 L 21,17 L 3,17 L 6,13 Z M 10.2,20 C 10.6,21.2 11.2,22 12,22 C 12.8,22 13.4,21.2 13.8,20" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" Width="13" Height="14" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center" Fill="Transparent"/>
+                        <TextBlock x:Name="NotifMenuText" Text="Notificaciones" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
                 <!-- Settings -->
                 <Button x:Name="SettingsBtn" Style="{StaticResource MenuActionButtonStyle}" Click="Settings_Click">
                     <StackPanel Orientation="Horizontal">
