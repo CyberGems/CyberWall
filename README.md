@@ -193,7 +193,7 @@ If you'd like to support this work, a donation would mean a lot. Thank you! 🙏
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-0070BA?style=for-the-badge&logo=paypal)](https://paypal.me/CyberGems) [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/cybergems)
 
 <details>
-<summary>Crypto donations — choose the correct network</summary>
+<summary><img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/color/btc.png" width="16" height="16"/> <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/color/eth.png" width="16" height="16"/> <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/color/usdt.png" width="16" height="16"/> <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/color/ltc.png" width="16" height="16"/> Crypto donations — choose the correct network</summary>
 
 | Asset | Network | Address | QR |
 |---|---|---|---|
