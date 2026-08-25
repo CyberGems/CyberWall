@@ -1,4 +1,4 @@
-<p align="center">
+﻿<p align="center">
   <img src="src/CyberWall.UI/Assets/CyberWall.png" width="140" alt="CyberWall logo" />
 </p>
 
@@ -191,6 +191,21 @@ Check that you allowed the correct executable, including any helper process it u
 If you'd like to support this work, a donation would mean a lot. Thank you! 🙏
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-0070BA?style=for-the-badge&logo=paypal)](https://paypal.me/CyberGems) [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/cybergems)
+
+<details>
+<summary>Crypto donations — choose the correct network</summary>
+
+| Asset | Network | Address | QR |
+|---|---|---|---|
+| BTC | Bitcoin | `bc1q5mxzz05nmvsheqzx7970euswta3fksxzcfzag4` | ![BTC QR](docs/donate/qr-btc.png) |
+| ETH | Ethereum (ERC20) | `0x79b703Ec0f77493679Fcd280aF3b983E20c580B8` | ![ETH QR](docs/donate/qr-eth.png) |
+| USDT | Ethereum (ERC20) | `0x79b703Ec0f77493679Fcd280aF3b983E20c580B8` | ![USDT ERC20 QR](docs/donate/qr-eth.png) |
+| USDT | BNB Smart Chain (BEP20) | `0x79b703Ec0f77493679Fcd280aF3b983E20c580B8` | ![USDT BEP20 QR](docs/donate/qr-eth.png) |
+| USDT | Tron (TRC20) | `TSVbSk1HSyZ1NprCnAYiw56ECwXgH887mD` | ![USDT TRC20 QR](docs/donate/qr-usdt-tron.png) |
+
+> ⚠️ Send only the selected asset on the indicated network. Using the wrong network will result in permanent loss of funds.
+
+</details>
 
 ## 📄 License
 
