@@ -193,16 +193,16 @@ If you'd like to support this work, a donation would mean a lot. Thank you! 🙏
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-0070BA?style=for-the-badge&logo=paypal)](https://paypal.me/CyberGems) [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/cybergems)
 
 <details>
-<summary><svg width="16" height="16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle"><circle cx="16" cy="16" r="14" fill="#F7931A"/><text x="16" y="21" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">B</text></svg> <svg width="16" height="16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle"><g fill="#627EEA"><polygon points="16,2 28,16 16,22 4,16"/><polygon points="16,22 28,16 16,30 4,16" opacity="0.6"/></g></svg> <svg width="16" height="16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle"><circle cx="16" cy="16" r="14" fill="#26A17B"/><text x="16" y="21" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">T</text></svg> <svg width="16" height="16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle"><circle cx="16" cy="16" r="14" fill="#345D9D"/><text x="16" y="21" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">L</text></svg> Crypto donations — choose the correct network</summary>
+<summary>🟠 🔷 🟢 🔵 Crypto donations — choose the correct network</summary>
 
 | Asset | Network | Address | QR |
 |---|---|---|---|
-| <svg width="16" height="16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle"><circle cx="16" cy="16" r="14" fill="#F7931A"/><text x="16" y="21" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">B</text></svg> BTC | Bitcoin | `bc1q5mxzz05nmvsheqzx7970euswta3fksxzcfzag4` | ![BTC QR](docs/donate/qr-btc.png) |
-| <svg width="16" height="16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle"><g fill="#627EEA"><polygon points="16,2 28,16 16,22 4,16"/><polygon points="16,22 28,16 16,30 4,16" opacity="0.6"/></g></svg> ETH | Ethereum (ERC20) | `0x79b703Ec0f77493679Fcd280aF3b983E20c580B8` | ![ETH QR](docs/donate/qr-eth.png) |
-| <svg width="16" height="16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle"><circle cx="16" cy="16" r="14" fill="#26A17B"/><text x="16" y="21" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">T</text></svg> USDT | Ethereum (ERC20) | `0x79b703Ec0f77493679Fcd280aF3b983E20c580B8` | ![USDT ERC20 QR](docs/donate/qr-eth.png) |
-| <svg width="16" height="16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle"><circle cx="16" cy="16" r="14" fill="#26A17B"/><text x="16" y="21" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">T</text></svg> USDT | BNB Smart Chain (BEP20) | `0x79b703Ec0f77493679Fcd280aF3b983E20c580B8` | ![USDT BEP20 QR](docs/donate/qr-eth.png) |
-| <svg width="16" height="16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle"><circle cx="16" cy="16" r="14" fill="#26A17B"/><text x="16" y="21" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">T</text></svg> USDT | Tron (TRC20) | `TSVbSk1HSyZ1NprCnAYiw56ECwXgH887mD` | ![USDT TRC20 QR](docs/donate/qr-usdt-tron.png) |
-| <svg width="16" height="16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle"><circle cx="16" cy="16" r="14" fill="#345D9D"/><text x="16" y="21" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">L</text></svg> LTC | Litecoin | `LWGnEHgcFCE2BRkzLnsdPDD8Y8ZeDK577X` | ![LTC QR](docs/donate/qr-ltc.png) |
+| 🟠 BTC | Bitcoin | `bc1q5mxzz05nmvsheqzx7970euswta3fksxzcfzag4` | ![BTC QR](docs/donate/qr-btc.png) |
+| 🔷 ETH | Ethereum (ERC20) | `0x79b703Ec0f77493679Fcd280aF3b983E20c580B8` | ![ETH QR](docs/donate/qr-eth.png) |
+| 🟢 USDT | Ethereum (ERC20) | `0x79b703Ec0f77493679Fcd280aF3b983E20c580B8` | ![USDT ERC20 QR](docs/donate/qr-eth.png) |
+| 🟢 USDT | BNB Smart Chain (BEP20) | `0x79b703Ec0f77493679Fcd280aF3b983E20c580B8` | ![USDT BEP20 QR](docs/donate/qr-eth.png) |
+| 🟢 USDT | Tron (TRC20) | `TSVbSk1HSyZ1NprCnAYiw56ECwXgH887mD` | ![USDT TRC20 QR](docs/donate/qr-usdt-tron.png) |
+| 🔵 LTC | Litecoin | `LWGnEHgcFCE2BRkzLnsdPDD8Y8ZeDK577X` | ![LTC QR](docs/donate/qr-ltc.png) |
 
 > ⚠️ Send only the selected asset on the indicated network. Using the wrong network will result in permanent loss of funds.
 
