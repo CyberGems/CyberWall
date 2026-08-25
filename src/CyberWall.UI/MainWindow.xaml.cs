@@ -25,7 +25,9 @@ public partial class MainWindow : Window
     private List<AppRule> _all = new();
     private bool _loading;
     private bool _notifOpen;
+    private bool _layoutRestored;
     private readonly HashSet<string> _pendingPopups = new();
+    private readonly Dictionary<string, string> _lastRemoteByApp = new(StringComparer.OrdinalIgnoreCase);
     private TrayService? _tray;
 
     public MainWindow()
@@ -46,6 +48,7 @@ public partial class MainWindow : Window
         UpdateStatus();
         var isAdmin = new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent()).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
         if (!isAdmin) StatusText.Text += "  ⚠️ " + (Strings.Current == Lang.Es ? "Ejecuta como Admin para filtrado real" : "Run as Admin for kernel filtering");
+        Closing += (_, _) => WindowLayoutPersistence.Save(this, App.Settings);
         _tray = new TrayService(this, _svc);
         GeoCountry.Updated += OnGeoUpdated;
         GeoCountry.Warm();
@@ -61,6 +64,11 @@ public partial class MainWindow : Window
         UpdateMaximizeButtonIcon();
         Loaded += (_, _) =>
         {
+            if (!_layoutRestored)
+            {
+                WindowLayoutPersistence.Restore(this, App.Settings);
+                _layoutRestored = true;
+            }
             UpdateNotifBadge();
             CheckForUpdatesOnStartup();
         };
@@ -214,6 +222,7 @@ public partial class MainWindow : Window
             string? key = null;
             try
             {
+                RememberLastRemote(ev);
                 key = AppRule.Normalize(ev.AppPath);
                 if (!_pendingPopups.Add(key)) return;
                 AutoBlockToast.CloseAll();
@@ -258,6 +267,7 @@ public partial class MainWindow : Window
     {
         Dispatcher.BeginInvoke(() =>
         {
+            RememberLastRemote(ev);
             _notifications.Add(AppNotificationKind.SilentBlock, ev.AppPath, ev.DisplayName,
                 string.IsNullOrEmpty(ev.RemoteAddress) ? null : $"{ev.RemoteAddress}:{ev.RemotePort}");
         });
@@ -348,6 +358,8 @@ public partial class MainWindow : Window
     {
         _all = _svc.Store.All.ToList();
         var last = LastRemoteByApp();
+        foreach (var entry in _lastRemoteByApp)
+            last[entry.Key] = entry.Value;
         var q = string.IsNullOrWhiteSpace(filter) ? _all : _all.Where(r => r.DisplayName.Contains(filter!, StringComparison.OrdinalIgnoreCase) || r.AppPath.Contains(filter!, StringComparison.OrdinalIgnoreCase)).ToList();
         Func<AppRule, object> key = _sortBy == "AppPath" ? r => r.AppPath : r => r.DisplayName;
         var blocked = q.Where(r => r.Verdict == Verdict.Block);
@@ -357,6 +369,22 @@ public partial class MainWindow : Window
         BlockedGrid.ItemsSource = blocked.Select(r => ToRow(r, last)).ToList();
         AllowedGrid.ItemsSource = allowed.Select(r => ToRow(r, last)).ToList();
         RefreshLanguage();
+    }
+
+    private void RememberLastRemote(ConnectionEvent ev)
+    {
+        if (string.IsNullOrWhiteSpace(ev.RemoteAddress) ||
+            !System.Net.IPAddress.TryParse(ev.RemoteAddress, out _))
+            return;
+
+        try
+        {
+            _lastRemoteByApp[AppRule.Normalize(ev.AppPath)] = ev.RemoteAddress;
+        }
+        catch
+        {
+            _lastRemoteByApp[ev.AppPath] = ev.RemoteAddress;
+        }
     }
 
     private static AppRuleRow ToRow(AppRule rule, Dictionary<string, string> last)

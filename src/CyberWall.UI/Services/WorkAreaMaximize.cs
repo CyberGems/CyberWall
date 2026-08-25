@@ -23,6 +23,14 @@ public static class WorkAreaMaximize
     public static bool IsFilled(Window window) =>
         window != null && (bool)window.GetValue(IsFilledProperty);
 
+    public static Rect GetRestoreBounds(Window window)
+    {
+        var restore = (Rect)window.GetValue(RestoreProperty);
+        if (restore.Width > 0 && restore.Height > 0)
+            return restore;
+        return new Rect(window.Left, window.Top, window.Width, window.Height);
+    }
+
     public static void Attach(Window window)
     {
         window.LocationChanged += (_, _) => RememberNormalBounds(window);

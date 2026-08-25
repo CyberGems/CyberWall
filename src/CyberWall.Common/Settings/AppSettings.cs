@@ -31,6 +31,13 @@ public sealed class AppSettings
     public bool MinimizeToTrayOnClose { get; set; } = true;
     public bool PopupAutoBlockEnabled { get; set; } = true;
     public int PopupAutoBlockSeconds { get; set; } = 300;
+    public bool MainWindowBoundsSaved { get; set; } = false;
+    public string MainWindowMonitor { get; set; } = "";
+    public double MainWindowLeft { get; set; }
+    public double MainWindowTop { get; set; }
+    public double MainWindowWidth { get; set; }
+    public double MainWindowHeight { get; set; }
+    public bool MainWindowMaximized { get; set; }
 
     private static string Path => System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "CyberWall", "settings.json");
 
