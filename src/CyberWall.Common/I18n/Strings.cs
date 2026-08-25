@@ -9,7 +9,10 @@ public static class Strings
     private static readonly Dictionary<string, (string En, string Es)> Map = new()
     {
         ["AppTitle"] = ("CyberWall — Per-app firewall", "CyberWall — Firewall por programa"),
-        ["AppSubtitle"] = ("Application-layer firewall & real-time network filter", "Firewall por programa y filtro de red en tiempo real"),
+        ["AppSubtitle"] = ("Simple, robust protection with a real-time network filter", "Protección simple y robusta, con filtro de red en tiempo real"),
+        ["Country"] = ("Country", "País"),
+        ["LocalNetwork"] = ("Local network", "Red local"),
+        ["UnknownCountry"] = ("Unknown location", "Ubicación desconocida"),
         ["WfpEngineBadge"] = ("WFP ENGINE", "MOTOR WFP"),
         ["MasterOn"] = ("Firewall ON", "Firewall ACTIVADO"),
         ["MasterOff"] = ("Firewall OFF", "Firewall DESACTIVADO"),

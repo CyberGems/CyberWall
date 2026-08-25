@@ -1,9 +1,12 @@
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using CyberWall.Common;
+using CyberWall.Common.Geo;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Common.Notifications;
@@ -44,7 +47,16 @@ public partial class MainWindow : Window
         var isAdmin = new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent()).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
         if (!isAdmin) StatusText.Text += "  ⚠️ " + (Strings.Current == Lang.Es ? "Ejecuta como Admin para filtrado real" : "Run as Admin for kernel filtering");
         _tray = new TrayService(this, _svc);
-        Closed += (_, _) => { App.Settings.FirewallEnabled = _svc.IsMasterOn; App.Settings.FirewallMode = (int)_svc.Mode; App.Settings.Save(); _svc.Dispose(); };
+        GeoCountry.Updated += OnGeoUpdated;
+        GeoCountry.Warm();
+        Closed += (_, _) =>
+        {
+            GeoCountry.Updated -= OnGeoUpdated;
+            App.Settings.FirewallEnabled = _svc.IsMasterOn;
+            App.Settings.FirewallMode = (int)_svc.Mode;
+            App.Settings.Save();
+            _svc.Dispose();
+        };
         StateChanged += (_, _) => Dispatcher.InvokeAsync(UpdateMaximizeButtonIcon);
         UpdateMaximizeButtonIcon();
         Loaded += (_, _) =>
@@ -105,17 +117,20 @@ public partial class MainWindow : Window
         var actHdr = Strings.T("Action");
         var dirHdr = Strings.T("Direction");
         var stateHdr = Strings.T("State");
+        var countryHdr = Strings.T("Country");
 
         AllowColState.Header = stateHdr;
         AllowColProg.Header = progHdr;
         AllowColPath.Header = pathHdr;
         AllowColAction.Header = actHdr;
+        AllowColCountry.Header = countryHdr;
         AllowColDir.Header = dirHdr;
 
         BlockColState.Header = stateHdr;
         BlockColProg.Header = progHdr;
         BlockColPath.Header = pathHdr;
         BlockColAction.Header = actHdr;
+        BlockColCountry.Header = countryHdr;
         BlockColDir.Header = dirHdr;
 
         AllowedExpander.Header = $"{Strings.T("Allowed")} ({_all.Count(r => r.Verdict == Verdict.Allow)})";
@@ -327,18 +342,63 @@ public partial class MainWindow : Window
     private string _sortBy = "DisplayName";
     private bool _sortAsc = true;
 
+    private void OnGeoUpdated() => Dispatcher.BeginInvoke(() => RefreshRules(SearchBox.Text));
+
     private void RefreshRules(string? filter = null)
     {
         _all = _svc.Store.All.ToList();
+        var last = LastRemoteByApp();
         var q = string.IsNullOrWhiteSpace(filter) ? _all : _all.Where(r => r.DisplayName.Contains(filter!, StringComparison.OrdinalIgnoreCase) || r.AppPath.Contains(filter!, StringComparison.OrdinalIgnoreCase)).ToList();
         Func<AppRule, object> key = _sortBy == "AppPath" ? r => r.AppPath : r => r.DisplayName;
         var blocked = q.Where(r => r.Verdict == Verdict.Block);
         var allowed = q.Where(r => r.Verdict == Verdict.Allow);
         blocked = _sortAsc ? blocked.OrderBy(key) : blocked.OrderByDescending(key);
         allowed = _sortAsc ? allowed.OrderBy(key) : allowed.OrderByDescending(key);
-        BlockedGrid.ItemsSource = blocked.ToList();
-        AllowedGrid.ItemsSource = allowed.ToList();
+        BlockedGrid.ItemsSource = blocked.Select(r => ToRow(r, last)).ToList();
+        AllowedGrid.ItemsSource = allowed.Select(r => ToRow(r, last)).ToList();
         RefreshLanguage();
+    }
+
+    private static AppRuleRow ToRow(AppRule rule, Dictionary<string, string> last)
+    {
+        string? ip = null;
+        try
+        {
+            last.TryGetValue(AppRule.Normalize(rule.AppPath), out ip);
+            ip ??= last.GetValueOrDefault(rule.AppPath);
+        }
+        catch
+        {
+            last.TryGetValue(rule.AppPath, out ip);
+        }
+        return new AppRuleRow { Rule = rule, Geo = GeoCountry.Lookup(ip) };
+    }
+
+    private static Dictionary<string, string> LastRemoteByApp()
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            var path = BlockedLog.LogPath;
+            if (!File.Exists(path)) return map;
+            foreach (var line in File.ReadLines(path))
+            {
+                try
+                {
+                    var parts = line.Split('|', StringSplitOptions.TrimEntries);
+                    if (parts.Length < 5) continue;
+                    var ip = NetworkEndpoint.ExtractAddress(parts[4]);
+                    if (string.IsNullOrEmpty(ip)) continue;
+                    string key;
+                    try { key = AppRule.Normalize(parts[3]); }
+                    catch { key = parts[3]; }
+                    map[key] = ip;
+                }
+                catch { }
+            }
+        }
+        catch { }
+        return map;
     }
 
     private void UpdateStatus()
@@ -391,7 +451,9 @@ public partial class MainWindow : Window
 
     private void QuickRemove_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not FrameworkElement btn || btn.Tag is not AppRule r) return;
+        if (sender is not FrameworkElement btn) return;
+        var r = btn.Tag as AppRule ?? (btn.Tag as AppRuleRow)?.Rule;
+        if (r == null) return;
         var dlg = new ConfirmDialog(r.DisplayName, r.AppPath) { Owner = this };
         if (dlg.ShowDialog() == true)
         {
@@ -402,8 +464,10 @@ public partial class MainWindow : Window
 
     private void RuleToggle_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is System.Windows.Controls.CheckBox cb && cb.DataContext is AppRule r)
+        if (sender is System.Windows.Controls.CheckBox cb)
         {
+            var r = cb.DataContext as AppRule ?? (cb.DataContext as AppRuleRow)?.Rule;
+            if (r == null) return;
             var allow = cb.IsChecked == true;
             _svc.SetVerdict(r.AppPath, allow ? Verdict.Allow : Verdict.Block, true, null);
             RefreshRules(SearchBox.Text);

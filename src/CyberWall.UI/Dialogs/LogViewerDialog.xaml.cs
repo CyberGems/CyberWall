@@ -3,6 +3,8 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using CyberWall.Common;
+using CyberWall.Common.Geo;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Service.Engine;
@@ -22,6 +24,10 @@ public class LogItem
     public string RemoteEndpoint { get; set; } = "";
     public string ProcessId { get; set; } = "";
     public string RawLine { get; set; } = "";
+    public GeoResult Geo { get; set; } = GeoResult.Unknown;
+    public bool HasCountry => Geo.HasCountry;
+    public string CountryCode => Geo.HasCountry ? Geo.Iso2 ?? "" : "";
+    public string CountryLabel => CountryDisplay.Label(Geo);
 }
 
 public partial class LogViewerDialog : Window
@@ -33,6 +39,9 @@ public partial class LogViewerDialog : Window
         InitializeComponent();
         Icon = AppIconHelper.CreateShieldImageSource(64);
         RefreshLanguage();
+        GeoCountry.Updated += OnGeoUpdated;
+        Closed += (_, _) => GeoCountry.Updated -= OnGeoUpdated;
+        GeoCountry.Warm();
         LoadLogs();
     }
 
@@ -51,6 +60,7 @@ public partial class LogViewerDialog : Window
         ColAction.Header = Strings.T("Action");
         ColDir.Header = Strings.T("Direction");
         ColProg.Header = Strings.T("Program");
+        ColCountry.Header = Strings.T("Country");
         ColDest.Header = Strings.T("Destination");
     }
 
@@ -75,6 +85,7 @@ public partial class LogViewerDialog : Window
                         var app = parts[3];
                         var ep = parts[4];
                         var pid = parts.Length > 5 ? parts[5] : "";
+                        var geo = GeoCountry.Lookup(NetworkEndpoint.ExtractAddress(ep));
 
                         _allItems.Add(new LogItem
                         {
@@ -85,7 +96,8 @@ public partial class LogViewerDialog : Window
                             DisplayName = Path.GetFileName(app),
                             RemoteEndpoint = ep,
                             ProcessId = pid,
-                            RawLine = line
+                            RawLine = line,
+                            Geo = geo
                         });
                     }
                 }
@@ -107,6 +119,7 @@ public partial class LogViewerDialog : Window
                 i.AppPath.Contains(q, StringComparison.OrdinalIgnoreCase) ||
                 i.RemoteEndpoint.Contains(q, StringComparison.OrdinalIgnoreCase) ||
                 i.ProcessId.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                i.CountryLabel.Contains(q, StringComparison.OrdinalIgnoreCase) ||
                 i.Timestamp.Contains(q, StringComparison.OrdinalIgnoreCase) ||
                 i.Verdict.ToString().Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
 
@@ -114,6 +127,8 @@ public partial class LogViewerDialog : Window
         CountBadge.Text = Strings.T("EntriesCount", filtered.Count);
         EmptyMsg.Visibility = filtered.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
+
+    private void OnGeoUpdated() => Dispatcher.BeginInvoke(LoadLogs);
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {

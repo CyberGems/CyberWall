@@ -51,6 +51,26 @@ public static class NetworkEndpoint
         return hasHost ? $"{address} · {pid}" : pid;
     }
 
+    public static string? ExtractAddress(string? endpoint)
+    {
+        if (string.IsNullOrWhiteSpace(endpoint)) return null;
+        var value = endpoint.Trim();
+        if (value[0] == '[')
+        {
+            var close = value.IndexOf(']');
+            if (close > 1) return value[1..close];
+        }
+
+        var colon = value.LastIndexOf(':');
+        if (colon > 0)
+        {
+            var head = value[..colon];
+            if (IPAddress.TryParse(head, out _)) return head;
+        }
+
+        return IPAddress.TryParse(value, out _) ? value : null;
+    }
+
     public static async Task<string?> TryResolveHostAsync(string address, CancellationToken cancellationToken)
     {
         if (!IPAddress.TryParse(address, out var ip)) return null;

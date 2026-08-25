@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using CyberWall.Common;
+using CyberWall.Common.Geo;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Common.Settings;
@@ -67,6 +68,9 @@ public partial class ConnectionPopup : Window
 
         PathLbl.Text = ev.AppPath;
         ScopeLbl.Text = Strings.T("DecisionAppliesToProgram");
+        GeoCountry.Updated += OnGeoUpdated;
+        Closed += (_, _) => GeoCountry.Updated -= OnGeoUpdated;
+        GeoCountry.Warm();
 
         CloseBtn.ToolTip = Strings.T("CloseWithoutSaving");
         SettingsBtn.ToolTip = Strings.T("Settings");
@@ -217,6 +221,10 @@ public partial class ConnectionPopup : Window
     {
         DetailLbl.Text = NetworkEndpoint.FormatPrimary(ev.Protocol, ev.RemoteAddress, ev.RemotePort, host);
         MetaLbl.Text = NetworkEndpoint.FormatSecondary(ev.RemoteAddress, ev.ProcessId, host != null);
+        var geo = GeoCountry.Lookup(ev.RemoteAddress);
+        CountryMark.Apply(geo);
+        CountryLbl.Text = geo.Kind == GeoKind.Unknown ? "" : CountryDisplay.Label(geo);
+        CountryLbl.Visibility = string.IsNullOrEmpty(CountryLbl.Text) ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void ApplyButtonRoles(bool inbound)
@@ -234,12 +242,24 @@ public partial class ConnectionPopup : Window
         }
     }
 
+    private string? _resolvedHost;
+
+    private void OnGeoUpdated()
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (!IsLoaded) return;
+            ApplyEndpoint(Event, _resolvedHost);
+        });
+    }
+
     private async Task ResolveHostAsync(ConnectionEvent ev)
     {
         try
         {
             var host = await NetworkEndpoint.TryResolveHostAsync(ev.RemoteAddress, _cts.Token).ConfigureAwait(true);
             if (host == null || !IsLoaded) return;
+            _resolvedHost = host;
             ApplyEndpoint(ev, host);
         }
         catch (OperationCanceledException) { }
