@@ -392,6 +392,89 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <!-- Flat expander headers with a standalone chevron instead of a circular button -->
+        <Style x:Key="ModernExpander" TargetType="Expander">
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Expander">
+                        <DockPanel>
+                            <ToggleButton x:Name="HeaderSite"
+                                          DockPanel.Dock="Top"
+                                          Content="{TemplateBinding Header}"
+                                          ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                          IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Background="{DynamicResource HeaderBgBrush}"
+                                          Foreground="{TemplateBinding Foreground}"
+                                          BorderBrush="{DynamicResource BorderBrush}"
+                                          BorderThickness="0,0,0,1"
+                                          Padding="10,6"
+                                          HorizontalContentAlignment="Left"
+                                          FocusVisualStyle="{x:Null}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="HeaderBorder"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                Padding="{TemplateBinding Padding}"
+                                                SnapsToDevicePixels="True">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="18"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Path x:Name="Arrow"
+                                                      Data="M 2 2 L 9 9 L 16 2"
+                                                      Width="10" Height="7"
+                                                      Stretch="Uniform"
+                                                      Stroke="{DynamicResource AccentBrush}"
+                                                      StrokeThickness="2"
+                                                      StrokeStartLineCap="Round"
+                                                      StrokeEndLineCap="Round"
+                                                      HorizontalAlignment="Left"
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,8,0"/>
+                                                <ContentPresenter Grid.Column="1"
+                                                                  Content="{TemplateBinding Content}"
+                                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                                  ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="HeaderBorder" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="Arrow" Property="RenderTransform">
+                                                    <Setter.Value>
+                                                        <RotateTransform Angle="180" CenterX="5" CenterY="3.5"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter x:Name="ExpandSite"
+                                              Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                              Margin="{TemplateBinding Padding}"
+                                              Visibility="Collapsed"/>
+                        </DockPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="ExpandSite" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <!-- Custom Window Frame Container with Smooth Anti-Aliasing Buffer Margin -->
@@ -502,6 +585,7 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
@@ -537,13 +621,43 @@
                             </Button>
                         </Grid>
 
+                        <!-- Shared pinned column header for both rule groups -->
+                        <Border x:Name="RulesColumnHeader" Grid.Row="1" Height="32" Margin="0,0,0,4"
+                                Background="{DynamicResource HeaderBgBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="0,1,0,1" SnapsToDevicePixels="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="72"/>
+                                    <ColumnDefinition Width="1.4*"/>
+                                    <ColumnDefinition Width="2.2*"/>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="56"/>
+                                    <ColumnDefinition Width="100"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="StateHeaderText" Grid.Column="0" Text="Estado" Foreground="{DynamicResource TextBrush}"
+                                           FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ProgramHeaderText" Grid.Column="1" Text="Programa" Foreground="{DynamicResource TextBrush}"
+                                           FontWeight="Bold" FontSize="11" Margin="12,0" VerticalAlignment="Center"
+                                           Cursor="Hand" Tag="DisplayName" MouseLeftButtonUp="RulesColumnHeader_Click"/>
+                                <TextBlock x:Name="PathHeaderText" Grid.Column="2" Text="Ruta del ejecutable" Foreground="{DynamicResource TextBrush}"
+                                           FontWeight="Bold" FontSize="11" Margin="12,0" VerticalAlignment="Center"
+                                           Cursor="Hand" Tag="AppPath" MouseLeftButtonUp="RulesColumnHeader_Click"/>
+                                <TextBlock x:Name="ActionHeaderText" Grid.Column="3" Text="Acción" Foreground="{DynamicResource TextBrush}"
+                                           FontWeight="Bold" FontSize="11" Margin="6,0" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="CountryHeaderText" Grid.Column="4" Text="País" Foreground="{DynamicResource TextBrush}"
+                                           FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="DirectionHeaderText" Grid.Column="5" Text="Dirección" Foreground="{DynamicResource TextBrush}"
+                                           FontWeight="Bold" FontSize="11" Margin="6,0" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
                         <!-- Rules List with Smooth Wheel Scrolling & Native 100% Aligned Column Headers -->
-                        <ScrollViewer x:Name="RulesScrollViewer" Grid.Row="1" Margin="0,4,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <ScrollViewer x:Name="RulesScrollViewer" Grid.Row="2" Margin="0,0,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                             <StackPanel>
                                 <!-- Allowed Section -->
                                 <Border CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,10">
-                                    <Expander x:Name="AllowedExpander" Header="Permitidas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0,6" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                        <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0,4,0,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" SelectionChanged="RulesGrid_SelectionChanged">
+                                    <Expander x:Name="AllowedExpander" Style="{StaticResource ModernExpander}" Header="Permitidas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0,6" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                        <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0,4,0,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" SelectionChanged="RulesGrid_SelectionChanged">
                                             <DataGrid.Columns>
                                                 <!-- Switch Column -->
                                                 <DataGridTemplateColumn x:Name="AllowColState" Header="Estado" Width="72" CanUserSort="False" HeaderStyle="{StaticResource StateColumnHeader}">
@@ -631,8 +745,8 @@
 
                             <!-- Blocked Section -->
                             <Border CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-                                <Expander x:Name="BlockedExpander" Header="Bloqueadas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0,6" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                    <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0,4,0,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" SelectionChanged="RulesGrid_SelectionChanged">
+                                <Expander x:Name="BlockedExpander" Style="{StaticResource ModernExpander}" Header="Bloqueadas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0,6" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0,4,0,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" SelectionChanged="RulesGrid_SelectionChanged">
                                         <DataGrid.Columns>
                                             <!-- Switch Column -->
                                             <DataGridTemplateColumn x:Name="BlockColState" Header="Estado" Width="72" CanUserSort="False" HeaderStyle="{StaticResource StateColumnHeader}">

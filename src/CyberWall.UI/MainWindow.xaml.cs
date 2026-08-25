@@ -127,6 +127,13 @@ public partial class MainWindow : Window
         var stateHdr = Strings.T("State");
         var countryHdr = Strings.T("Country");
 
+        StateHeaderText.Text = stateHdr;
+        ProgramHeaderText.Text = progHdr;
+        PathHeaderText.Text = pathHdr;
+        ActionHeaderText.Text = actHdr;
+        CountryHeaderText.Text = countryHdr;
+        DirectionHeaderText.Text = dirHdr;
+
         AllowColState.Header = stateHdr;
         AllowColProg.Header = progHdr;
         AllowColPath.Header = pathHdr;
@@ -475,6 +482,23 @@ public partial class MainWindow : Window
     {
         SearchPlaceholder.Visibility = string.IsNullOrEmpty(SearchBox.Text) ? Visibility.Visible : Visibility.Collapsed;
         RefreshRules(SearchBox.Text);
+    }
+
+    private void RulesColumnHeader_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement header || header.Tag is not string sortBy)
+            return;
+
+        if (_sortBy == sortBy)
+            _sortAsc = !_sortAsc;
+        else
+        {
+            _sortBy = sortBy;
+            _sortAsc = true;
+        }
+
+        RefreshRules(SearchBox.Text);
+        e.Handled = true;
     }
 
     private void QuickRemove_Click(object sender, RoutedEventArgs e)
