@@ -38,10 +38,13 @@
         </Style>
     </Window.Resources>
 
-    <Border Margin="8" CornerRadius="14" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1" Padding="0" SnapsToDevicePixels="True">
-        <Border.Effect>
-            <DropShadowEffect Color="Black" Opacity="0.5" BlurRadius="16" ShadowDepth="4"/>
-        </Border.Effect>
+    <Grid>
+        <Border Margin="8" CornerRadius="14" Background="{DynamicResource CardBrush}" IsHitTestVisible="False">
+            <Border.Effect>
+                <DropShadowEffect Color="Black" Opacity="0.5" BlurRadius="16" ShadowDepth="4"/>
+            </Border.Effect>
+        </Border>
+        <Border Margin="8" CornerRadius="14" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1" Padding="0" SnapsToDevicePixels="True" UseLayoutRounding="True">
         <Grid Margin="14,12">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -75,5 +78,6 @@
 
             <Button x:Name="UndoBtn" Grid.Row="2" Style="{StaticResource UndoButton}" Content="Permitir este programa" HorizontalAlignment="Right" Margin="0,10,0,0" Click="Undo_Click"/>
         </Grid>
-    </Border>
+        </Border>
+    </Grid>
 </Window>

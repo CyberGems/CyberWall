@@ -1,10 +1,12 @@
 using System.Windows;
 using System.Windows.Automation;
+using System.Windows.Media;
 using System.Windows.Threading;
 using CyberWall.Common;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.UI.Services;
+using Color = System.Windows.Media.Color;
 
 namespace CyberWall.UI.Popup;
 
@@ -38,19 +40,27 @@ public partial class FirstActivityToast : Window
 
         if (ev.Direction == Direction.Inbound)
         {
-            DirectionPill.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(45, 168, 85, 247));
-            DirectionPill.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(90, 168, 85, 247));
+            var fg = new SolidColorBrush(Color.FromRgb(192, 132, 252));
+            DirectionPill.Background = new SolidColorBrush(Color.FromArgb(45, 168, 85, 247));
+            DirectionPill.BorderBrush = new SolidColorBrush(Color.FromArgb(90, 168, 85, 247));
             DirectionPill.BorderThickness = new Thickness(1);
-            DirectionPillText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(192, 132, 252));
-            DirectionPillText.Text = "↓ " + Strings.T("Inbound");
+            DirectionPillText.Foreground = fg;
+            DirectionPillText.Text = Strings.T("Inbound");
+            DirectionArrow.Stroke = fg;
+            DirectionArrow.Fill = System.Windows.Media.Brushes.Transparent;
+            DirectionArrow.Data = Geometry.Parse("M 5 1.5 L 5 11 M 5 11 L 1.6 6.7 M 5 11 L 8.4 6.7");
         }
         else
         {
-            DirectionPill.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(40, 0, 229, 255));
-            DirectionPill.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(80, 0, 229, 255));
+            var fg = new SolidColorBrush(Color.FromRgb(0, 229, 255));
+            DirectionPill.Background = new SolidColorBrush(Color.FromArgb(40, 0, 229, 255));
+            DirectionPill.BorderBrush = new SolidColorBrush(Color.FromArgb(80, 0, 229, 255));
             DirectionPill.BorderThickness = new Thickness(1);
-            DirectionPillText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 229, 255));
-            DirectionPillText.Text = "↑ " + Strings.T("Outbound");
+            DirectionPillText.Foreground = fg;
+            DirectionPillText.Text = Strings.T("Outbound");
+            DirectionArrow.Stroke = fg;
+            DirectionArrow.Fill = System.Windows.Media.Brushes.Transparent;
+            DirectionArrow.Data = Geometry.Parse("M 5 11 L 5 1.5 M 5 1.5 L 1.6 5.8 M 5 1.5 L 8.4 5.8");
         }
 
         EndpointLbl.Text = NetworkEndpoint.FormatPrimary(ev.Protocol, ev.RemoteAddress, ev.RemotePort);

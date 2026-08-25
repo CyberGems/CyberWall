@@ -69,16 +69,21 @@ public partial class ConnectionPopup : Window
         ScopeLbl.Text = Strings.T("DecisionAppliesToProgram");
 
         CloseBtn.ToolTip = Strings.T("CloseWithoutSaving");
+        SettingsBtn.ToolTip = Strings.T("Settings");
         SearchBtn.ToolTip = Strings.T("SearchProcessWeb");
         CopyPathBtn.ToolTip = Strings.T("CopyFullPath");
         OpenFolderBtn.ToolTip = Strings.T("OpenExeFolder");
         AutomationProperties.SetName(CloseBtn, Strings.T("CloseWithoutSaving"));
+        AutomationProperties.SetName(SettingsBtn, Strings.T("Settings"));
         AutomationProperties.SetName(SearchBtn, Strings.T("SearchProcessWeb"));
         AutomationProperties.SetName(CopyPathBtn, Strings.T("CopyFullPath"));
         AutomationProperties.SetName(OpenFolderBtn, Strings.T("OpenExeFolder"));
         AutomationProperties.SetName(BlockBtn, Strings.T("Block"));
         AutomationProperties.SetName(AllowOnceBtn, Strings.T("AllowOnce"));
         AutomationProperties.SetName(AllowBtn, Strings.T("AllowAlways"));
+
+        if (IsPreview)
+            SettingsBtn.Visibility = Visibility.Collapsed;
 
         _countdownTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _countdownTimer.Tick += (_, _) => TickCountdown();
@@ -183,20 +188,28 @@ public partial class ConnectionPopup : Window
     {
         if (ev.Direction == Direction.Inbound)
         {
+            var fg = new SolidColorBrush(Color.FromRgb(192, 132, 252));
             DirectionPill.Background = new SolidColorBrush(Color.FromArgb(45, 168, 85, 247));
             DirectionPill.BorderBrush = new SolidColorBrush(Color.FromArgb(90, 168, 85, 247));
             DirectionPill.BorderThickness = new Thickness(1);
-            DirectionPillText.Foreground = new SolidColorBrush(Color.FromRgb(192, 132, 252));
-            DirectionPillText.Text = "↓ " + Strings.T("Inbound");
+            DirectionPillText.Foreground = fg;
+            DirectionPillText.Text = Strings.T("Inbound");
+            DirectionArrow.Stroke = fg;
+            DirectionArrow.Fill = System.Windows.Media.Brushes.Transparent;
+            DirectionArrow.Data = Geometry.Parse("M 5 1.5 L 5 11 M 5 11 L 1.6 6.7 M 5 11 L 8.4 6.7");
             InboundWarn.Visibility = Visibility.Visible;
         }
         else
         {
+            var fg = new SolidColorBrush(Color.FromRgb(0, 229, 255));
             DirectionPill.Background = new SolidColorBrush(Color.FromArgb(40, 0, 229, 255));
             DirectionPill.BorderBrush = new SolidColorBrush(Color.FromArgb(80, 0, 229, 255));
             DirectionPill.BorderThickness = new Thickness(1);
-            DirectionPillText.Foreground = new SolidColorBrush(Color.FromRgb(0, 229, 255));
-            DirectionPillText.Text = "↑ " + Strings.T("Outbound");
+            DirectionPillText.Foreground = fg;
+            DirectionPillText.Text = Strings.T("Outbound");
+            DirectionArrow.Stroke = fg;
+            DirectionArrow.Fill = System.Windows.Media.Brushes.Transparent;
+            DirectionArrow.Data = Geometry.Parse("M 5 11 L 5 1.5 M 5 1.5 L 1.6 5.8 M 5 1.5 L 8.4 5.8");
         }
     }
 
@@ -300,6 +313,16 @@ public partial class ConnectionPopup : Window
     private void AllowOnce_Click(object s, RoutedEventArgs e) => Complete(PopupDecision.AllowOnce);
     private void Block_Click(object s, RoutedEventArgs e) => Complete(PopupDecision.BlockAlways);
     private void Close_Click(object s, RoutedEventArgs e) => Dismiss();
+
+    private void Settings_Click(object s, RoutedEventArgs e)
+    {
+        if (System.Windows.Application.Current.MainWindow is not MainWindow mw)
+            return;
+        var wasTop = Topmost;
+        Topmost = false;
+        try { mw.OpenSettings(); }
+        finally { Topmost = wasTop; }
+    }
 
     private void Dismiss() => Complete(PopupDecision.Dismiss);
 

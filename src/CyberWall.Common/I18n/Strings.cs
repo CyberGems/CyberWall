@@ -9,6 +9,8 @@ public static class Strings
     private static readonly Dictionary<string, (string En, string Es)> Map = new()
     {
         ["AppTitle"] = ("CyberWall — Per-app firewall", "CyberWall — Firewall por programa"),
+        ["AppSubtitle"] = ("Application-layer firewall & real-time network filter", "Firewall por programa y filtro de red en tiempo real"),
+        ["WfpEngineBadge"] = ("WFP ENGINE", "MOTOR WFP"),
         ["MasterOn"] = ("Firewall ON", "Firewall ACTIVADO"),
         ["MasterOff"] = ("Firewall OFF", "Firewall DESACTIVADO"),
         ["ProtectionActive"] = ("PROTECTION ACTIVE", "PROTECCIÓN ACTIVA"),
@@ -75,6 +77,7 @@ public static class Strings
         ["Outbound"] = ("Outbound", "Salida"),
         ["Both"] = ("Both", "Ambas"),
         ["Remember"] = ("Remember my choice", "Recordar mi elección"),
+        ["StatusFooter"] = ("Windows 10/11 • WFP Kernel Engine • Admin Privileges Active • Persistent Rules", "Windows 10/11 • Motor WFP del kernel • Privilegios de administrador activos • Reglas persistentes"),
         ["Settings"] = ("Settings", "Configuración"),
         ["Rules"] = ("Rules", "Reglas"),
         ["Search"] = ("Search program or path...", "Buscar programa o ruta..."),
@@ -85,6 +88,7 @@ public static class Strings
         ["Allowed"] = ("Allowed", "Permitidas"),
         ["Blocked"] = ("Blocked", "Bloqueadas"),
         ["Program"] = ("Program", "Programa"),
+        ["State"] = ("State", "Estado"),
         ["Path"] = ("Path", "Ruta"),
         ["Verdict"] = ("Action", "Acción"),
         ["Action"] = ("Action", "Acción"),

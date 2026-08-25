@@ -174,8 +174,24 @@ public static class PopupWindowHelper
         if (top < wa.Top) top = wa.Top;
         if (top + height > wa.Bottom) top = wa.Bottom - height;
 
-        window.Left = left;
-        window.Top = top;
+        window.Left = SnapToDevicePixels(window, left, horizontal: true);
+        window.Top = SnapToDevicePixels(window, top, horizontal: false);
+    }
+
+    private static double SnapToDevicePixels(Window window, double dip, bool horizontal)
+    {
+        try
+        {
+            var source = PresentationSource.FromVisual(window);
+            var m = source?.CompositionTarget?.TransformToDevice ?? System.Windows.Media.Matrix.Identity;
+            double scale = horizontal ? m.M11 : m.M22;
+            if (scale <= 0) return dip;
+            return Math.Round(dip * scale) / scale;
+        }
+        catch
+        {
+            return dip;
+        }
     }
 
     public static bool HasOpenPermissionPopup()

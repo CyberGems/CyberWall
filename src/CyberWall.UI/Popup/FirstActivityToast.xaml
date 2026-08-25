@@ -12,10 +12,13 @@
     </Window.Resources>
 
     <!-- Outer buffer for clean anti-aliased corners -->
-    <Border Margin="8" CornerRadius="14" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1" Padding="0" SnapsToDevicePixels="True">
-        <Border.Effect>
-            <DropShadowEffect Color="Black" Opacity="0.5" BlurRadius="16" ShadowDepth="4"/>
-        </Border.Effect>
+    <Grid>
+        <Border Margin="8" CornerRadius="14" Background="{DynamicResource CardBrush}" IsHitTestVisible="False">
+            <Border.Effect>
+                <DropShadowEffect Color="Black" Opacity="0.5" BlurRadius="16" ShadowDepth="4"/>
+            </Border.Effect>
+        </Border>
+        <Border Margin="8" CornerRadius="14" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1" Padding="0" SnapsToDevicePixels="True" UseLayoutRounding="True">
         <Grid Margin="14,12">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -62,7 +65,10 @@
                         <TextBlock x:Name="DescLbl" Text="Primera conexión iniciada por el programa." Foreground="{DynamicResource TextBrush}" FontSize="11.5" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
                         <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
                             <Border x:Name="DirectionPill" CornerRadius="4" Padding="5,1" Margin="0,0,6,0" VerticalAlignment="Center">
-                                <TextBlock x:Name="DirectionPillText" FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Path x:Name="DirectionArrow" Width="10" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" Fill="Transparent" Stroke="{DynamicResource AccentBrush}" StrokeThickness="2.1" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Data="M 5 11 L 5 1.5 M 5 1.5 L 1.6 5.8 M 5 1.5 L 8.4 5.8"/>
+                                    <TextBlock x:Name="DirectionPillText" FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
                             </Border>
                             <TextBlock x:Name="EndpointLbl" Text="TCP • 142.250.190.46:443" Foreground="{DynamicResource SubTextBrush}" FontSize="10.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
@@ -70,5 +76,6 @@
                 </Grid>
             </Border>
         </Grid>
-    </Border>
+        </Border>
+    </Grid>
 </Window>

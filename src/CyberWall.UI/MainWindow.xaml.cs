@@ -89,8 +89,12 @@ public partial class MainWindow : Window
 
     public void RefreshLanguage()
     {
+        Title = Strings.T("AppTitle");
         TitleText.Text = "CyberWall";
+        WfpBadgeText.Text = Strings.T("WfpEngineBadge");
+        SubtitleText.Text = Strings.T("AppSubtitle");
         SettingsBtnText.Text = Strings.T("Settings");
+        FooterStatusText.Text = Strings.T("StatusFooter");
         NotifBtn.ToolTip = Strings.T("Notifications");
         ModeLbl.Text = Strings.T("Mode");
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
@@ -100,7 +104,7 @@ public partial class MainWindow : Window
         var pathHdr = Strings.T("Path") + (_sortBy == "AppPath" ? (_sortAsc ? " ▾" : " ▴") : "");
         var actHdr = Strings.T("Action");
         var dirHdr = Strings.T("Direction");
-        var stateHdr = Strings.Current == Lang.Es ? "Estado" : "State";
+        var stateHdr = Strings.T("State");
 
         AllowColState.Header = stateHdr;
         AllowColProg.Header = progHdr;
@@ -294,6 +298,8 @@ public partial class MainWindow : Window
                 OpenUpdateFromNotification)
             { Owner = this };
             dlg.ShowDialog();
+            if (dlg.OpenSettingsAfterClose)
+                OpenSettings();
         }
         finally
         {
@@ -404,12 +410,26 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Settings_Click(object sender, RoutedEventArgs e) { var w = new SettingsWindow(App.Settings) { Owner = this }; w.ShowDialog(); RefreshLanguage(); UpdateStatus(); }
+    public void OpenSettings()
+    {
+        var w = new SettingsWindow(App.Settings) { Owner = this };
+        w.ShowDialog();
+        RefreshLanguage();
+        UpdateStatus();
+    }
+
+    private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
     
     private void OpenLog_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new LogViewerDialog { Owner = this };
         dlg.ShowDialog();
+    }
+
+    private void RulesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.DataGrid grid)
+            grid.UnselectAll();
     }
 
     private void DataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)

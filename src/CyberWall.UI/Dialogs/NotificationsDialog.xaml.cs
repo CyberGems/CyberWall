@@ -15,6 +15,7 @@ public partial class NotificationsDialog : Window
     private readonly Action _onEnableProtection;
     private readonly Action _onDownloadUpdate;
     private bool _busy;
+    public bool OpenSettingsAfterClose { get; private set; }
 
     public NotificationsDialog(NotificationStore store, Func<string, Task> onAllow, Action onEnableProtection, Action onDownloadUpdate)
     {
@@ -47,6 +48,7 @@ public partial class NotificationsDialog : Window
         ClearBtnText.Text = Strings.T("ClearNotifications");
         CloseBtn.Content = Strings.T("Close");
         EmptyMsg.Text = Strings.T("NotificationsEmpty");
+        SettingsTitleBtn.ToolTip = Strings.T("Settings");
     }
 
     private void BindList()
@@ -146,6 +148,12 @@ public partial class NotificationsDialog : Window
         _openedUnread.Clear();
         _store.Clear();
         BindList();
+    }
+
+    private void Settings_Click(object sender, RoutedEventArgs e)
+    {
+        OpenSettingsAfterClose = true;
+        Close();
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
