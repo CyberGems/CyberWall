@@ -104,6 +104,8 @@ public static class Strings
         ["TrafficLive"] = ("LIVE TRAFFIC", "TRÁFICO EN VIVO"),
         ["TrafficProtected"] = ("Traffic protected", "Tráfico protegido"),
         ["TrafficUnfiltered"] = ("Traffic unfiltered", "Tráfico sin filtrar"),
+        ["TrafficOffline"] = ("OFFLINE", "SIN INTERNET"),
+        ["TrafficChecking"] = ("Checking connection", "Comprobando conexión"),
         ["ThemeCyberWall"] = ("CyberWall — Cyber Navy & Neon Cyan", "CyberWall — Azul Cyber y Cyan Neón"),
         ["ThemeDark"] = ("Dark — Neutral Charcoal & Indigo", "Dark — Carbón Neutro e Índigo"),
         ["ThemeLight"] = ("Light — Slate & Royal Blue", "Light — Pizarra y Azul Real"),

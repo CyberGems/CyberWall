@@ -1,3 +1,5 @@
+using System.Net.Http;
+using System.Net.NetworkInformation;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -19,9 +21,24 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
     }
 
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(60) };
+    private readonly DispatcherTimer _connectivityTimer = new() { Interval = TimeSpan.FromSeconds(30) };
     private readonly List<Packet> _packets = new();
+    private CancellationTokenSource? _connectivityCts;
     private DateTime _lastTickUtc;
     private bool _isActive;
+    private ConnectivityState _connectivity = ConnectivityState.Unknown;
+
+    private static readonly HttpClient ConnectivityClient = new()
+    {
+        Timeout = TimeSpan.FromSeconds(3)
+    };
+
+    private enum ConnectivityState
+    {
+        Unknown,
+        Online,
+        Offline
+    }
 
     public NetworkTrafficIndicator()
     {
@@ -29,14 +46,24 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         CreatePackets();
         RefreshLanguage();
         _timer.Tick += OnTick;
+        _connectivityTimer.Tick += (_, _) => _ = CheckConnectivityAsync();
         Loaded += (_, _) =>
         {
             _lastTickUtc = DateTime.UtcNow;
             _timer.Start();
+            _connectivityTimer.Start();
+            _ = CheckConnectivityAsync();
             RefreshPackets();
         };
-        Unloaded += (_, _) => _timer.Stop();
+        Unloaded += (_, _) =>
+        {
+            _timer.Stop();
+            _connectivityTimer.Stop();
+            _connectivityCts?.Cancel();
+            _connectivityCts = null;
+        };
         SizeChanged += (_, _) => RefreshPackets();
+        NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
     }
 
     public void SetActive(bool active)
@@ -48,9 +75,15 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
 
     public void RefreshLanguage()
     {
-        LiveText.Text = Strings.T("TrafficLive");
-        StateText.Text = Strings.T(_isActive ? "TrafficProtected" : "TrafficUnfiltered");
-        ToolTip = Strings.T(_isActive ? "TrafficProtected" : "TrafficUnfiltered");
+        LiveText.Text = Strings.T(_connectivity == ConnectivityState.Offline ? "TrafficOffline" : "TrafficLive");
+        var stateKey = _connectivity switch
+        {
+            ConnectivityState.Offline => "TrafficOffline",
+            ConnectivityState.Unknown => "TrafficChecking",
+            _ => _isActive ? "TrafficProtected" : "TrafficUnfiltered"
+        };
+        StateText.Text = Strings.T(stateKey);
+        ToolTip = Strings.T(stateKey);
     }
 
     private void CreatePackets()
@@ -90,15 +123,100 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
 
         foreach (var packet in _packets)
         {
-            packet.Position += packet.Speed * elapsed * (_isActive ? 1 : 0.55);
+            var flowFactor = _connectivity switch
+            {
+                ConnectivityState.Offline => 0,
+                ConnectivityState.Unknown => 0.7,
+                _ => _isActive ? 1 : 0.55
+            };
+            packet.Position += packet.Speed * elapsed * flowFactor;
             if (packet.Position > width + 8)
                 packet.Position = -8 - packet.Speed * 0.15;
 
             Canvas.SetLeft(packet.Element, packet.Position);
             Canvas.SetTop(packet.Element, packet.Top);
             packet.Element.Opacity = (0.45 + (Math.Sin(now.TimeOfDay.TotalSeconds * 3 + packet.Phase) + 1) * 0.2)
-                * (_isActive ? 1 : 0.7);
+                * (_connectivity == ConnectivityState.Offline ? 0.25 : _isActive ? 1 : 0.7);
         }
+    }
+
+    private void OnNetworkAvailabilityChanged(object? sender, NetworkAvailabilityEventArgs e)
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (!IsLoaded) return;
+            if (!e.IsAvailable)
+                SetConnectivity(ConnectivityState.Offline);
+            else
+                _ = CheckConnectivityAsync();
+        });
+    }
+
+    private async Task CheckConnectivityAsync()
+    {
+        if (!IsLoaded || Interlocked.CompareExchange(ref _connectivityCheck, 1, 0) != 0)
+            return;
+
+        _connectivityCts?.Cancel();
+        _connectivityCts?.Dispose();
+        _connectivityCts = new CancellationTokenSource();
+        var token = _connectivityCts.Token;
+        try
+        {
+            if (!NetworkInterface.GetIsNetworkAvailable() || !HasDefaultRoute())
+            {
+                SetConnectivity(ConnectivityState.Offline);
+                return;
+            }
+
+            using var response = await ConnectivityClient.GetAsync(
+                "http://www.msftconnecttest.com/connecttest.txt",
+                HttpCompletionOption.ResponseHeadersRead,
+                token).ConfigureAwait(true);
+            SetConnectivity(response.IsSuccessStatusCode
+                ? ConnectivityState.Online
+                : ConnectivityState.Offline);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch
+        {
+            SetConnectivity(ConnectivityState.Offline);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _connectivityCheck, 0);
+        }
+    }
+
+    private static bool HasDefaultRoute()
+    {
+        try
+        {
+            return NetworkInterface.GetAllNetworkInterfaces().Any(nic =>
+                nic.OperationalStatus == OperationalStatus.Up &&
+                nic.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
+                nic.GetIPProperties().GatewayAddresses.Count > 0);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private int _connectivityCheck;
+
+    private void SetConnectivity(ConnectivityState state)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(() => SetConnectivity(state));
+            return;
+        }
+
+        if (_connectivity == state) return;
+        _connectivity = state;
+        RefreshAppearance();
+        RefreshLanguage();
     }
 
     private void RefreshPackets()
@@ -112,7 +230,9 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
 
     private void RefreshAppearance()
     {
-        var key = _isActive ? "AccentBrush" : "BadgeWarnFgBrush";
+        var key = _connectivity == ConnectivityState.Offline
+            ? "BadgeBlockFgBrush"
+            : _isActive ? "AccentBrush" : "BadgeWarnFgBrush";
         if (FindResource(key) is not SolidColorBrush baseBrush)
             return;
 
