@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License" />
   <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D4.svg?logo=windows&logoColor=white" alt="Platform" />
   <img src="https://img.shields.io/badge/.NET-10.0-512BD4.svg?logo=dotnet&logoColor=white" alt=".NET" />
-  <img src="https://img.shields.io/badge/version-1.1.1-00F0FF.svg" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.2.0-00F0FF.svg" alt="Version" />
 </p>
 
 A modern, ultra-fast, and lightweight application-layer firewall for Windows, powered by the **Windows Filtering Platform (WFP)**. Built on a strict **default-deny (whitelist)** architecture, CyberWall intercepts unknown network connections and displays interactive real-time prompts per **application executable** — turning your PC into an impenetrable network fortress.
@@ -97,7 +97,88 @@ dotnet build
 1. **Kernel Interception**: When an application without an existing rule attempts to make an outbound or inbound connection, Windows Filtering Platform safely holds the connection at the kernel level.
 2. **Instant Event Capture**: `WfpBlockWatcher` receives the drop event in real-time, resolves the NT kernel device path (e.g. `\device\harddiskvolume3\...`) to a standard Win32 file path (`C:\...`), and debounces duplicate triggers.
 3. **Interactive Prompt**: A non-intrusive frameless popup appears in your chosen monitor corner showing the application icon, name, protocol, destination endpoint, and graphic direction badge (`↑ Outbound` / `↓ Inbound`).
-4. **Rule Enforcement**: Clicking **Allow** or **Block** (with *Remember my choice* checked) writes the rule to `rules.json` and updates the Windows Firewall engine. The waiting application connection is immediately authorized and resumes seamlessly.
+4. **Rule Enforcement**: CyberWall applies the selected decision to the pending process. **Allow always** and **Block** save a persistent rule to `rules.json` and update the Windows Firewall engine, while **Allow once** keeps the decision for the current session only.
+
+---
+
+## ❓ Frequently Asked Questions
+
+### What is CyberWall?
+
+CyberWall is a per-application firewall for Windows. It uses the Windows Filtering Platform (WFP), the built-in Windows Firewall engine, and Windows security audit events to monitor and enforce network decisions for individual executable files.
+
+### Does CyberWall replace Windows Firewall?
+
+No. CyberWall uses Windows Filtering Platform and configures rules through the Windows Firewall engine; it does not install a third-party kernel driver or replace the Windows networking stack. While protection is enabled, it changes the default firewall policy and adds its own per-program or packaged-app rules. Other firewall rules can still affect the final result.
+
+### What does “default-deny” mean?
+
+When CyberWall is enabled, incoming and outgoing traffic from applications without a matching rule is blocked. In **Ask to connect** mode, CyberWall shows a prompt so you can decide. In **Block all** mode, unknown applications are blocked silently and recorded in the notification center.
+
+### What is the difference between the two modes?
+
+- **Ask to connect**: a new, unknown application triggers a prompt with **Block**, **Allow once**, and **Allow always** actions.
+- **Block all**: unknown applications are blocked without a permission prompt. Existing allowed rules continue to work.
+
+### What does “Allow once” do?
+
+It allows the application for the current session only. The temporary decision expires after approximately 10 minutes or when the process identity changes. Use **Allow always** to save a persistent application rule.
+
+### Are decisions made per IP address or port?
+
+No. CyberWall currently makes decisions at the application level. A saved allow or block decision applies to the executable, including both inbound and outbound traffic. The prompt still shows the destination address, port, protocol, direction, and approximate country so you can make an informed decision.
+
+### Does CyberWall support Microsoft Store applications?
+
+Yes. Packaged applications are identified by their package identity and receive package-aware Windows Firewall rules. Companion executables inside a package are handled together when CyberWall can resolve them.
+
+### Do rules survive a restart?
+
+Yes. CyberWall stores its application rules in:
+
+```text
+%ProgramData%\CyberWall\rules.json
+```
+
+The corresponding Windows Firewall rules are also persistent. Removing an application from CyberWall removes its stored rule and the associated CyberWall firewall rules. If an application connects again afterwards, it can appear as a new request.
+
+### Does protection continue when CyberWall is closed?
+
+If CyberWall is minimized to the system tray, it remains running and continues filtering. If the desktop application is fully exited, its active filtering session is stopped; persistent program rules may remain in Windows Firewall, but unknown applications are not covered by CyberWall's default-deny session until protection is enabled again. For background operation, use the included CyberWall Windows Service where appropriate.
+
+### Why do I need Administrator privileges?
+
+Administrator privileges are required to configure Windows Firewall rules, access the Security event log used for real-time WFP drop events, and apply kernel-level filtering. Without elevation, the application can run for UI and development purposes, but the status will show **Simulated** and real enforcement is not guaranteed.
+
+### Does CyberWall inspect the contents of network traffic?
+
+No. CyberWall decides based on the application identity and connection metadata such as direction, protocol, remote address, port, and process ID. It is not an antivirus, malware scanner, intrusion-prevention system, or TLS/deep-packet inspection tool.
+
+### Where can I find the connection log?
+
+The log is stored at:
+
+```text
+%ProgramData%\CyberWall\blocked.log
+```
+
+It records the time, action, direction, executable path, remote endpoint, and process ID. The in-app **Connection Log** can filter entries by application, IP, port, PID, country, or date, and can open, copy, refresh, or clear the file.
+
+### What happens if I do not answer a prompt?
+
+When **Auto-block unanswered prompts** is enabled, the application is blocked automatically after the configured timeout. The timeout can be changed in Settings from 30 seconds to 30 minutes. If the option is disabled, closing the prompt still applies a temporary block for that session.
+
+### Can CyberWall run alongside Windows Defender Firewall?
+
+Yes. CyberWall is designed to work through the built-in Windows Firewall rather than alongside a separate replacement firewall. Avoid overlapping products that independently rewrite the same firewall policies, because their rules and default actions can conflict.
+
+### How can I recover network access?
+
+Turn the **Firewall** switch off in the main window, or remove the application's block rule and allow it again. Disabling CyberWall stops its active monitoring and restores the Windows profile baseline used by the application—currently **block inbound / allow outbound**—while persistent per-application rules are not automatically deleted.
+
+### Why did an allowed application still fail to connect?
+
+Check that you allowed the correct executable, including any helper process it uses, and confirm that another Windows Firewall rule or security product is not blocking it. Some applications use packaged identities or launch helper binaries; CyberWall handles common packaged apps and Git companion binaries, but not every third-party launcher or helper automatically.
 
 ---
 
