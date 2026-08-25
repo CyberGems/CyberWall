@@ -20,3 +20,12 @@ public enum Direction
     Outbound = 1,
     Both = 2
 }
+
+public enum PopupDecision
+{
+    None = 0,
+    AllowAlways,
+    AllowOnce,
+    BlockAlways,
+    Dismiss
+}

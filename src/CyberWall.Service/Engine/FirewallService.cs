@@ -15,6 +15,9 @@ public sealed class FirewallService : IDisposable
     public event Action<ConnectionEvent>? OnAskConnection;
     private readonly HashSet<string> _pendingHolds = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _pendingLock = new();
+    private readonly Dictionary<string, (Verdict Verdict, int Pid, DateTime ExpiresUtc)> _sessions = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _sessionLock = new();
+    private static readonly TimeSpan SessionTtl = TimeSpan.FromMinutes(10);
 
     public FirewallService()
     {
@@ -81,17 +84,52 @@ public sealed class FirewallService : IDisposable
         if (!IsEnabled) return Verdict.Allow;
         var v = Wfp.Classify(ev.AppPath, ev.Direction, Store);
         if (v != Verdict.Ask) return v;
+        if (TryGetSession(ev.AppPath, ev.ProcessId, out var session)) return session;
         return Mode == FirewallMode.Ask ? Verdict.Ask : Verdict.Block;
+    }
+
+    public bool TryGetSession(string appPath, int pid, out Verdict verdict)
+    {
+        var key = SafeKey(appPath);
+        lock (_sessionLock)
+        {
+            if (!_sessions.TryGetValue(key, out var s))
+            {
+                verdict = default;
+                return false;
+            }
+            if (DateTime.UtcNow > s.ExpiresUtc)
+            {
+                _sessions.Remove(key);
+                verdict = default;
+                return false;
+            }
+            if (s.Pid != 0 && pid != 0 && s.Pid != pid)
+            {
+                _sessions.Remove(key);
+                verdict = default;
+                return false;
+            }
+            verdict = s.Verdict;
+            return true;
+        }
     }
 
     public void SetVerdict(string appPath, Verdict verdict, bool permanent, ConnectionEvent? ev = null)
     {
         if (ev != null) BlockedLog.Append(ev, verdict);
-        lock (_pendingLock) _pendingHolds.Remove(SafeKey(appPath));
+        var key = SafeKey(appPath);
+        lock (_pendingLock) _pendingHolds.Remove(key);
         var pid = ev?.ProcessId ?? 0;
         if (verdict == Verdict.Allow) Wfp.AllowApp(appPath, pid);
         else if (verdict == Verdict.Block) Wfp.BlockApp(appPath, pid);
-        if (!permanent) return;
+        if (!permanent)
+        {
+            lock (_sessionLock)
+                _sessions[key] = (verdict, pid, DateTime.UtcNow.Add(SessionTtl));
+            return;
+        }
+        lock (_sessionLock) _sessions.Remove(key);
         ProcessIdentity.TryGetPackageFamilyName(pid, appPath, out var pfn);
         Store.Upsert(new AppRule
         {
@@ -103,7 +141,9 @@ public sealed class FirewallService : IDisposable
 
     public void RemoveRule(string appPath)
     {
-        lock (_pendingLock) _pendingHolds.Remove(SafeKey(appPath));
+        var key = SafeKey(appPath);
+        lock (_pendingLock) _pendingHolds.Remove(key);
+        lock (_sessionLock) _sessions.Remove(key);
         Store.Remove(appPath);
         Wfp.RemoveApp(appPath);
     }

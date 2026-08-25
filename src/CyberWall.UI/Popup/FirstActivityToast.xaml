@@ -32,8 +32,8 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- GlassWire style circular green NEW badge -->
-                <Border Width="26" Height="26" CornerRadius="13" Background="#2E7D32" BorderBrush="#81C784" BorderThickness="1.5" VerticalAlignment="Center" Margin="0,0,10,0">
-                    <TextBlock Text="NEW" FontSize="8.5" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Border CornerRadius="6" Background="#2E7D32" BorderBrush="#81C784" BorderThickness="1" Padding="6,2" VerticalAlignment="Center" Margin="0,0,10,0">
+                    <TextBlock x:Name="NewBadgeLbl" Text="NEW" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
 
                 <!-- Title -->
@@ -43,7 +43,7 @@
                 <TextBlock x:Name="TimeLbl" Grid.Column="2" Text="Ahora" FontSize="11" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
 
                 <!-- Close Button -->
-                <Button Grid.Column="3" Content="✕" Width="22" Height="22" Background="Transparent" Foreground="{DynamicResource SubTextBrush}" BorderThickness="0" Cursor="Hand" Click="Close_Click"/>
+                <Button x:Name="CloseBtn" Grid.Column="3" Content="✕" Width="22" Height="22" Background="Transparent" Foreground="{DynamicResource SubTextBrush}" BorderThickness="0" Cursor="Hand" Click="Close_Click"/>
             </Grid>
 
             <!-- Body: App Activity Details Card -->

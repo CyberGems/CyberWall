@@ -52,16 +52,18 @@ public sealed class ConnectionMonitor : IDisposable
             ev = ev with { AppPath = hostPath, ProcessId = hostPid };
         }
 
-        if (_svc.Store.TryGet(ev.AppPath, out var existing))
-        {
-            if (existing.Verdict == Verdict.Block)
-                _svc.ReenforceBlock(ev.AppPath, ev.ProcessId);
-            return;
-        }
+        if (ShouldSkipPrompt(ev.AppPath, ev.ProcessId)) return;
 
         _svc.HoldPending(ev);
         if (_svc.Mode == FirewallMode.BlockAll) return;
-        OnNewConnection?.Invoke(ev);
+        try
+        {
+            OnNewConnection?.Invoke(ev);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex);
+        }
     }
 
     private void Poll()
@@ -87,12 +89,7 @@ public sealed class ConnectionMonitor : IDisposable
                     pid = hostPid;
                 }
 
-                if (_svc.Store.TryGet(path, out var existing))
-                {
-                    if (existing.Verdict == Verdict.Block)
-                        _svc.ReenforceBlock(path, pid);
-                    continue;
-                }
+                if (ShouldSkipPrompt(path, pid)) continue;
 
                 var ev = new ConnectionEvent
                 {
@@ -112,6 +109,24 @@ public sealed class ConnectionMonitor : IDisposable
         }
         catch (Exception ex) { Debug.WriteLine(ex); }
         finally { Interlocked.Exchange(ref _polling, 0); }
+    }
+
+    private bool ShouldSkipPrompt(string path, int pid)
+    {
+        if (_svc == null) return true;
+        if (_svc.Store.TryGet(path, out var existing))
+        {
+            if (existing.Verdict == Verdict.Block)
+                _svc.ReenforceBlock(path, pid);
+            return true;
+        }
+        if (_svc.TryGetSession(path, pid, out var session))
+        {
+            if (session == Verdict.Block)
+                _svc.ReenforceBlock(path, pid);
+            return true;
+        }
+        return false;
     }
 
     private static string? GetPath(int pid) => ProcessIdentity.GetImagePath(pid);

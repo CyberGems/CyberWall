@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -167,24 +168,43 @@ public partial class MainWindow : Window
 
     private void OnAskConnection(ConnectionEvent ev)
     {
-        Dispatcher.Invoke(() =>
+        Dispatcher.BeginInvoke(() =>
         {
-            var key = AppRule.Normalize(ev.AppPath);
-            if (!_pendingPopups.Add(key)) return;
-            var p = new ConnectionPopup(ev);
-            p.ClosedWithVerdict += popup =>
+            string? key = null;
+            try
             {
-                _pendingPopups.Remove(key);
-                bool isFirstTime = !_svc.Store.TryGet(popup.Event.AppPath, out _);
-                _svc.SetVerdict(popup.Event.AppPath, popup.ResultVerdict, popup.Remember, popup.Event);
-                if (popup.Remember) RefreshRules(SearchBox.Text);
-                if (isFirstTime && popup.ResultVerdict == Verdict.Allow)
+                key = AppRule.Normalize(ev.AppPath);
+                if (!_pendingPopups.Add(key)) return;
+                var p = new ConnectionPopup(ev);
+                p.ClosedWithVerdict += popup =>
                 {
-                    FirstActivityToast.ShowToast(popup.Event);
-                }
-            };
-            p.Closed += (_, _) => _pendingPopups.Remove(key);
-            p.Show();
+                    _pendingPopups.Remove(key);
+                    switch (popup.Decision)
+                    {
+                        case PopupDecision.AllowAlways:
+                            _svc.SetVerdict(popup.Event.AppPath, Verdict.Allow, true, popup.Event);
+                            RefreshRules(SearchBox.Text);
+                            break;
+                        case PopupDecision.AllowOnce:
+                            _svc.SetVerdict(popup.Event.AppPath, Verdict.Allow, false, popup.Event);
+                            break;
+                        case PopupDecision.BlockAlways:
+                            _svc.SetVerdict(popup.Event.AppPath, Verdict.Block, true, popup.Event);
+                            RefreshRules(SearchBox.Text);
+                            break;
+                        default:
+                            _svc.SetVerdict(popup.Event.AppPath, Verdict.Block, false, popup.Event);
+                            break;
+                    }
+                };
+                p.Closed += (_, _) => _pendingPopups.Remove(key);
+                p.Show();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+                if (key != null) _pendingPopups.Remove(key);
+            }
         });
     }
 

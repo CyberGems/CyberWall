@@ -1,5 +1,7 @@
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Threading;
+using CyberWall.Common;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.UI.Services;
@@ -28,8 +30,11 @@ public partial class FirstActivityToast : Window
         };
 
         TitleLbl.Text = Strings.T("FirstNetworkActivity");
-        TimeLbl.Text = DateTime.Now.ToString("d MMM, HH:mm");
+        TimeLbl.Text = Strings.T("Now");
+        NewBadgeLbl.Text = Strings.T("NewBadge");
         DescLbl.Text = Strings.T("FirstNetworkActivityDesc", ev.DisplayName);
+        CloseBtn.ToolTip = Strings.T("Close");
+        AutomationProperties.SetName(CloseBtn, Strings.T("Close"));
 
         if (ev.Direction == Direction.Inbound)
         {
@@ -48,7 +53,7 @@ public partial class FirstActivityToast : Window
             DirectionPillText.Text = "↑ " + Strings.T("Outbound");
         }
 
-        EndpointLbl.Text = $"{ev.Protocol} • {ev.RemoteAddress}:{ev.RemotePort}";
+        EndpointLbl.Text = NetworkEndpoint.FormatPrimary(ev.Protocol, ev.RemoteAddress, ev.RemotePort);
 
         _autoCloseTimer = new DispatcherTimer
         {

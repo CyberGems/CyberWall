@@ -115,8 +115,8 @@ public static class PopupWindowHelper
         const double marginY = 20;
         const double gap = 10;
 
-        double width = window.Width > 0 ? window.Width : 440;
-        double height = window.Height > 0 ? window.Height : 220;
+        double width = window.ActualWidth > 1 ? window.ActualWidth : window.Width > 0 ? window.Width : 500;
+        double height = window.ActualHeight > 1 ? window.ActualHeight : window.Height > 0 ? window.Height : 280;
 
         double left;
         double top;

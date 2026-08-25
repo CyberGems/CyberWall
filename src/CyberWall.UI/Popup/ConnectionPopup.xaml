@@ -2,15 +2,15 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:conv="clr-namespace:CyberWall.UI.Converters"
-        Title="CyberWall — Network Prompt" Height="240" Width="460" WindowStyle="None" ResizeMode="NoResize"
-        Topmost="True" Background="Transparent" AllowsTransparency="True" ShowInTaskbar="False" WindowStartupLocation="Manual"
+        Title="CyberWall — Network Prompt" Width="500" MinHeight="200" SizeToContent="Height" WindowStyle="None" ResizeMode="NoResize"
+        Topmost="True" Background="Transparent" AllowsTransparency="True" ShowInTaskbar="False"
+        WindowStartupLocation="Manual"
         TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType" TextOptions.TextHintingMode="Fixed"
         UseLayoutRounding="True" SnapsToDevicePixels="True"
         FontFamily="Segoe UI Variable Text, Segoe UI, -apple-system, BlinkMacSystemFont, Roboto, sans-serif">
     <Window.Resources>
         <conv:PathToIconConverter x:Key="PathToIconConverter"/>
 
-        <!-- Primary Action Button -->
         <Style x:Key="PopupPrimaryButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource AccentFgBrush}"/>
@@ -18,10 +18,13 @@
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="MinWidth" Value="96"/>
+            <Setter Property="Height" Value="32"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" SnapsToDevicePixels="True">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -37,7 +40,6 @@
             </Setter>
         </Style>
 
-        <!-- Block Action Button -->
         <Style x:Key="PopupBlockButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource BadgeBlockFgBrush}"/>
@@ -46,10 +48,13 @@
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="MinWidth" Value="88"/>
+            <Setter Property="Height" Value="32"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" SnapsToDevicePixels="True">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -65,9 +70,96 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="PopupDangerButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource BadgeBlockFgBrush}"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="MinWidth" Value="88"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PopupSecondaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="MinWidth" Value="110"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PopupIconButton" TargetType="Button">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
-    <!-- Outer buffer for pure anti-aliased corners without background clipping -->
     <Border Margin="8" CornerRadius="14" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1" Padding="0" SnapsToDevicePixels="True">
         <Border.Effect>
             <DropShadowEffect Color="Black" Opacity="0.5" BlurRadius="16" ShadowDepth="4"/>
@@ -75,62 +167,96 @@
         <Grid Margin="16,14">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- Header -->
-            <Grid>
+            <Grid x:Name="HeaderBar">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- App Icon Container with Bare Security Shield Icon (No Circular Ring) -->
                 <Grid Width="42" Height="42">
-                    <!-- Main Icon Card -->
                     <Border Width="38" Height="38" CornerRadius="10" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" HorizontalAlignment="Left" VerticalAlignment="Bottom">
                         <Image Source="{Binding Event.AppPath, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource PathToIconConverter}}" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
                     </Border>
-
-                    <!-- Mini Bare Security Shield Badge (Top-Right) -->
-                    <Path Data="M 6 1.5 L 1.5 3.5 L 1.5 7.5 C 1.5 10.5 4 13.2 6 14 C 8 13.2 10.5 10.5 10.5 7.5 L 10.5 3.5 Z" Width="13" Height="14" Stretch="Uniform" Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Right" VerticalAlignment="Top">
+                    <Path x:Name="ShieldPath" Data="M 6 1.5 L 1.5 3.5 L 1.5 7.5 C 1.5 10.5 4 13.2 6 14 C 8 13.2 10.5 10.5 10.5 7.5 L 10.5 3.5 Z" Width="13" Height="14" Stretch="Uniform" Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Right" VerticalAlignment="Top">
                         <Path.Effect>
                             <DropShadowEffect Color="Black" Opacity="0.75" BlurRadius="5" ShadowDepth="1"/>
                         </Path.Effect>
                     </Path>
                 </Grid>
 
-                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
-                    <TextBlock x:Name="TitleLbl" Text="Nueva Solicitud de Conexión" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
-                    <TextBlock x:Name="AppLbl" Text="demo.exe quiere acceder a la red" Foreground="{DynamicResource AccentBrush}" FontWeight="SemiBold" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                <StackPanel Grid.Column="1" Margin="12,0,8,0" VerticalAlignment="Center">
+                    <TextBlock x:Name="TitleLbl" Text="MoUSO Core Worker Process" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="AppLbl" Text="mousocoreworker.exe quiere acceder a la red" Foreground="{DynamicResource AccentBrush}" FontWeight="SemiBold" FontSize="11.5" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <Border x:Name="PublisherPill" CornerRadius="5" Padding="6,2" VerticalAlignment="Center" Margin="0,0,8,0">
+                            <TextBlock x:Name="PublisherLbl" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </Border>
+                        <Button x:Name="SearchBtn" Style="{StaticResource PopupIconButton}" Click="Search_Click" Margin="0,0,4,0">
+                            <Path Fill="{DynamicResource SubTextBrush}" Stretch="Uniform" Width="12" Height="12">
+                                <Path.Data>
+                                    <GeometryGroup FillRule="EvenOdd">
+                                        <PathGeometry Figures="M6,1.2 C3.4,1.2 1.2,3.4 1.2,6 C1.2,8.6 3.4,10.8 6,10.8 C7.1,10.8 8.1,10.4 8.9,9.8 L11.1,12 L12,11.1 L9.8,8.9 C10.4,8.1 10.8,7.1 10.8,6 C10.8,3.4 8.6,1.2 6,1.2 Z"/>
+                                        <EllipseGeometry Center="6,6" RadiusX="3.4" RadiusY="3.4"/>
+                                    </GeometryGroup>
+                                </Path.Data>
+                            </Path>
+                        </Button>
+                        <Button x:Name="CopyPathBtn" Style="{StaticResource PopupIconButton}" Click="CopyPath_Click" Margin="0,0,4,0">
+                            <Path Fill="{DynamicResource SubTextBrush}" Stretch="Uniform" Width="11" Height="11"
+                                  Data="M4.2,3.4 H9.6 V9.2 H4.2 Z M6.2,1.6 H11.6 V7.4 H10.2 V3 H6.2 Z"/>
+                        </Button>
+                        <Button x:Name="OpenFolderBtn" Style="{StaticResource PopupIconButton}" Click="OpenFolder_Click">
+                            <Path Fill="{DynamicResource SubTextBrush}" Stretch="Uniform" Width="11" Height="11"
+                                  Data="M1,3 L1,10 L11,10 L11,5 L6.2,5 L5.2,3 Z"/>
+                        </Button>
+                    </StackPanel>
                 </StackPanel>
-                <Button Grid.Column="2" Content="✕" Width="26" Height="26" Background="Transparent" Foreground="{DynamicResource SubTextBrush}" BorderThickness="0" Cursor="Hand" Click="Close_Click"/>
+                <Button x:Name="CloseBtn" Grid.Column="2" Content="✕" Width="26" Height="26" VerticalAlignment="Top" Background="Transparent" Foreground="{DynamicResource SubTextBrush}" BorderThickness="0" Cursor="Hand" Click="Close_Click"/>
             </Grid>
 
-            <!-- Details Card with Graphic Direction Arrow Pill Badge -->
-            <StackPanel Grid.Row="1" Margin="0,10,0,0" VerticalAlignment="Center">
-                <Border Background="{DynamicResource CardSecondaryBrush}" CornerRadius="8" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="10,7">
-                    <StackPanel>
-                        <!-- Direction Badge + Protocol + Remote IP:Port + PID -->
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Border x:Name="DirectionPill" CornerRadius="5" Padding="6,2" Margin="0,0,8,0" VerticalAlignment="Center">
-                                <TextBlock x:Name="DirectionPillText" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
-                            </Border>
-                            <TextBlock x:Name="DetailLbl" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="Medium" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                        </StackPanel>
-                        <TextBlock x:Name="PathLbl" Foreground="{DynamicResource SubTextBrush}" FontSize="10" TextWrapping="Wrap" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
-                </Border>
-                <CheckBox x:Name="RememberChk" Content="Recordar mi elección" Foreground="{DynamicResource SubTextBrush}" Margin="2,7,0,0" IsChecked="True" FontSize="11" Cursor="Hand"/>
-            </StackPanel>
+            <Border x:Name="InboundWarn" Grid.Row="1" Visibility="Collapsed" Background="{DynamicResource BadgeBlockBgBrush}" CornerRadius="8" BorderBrush="{DynamicResource BadgeBlockFgBrush}" BorderThickness="1" Padding="10,7" Margin="0,10,0,0">
+                <TextBlock x:Name="InboundWarnLbl" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource BadgeBlockFgBrush}" TextWrapping="Wrap"/>
+            </Border>
 
-            <!-- Action Buttons -->
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-                <Button x:Name="BlockBtn" Content="Bloquear" Width="110" Height="32" Style="{StaticResource PopupBlockButton}" Click="Block_Click"/>
-                <Button x:Name="AllowBtn" Content="Permitir" Width="110" Height="32" Margin="10,0,0,0" Style="{StaticResource PopupPrimaryButton}" Click="Allow_Click"/>
-            </StackPanel>
+            <!-- Details -->
+            <Border Grid.Row="2" Background="{DynamicResource CardSecondaryBrush}" CornerRadius="8" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="10,8" Margin="0,10,0,0">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border x:Name="DirectionPill" CornerRadius="5" Padding="6,2" Margin="0,0,8,0" VerticalAlignment="Center">
+                            <TextBlock x:Name="DirectionPillText" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock x:Name="DetailLbl" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="Medium" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                    <TextBlock x:Name="PathLbl" Foreground="{DynamicResource SubTextBrush}" FontSize="10" TextWrapping="Wrap" Margin="0,5,0,0" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="MetaLbl" Foreground="{DynamicResource SubTextBrush}" FontSize="10" Margin="0,3,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Footer -->
+            <Grid Grid.Row="3" Margin="0,10,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <DockPanel LastChildFill="True">
+                    <TextBlock x:Name="CountdownLbl" DockPanel.Dock="Right" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                    <TextBlock x:Name="ScopeLbl" FontSize="10.5" Foreground="{DynamicResource SubTextBrush}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </DockPanel>
+                <TextBlock x:Name="FeedbackLbl" Grid.Row="1" FontSize="10.5" Foreground="{DynamicResource AccentBrush}" Margin="0,4,0,0" Visibility="Collapsed"/>
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                    <Button x:Name="BlockBtn" Content="Bloquear" Style="{StaticResource PopupBlockButton}" Click="Block_Click"/>
+                    <Button x:Name="AllowOnceBtn" Content="Permitir una vez" Style="{StaticResource PopupSecondaryButton}" Click="AllowOnce_Click" Margin="8,0,0,0"/>
+                    <Button x:Name="AllowBtn" Content="Permitir siempre" Style="{StaticResource PopupPrimaryButton}" Click="Allow_Click" Margin="8,0,0,0"/>
+                </StackPanel>
+            </Grid>
         </Grid>
     </Border>
 </Window>
