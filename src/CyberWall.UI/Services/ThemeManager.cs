@@ -22,6 +22,8 @@ public static class ThemeManager
         string BadgeAllowFg,
         string BadgeBlockBg,
         string BadgeBlockFg,
+        string BadgeWarnBg,
+        string BadgeWarnFg,
         string SearchBg,
         string InputBg,
         string SwitchActive,
@@ -47,6 +49,8 @@ public static class ThemeManager
             BadgeAllowFg: "#00F5A0",
             BadgeBlockBg: "#3B121E",
             BadgeBlockFg: "#FF4D6D",
+            BadgeWarnBg: "#3D2410",
+            BadgeWarnFg: "#FB923C",
             SearchBg: "#0A1220",
             InputBg: "#0A1220",
             SwitchActive: "#00E5FF",
@@ -70,6 +74,8 @@ public static class ThemeManager
             BadgeAllowFg: "#34D399",
             BadgeBlockBg: "#37171C",
             BadgeBlockFg: "#F87171",
+            BadgeWarnBg: "#3D2A12",
+            BadgeWarnFg: "#FB923C",
             SearchBg: "#16161A",
             InputBg: "#16161A",
             SwitchActive: "#6366F1",
@@ -93,6 +99,8 @@ public static class ThemeManager
             BadgeAllowFg: "#15803D",
             BadgeBlockBg: "#FEE2E2",
             BadgeBlockFg: "#B91C1C",
+            BadgeWarnBg: "#FFEDD5",
+            BadgeWarnFg: "#C2410C",
             SearchBg: "#FFFFFF",
             InputBg: "#FFFFFF",
             SwitchActive: "#2563EB",
@@ -120,6 +128,8 @@ public static class ThemeManager
         Set("BadgeAllowFgBrush", p.BadgeAllowFg);
         Set("BadgeBlockBgBrush", p.BadgeBlockBg);
         Set("BadgeBlockFgBrush", p.BadgeBlockFg);
+        Set("BadgeWarnBgBrush", p.BadgeWarnBg);
+        Set("BadgeWarnFgBrush", p.BadgeWarnFg);
         Set("SearchBgBrush", p.SearchBg);
         Set("InputBgBrush", p.InputBg);
         Set("SwitchActiveBrush", p.SwitchActive);

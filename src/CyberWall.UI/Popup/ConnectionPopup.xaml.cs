@@ -164,11 +164,11 @@ public partial class ConnectionPopup : Window
         }
         else
         {
-            PublisherPill.Background = (Brush)FindResource("BadgeBlockBgBrush");
-            PublisherPill.BorderBrush = (Brush)FindResource("BadgeBlockFgBrush");
+            PublisherPill.Background = (Brush)FindResource("BadgeWarnBgBrush");
+            PublisherPill.BorderBrush = (Brush)FindResource("BadgeWarnFgBrush");
             PublisherPill.BorderThickness = new Thickness(1);
-            PublisherLbl.Foreground = (Brush)FindResource("BadgeBlockFgBrush");
-            ShieldPath.Fill = (Brush)FindResource("BadgeBlockFgBrush");
+            PublisherLbl.Foreground = (Brush)FindResource("BadgeWarnFgBrush");
+            ShieldPath.Fill = (Brush)FindResource("BadgeWarnFgBrush");
         }
 
         if (inbound)

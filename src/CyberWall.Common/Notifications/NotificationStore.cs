@@ -112,6 +112,18 @@ public sealed class NotificationStore
         Changed?.Invoke();
     }
 
+    public void Remove(Guid id)
+    {
+        lock (_lock)
+        {
+            var n = _items.FirstOrDefault(i => i.Id == id);
+            if (n == null) return;
+            _items.Remove(n);
+            Save();
+        }
+        Changed?.Invoke();
+    }
+
     public void Clear()
     {
         lock (_lock)

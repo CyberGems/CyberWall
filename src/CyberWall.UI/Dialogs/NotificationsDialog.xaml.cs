@@ -11,11 +11,12 @@ public partial class NotificationsDialog : Window
 {
     private readonly NotificationStore _store;
     private readonly HashSet<Guid> _openedUnread;
-    private readonly Action<string> _onAllow;
+    private readonly Func<string, Task> _onAllow;
     private readonly Action _onEnableProtection;
     private readonly Action _onDownloadUpdate;
+    private bool _busy;
 
-    public NotificationsDialog(NotificationStore store, Action<string> onAllow, Action onEnableProtection, Action onDownloadUpdate)
+    public NotificationsDialog(NotificationStore store, Func<string, Task> onAllow, Action onEnableProtection, Action onDownloadUpdate)
     {
         _store = store;
         _onAllow = onAllow;
@@ -33,7 +34,11 @@ public partial class NotificationsDialog : Window
         Closed += (_, _) => _store.Changed -= OnStoreChanged;
     }
 
-    private void OnStoreChanged() => Dispatcher.BeginInvoke(BindList);
+    private void OnStoreChanged()
+    {
+        if (_busy) return;
+        Dispatcher.BeginInvoke(BindList);
+    }
 
     private void RefreshLanguage()
     {
@@ -55,28 +60,75 @@ public partial class NotificationsDialog : Window
         NotifList.Visibility = items.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    private void Action_Click(object sender, RoutedEventArgs e)
+    private async void Action_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: NotificationItemVm vm }) return;
+        if (!vm.CanAct) return;
+
         switch (vm.Kind)
         {
             case AppNotificationKind.AutoBlocked:
             case AppNotificationKind.SilentBlock:
-                if (string.IsNullOrWhiteSpace(vm.AppPath)) return;
-                _onAllow(vm.AppPath);
-                _store.MarkRelatedRead(vm.Kind, vm.AppPath);
-                _openedUnread.Remove(vm.Id);
-                BindList();
+                await AllowAsync(vm);
                 break;
             case AppNotificationKind.ProtectionOff:
-                _onEnableProtection();
-                _store.MarkRelatedRead(AppNotificationKind.ProtectionOff, null);
-                BindList();
+                await EnableAsync(vm);
                 break;
             case AppNotificationKind.UpdateAvailable:
                 Close();
                 _onDownloadUpdate();
                 break;
+        }
+    }
+
+    private async Task AllowAsync(NotificationItemVm vm)
+    {
+        if (string.IsNullOrWhiteSpace(vm.AppPath)) return;
+        _busy = true;
+        vm.MarkBusy(Strings.T("NotifAllowing"));
+        await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Render);
+        try
+        {
+            try
+            {
+                await _onAllow(vm.AppPath);
+            }
+            catch
+            {
+                vm.IsBusy = false;
+                vm.ActionLabel = Strings.T("AutoBlockedUndo");
+                return;
+            }
+            var name = string.IsNullOrWhiteSpace(vm.AppName) ? "?" : vm.AppName;
+            vm.MarkResolved(Strings.T("NotifAllowed"), Strings.T("NotifAllowedDesc", name));
+            await Task.Delay(900);
+            _store.Remove(vm.Id);
+            _openedUnread.Remove(vm.Id);
+        }
+        finally
+        {
+            _busy = false;
+            BindList();
+        }
+    }
+
+    private async Task EnableAsync(NotificationItemVm vm)
+    {
+        _busy = true;
+        vm.MarkBusy(Strings.T("NotifAllowing"));
+        await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Render);
+        try
+        {
+            _onEnableProtection();
+            vm.MarkResolved(Strings.T("NotifProtectionOn"), Strings.T("NotifProtectionOnDesc"));
+            await Task.Delay(700);
+            _store.Remove(vm.Id);
+            _openedUnread.Remove(vm.Id);
+        }
+        finally
+        {
+            _busy = false;
+            BindList();
         }
     }
 

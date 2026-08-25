@@ -111,15 +111,14 @@ public static class RealFirewall
         }
         if (!string.IsNullOrEmpty(pfn)) ApplyPackageBlock(pfn);
         DisableMatchingAllowRules(sid, pfn);
-        HostAppResolver.TerminateHelpers(appPath);
-        ProcessIdentity.TerminateTcpConnections(pid, appPath);
-        if (!string.IsNullOrEmpty(pfn)) ProcessIdentity.SuspendProcess(pid);
+        StopLiveTraffic(appPath, pid, pfn);
     }
 
     /// <summary>
-    /// Pending block while the user is asked. Store apps are keyed by AppContainer SID;
-    /// Windows' auto-allow rule must be disabled or traffic keeps flowing, including
-    /// connections that were already established before the popup.
+    /// Pending block while the user is asked. Store apps keep leaking on
+    /// already-established sockets, so those still get their TCP torn down.
+    /// Win32 apps must not — aborting their sockets (including localhost)
+    /// crashes tools that are waiting on the permission popup.
     /// </summary>
     public static void HoldApp(string appPath, int pid = 0)
     {
@@ -127,11 +126,22 @@ public static class RealFirewall
         ProcessIdentity.TryGetPackageFamilyName(pid, appPath, out var pfn);
         ProcessIdentity.TryGetPackageSid(pfn, out var sid);
         DisableMatchingAllowRules(sid, pfn);
-        if (!string.IsNullOrEmpty(pfn)) ApplyPackageBlock(pfn);
+        if (!string.IsNullOrEmpty(pfn))
+            ApplyPackageBlock(pfn);
         ApplySingleBlock(appPath);
+        StopLiveTraffic(appPath, pid, pfn);
+    }
+
+    /// <summary>
+    /// Store apps ignore a pending/block rule on sockets they already have open.
+    /// Win32 apps crash if those sockets (especially localhost) are aborted.
+    /// </summary>
+    private static void StopLiveTraffic(string appPath, int pid, string? pfn)
+    {
+        if (string.IsNullOrEmpty(pfn)) return;
         HostAppResolver.TerminateHelpers(appPath);
         ProcessIdentity.TerminateTcpConnections(pid, appPath);
-        if (!string.IsNullOrEmpty(pfn)) ProcessIdentity.SuspendProcess(pid);
+        ProcessIdentity.SuspendProcess(pid);
     }
 
     private static void ApplySingleBlock(string appPath)

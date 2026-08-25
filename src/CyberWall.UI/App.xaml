@@ -19,6 +19,8 @@
         <SolidColorBrush x:Key="BadgeAllowFgBrush" Color="#00F5A0"/>
         <SolidColorBrush x:Key="BadgeBlockBgBrush" Color="#3B121E"/>
         <SolidColorBrush x:Key="BadgeBlockFgBrush" Color="#FF4D6D"/>
+        <SolidColorBrush x:Key="BadgeWarnBgBrush" Color="#3D2410"/>
+        <SolidColorBrush x:Key="BadgeWarnFgBrush" Color="#FB923C"/>
         <SolidColorBrush x:Key="SearchBgBrush" Color="#0A1220"/>
         <SolidColorBrush x:Key="InputBgBrush" Color="#0A1220"/>
         <SolidColorBrush x:Key="SwitchActiveBrush" Color="#00E5FF"/>

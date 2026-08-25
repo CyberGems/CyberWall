@@ -281,9 +281,9 @@ public partial class MainWindow : Window
         {
             var dlg = new NotificationsDialog(
                 _notifications,
-                path =>
+                async path =>
                 {
-                    _svc.SetVerdict(path, Verdict.Allow, true);
+                    await Task.Run(() => _svc.SetVerdict(path, Verdict.Allow, true));
                     RefreshRules(SearchBox.Text);
                 },
                 () =>

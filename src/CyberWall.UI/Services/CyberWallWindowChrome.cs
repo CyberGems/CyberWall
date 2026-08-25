@@ -27,17 +27,29 @@ public static class CyberWallWindowChrome
 
     public static void Apply(Window window, double radius = DefaultCornerRadius)
     {
+        bool canResize = window.ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip;
         WindowChrome.SetWindowChrome(window, new WindowChrome
         {
             CaptionHeight = 0,
             CornerRadius = new CornerRadius(radius),
             GlassFrameThickness = new Thickness(0),
-            ResizeBorderThickness = new Thickness(8),
+            ResizeBorderThickness = canResize ? new Thickness(8) : new Thickness(0),
             UseAeroCaptionButtons = false
         });
 
+        if (!canResize)
+        {
+            void MakeContentClickable()
+            {
+                if (window.Content is IInputElement content)
+                    WindowChrome.SetIsHitTestVisibleInChrome(content, true);
+            }
+            if (window.IsLoaded) MakeContentClickable();
+            else window.Loaded += (_, _) => MakeContentClickable();
+        }
+
         ApplyRoundedCorners(window, radius);
-        if (window.ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip)
+        if (canResize)
             WorkAreaMaximize.Attach(window);
     }
 

@@ -62,7 +62,8 @@ public sealed class FirewallService : IDisposable
         try
         {
             if (first) Wfp.HoldApp(ev.AppPath, ev.ProcessId);
-            else ProcessIdentity.TerminateTcpConnections(ev.ProcessId, ev.AppPath);
+            else if (PackagePath.TryGetFamilyName(ev.AppPath, out _))
+                ProcessIdentity.TerminateTcpConnections(ev.ProcessId, ev.AppPath);
         }
         catch
         {
@@ -76,10 +77,12 @@ public sealed class FirewallService : IDisposable
     public void ReenforceBlock(string appPath, int pid)
     {
         if (!IsEnabled) return;
+        ProcessIdentity.TryGetPackageFamilyName(pid, appPath, out var pfn);
+        if (string.IsNullOrEmpty(pfn) && !PackagePath.TryGetFamilyName(appPath, out pfn))
+            return;
         HostAppResolver.TerminateHelpers(appPath);
         ProcessIdentity.TerminateTcpConnections(pid, appPath);
-        if (PackagePath.TryGetFamilyName(appPath, out _))
-            ProcessIdentity.SuspendProcess(pid);
+        ProcessIdentity.SuspendProcess(pid);
     }
 
     public Verdict Decide(ConnectionEvent ev)

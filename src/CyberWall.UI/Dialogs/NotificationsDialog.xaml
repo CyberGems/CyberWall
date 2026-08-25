@@ -90,10 +90,36 @@
             </Setter>
         </Style>
 
-        <Style x:Key="ItemActionButton" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
-            <Setter Property="Padding" Value="10,4"/>
+        <Style x:Key="ItemActionButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentFgBrush}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="12,6"/>
             <Setter Property="Margin" Value="6,0,0,0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.88"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.65"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
@@ -147,6 +173,10 @@
                                                     <Setter Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
                                                     <Setter Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
                                                 </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsResolved}" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource BadgeAllowBgBrush}"/>
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource BadgeAllowFgBrush}"/>
+                                                </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
@@ -181,7 +211,7 @@
                                             <TextBlock Text="{Binding Description}" Foreground="{DynamicResource SubTextBrush}" FontSize="11.5" TextWrapping="Wrap" Margin="0,4,0,0"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
-                                            <Button Style="{StaticResource ItemActionButton}" Tag="{Binding}" Click="Action_Click" Visibility="{Binding ShowAction, Converter={StaticResource BoolToVis}}" Content="{Binding ActionLabel}"/>
+                                            <Button Style="{StaticResource ItemActionButton}" Tag="{Binding}" Click="Action_Click" IsEnabled="{Binding CanAct}" Visibility="{Binding ShowAction, Converter={StaticResource BoolToVis}}" Content="{Binding ActionLabel}"/>
                                         </StackPanel>
                                     </Grid>
                                 </Border>
