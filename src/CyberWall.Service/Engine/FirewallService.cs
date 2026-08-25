@@ -1,3 +1,4 @@
+using CyberWall.Common;
 using CyberWall.Common.Models;
 using CyberWall.Service.Rules;
 using CyberWall.Service.Wfp;
@@ -12,6 +13,8 @@ public sealed class FirewallService : IDisposable
     public FirewallMode Mode { get; private set; } = FirewallMode.Ask;
     public bool IsEnabled => Wfp.IsEnabled;
     public event Action<ConnectionEvent>? OnAskConnection;
+    private readonly HashSet<string> _pendingHolds = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _pendingLock = new();
 
     public FirewallService()
     {
@@ -44,6 +47,35 @@ public sealed class FirewallService : IDisposable
         if (!IsEnabled) { Wfp.TryEnable(); Monitor.Start(this); }
     }
 
+    public void HoldPending(ConnectionEvent ev)
+    {
+        if (!IsEnabled) return;
+        var key = SafeKey(ev.AppPath);
+        bool first;
+        lock (_pendingLock) first = _pendingHolds.Add(key);
+        try
+        {
+            if (first) Wfp.HoldApp(ev.AppPath, ev.ProcessId);
+            else ProcessIdentity.TerminateTcpConnections(ev.ProcessId, ev.AppPath);
+        }
+        catch
+        {
+            if (first)
+            {
+                lock (_pendingLock) _pendingHolds.Remove(key);
+            }
+        }
+    }
+
+    public void ReenforceBlock(string appPath, int pid)
+    {
+        if (!IsEnabled) return;
+        HostAppResolver.TerminateHelpers(appPath);
+        ProcessIdentity.TerminateTcpConnections(pid, appPath);
+        if (PackagePath.TryGetFamilyName(appPath, out _))
+            ProcessIdentity.SuspendProcess(pid);
+    }
+
     public Verdict Decide(ConnectionEvent ev)
     {
         if (!IsEnabled) return Verdict.Allow;
@@ -55,12 +87,32 @@ public sealed class FirewallService : IDisposable
     public void SetVerdict(string appPath, Verdict verdict, bool permanent, ConnectionEvent? ev = null)
     {
         if (ev != null) BlockedLog.Append(ev, verdict);
+        lock (_pendingLock) _pendingHolds.Remove(SafeKey(appPath));
+        var pid = ev?.ProcessId ?? 0;
+        if (verdict == Verdict.Allow) Wfp.AllowApp(appPath, pid);
+        else if (verdict == Verdict.Block) Wfp.BlockApp(appPath, pid);
         if (!permanent) return;
-        if (verdict == Verdict.Allow) { Store.Upsert(new AppRule { AppPath = appPath, Verdict = verdict }); Wfp.AllowApp(appPath); }
-        else if (verdict == Verdict.Block) { Store.Upsert(new AppRule { AppPath = appPath, Verdict = verdict }); Wfp.BlockApp(appPath); }
+        ProcessIdentity.TryGetPackageFamilyName(pid, appPath, out var pfn);
+        Store.Upsert(new AppRule
+        {
+            AppPath = appPath,
+            Verdict = verdict,
+            PackageFamilyName = string.IsNullOrEmpty(pfn) ? null : pfn
+        });
     }
 
-    public void RemoveRule(string appPath) { Store.Remove(appPath); Wfp.RemoveApp(appPath); }
+    public void RemoveRule(string appPath)
+    {
+        lock (_pendingLock) _pendingHolds.Remove(SafeKey(appPath));
+        Store.Remove(appPath);
+        Wfp.RemoveApp(appPath);
+    }
+
+    private static string SafeKey(string appPath)
+    {
+        try { return AppRule.Normalize(appPath); }
+        catch { return appPath; }
+    }
 
     public void Dispose() { Monitor.Dispose(); Wfp.Dispose(); }
 }

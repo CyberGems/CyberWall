@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CyberWall.Common;
 using CyberWall.Common.Models;
 
 namespace CyberWall.Service.Rules;
@@ -19,7 +20,35 @@ public sealed class RuleStore
 
     public bool TryGet(string appPath, out AppRule rule)
     {
-        lock (_lock) return _rules.TryGetValue(AppRule.Normalize(appPath), out rule!);
+        lock (_lock)
+        {
+            try
+            {
+                if (_rules.TryGetValue(AppRule.Normalize(appPath), out rule!)) return true;
+            }
+            catch { }
+
+            if (!PackagePath.TryGetFamilyName(appPath, out var pfn))
+            {
+                rule = null!;
+                return false;
+            }
+
+            foreach (var r in _rules.Values)
+            {
+                var rulePfn = r.PackageFamilyName;
+                if (string.IsNullOrEmpty(rulePfn))
+                    PackagePath.TryGetFamilyName(r.AppPath, out rulePfn);
+                if (!string.IsNullOrEmpty(rulePfn) && pfn.Equals(rulePfn, StringComparison.OrdinalIgnoreCase))
+                {
+                    rule = r;
+                    return true;
+                }
+            }
+
+            rule = null!;
+            return false;
+        }
     }
 
     public void Upsert(AppRule rule)

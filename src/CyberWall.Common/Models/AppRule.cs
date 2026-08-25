@@ -21,6 +21,7 @@ public sealed record AppRule
     public Direction Direction { get; init; } = Direction.Both;
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
     public string? IconBase64 { get; init; }
+    public string? PackageFamilyName { get; init; }
 
     public static string Normalize(string path) => Path.GetFullPath(path).ToLowerInvariant();
 }

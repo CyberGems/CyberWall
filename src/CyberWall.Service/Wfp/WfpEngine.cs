@@ -47,9 +47,10 @@ public sealed class WfpEngine : IDisposable
         if (_realBlock) { RealFirewall.Disable(); _realBlock = false; }
     }
 
-    public void AllowApp(string path) { if (_enabled) RealFirewall.AllowApp(path); }
-    public void BlockApp(string path) { if (_enabled) RealFirewall.BlockApp(path); }
-    public void RemoveApp(string path) => RealFirewall.RemoveApp(path);
+    public void AllowApp(string path, int pid = 0) { if (_enabled) RealFirewall.AllowApp(path, pid); }
+    public void BlockApp(string path, int pid = 0) { if (_enabled) RealFirewall.BlockApp(path, pid); }
+    public void HoldApp(string path, int pid = 0) { if (_enabled) RealFirewall.HoldApp(path, pid); }
+    public void RemoveApp(string path, int pid = 0) => RealFirewall.RemoveApp(path, pid);
 
     public Verdict Classify(string appPath, Direction dir, RuleStore store)
     {

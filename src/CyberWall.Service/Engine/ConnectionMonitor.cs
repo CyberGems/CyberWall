@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Runtime.InteropServices;
 using CyberWall.Common.Models;
+using CyberWall.Service.Wfp;
 
 namespace CyberWall.Service.Engine;
 
@@ -13,6 +14,7 @@ public sealed class ConnectionMonitor : IDisposable
     private readonly HashSet<int> _ownPids;
     private readonly WfpBlockWatcher _blockWatcher = new();
     private FirewallService? _svc;
+    private int _polling;
 
     public ConnectionMonitor()
     {
@@ -40,21 +42,32 @@ public sealed class ConnectionMonitor : IDisposable
     private void HandleBlockedConnection(ConnectionEvent ev)
     {
         if (_svc == null || !_svc.IsMasterOn) return;
-        if (_svc.Mode == FirewallMode.BlockAll) return;
-
-        // Skip if already in rule store
-        if (_svc.Store.TryGet(ev.AppPath, out _)) return;
 
         // Skip own processes
         if (_ownPids.Contains(ev.ProcessId)) return;
         if (ev.AppPath.Contains("CyberWall", StringComparison.OrdinalIgnoreCase)) return;
 
+        if (HostAppResolver.TryResolveHost(ev.ProcessId, ev.AppPath, out var hostPath, out var hostPid))
+        {
+            ev = ev with { AppPath = hostPath, ProcessId = hostPid };
+        }
+
+        if (_svc.Store.TryGet(ev.AppPath, out var existing))
+        {
+            if (existing.Verdict == Verdict.Block)
+                _svc.ReenforceBlock(ev.AppPath, ev.ProcessId);
+            return;
+        }
+
+        _svc.HoldPending(ev);
+        if (_svc.Mode == FirewallMode.BlockAll) return;
         OnNewConnection?.Invoke(ev);
     }
 
     private void Poll()
     {
         if (_svc == null || !_svc.IsMasterOn) return;
+        if (Interlocked.Exchange(ref _polling, 1) == 1) return;
         try
         {
             var conns = GetTcpConnections();
@@ -66,7 +79,20 @@ public sealed class ConnectionMonitor : IDisposable
                 if (path == null) continue;
                 if (_ownPids.Contains(c.Pid)) continue;
                 if (path.Contains("CyberWall", StringComparison.OrdinalIgnoreCase)) continue;
-                if (_svc.Store.TryGet(path, out _)) continue;
+
+                var pid = c.Pid;
+                if (HostAppResolver.TryResolveHost(c.Pid, path, out var hostPath, out var hostPid))
+                {
+                    path = hostPath;
+                    pid = hostPid;
+                }
+
+                if (_svc.Store.TryGet(path, out var existing))
+                {
+                    if (existing.Verdict == Verdict.Block)
+                        _svc.ReenforceBlock(path, pid);
+                    continue;
+                }
 
                 var ev = new ConnectionEvent
                 {
@@ -74,33 +100,40 @@ public sealed class ConnectionMonitor : IDisposable
                     RemoteAddress = c.Remote,
                     RemotePort = c.Port,
                     Direction = Direction.Outbound,
-                    ProcessId = c.Pid,
+                    ProcessId = pid,
                     Protocol = "TCP"
                 };
 
+                _svc.HoldPending(ev);
                 if (_svc.Mode == FirewallMode.BlockAll) continue;
                 OnNewConnection?.Invoke(ev);
             }
             if (_seen.Count > 5000) _seen.Clear();
         }
         catch (Exception ex) { Debug.WriteLine(ex); }
+        finally { Interlocked.Exchange(ref _polling, 0); }
     }
 
-    private static string? GetPath(int pid)
-    {
-        try { using var p = Process.GetProcessById(pid); return p.MainModule?.FileName; } catch { return null; }
-    }
+    private static string? GetPath(int pid) => ProcessIdentity.GetImagePath(pid);
 
     private static List<(int Pid, string Remote, int Port)> GetTcpConnections()
     {
         var list = new List<(int, string, int)>();
+        CollectTcp4(list);
+        CollectTcp6(list);
+        return list;
+    }
+
+    private static void CollectTcp4(List<(int, string, int)> list)
+    {
         nint table = 0;
         try
         {
             int size = 0;
             GetExtendedTcpTable(nint.Zero, ref size, false, 2, 5, 0);
+            if (size <= 0) return;
             table = Marshal.AllocHGlobal(size);
-            if (GetExtendedTcpTable(table, ref size, false, 2, 5, 0) != 0) return list;
+            if (GetExtendedTcpTable(table, ref size, false, 2, 5, 0) != 0) return;
             int count = Marshal.ReadInt32(table);
             nint row = table + 4;
             int rowSize = Marshal.SizeOf<MIB_TCPROW_OWNER_PID>();
@@ -116,11 +149,48 @@ public sealed class ConnectionMonitor : IDisposable
             }
         }
         finally { if (table != 0) Marshal.FreeHGlobal(table); }
-        return list;
+    }
+
+    private static void CollectTcp6(List<(int, string, int)> list)
+    {
+        nint table = 0;
+        try
+        {
+            int size = 0;
+            GetExtendedTcpTable(nint.Zero, ref size, false, 23, 5, 0);
+            if (size <= 0) return;
+            table = Marshal.AllocHGlobal(size);
+            if (GetExtendedTcpTable(table, ref size, false, 23, 5, 0) != 0) return;
+            int count = Marshal.ReadInt32(table);
+            nint row = table + 4;
+            int rowSize = Marshal.SizeOf<MIB_TCP6ROW_OWNER_PID>();
+            for (int i = 0; i < count; i++)
+            {
+                var r = Marshal.PtrToStructure<MIB_TCP6ROW_OWNER_PID>(row + i * rowSize);
+                if (r.remoteAddr == null || r.state is not (2 or 5)) continue;
+                var ip = new IPAddress(r.remoteAddr);
+                int port = (int)((r.remotePort >> 8) | ((r.remotePort & 0xFF) << 8));
+                list.Add(((int)r.owningPid, ip.ToString(), port));
+            }
+        }
+        catch (Exception ex) { Debug.WriteLine(ex); }
+        finally { if (table != 0) Marshal.FreeHGlobal(table); }
     }
 
     [DllImport("iphlpapi.dll")] static extern uint GetExtendedTcpTable(nint pTable, ref int pdwSize, bool sort, int family, int tableClass, int reserved);
     [StructLayout(LayoutKind.Sequential)] struct MIB_TCPROW_OWNER_PID { public uint state; public uint localAddr; public uint localPort; public uint remoteAddr; public uint remotePort; public uint owningPid; }
+    [StructLayout(LayoutKind.Sequential)]
+    struct MIB_TCP6ROW_OWNER_PID
+    {
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)] public byte[] localAddr;
+        public uint localScopeId;
+        public uint localPort;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)] public byte[] remoteAddr;
+        public uint remoteScopeId;
+        public uint remotePort;
+        public uint state;
+        public uint owningPid;
+    }
 
     public void Dispose()
     {
