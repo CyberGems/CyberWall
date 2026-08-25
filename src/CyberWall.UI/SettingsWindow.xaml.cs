@@ -45,6 +45,8 @@ public partial class SettingsWindow : Window
         PopulateMonitors();
         StartupToggle.IsChecked = StartupHelper.IsStartupEnabled();
         MinimizeToTrayToggle.IsChecked = s.MinimizeToTrayOnClose;
+        AutoBlockToggle.IsChecked = s.PopupAutoBlockEnabled;
+        PopulateAutoBlockWait();
         UpdateTexts();
         Closing += (_, _) => ConnectionPopup.DismissPreview();
         _loading = false;
@@ -165,11 +167,15 @@ public partial class SettingsWindow : Window
         StartupDescLbl.Text = Strings.T("RunAtStartupDesc");
         MinimizeToTrayTitleLbl.Text = Strings.T("MinimizeToTrayOnClose");
         MinimizeToTrayDescLbl.Text = Strings.T("MinimizeToTrayOnCloseDesc");
+        AutoBlockTitleLbl.Text = Strings.T("PopupAutoBlock");
+        AutoBlockDescLbl.Text = Strings.T("PopupAutoBlockDesc");
+        AutoBlockWaitLbl.Text = Strings.T("PopupAutoBlockWait");
         PreviewBtn.Content = Strings.T("PreviewPopup");
         AboutBtn.Content = Strings.T("About");
         CloseBtn.Content = es ? "Cerrar" : "Close";
 
         PopulateMonitors();
+        PopulateAutoBlockWait();
     }
 
     private void StartupToggle_Click(object sender, RoutedEventArgs e)
@@ -189,6 +195,61 @@ public partial class SettingsWindow : Window
         if (Owner is MainWindow mw)
         {
             mw.UpdateCloseButtonTooltip();
+        }
+    }
+
+    private static readonly (int Seconds, string Key)[] AutoBlockWaitOptions =
+    {
+        (30, "PopupAutoBlock30s"),
+        (60, "PopupAutoBlock1m"),
+        (120, "PopupAutoBlock2m"),
+        (300, "PopupAutoBlock5m"),
+        (600, "PopupAutoBlock10m"),
+        (900, "PopupAutoBlock15m"),
+        (1800, "PopupAutoBlock30m")
+    };
+
+    private void PopulateAutoBlockWait()
+    {
+        var wasLoading = _loading;
+        _loading = true;
+        AutoBlockWaitBox.Items.Clear();
+        foreach (var (secs, key) in AutoBlockWaitOptions)
+            AutoBlockWaitBox.Items.Add(new ComboBoxItem { Content = Strings.T(key), Tag = secs });
+
+        var want = _s.PopupAutoBlockSeconds;
+        int best = 3;
+        int bestDiff = int.MaxValue;
+        for (int i = 0; i < AutoBlockWaitBox.Items.Count; i++)
+        {
+            if (AutoBlockWaitBox.Items[i] is not ComboBoxItem { Tag: int secs }) continue;
+            var d = Math.Abs(secs - want);
+            if (d >= bestDiff) continue;
+            bestDiff = d;
+            best = i;
+        }
+        AutoBlockWaitBox.SelectedIndex = best;
+        AutoBlockWaitRow.IsEnabled = _s.PopupAutoBlockEnabled;
+        AutoBlockWaitRow.Opacity = _s.PopupAutoBlockEnabled ? 1 : 0.45;
+        _loading = wasLoading;
+    }
+
+    private void AutoBlockToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        _s.PopupAutoBlockEnabled = AutoBlockToggle.IsChecked == true;
+        _s.Save();
+        AutoBlockWaitRow.IsEnabled = _s.PopupAutoBlockEnabled;
+        AutoBlockWaitRow.Opacity = _s.PopupAutoBlockEnabled ? 1 : 0.45;
+    }
+
+    private void AutoBlockWaitBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loading) return;
+        if (AutoBlockWaitBox.SelectedItem is ComboBoxItem { Tag: int secs })
+        {
+            _s.PopupAutoBlockSeconds = secs;
+            _s.Save();
         }
     }
 

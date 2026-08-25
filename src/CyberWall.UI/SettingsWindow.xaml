@@ -480,6 +480,38 @@
 
                                 <CheckBox x:Name="MinimizeToTrayToggle" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}" VerticalAlignment="Center" Click="MinimizeToTrayToggle_Click"/>
                             </Grid>
+
+                            <!-- Divider -->
+                            <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,10"/>
+
+                            <!-- 3. Auto-block unanswered prompts -->
+                            <Grid MinHeight="44">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <Path Data="M 12 3 A 9 9 0 1 1 3 12 M 12 7 V 12 L 15.5 14" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="14" Height="14" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <TextBlock x:Name="AutoBlockTitleLbl" Text="Bloquear avisos sin respuesta" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextBrush}"/>
+                                    <TextBlock x:Name="AutoBlockDescLbl" Text="Si no respondes, el programa se bloquea automáticamente." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+
+                                <CheckBox x:Name="AutoBlockToggle" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}" VerticalAlignment="Center" Click="AutoBlockToggle_Click"/>
+                            </Grid>
+
+                            <Grid x:Name="AutoBlockWaitRow" MinHeight="40" Margin="44,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="AutoBlockWaitLbl" Text="Esperar antes de bloquear" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <ComboBox x:Name="AutoBlockWaitBox" Grid.Column="1" Width="150" Height="34" Style="{StaticResource ModernComboBox}" SelectionChanged="AutoBlockWaitBox_SelectionChanged"/>
+                            </Grid>
                         </StackPanel>
                     </Border>
                 </StackPanel>

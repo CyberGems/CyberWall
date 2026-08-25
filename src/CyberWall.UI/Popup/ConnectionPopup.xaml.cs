@@ -17,7 +17,7 @@ namespace CyberWall.UI.Popup;
 
 public partial class ConnectionPopup : Window
 {
-    private const int TimeoutSeconds = 90;
+    private const int DefaultTimeoutSeconds = 300;
 
     private static ConnectionPopup? _activePreview;
     private static DispatcherTimer? _previewTimer;
@@ -25,7 +25,8 @@ public partial class ConnectionPopup : Window
     private readonly DispatcherTimer _countdownTimer;
     private readonly DispatcherTimer _feedbackTimer;
     private readonly CancellationTokenSource _cts = new();
-    private int _remaining = TimeoutSeconds;
+    private readonly bool _autoBlockEnabled;
+    private int _remaining = DefaultTimeoutSeconds;
     private bool _countdownPaused;
     private AppIdentityInfo _identity = AppIdentity.Resolve(null);
 
@@ -41,6 +42,10 @@ public partial class ConnectionPopup : Window
         Event = ev;
         IsPreview = isPreview;
         DataContext = this;
+
+        var timeoutSeconds = Math.Clamp(App.Settings.PopupAutoBlockSeconds, 15, 3600);
+        _autoBlockEnabled = !isPreview && App.Settings.PopupAutoBlockEnabled;
+        _remaining = timeoutSeconds;
 
         SourceInitialized += (_, _) => PopupWindowHelper.ApplyNoActivateChrome(this);
         Loaded += OnLoaded;
@@ -84,7 +89,7 @@ public partial class ConnectionPopup : Window
             FeedbackLbl.Visibility = Visibility.Collapsed;
         };
 
-        if (isPreview)
+        if (isPreview || !_autoBlockEnabled)
         {
             CountdownLbl.Visibility = Visibility.Collapsed;
         }
@@ -100,11 +105,10 @@ public partial class ConnectionPopup : Window
         var pos = App.Settings.NotificationPosition;
         var mon = App.Settings.NotificationMonitor;
         PopupWindowHelper.PositionPopup(this, pos, mon, IsPreview ? 0 : null);
-        if (!IsPreview && !_countdownTimer.IsEnabled)
-        {
+        if (IsPreview) return;
+        if (_autoBlockEnabled && !_countdownTimer.IsEnabled)
             _countdownTimer.Start();
-            _ = ResolveHostAsync(Event);
-        }
+        _ = ResolveHostAsync(Event);
     }
 
     private void OnPreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)

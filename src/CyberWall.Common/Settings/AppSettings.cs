@@ -29,6 +29,8 @@ public sealed class AppSettings
     public bool AutoCheckForUpdates { get; set; } = true;
     public bool RunAtStartup { get; set; } = false;
     public bool MinimizeToTrayOnClose { get; set; } = true;
+    public bool PopupAutoBlockEnabled { get; set; } = true;
+    public int PopupAutoBlockSeconds { get; set; } = 300;
 
     private static string Path => System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "CyberWall", "settings.json");
 
