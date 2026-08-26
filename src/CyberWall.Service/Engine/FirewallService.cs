@@ -73,11 +73,6 @@ public sealed class FirewallService : IDisposable
         else if (oldMode == FirewallMode.Killswitch)
         {
             Wfp.SetKillswitch(false);
-            foreach (var r in Store.All)
-            {
-                if (r.Verdict == Verdict.Allow)
-                    Wfp.AllowApp(r.AppPath);
-            }
         }
     }
 

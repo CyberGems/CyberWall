@@ -62,6 +62,8 @@ public static class RealFirewall
         if (!IsAdmin) return false;
         try
         {
+            RunNetsh("advfirewall firewall delete rule name=\"CyberWall-Killswitch-BlockAll-Out\"");
+            RunNetsh("advfirewall firewall delete rule name=\"CyberWall-Killswitch-BlockAll-In\"");
             RunNetsh("advfirewall set allprofiles firewallpolicy blockinbound,allowoutbound");
             return true;
         }
@@ -75,12 +77,14 @@ public static class RealFirewall
         {
             if (enable)
             {
-                RunNetsh("advfirewall firewall set rule name=\"CyberWall-Allow-\" new enable=no");
+                RunNetsh("advfirewall firewall add rule name=\"CyberWall-Killswitch-BlockAll-Out\" dir=out action=block enable=yes profile=any");
+                RunNetsh("advfirewall firewall add rule name=\"CyberWall-Killswitch-BlockAll-In\" dir=in action=block enable=yes profile=any");
                 ProcessIdentity.TerminateAllNonSelfConnections();
             }
             else
             {
-                RunNetsh("advfirewall firewall set rule name=\"CyberWall-Allow-\" new enable=yes");
+                RunNetsh("advfirewall firewall delete rule name=\"CyberWall-Killswitch-BlockAll-Out\"");
+                RunNetsh("advfirewall firewall delete rule name=\"CyberWall-Killswitch-BlockAll-In\"");
             }
         }
         catch (Exception ex)

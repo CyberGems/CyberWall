@@ -123,8 +123,8 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Shield Icon -->
-                <Border Width="26" Height="26" CornerRadius="7" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,8,0">
-                    <Path Data="M 12 2 L 2 6 L 2 13 C 2 19 6.5 24.5 12 26 C 17.5 24.5 22 19 22 13 L 22 6 Z" Width="12" Height="14" Stretch="Uniform" Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Border Width="26" Height="26" CornerRadius="7" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,8,0" Padding="2">
+                    <Image Source="pack://application:,,,/Assets/CyberWall.png" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
                 </Border>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">

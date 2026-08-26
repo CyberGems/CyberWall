@@ -130,7 +130,7 @@
                 <Border Grid.Row="0" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" CornerRadius="11,11,0,0" Padding="18,10" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                     <Grid>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Path Data="M 12 2 L 2 6 L 2 13 C 2 19 6.5 24.5 12 26 C 17.5 24.5 22 19 22 13 L 22 6 Z" Width="14" Height="16" Stretch="Uniform" Fill="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <Image Source="pack://application:,,,/Assets/CyberWall.png" Width="16" Height="16" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <TextBlock x:Name="AboutTitleText" Text="Acerca de ᐧ CyberWall" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                         <Button Content="✕" Style="{StaticResource TitleCloseButton}" HorizontalAlignment="Right" Click="Close_Click"/>
@@ -149,11 +149,11 @@
 
                             <!-- Brand Logo + Name + Version -->
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Border Width="76" Height="76" CornerRadius="18" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1.5">
+                                <Border Width="76" Height="76" CornerRadius="18" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1.5" Padding="8">
                                     <Border.Effect>
                                         <DropShadowEffect Color="Black" Opacity="0.3" BlurRadius="10" ShadowDepth="2"/>
                                     </Border.Effect>
-                                    <Path Data="M 12 2 L 2 6 L 2 13 C 2 19 6.5 24.5 12 26 C 17.5 24.5 22 19 22 13 L 22 6 Z" Width="36" Height="42" Stretch="Uniform" Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <Image Source="pack://application:,,,/Assets/CyberWall.png" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
                                 </Border>
                                 <StackPanel Margin="18,0,0,0" VerticalAlignment="Center">
                                     <TextBlock FontSize="28" FontWeight="Bold" FontFamily="Segoe UI Variable Display">

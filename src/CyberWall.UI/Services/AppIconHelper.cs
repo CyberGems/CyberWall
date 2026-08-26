@@ -23,32 +23,88 @@ public static class AppIconHelper
     {
         if (_trayIcon != null) return _trayIcon;
 
+        try
+        {
+            var uri = new Uri("pack://application:,,,/Assets/CyberWall.ico", UriKind.Absolute);
+            var sri = System.Windows.Application.GetResourceStream(uri);
+            if (sri != null)
+            {
+                using var stream = sri.Stream;
+                var icon = new System.Drawing.Icon(stream, size, size);
+                _trayIcon = icon;
+                return icon;
+            }
+        }
+        catch { }
+
+        try
+        {
+            var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "CyberWall.ico");
+            if (File.Exists(iconPath))
+            {
+                var icon = new System.Drawing.Icon(iconPath, size, size);
+                _trayIcon = icon;
+                return icon;
+            }
+        }
+        catch { }
+
         using var bmp = GenerateShieldBitmap(size);
         var hIcon = bmp.GetHicon();
-        var icon = (System.Drawing.Icon)System.Drawing.Icon.FromHandle(hIcon).Clone();
+        var fallbackIcon = (System.Drawing.Icon)System.Drawing.Icon.FromHandle(hIcon).Clone();
         DestroyIcon(hIcon);
-        _trayIcon = icon;
-        return icon;
+        _trayIcon = fallbackIcon;
+        return fallbackIcon;
     }
 
     public static WpfImageSource CreateShieldImageSource(int size = 64)
     {
         if (_cachedImageSource != null) return _cachedImageSource;
 
+        try
+        {
+            var uri = new Uri("pack://application:,,,/Assets/CyberWall.png", UriKind.Absolute);
+            var bi = new BitmapImage();
+            bi.BeginInit();
+            bi.UriSource = uri;
+            bi.DecodePixelWidth = size;
+            bi.CacheOption = BitmapCacheOption.OnLoad;
+            bi.EndInit();
+            bi.Freeze();
+            _cachedImageSource = bi;
+            return bi;
+        }
+        catch { }
+
+        try
+        {
+            var uri = new Uri("pack://application:,,,/Assets/CyberWall.ico", UriKind.Absolute);
+            var bi = new BitmapImage();
+            bi.BeginInit();
+            bi.UriSource = uri;
+            bi.DecodePixelWidth = size;
+            bi.CacheOption = BitmapCacheOption.OnLoad;
+            bi.EndInit();
+            bi.Freeze();
+            _cachedImageSource = bi;
+            return bi;
+        }
+        catch { }
+
         using var bmp = GenerateShieldBitmap(size);
         using var ms = new MemoryStream();
         bmp.Save(ms, ImageFormat.Png);
         ms.Position = 0;
 
-        var bi = new BitmapImage();
-        bi.BeginInit();
-        bi.StreamSource = ms;
-        bi.CacheOption = BitmapCacheOption.OnLoad;
-        bi.EndInit();
-        bi.Freeze();
+        var fallback = new BitmapImage();
+        fallback.BeginInit();
+        fallback.StreamSource = ms;
+        fallback.CacheOption = BitmapCacheOption.OnLoad;
+        fallback.EndInit();
+        fallback.Freeze();
 
-        _cachedImageSource = bi;
-        return bi;
+        _cachedImageSource = fallback;
+        return fallback;
     }
 
     private static Bitmap GenerateShieldBitmap(int size)

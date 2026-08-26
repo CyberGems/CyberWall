@@ -22,6 +22,7 @@
   <ItemGroup>
     <Resource Include="CyberWall.ico" />
     <Resource Include="Assets\CyberWall.ico" />
+    <Resource Include="Assets\CyberWall.png" />
   </ItemGroup>
 
 </Project>
