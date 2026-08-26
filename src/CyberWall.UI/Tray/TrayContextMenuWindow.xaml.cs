@@ -154,7 +154,12 @@ public partial class TrayContextMenuWindow : Window
         MasterSwitch.IsChecked = on;
         ProtectionStatusText.Text = on ? Strings.T("ProtectionActive") : Strings.T("ProtectionDisabled");
         StatusDot.Fill = on ? new SolidColorBrush(MediaColor.FromRgb(0x4A, 0xDE, 0x80)) : new SolidColorBrush(MediaColor.FromRgb(0xEF, 0x44, 0x44));
-        ProtectionModeText.Text = _svc.Mode == FirewallMode.Ask ? Strings.T("ModeAsk") : Strings.T("ModeBlockAll");
+        ProtectionModeText.Text = _svc.Mode switch
+        {
+            FirewallMode.BlockAll => Strings.T("ModeBlockAll"),
+            FirewallMode.Killswitch => Strings.T("ModeKillswitch"),
+            _ => Strings.T("ModeAsk")
+        };
         _updatingUi = false;
     }
 

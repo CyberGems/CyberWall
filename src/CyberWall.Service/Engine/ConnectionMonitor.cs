@@ -55,7 +55,7 @@ public sealed class ConnectionMonitor : IDisposable
         if (ShouldSkipPrompt(ev.AppPath, ev.ProcessId)) return;
 
         _svc.HoldPending(ev);
-        if (_svc.Mode == FirewallMode.BlockAll)
+        if (_svc.Mode == FirewallMode.BlockAll || _svc.Mode == FirewallMode.Killswitch)
         {
             _svc.NotifyUnknownBlocked(ev);
             return;
@@ -106,7 +106,7 @@ public sealed class ConnectionMonitor : IDisposable
                 };
 
                 _svc.HoldPending(ev);
-                if (_svc.Mode == FirewallMode.BlockAll)
+                if (_svc.Mode == FirewallMode.BlockAll || _svc.Mode == FirewallMode.Killswitch)
                 {
                     _svc.NotifyUnknownBlocked(ev);
                     continue;
@@ -122,6 +122,11 @@ public sealed class ConnectionMonitor : IDisposable
     private bool ShouldSkipPrompt(string path, int pid)
     {
         if (_svc == null) return true;
+        if (_svc.Mode == FirewallMode.Killswitch)
+        {
+            _svc.ReenforceBlock(path, pid);
+            return true;
+        }
         if (_svc.Store.TryGet(path, out var existing))
         {
             if (existing.Verdict == Verdict.Block)

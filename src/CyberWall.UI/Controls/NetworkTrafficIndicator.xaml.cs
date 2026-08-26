@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Windows;
@@ -24,11 +25,11 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         public double Length { get; init; }
     }
 
-    private readonly DispatcherTimer _timer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(33) };
+    private readonly Stopwatch _stopwatch = new();
+    private TimeSpan _lastRenderingTime;
     private readonly DispatcherTimer _connectivityTimer = new() { Interval = TimeSpan.FromSeconds(30) };
     private readonly List<Packet> _packets = new();
     private CancellationTokenSource? _connectivityCts;
-    private DateTime _lastTickUtc;
     private bool _isActive;
     private FirewallMode _mode = FirewallMode.Ask;
     private ConnectivityState _connectivity = ConnectivityState.Unknown;
@@ -50,19 +51,20 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         InitializeComponent();
         CreatePackets();
         RefreshLanguage();
-        _timer.Tick += OnTick;
         _connectivityTimer.Tick += (_, _) => _ = CheckConnectivityAsync();
         Loaded += (_, _) =>
         {
-            _lastTickUtc = DateTime.UtcNow;
-            _timer.Start();
+            _stopwatch.Restart();
+            _lastRenderingTime = _stopwatch.Elapsed;
+            CompositionTarget.Rendering += OnRendering;
             _connectivityTimer.Start();
             _ = CheckConnectivityAsync();
             RefreshPackets();
         };
         Unloaded += (_, _) =>
         {
-            _timer.Stop();
+            CompositionTarget.Rendering -= OnRendering;
+            _stopwatch.Stop();
             _connectivityTimer.Stop();
             _connectivityCts?.Cancel();
             _connectivityCts = null;
@@ -81,12 +83,18 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
 
     public void RefreshLanguage()
     {
-        LiveText.Text = Strings.T(_connectivity == ConnectivityState.Offline ? "TrafficOffline" : "TrafficLive");
+        var isOfflineOrKillswitch = _connectivity == ConnectivityState.Offline || _mode == FirewallMode.Killswitch;
+        LiveText.Text = Strings.T(isOfflineOrKillswitch ? "TrafficOffline" : "TrafficLive");
         var stateKey = _connectivity switch
         {
             ConnectivityState.Offline => "TrafficDisconnected",
             ConnectivityState.Unknown => "TrafficChecking",
-            _ => !_isActive ? "TrafficUnfiltered" : (_mode == FirewallMode.BlockAll ? "TrafficStrict" : "TrafficProtected")
+            _ => !_isActive ? "TrafficUnfiltered" : (_mode switch
+            {
+                FirewallMode.Killswitch => "TrafficKillswitch",
+                FirewallMode.BlockAll => "TrafficStrict",
+                _ => "TrafficProtected"
+            })
         };
         StateText.Text = Strings.T(stateKey);
         ToolTip = Strings.T(stateKey);
@@ -124,11 +132,14 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         RefreshAppearance();
     }
 
-    private void OnTick(object? sender, EventArgs e)
+    private void OnRendering(object? sender, EventArgs e)
     {
-        var now = DateTime.UtcNow;
-        var elapsed = Math.Clamp((now - _lastTickUtc).TotalSeconds, 0, 0.2);
-        _lastTickUtc = now;
+        var current = _stopwatch.Elapsed;
+        var elapsed = (current - _lastRenderingTime).TotalSeconds;
+        _lastRenderingTime = current;
+        if (elapsed <= 0.0) return;
+        if (elapsed > 0.1) elapsed = 0.033;
+
         var width = TrafficCanvas.ActualWidth;
         if (width <= 0) return;
 
@@ -136,34 +147,43 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         {
             ConnectivityState.Offline => 0.0,
             ConnectivityState.Unknown => 0.6,
-            _ => !_isActive ? 0.45 : (_mode == FirewallMode.BlockAll ? 1.25 : 1.0)
+            _ => !_isActive ? 0.45 : (_mode switch
+            {
+                FirewallMode.Killswitch => 0.0,
+                FirewallMode.BlockAll => 1.25,
+                _ => 1.0
+            })
         };
 
-        if (_connectivity == ConnectivityState.Offline)
+        var nowSeconds = current.TotalSeconds;
+        if (_connectivity == ConnectivityState.Offline || _mode == FirewallMode.Killswitch)
         {
             StatusHalo.Opacity = 0.08;
         }
         else
         {
-            var haloPulse = 0.16 + (Math.Sin(now.TimeOfDay.TotalSeconds * 3.2) + 1.0) * 0.12;
+            var haloPulse = 0.16 + (Math.Sin(nowSeconds * 3.2) + 1.0) * 0.12;
             StatusHalo.Opacity = haloPulse;
         }
 
         foreach (var packet in _packets)
         {
-            packet.Position += packet.Speed * elapsed * flowFactor;
-            if (packet.Position > width + packet.Length + 4)
-                packet.Position = -packet.Length - (packet.Speed * 0.15);
+            if (flowFactor > 0)
+            {
+                packet.Position += packet.Speed * elapsed * flowFactor;
+                if (packet.Position > width + packet.Length + 4)
+                    packet.Position = -packet.Length - (packet.Speed * 0.15);
 
-            Canvas.SetLeft(packet.Element, packet.Position);
-            Canvas.SetTop(packet.Element, packet.Top);
+                Canvas.SetLeft(packet.Element, packet.Position);
+                Canvas.SetTop(packet.Element, packet.Top);
+            }
 
-            var pulse = 0.65 + (Math.Sin(now.TimeOfDay.TotalSeconds * 3.5 + packet.Phase) + 1.0) * 0.175;
+            var pulse = 0.65 + (Math.Sin(nowSeconds * 3.5 + packet.Phase) + 1.0) * 0.175;
             packet.Element.Opacity = _connectivity switch
             {
                 ConnectivityState.Offline => 0.08,
                 ConnectivityState.Unknown => pulse * 0.5,
-                _ => _isActive ? pulse : pulse * 0.7
+                _ => _mode == FirewallMode.Killswitch ? 0.08 : (!_isActive ? pulse * 0.5 : pulse)
             };
         }
     }
@@ -261,7 +281,7 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         string fgKey;
         string bgKey;
 
-        if (_connectivity == ConnectivityState.Offline)
+        if (_connectivity == ConnectivityState.Offline || _mode == FirewallMode.Killswitch)
         {
             fgKey = "BadgeBlockFgBrush";
             bgKey = "BadgeBlockBgBrush";

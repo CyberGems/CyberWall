@@ -578,9 +578,10 @@
                         <!-- Right: Mode Dropdown -->
                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock x:Name="ModeLbl" Text="Modo:" Foreground="{DynamicResource SubTextBrush}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <ComboBox x:Name="ModeBox" Width="210" Height="34" Style="{StaticResource ModernComboBox}" SelectionChanged="ModeBox_SelectionChanged">
+                            <ComboBox x:Name="ModeBox" Width="235" Height="34" Style="{StaticResource ModernComboBox}" SelectionChanged="ModeBox_SelectionChanged">
                                 <ComboBoxItem Content="Preguntar para conectar"/>
-                                <ComboBoxItem Content="Bloquear todo"/>
+                                <ComboBoxItem Content="Bloquear sin preguntar"/>
+                                <ComboBoxItem Content="Bloqueo total (Killswitch)"/>
                             </ComboBox>
                         </StackPanel>
                     </Grid>

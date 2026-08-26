@@ -56,19 +56,24 @@
             <Setter Property="FontSize" Value="11.5"/>
             <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, -apple-system, BlinkMacSystemFont, Roboto, sans-serif"/>
             <Setter Property="Padding" Value="8,5"/>
-            <Setter Property="HasDropShadow" Value="True"/>
+            <Setter Property="HasDropShadow" Value="False"/>
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToolTip">
                         <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
-                            <Border.Effect>
-                                <DropShadowEffect Color="Black" Opacity="0.45" BlurRadius="10" ShadowDepth="2"/>
-                            </Border.Effect>
                             <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- Global ToolTipService Timing Configuration to prevent stuck/overlapping tooltips -->
+        <Style TargetType="FrameworkElement">
+            <Setter Property="ToolTipService.InitialShowDelay" Value="250"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="7000"/>
         </Style>
     </Application.Resources>
 </Application>

@@ -4,7 +4,8 @@ public enum FirewallMode
 {
     Disabled = 0,
     BlockAll = 1,
-    Ask = 2
+    Ask = 2,
+    Killswitch = 3
 }
 
 public enum Verdict

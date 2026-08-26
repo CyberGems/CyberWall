@@ -78,7 +78,7 @@ public sealed class FirewallService : IDisposable
 
     public void ReenforceAllow(string appPath, int pid)
     {
-        if (!IsEnabled) return;
+        if (!IsEnabled || Mode == FirewallMode.Killswitch) return;
         var key = SafeKey(appPath);
         bool first;
         lock (_sessionLock) first = _reappliedAllows.Add(key);
@@ -99,6 +99,7 @@ public sealed class FirewallService : IDisposable
     public Verdict Decide(ConnectionEvent ev)
     {
         if (!IsEnabled) return Verdict.Allow;
+        if (Mode == FirewallMode.Killswitch) return Verdict.Block;
         var v = Wfp.Classify(ev.AppPath, ev.Direction, Store);
         if (v != Verdict.Ask) return v;
         if (TryGetSession(ev.AppPath, ev.ProcessId, out var session)) return session;

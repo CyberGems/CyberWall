@@ -151,11 +151,17 @@ public partial class MainWindow : Window
 
         AllowedExpander.Header = $"{Strings.T("Allowed")} ({_all.Count(r => r.Verdict == Verdict.Allow)})";
         BlockedExpander.Header = $"{Strings.T("Blocked")} ({_all.Count(r => r.Verdict == Verdict.Block)})";
-        var m = _svc.Mode == FirewallMode.BlockAll ? 1 : 0;
+        var m = _svc.Mode switch
+        {
+            FirewallMode.BlockAll => 1,
+            FirewallMode.Killswitch => 2,
+            _ => 0
+        };
         _loading = true;
         ModeBox.Items.Clear();
         ModeBox.Items.Add(new ComboBoxItem { Content = Strings.T("ModeAsk") });
         ModeBox.Items.Add(new ComboBoxItem { Content = Strings.T("ModeBlockAll") });
+        ModeBox.Items.Add(new ComboBoxItem { Content = Strings.T("ModeKillswitch") });
         ModeBox.SelectedIndex = m;
         _loading = false;
         UpdateMaximizeButtonIcon();
@@ -447,7 +453,16 @@ public partial class MainWindow : Window
         TrafficIndicator.SetActive(on, _svc.Mode);
         var real = _svc.Wfp.IsRealBlock ? " • WFP Real" : " • Simulado";
         if (!on) StatusText.Text = Strings.T("StatusDisabled") + real;
-        else StatusText.Text = (_svc.Mode == FirewallMode.Ask ? Strings.T("StatusEnabledAsk") : Strings.T("StatusEnabledBlock")) + real;
+        else
+        {
+            var statusKey = _svc.Mode switch
+            {
+                FirewallMode.BlockAll => "StatusEnabledBlock",
+                FirewallMode.Killswitch => "StatusEnabledKillswitch",
+                _ => "StatusEnabledAsk"
+            };
+            StatusText.Text = Strings.T(statusKey) + real;
+        }
     }
 
     private void MasterToggle_Changed(object sender, RoutedEventArgs e)
@@ -455,7 +470,12 @@ public partial class MainWindow : Window
         if (_loading) return;
         if (MasterToggle.IsChecked == true)
         {
-            var m = ModeBox.SelectedIndex == 1 ? FirewallMode.BlockAll : FirewallMode.Ask;
+            var m = ModeBox.SelectedIndex switch
+            {
+                1 => FirewallMode.BlockAll,
+                2 => FirewallMode.Killswitch,
+                _ => FirewallMode.Ask
+            };
             _svc.Enable(m);
             _notifications.MarkRelatedRead(AppNotificationKind.ProtectionOff, null);
         }
@@ -473,7 +493,12 @@ public partial class MainWindow : Window
     private void ModeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_loading || !_svc.IsMasterOn) return;
-        var m = ModeBox.SelectedIndex == 1 ? FirewallMode.BlockAll : FirewallMode.Ask;
+        var m = ModeBox.SelectedIndex switch
+        {
+            1 => FirewallMode.BlockAll,
+            2 => FirewallMode.Killswitch,
+            _ => FirewallMode.Ask
+        };
         _svc.SetMode(m);
         App.Settings.FirewallMode = (int)m;
         App.Settings.Save();
