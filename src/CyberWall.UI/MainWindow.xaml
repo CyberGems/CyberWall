@@ -101,6 +101,11 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="350"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="100"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
+            <Setter Property="ToolTipService.Placement" Value="Bottom"/>
+            <Setter Property="ToolTipService.VerticalOffset" Value="4"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -126,6 +131,11 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="350"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="100"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
+            <Setter Property="ToolTipService.Placement" Value="Bottom"/>
+            <Setter Property="ToolTipService.VerticalOffset" Value="4"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -258,6 +268,11 @@
             <Setter Property="Padding" Value="14,6"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="350"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="100"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
+            <Setter Property="ToolTipService.Placement" Value="Bottom"/>
+            <Setter Property="ToolTipService.VerticalOffset" Value="4"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">

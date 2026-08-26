@@ -69,11 +69,5 @@
             </Setter>
         </Style>
 
-        <!-- Global ToolTipService Timing Configuration to prevent stuck/overlapping tooltips -->
-        <Style TargetType="FrameworkElement">
-            <Setter Property="ToolTipService.InitialShowDelay" Value="250"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
-            <Setter Property="ToolTipService.ShowDuration" Value="7000"/>
-        </Style>
     </Application.Resources>
 </Application>

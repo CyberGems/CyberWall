@@ -68,6 +68,27 @@ public static class RealFirewall
         catch { return false; }
     }
 
+    public static void SetKillswitch(bool enable)
+    {
+        if (!IsAdmin) return;
+        try
+        {
+            if (enable)
+            {
+                RunNetsh("advfirewall firewall set rule name=\"CyberWall-Allow-\" new enable=no");
+                ProcessIdentity.TerminateAllNonSelfConnections();
+            }
+            else
+            {
+                RunNetsh("advfirewall firewall set rule name=\"CyberWall-Allow-\" new enable=yes");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex);
+        }
+    }
+
     public static void AllowApp(string appPath, int pid = 0)
     {
         if (!IsAdmin) return;

@@ -34,6 +34,10 @@ public sealed class FirewallService : IDisposable
         {
             lock (_sessionLock) _reappliedAllows.Clear();
             RealFirewall.EnsureSelfAllowed();
+            if (Mode == FirewallMode.Killswitch)
+            {
+                Wfp.SetKillswitch(true);
+            }
             Monitor.Start(this);
         }
         return ok;
@@ -41,6 +45,10 @@ public sealed class FirewallService : IDisposable
 
     public void Disable()
     {
+        if (Mode == FirewallMode.Killswitch)
+        {
+            Wfp.SetKillswitch(false);
+        }
         Monitor.Stop();
         Wfp.Disable();
     }
@@ -49,8 +57,28 @@ public sealed class FirewallService : IDisposable
     public void SetMode(FirewallMode mode)
     {
         if (mode == FirewallMode.Disabled) { Disable(); return; }
+        var oldMode = Mode;
         Mode = mode;
-        if (!IsEnabled) { Wfp.TryEnable(); Monitor.Start(this); }
+        if (!IsEnabled)
+        {
+            Wfp.TryEnable();
+            Monitor.Start(this);
+        }
+
+        if (Mode == FirewallMode.Killswitch)
+        {
+            lock (_sessionLock) _reappliedAllows.Clear();
+            Wfp.SetKillswitch(true);
+        }
+        else if (oldMode == FirewallMode.Killswitch)
+        {
+            Wfp.SetKillswitch(false);
+            foreach (var r in Store.All)
+            {
+                if (r.Verdict == Verdict.Allow)
+                    Wfp.AllowApp(r.AppPath);
+            }
+        }
     }
 
     public void NotifyUnknownBlocked(ConnectionEvent ev) => OnUnknownBlocked?.Invoke(ev);

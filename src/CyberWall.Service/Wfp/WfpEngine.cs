@@ -51,6 +51,7 @@ public sealed class WfpEngine : IDisposable
     public void BlockApp(string path, int pid = 0) { if (_enabled) RealFirewall.BlockApp(path, pid); }
     public void HoldApp(string path, int pid = 0) { if (_enabled) RealFirewall.HoldApp(path, pid); }
     public void RemoveApp(string path, int pid = 0) => RealFirewall.RemoveApp(path, pid);
+    public void SetKillswitch(bool enable) { if (_enabled) RealFirewall.SetKillswitch(enable); }
 
     public Verdict Classify(string appPath, Direction dir, RuleStore store)
     {

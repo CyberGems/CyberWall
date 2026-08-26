@@ -98,6 +98,41 @@ internal static class ProcessIdentity
         }
     }
 
+    public static void TerminateAllNonSelfConnections()
+    {
+        var ownPid = Process.GetCurrentProcess().Id;
+        nint table = 0;
+        try
+        {
+            int size = 0;
+            GetExtendedTcpTable(nint.Zero, ref size, false, 2, 5, 0);
+            if (size <= 0) return;
+            table = Marshal.AllocHGlobal(size);
+            if (GetExtendedTcpTable(table, ref size, false, 2, 5, 0) != 0) return;
+            int count = Marshal.ReadInt32(table);
+            nint row = table + 4;
+            int rowSize = Marshal.SizeOf<MIB_TCPROW_OWNER_PID>();
+            for (int i = 0; i < count; i++)
+            {
+                var r = Marshal.PtrToStructure<MIB_TCPROW_OWNER_PID>(row + i * rowSize);
+                var pid = (int)r.owningPid;
+                if (pid == ownPid || pid <= 4) continue;
+                if (r.state != TcpStateSynSent && r.state != TcpStateEstablished) continue;
+                var del = new MIB_TCPROW
+                {
+                    state = TcpStateDeleteTcb,
+                    localAddr = r.localAddr,
+                    localPort = r.localPort,
+                    remoteAddr = r.remoteAddr,
+                    remotePort = r.remotePort
+                };
+                SetTcpEntry(ref del);
+            }
+        }
+        catch (Exception ex) { Debug.WriteLine(ex); }
+        finally { if (table != 0) Marshal.FreeHGlobal(table); }
+    }
+
     public static void SuspendProcess(int pid)
     {
         if (pid <= 0) return;
