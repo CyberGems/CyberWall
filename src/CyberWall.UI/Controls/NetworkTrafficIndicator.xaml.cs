@@ -5,7 +5,10 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using CyberWall.Common.I18n;
+using CyberWall.Common.Models;
 using MediaColor = System.Windows.Media.Color;
+using MediaBrush = System.Windows.Media.Brush;
+using WPoint = System.Windows.Point;
 
 namespace CyberWall.UI.Controls;
 
@@ -18,14 +21,16 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         public double Speed { get; init; }
         public double Top { get; init; }
         public double Phase { get; init; }
+        public double Length { get; init; }
     }
 
-    private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(60) };
+    private readonly DispatcherTimer _timer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(33) };
     private readonly DispatcherTimer _connectivityTimer = new() { Interval = TimeSpan.FromSeconds(30) };
     private readonly List<Packet> _packets = new();
     private CancellationTokenSource? _connectivityCts;
     private DateTime _lastTickUtc;
     private bool _isActive;
+    private FirewallMode _mode = FirewallMode.Ask;
     private ConnectivityState _connectivity = ConnectivityState.Unknown;
 
     private static readonly HttpClient ConnectivityClient = new()
@@ -66,9 +71,10 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
     }
 
-    public void SetActive(bool active)
+    public void SetActive(bool active, FirewallMode mode = FirewallMode.Ask)
     {
         _isActive = active;
+        _mode = mode;
         RefreshAppearance();
         RefreshLanguage();
     }
@@ -78,9 +84,9 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         LiveText.Text = Strings.T(_connectivity == ConnectivityState.Offline ? "TrafficOffline" : "TrafficLive");
         var stateKey = _connectivity switch
         {
-            ConnectivityState.Offline => "TrafficOffline",
+            ConnectivityState.Offline => "TrafficDisconnected",
             ConnectivityState.Unknown => "TrafficChecking",
-            _ => _isActive ? "TrafficProtected" : "TrafficUnfiltered"
+            _ => !_isActive ? "TrafficUnfiltered" : (_mode == FirewallMode.BlockAll ? "TrafficStrict" : "TrafficProtected")
         };
         StateText.Text = Strings.T(stateKey);
         ToolTip = Strings.T(stateKey);
@@ -88,24 +94,29 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
 
     private void CreatePackets()
     {
+        TrafficCanvas.Children.Clear();
+        _packets.Clear();
         var random = new Random(9173);
-        for (var i = 0; i < 6; i++)
+
+        for (var i = 0; i < 8; i++)
         {
+            var length = 10.0 + random.Next(0, 15);
+            var height = (i % 3 == 0) ? 2.5 : 2.0;
             var packet = new Border
             {
-                Width = 3 + random.Next(0, 4),
-                Height = i % 2 == 0 ? 3 : 2,
-                CornerRadius = new CornerRadius(2),
-                Opacity = 0.55 + random.NextDouble() * 0.4,
+                Width = length,
+                Height = height,
+                CornerRadius = new CornerRadius(height / 2.0),
                 IsHitTestVisible = false
             };
             var item = new Packet
             {
                 Element = packet,
-                Position = -8 - random.NextDouble() * 180,
-                Speed = 34 + random.NextDouble() * 32,
-                Top = 6 + random.NextDouble() * 8,
-                Phase = random.NextDouble() * Math.PI * 2
+                Position = -20 - random.NextDouble() * 200,
+                Speed = 42 + random.NextDouble() * 45,
+                Top = 4.0 + random.NextDouble() * 6.5,
+                Phase = random.NextDouble() * Math.PI * 2,
+                Length = length
             };
             _packets.Add(item);
             TrafficCanvas.Children.Add(packet);
@@ -121,22 +132,39 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         var width = TrafficCanvas.ActualWidth;
         if (width <= 0) return;
 
+        var flowFactor = _connectivity switch
+        {
+            ConnectivityState.Offline => 0.0,
+            ConnectivityState.Unknown => 0.6,
+            _ => !_isActive ? 0.45 : (_mode == FirewallMode.BlockAll ? 1.25 : 1.0)
+        };
+
+        if (_connectivity == ConnectivityState.Offline)
+        {
+            StatusHalo.Opacity = 0.08;
+        }
+        else
+        {
+            var haloPulse = 0.16 + (Math.Sin(now.TimeOfDay.TotalSeconds * 3.2) + 1.0) * 0.12;
+            StatusHalo.Opacity = haloPulse;
+        }
+
         foreach (var packet in _packets)
         {
-            var flowFactor = _connectivity switch
-            {
-                ConnectivityState.Offline => 0,
-                ConnectivityState.Unknown => 0.7,
-                _ => _isActive ? 1 : 0.55
-            };
             packet.Position += packet.Speed * elapsed * flowFactor;
-            if (packet.Position > width + 8)
-                packet.Position = -8 - packet.Speed * 0.15;
+            if (packet.Position > width + packet.Length + 4)
+                packet.Position = -packet.Length - (packet.Speed * 0.15);
 
             Canvas.SetLeft(packet.Element, packet.Position);
             Canvas.SetTop(packet.Element, packet.Top);
-            packet.Element.Opacity = (0.45 + (Math.Sin(now.TimeOfDay.TotalSeconds * 3 + packet.Phase) + 1) * 0.2)
-                * (_connectivity == ConnectivityState.Offline ? 0.25 : _isActive ? 1 : 0.7);
+
+            var pulse = 0.65 + (Math.Sin(now.TimeOfDay.TotalSeconds * 3.5 + packet.Phase) + 1.0) * 0.175;
+            packet.Element.Opacity = _connectivity switch
+            {
+                ConnectivityState.Offline => 0.08,
+                ConnectivityState.Unknown => pulse * 0.5,
+                _ => _isActive ? pulse : pulse * 0.7
+            };
         }
     }
 
@@ -230,17 +258,56 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
 
     private void RefreshAppearance()
     {
-        var key = _connectivity == ConnectivityState.Offline
-            ? "BadgeBlockFgBrush"
-            : _isActive ? "AccentBrush" : "BadgeWarnFgBrush";
-        if (FindResource(key) is not SolidColorBrush baseBrush)
+        string fgKey;
+        string bgKey;
+
+        if (_connectivity == ConnectivityState.Offline)
+        {
+            fgKey = "BadgeBlockFgBrush";
+            bgKey = "BadgeBlockBgBrush";
+        }
+        else if (!_isActive)
+        {
+            fgKey = "BadgeWarnFgBrush";
+            bgKey = "BadgeWarnBgBrush";
+        }
+        else if (_mode == FirewallMode.BlockAll)
+        {
+            fgKey = "AccentBrush";
+            bgKey = "BadgeAllowBgBrush";
+        }
+        else
+        {
+            fgKey = "BadgeAllowFgBrush";
+            bgKey = "BadgeAllowBgBrush";
+        }
+
+        if (FindResource(fgKey) is not SolidColorBrush fgBrush)
             return;
 
-        var color = baseBrush.Color;
-        StatusDot.Fill = baseBrush;
-        StateText.Foreground = baseBrush;
-        RootBorder.BorderBrush = new SolidColorBrush(MediaColor.FromArgb(100, color.R, color.G, color.B));
+        var fgColor = fgBrush.Color;
+        var bgBrush = (FindResource(bgKey) is MediaBrush b) ? b : new SolidColorBrush(MediaColor.FromArgb(40, fgColor.R, fgColor.G, fgColor.B));
+
+        StatusDot.Fill = fgBrush;
+        StatusHalo.Fill = fgBrush;
+        StateText.Foreground = fgBrush;
+        StatePill.Background = bgBrush;
+        StatePill.BorderBrush = new SolidColorBrush(MediaColor.FromArgb(_mode == FirewallMode.BlockAll ? (byte)120 : (byte)70, fgColor.R, fgColor.G, fgColor.B));
+        RootBorder.BorderBrush = new SolidColorBrush(MediaColor.FromArgb(_mode == FirewallMode.BlockAll ? (byte)80 : (byte)45, fgColor.R, fgColor.G, fgColor.B));
+
         foreach (var packet in _packets)
-            packet.Element.Background = new SolidColorBrush(MediaColor.FromArgb(210, color.R, color.G, color.B));
+        {
+            var trailBrush = new LinearGradientBrush
+            {
+                StartPoint = new WPoint(0, 0.5),
+                EndPoint = new WPoint(1, 0.5)
+            };
+            trailBrush.GradientStops.Add(new GradientStop(MediaColor.FromArgb(20, fgColor.R, fgColor.G, fgColor.B), 0.0));
+            trailBrush.GradientStops.Add(new GradientStop(MediaColor.FromArgb(140, fgColor.R, fgColor.G, fgColor.B), 0.65));
+            trailBrush.GradientStops.Add(new GradientStop(MediaColor.FromArgb(250, fgColor.R, fgColor.G, fgColor.B), 1.0));
+            trailBrush.Freeze();
+
+            packet.Element.Background = trailBrush;
+        }
     }
 }

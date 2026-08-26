@@ -126,6 +126,8 @@ public sealed class ConnectionMonitor : IDisposable
         {
             if (existing.Verdict == Verdict.Block)
                 _svc.ReenforceBlock(path, pid);
+            else
+                _svc.ReenforceAllow(path, pid);
             return true;
         }
         if (_svc.TryGetSession(path, pid, out var session))

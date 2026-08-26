@@ -18,6 +18,7 @@ public sealed class FirewallService : IDisposable
     private readonly object _pendingLock = new();
     private readonly Dictionary<string, (Verdict Verdict, int Pid, DateTime ExpiresUtc)> _sessions = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _sessionLock = new();
+    private readonly HashSet<string> _reappliedAllows = new(StringComparer.OrdinalIgnoreCase);
     private static readonly TimeSpan SessionTtl = TimeSpan.FromMinutes(10);
 
     public FirewallService()
@@ -31,6 +32,7 @@ public sealed class FirewallService : IDisposable
         var ok = Wfp.TryEnable();
         if (ok)
         {
+            lock (_sessionLock) _reappliedAllows.Clear();
             RealFirewall.EnsureSelfAllowed();
             Monitor.Start(this);
         }
@@ -72,6 +74,15 @@ public sealed class FirewallService : IDisposable
                 lock (_pendingLock) _pendingHolds.Remove(key);
             }
         }
+    }
+
+    public void ReenforceAllow(string appPath, int pid)
+    {
+        if (!IsEnabled) return;
+        var key = SafeKey(appPath);
+        bool first;
+        lock (_sessionLock) first = _reappliedAllows.Add(key);
+        if (first) Wfp.AllowApp(appPath, pid);
     }
 
     public void ReenforceBlock(string appPath, int pid)
@@ -129,6 +140,10 @@ public sealed class FirewallService : IDisposable
         var pid = ev?.ProcessId ?? 0;
         if (verdict == Verdict.Allow) Wfp.AllowApp(appPath, pid);
         else if (verdict == Verdict.Block) Wfp.BlockApp(appPath, pid);
+        if (verdict == Verdict.Allow)
+        {
+            lock (_sessionLock) _reappliedAllows.Add(key);
+        }
         if (!permanent)
         {
             lock (_sessionLock)

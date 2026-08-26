@@ -444,7 +444,7 @@ public partial class MainWindow : Window
         MasterLabel.Text = on ? Strings.T("ProtectionActive") : Strings.T("ProtectionDisabled");
         StatusDot.Fill = on ? new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0xDE, 0x80)) : new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xEF, 0x44, 0x44));
         ModeBox.IsEnabled = on;
-        TrafficIndicator.SetActive(on);
+        TrafficIndicator.SetActive(on, _svc.Mode);
         var real = _svc.Wfp.IsRealBlock ? " • WFP Real" : " • Simulado";
         if (!on) StatusText.Text = Strings.T("StatusDisabled") + real;
         else StatusText.Text = (_svc.Mode == FirewallMode.Ask ? Strings.T("StatusEnabledAsk") : Strings.T("StatusEnabledBlock")) + real;

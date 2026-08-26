@@ -46,6 +46,9 @@ public sealed class RuleStore
                 }
             }
 
+            if (TryGetVersionedWebViewRule(appPath, out rule))
+                return true;
+
             rule = null!;
             return false;
         }
@@ -87,5 +90,45 @@ public sealed class RuleStore
             File.WriteAllText(_path, json);
         }
         catch { }
+    }
+
+    private bool TryGetVersionedWebViewRule(string appPath, out AppRule rule)
+    {
+        rule = null!;
+        var stablePath = StableWebViewPath(appPath);
+        if (stablePath == null) return false;
+
+        foreach (var candidate in _rules.Values)
+        {
+            if (StableWebViewPath(candidate.AppPath) == stablePath)
+            {
+                rule = candidate;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string? StableWebViewPath(string path)
+    {
+        try
+        {
+            var fileName = Path.GetFileName(path);
+            if (!fileName.Equals("msedgewebview2.exe", StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            var versionDir = Directory.GetParent(path);
+            var applicationDir = versionDir?.Parent;
+            if (applicationDir == null ||
+                !applicationDir.Name.Equals("Application", StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            return AppRule.Normalize(Path.Combine(applicationDir.FullName, fileName));
+        }
+        catch
+        {
+            return null;
+        }
     }
 }
