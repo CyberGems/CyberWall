@@ -11,6 +11,15 @@
   <img src="https://img.shields.io/badge/version-1.2.0-00F0FF.svg" alt="Version" />
 </p>
 
+<p align="center">
+  <a href="https://github.com/CyberGems/CyberWall/releases/latest">
+    <img src="https://img.shields.io/badge/⚡_Download_Latest_Release-(Windows_64--bit)-00F2FF?style=for-the-badge&logo=windows&logoColor=000000" alt="Download Latest Release" />
+  </a>
+  <a href="https://github.com/CyberGems/CyberWall/releases">
+    <img src="https://img.shields.io/badge/All_Releases-Changelog-18181B?style=for-the-badge&logo=github&logoColor=white" alt="All Releases" />
+  </a>
+</p>
+
 A modern, ultra-fast, and lightweight application-layer firewall for Windows, powered by the **Windows Filtering Platform (WFP)**. Built on a strict **default-deny (whitelist)** architecture, CyberWall intercepts unknown network connections and displays interactive real-time prompts per **application executable** — turning your PC into an impenetrable network fortress.
 
 *Free and open source (GPLv3) — no ads, no tracking, and no data collection. Just enjoy it.*
