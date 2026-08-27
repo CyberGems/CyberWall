@@ -509,6 +509,36 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private void QuickSearch_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement btn) return;
+        var r = btn.Tag as AppRule ?? (btn.Tag as AppRuleRow)?.Rule;
+        if (r == null) return;
+        var query = !string.IsNullOrWhiteSpace(r.DisplayName) ? r.DisplayName : Path.GetFileName(r.AppPath);
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = $"https://www.google.com/search?q={Uri.EscapeDataString(query + " process")}",
+                UseShellExecute = true
+            });
+        }
+        catch { }
+    }
+
+    private void QuickCopy_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement btn) return;
+        var r = btn.Tag as AppRule ?? (btn.Tag as AppRuleRow)?.Rule;
+        var path = r?.AppPath;
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            System.Windows.Clipboard.SetText(path);
+        }
+        catch { }
+    }
+
     private void QuickFolder_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement btn) return;
@@ -580,8 +610,13 @@ public partial class MainWindow : Window
 
     private void RulesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is System.Windows.Controls.DataGrid grid)
-            grid.UnselectAll();
+        if (sender is System.Windows.Controls.DataGrid grid && grid.SelectedItem != null)
+        {
+            if (grid == AllowedGrid)
+                BlockedGrid.UnselectAll();
+            else if (grid == BlockedGrid)
+                AllowedGrid.UnselectAll();
+        }
     }
 
     private void RulesScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
@@ -627,21 +662,27 @@ public partial class MainWindow : Window
         {
             try
             {
-                if (AllowedGrid.Items.Count > 0)
+                var targetGrid = AllowedGrid.Items.Count > 0 ? AllowedGrid : (BlockedGrid.Items.Count > 0 ? BlockedGrid : null);
+                if (targetGrid != null && targetGrid.Items.Count > 0)
                 {
-                    AllowedGrid.Focus();
-                    if (AllowedGrid.Items[0] != null)
+                    targetGrid.Focus();
+                    targetGrid.SelectedIndex = 0;
+                    targetGrid.ScrollIntoView(targetGrid.Items[0]);
+
+                    var row = targetGrid.ItemContainerGenerator.ContainerFromIndex(0) as DataGridRow;
+                    if (row != null)
                     {
-                        AllowedGrid.CurrentItem = AllowedGrid.Items[0];
+                        row.Focus();
+                        row.IsSelected = true;
                     }
-                    e.Handled = true;
-                }
-                else if (BlockedGrid.Items.Count > 0)
-                {
-                    BlockedGrid.Focus();
-                    if (BlockedGrid.Items[0] != null)
+                    else
                     {
-                        BlockedGrid.CurrentItem = BlockedGrid.Items[0];
+                        targetGrid.Dispatcher.BeginInvoke(() =>
+                        {
+                            var r = targetGrid.ItemContainerGenerator.ContainerFromIndex(0) as DataGridRow;
+                            r?.Focus();
+                            if (r != null) r.IsSelected = true;
+                        }, System.Windows.Threading.DispatcherPriority.Loaded);
                     }
                     e.Handled = true;
                 }

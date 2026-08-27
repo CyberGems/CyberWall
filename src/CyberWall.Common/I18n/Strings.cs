@@ -227,6 +227,10 @@ public static class Strings
         ["ClearAllRulesShort"] = ("Clear rules", "Limpiar reglas"),
         ["ClearAllRulesDesc"] = ("Remove all program rules from the firewall list.", "Elimina todas las reglas de programas de la lista del firewall."),
         ["ClearAllRulesConfirm"] = ("Are you sure you want to remove ALL firewall rules? This action cannot be undone.", "¿Estás seguro de que deseas eliminar TODAS las reglas del firewall? Esta acción no se puede deshacer."),
+        ["SearchGoogle"] = ("Search process on Google", "Buscar proceso en Google"),
+        ["CopyPathTooltip"] = ("Copy path to clipboard", "Copiar ruta al portapapeles"),
+        ["OpenFolderTooltip"] = ("Open executable folder", "Abrir carpeta del ejecutable"),
+        ["RemoveRuleTooltip"] = ("Remove firewall rule", "Eliminar regla del firewall"),
     };
 
     public static string T(string key, params object[] args)

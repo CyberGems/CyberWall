@@ -20,3 +20,11 @@ public sealed class DirectionDisplayConverter : IValueConverter
 
     public object ConvertBack(object v, Type _, object __, CultureInfo ___) => throw new NotSupportedException();
 }
+
+public sealed class TranslationKeyConverter : IValueConverter
+{
+    public object Convert(object v, Type _, object p, CultureInfo ___) =>
+        p is string key ? Strings.T(key) : (v is string s ? Strings.T(s) : "");
+
+    public object ConvertBack(object v, Type _, object __, CultureInfo ___) => throw new NotSupportedException();
+}

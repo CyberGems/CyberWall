@@ -15,6 +15,7 @@
         <conv:PathToIconConverter x:Key="PathToIconConverter"/>
         <conv:VerdictDisplayConverter x:Key="VerdictDisplayConverter"/>
         <conv:DirectionDisplayConverter x:Key="DirectionDisplayConverter"/>
+        <conv:TranslationKeyConverter x:Key="T"/>
 
         <!-- Themed Modern ScrollBar Styles -->
         <Style x:Key="CustomScrollThumbStyle" TargetType="{x:Type Thumb}">
@@ -153,8 +154,8 @@
             </Setter>
         </Style>
 
-        <!-- Row Delete Quick Button Style -->
-        <Style x:Key="RowDeleteButton" TargetType="Button">
+        <!-- Row Quick Action Buttons (Search, Copy, Folder) -->
+        <Style x:Key="RowQuickButton" TargetType="Button">
             <Setter Property="Width" Value="22"/>
             <Setter Property="Height" Value="22"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -162,32 +163,10 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="5" SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#40E81123"/>
-                                <Setter Property="Foreground" Value="#FF5555"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Row Folder Quick Button Style -->
-        <Style x:Key="RowFolderButton" TargetType="Button">
-            <Setter Property="Width" Value="22"/>
-            <Setter Property="Height" Value="22"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="200"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="50"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -198,6 +177,36 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Row Delete Quick Button Style -->
+        <Style x:Key="RowDeleteButton" TargetType="Button">
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="200"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="50"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="5" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#40E81123"/>
+                                <Setter Property="Foreground" Value="#FF5555"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -379,7 +388,7 @@
             </Setter>
         </Style>
 
-        <!-- High-Performance DataGridRow Template with Fast High-Contrast Row Hover Highlight -->
+        <!-- High-Performance DataGridRow Template with Fast High-Contrast Row Hover & Selection Highlight -->
         <Style TargetType="DataGridRow">
             <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
@@ -387,10 +396,11 @@
             <Setter Property="Margin" Value="0"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Arrow"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
-                        <Border x:Name="DGR_Border" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="0" SnapsToDevicePixels="True">
+                        <Border x:Name="DGR_Border" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="2,0,0,0" SnapsToDevicePixels="True">
                             <SelectiveScrollingGrid>
                                 <SelectiveScrollingGrid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -411,6 +421,10 @@
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="DGR_Border" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="DGR_Border" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                <Setter TargetName="DGR_Border" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -719,9 +733,12 @@
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="BorderBrush" Value="Transparent"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
                                             <Style.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                                    <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
                                                 </Trigger>
                                             </Style.Triggers>
                                         </Style>
@@ -733,9 +750,12 @@
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="BorderBrush" Value="Transparent"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
                                             <Style.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                                    <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
                                                 </Trigger>
                                             </Style.Triggers>
                                         </Style>
@@ -758,7 +778,7 @@
                                 <!-- Allowed Section -->
                                 <Border CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,10">
                                     <Expander x:Name="AllowedExpander" Style="{StaticResource ModernExpander}" Header="Permitidas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                        <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" PreviewKeyDown="DataGrid_PreviewKeyDown" SelectionChanged="RulesGrid_SelectionChanged">
+                                        <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" PreviewKeyDown="DataGrid_PreviewKeyDown" SelectionChanged="RulesGrid_SelectionChanged">
                                             <DataGrid.Columns>
                                                 <!-- Switch Column -->
                                                 <DataGridTemplateColumn x:Name="AllowColState" Header="Estado" Width="72" CanUserSort="False" HeaderStyle="{StaticResource StateColumnHeader}">
@@ -769,30 +789,58 @@
                                                     </DataGridTemplateColumn.CellTemplate>
                                                 </DataGridTemplateColumn>
 
-                                                <!-- Program Name + Clean Bare Icon + Inline Folder & Delete Buttons on Hover -->
+                                                <!-- Program Name + Clean Bare Icon + Quick Action Buttons (Search, Copy, Folder, Remove) -->
                                                 <DataGridTemplateColumn x:Name="AllowColProg" Header="Programa" Width="1.4*" SortMemberPath="DisplayName" CanUserSort="True">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
-                                                            <Grid Margin="12,0">
+                                                            <Grid Margin="10,0,4,0">
                                                                 <Grid.ColumnDefinitions>
                                                                     <ColumnDefinition Width="Auto"/>
                                                                     <ColumnDefinition Width="*"/>
                                                                     <ColumnDefinition Width="Auto"/>
                                                                     <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="Auto"/>
                                                                 </Grid.ColumnDefinitions>
-                                                                <Image Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="20" Height="20" Margin="0,0,10,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
-                                                                <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                                                <Button x:Name="QuickFolderBtn" Grid.Column="2" Style="{StaticResource RowFolderButton}" ToolTip="Abrir carpeta del ejecutable" Tag="{Binding}" Click="QuickFolder_Click" Margin="6,0,0,0">
-                                                                    <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform" Width="11" Height="11" Data="M1,3 L1,10 L11,10 L11,5 L6.2,5 L5.2,3 Z"/>
+                                                                <Image Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="20" Height="20" Margin="0,0,8,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                                <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                                           ToolTip="{Binding DisplayName}"
+                                                                           ToolTipService.InitialShowDelay="100" ToolTipService.BetweenShowDelay="50" ToolTipService.ShowDuration="6000"/>
+                                                                <Button x:Name="QuickSearchBtn" Grid.Column="2" Style="{StaticResource RowQuickButton}" ToolTip="{Binding Converter={StaticResource T}, ConverterParameter=SearchGoogle}" Tag="{Binding}" Click="QuickSearch_Click" Margin="3,0,0,0">
+                                                                    <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform" Width="10" Height="10">
+                                                                        <Path.Data>
+                                                                            <GeometryGroup FillRule="EvenOdd">
+                                                                                <PathGeometry Figures="M6,1.2 C3.4,1.2 1.2,3.4 1.2,6 C1.2,8.6 3.4,10.8 6,10.8 C7.1,10.8 8.1,10.4 8.9,9.8 L11.1,12 L12,11.1 L9.8,8.9 C10.4,8.1 10.8,7.1 10.8,6 C10.8,3.4 8.6,1.2 6,1.2 Z"/>
+                                                                                <EllipseGeometry Center="6,6" RadiusX="3.4" RadiusY="3.4"/>
+                                                                            </GeometryGroup>
+                                                                        </Path.Data>
+                                                                    </Path>
                                                                 </Button>
-                                                                <Button x:Name="QuickRemoveBtn" Grid.Column="3" Content="✕" Style="{StaticResource RowDeleteButton}" ToolTip="Eliminar regla" Tag="{Binding}" Click="QuickRemove_Click" Margin="4,0,0,0"/>
+                                                                <Button x:Name="QuickCopyBtn" Grid.Column="3" Style="{StaticResource RowQuickButton}" ToolTip="{Binding Converter={StaticResource T}, ConverterParameter=CopyPathTooltip}" Tag="{Binding}" Click="QuickCopy_Click" Margin="3,0,0,0">
+                                                                    <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform" Width="10" Height="10"
+                                                                          Data="M4.2,3.4 H9.6 V9.2 H4.2 Z M6.2,1.6 H11.6 V7.4 H10.2 V3 H6.2 Z"/>
+                                                                </Button>
+                                                                <Button x:Name="QuickFolderBtn" Grid.Column="4" Style="{StaticResource RowQuickButton}" ToolTip="{Binding Converter={StaticResource T}, ConverterParameter=OpenFolderTooltip}" Tag="{Binding}" Click="QuickFolder_Click" Margin="3,0,0,0">
+                                                                    <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform" Width="10" Height="10" Data="M1,3 L1,10 L11,10 L11,5 L6.2,5 L5.2,3 Z"/>
+                                                                </Button>
+                                                                <Button x:Name="QuickRemoveBtn" Grid.Column="5" Content="✕" Style="{StaticResource RowDeleteButton}" ToolTip="{Binding Converter={StaticResource T}, ConverterParameter=RemoveRuleTooltip}" Tag="{Binding}" Click="QuickRemove_Click" Margin="3,0,0,0"/>
                                                             </Grid>
                                                             <DataTemplate.Triggers>
                                                                 <DataTrigger Binding="{Binding Path=IsMouseOver, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="False">
+                                                                    <Setter TargetName="QuickSearchBtn" Property="Visibility" Value="Collapsed"/>
+                                                                    <Setter TargetName="QuickCopyBtn" Property="Visibility" Value="Collapsed"/>
                                                                     <Setter TargetName="QuickFolderBtn" Property="Visibility" Value="Collapsed"/>
                                                                     <Setter TargetName="QuickRemoveBtn" Property="Visibility" Value="Collapsed"/>
                                                                 </DataTrigger>
                                                                 <DataTrigger Binding="{Binding Path=IsMouseOver, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                                                    <Setter TargetName="QuickSearchBtn" Property="Visibility" Value="Visible"/>
+                                                                    <Setter TargetName="QuickCopyBtn" Property="Visibility" Value="Visible"/>
+                                                                    <Setter TargetName="QuickFolderBtn" Property="Visibility" Value="Visible"/>
+                                                                    <Setter TargetName="QuickRemoveBtn" Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Path=IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                                                    <Setter TargetName="QuickSearchBtn" Property="Visibility" Value="Visible"/>
+                                                                    <Setter TargetName="QuickCopyBtn" Property="Visibility" Value="Visible"/>
                                                                     <Setter TargetName="QuickFolderBtn" Property="Visibility" Value="Visible"/>
                                                                     <Setter TargetName="QuickRemoveBtn" Property="Visibility" Value="Visible"/>
                                                                 </DataTrigger>
@@ -856,7 +904,7 @@
                             <!-- Blocked Section -->
                             <Border CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
                                 <Expander x:Name="BlockedExpander" Style="{StaticResource ModernExpander}" Header="Bloqueadas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                    <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" PreviewKeyDown="DataGrid_PreviewKeyDown" SelectionChanged="RulesGrid_SelectionChanged">
+                                    <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" PreviewKeyDown="DataGrid_PreviewKeyDown" SelectionChanged="RulesGrid_SelectionChanged">
                                         <DataGrid.Columns>
                                             <!-- Switch Column -->
                                             <DataGridTemplateColumn x:Name="BlockColState" Header="Estado" Width="72" CanUserSort="False" HeaderStyle="{StaticResource StateColumnHeader}">
@@ -867,30 +915,58 @@
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
 
-                                            <!-- Program Name + Clean Bare Icon + Inline Folder & Delete Buttons on Hover -->
+                                            <!-- Program Name + Clean Bare Icon + Quick Action Buttons (Search, Copy, Folder, Remove) -->
                                             <DataGridTemplateColumn x:Name="BlockColProg" Header="Programa" Width="1.4*" SortMemberPath="DisplayName" CanUserSort="True">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <Grid Margin="12,0">
+                                                        <Grid Margin="10,0,4,0">
                                                             <Grid.ColumnDefinitions>
                                                                 <ColumnDefinition Width="Auto"/>
                                                                 <ColumnDefinition Width="*"/>
                                                                 <ColumnDefinition Width="Auto"/>
                                                                 <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
                                                             </Grid.ColumnDefinitions>
-                                                            <Image Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="20" Height="20" Margin="0,0,10,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
-                                                            <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                                            <Button x:Name="QuickFolderBtn" Grid.Column="2" Style="{StaticResource RowFolderButton}" ToolTip="Abrir carpeta del ejecutable" Tag="{Binding}" Click="QuickFolder_Click" Margin="6,0,0,0">
-                                                                <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform" Width="11" Height="11" Data="M1,3 L1,10 L11,10 L11,5 L6.2,5 L5.2,3 Z"/>
+                                                            <Image Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="20" Height="20" Margin="0,0,8,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                            <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                                       ToolTip="{Binding DisplayName}"
+                                                                       ToolTipService.InitialShowDelay="100" ToolTipService.BetweenShowDelay="50" ToolTipService.ShowDuration="6000"/>
+                                                            <Button x:Name="QuickSearchBtn" Grid.Column="2" Style="{StaticResource RowQuickButton}" ToolTip="{Binding Converter={StaticResource T}, ConverterParameter=SearchGoogle}" Tag="{Binding}" Click="QuickSearch_Click" Margin="3,0,0,0">
+                                                                <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform" Width="10" Height="10">
+                                                                    <Path.Data>
+                                                                        <GeometryGroup FillRule="EvenOdd">
+                                                                            <PathGeometry Figures="M6,1.2 C3.4,1.2 1.2,3.4 1.2,6 C1.2,8.6 3.4,10.8 6,10.8 C7.1,10.8 8.1,10.4 8.9,9.8 L11.1,12 L12,11.1 L9.8,8.9 C10.4,8.1 10.8,7.1 10.8,6 C10.8,3.4 8.6,1.2 6,1.2 Z"/>
+                                                                            <EllipseGeometry Center="6,6" RadiusX="3.4" RadiusY="3.4"/>
+                                                                        </GeometryGroup>
+                                                                    </Path.Data>
+                                                                </Path>
                                                             </Button>
-                                                            <Button x:Name="QuickRemoveBtn" Grid.Column="3" Content="✕" Style="{StaticResource RowDeleteButton}" ToolTip="Eliminar regla" Tag="{Binding}" Click="QuickRemove_Click" Margin="4,0,0,0"/>
+                                                            <Button x:Name="QuickCopyBtn" Grid.Column="3" Style="{StaticResource RowQuickButton}" ToolTip="{Binding Converter={StaticResource T}, ConverterParameter=CopyPathTooltip}" Tag="{Binding}" Click="QuickCopy_Click" Margin="3,0,0,0">
+                                                                <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform" Width="10" Height="10"
+                                                                      Data="M4.2,3.4 H9.6 V9.2 H4.2 Z M6.2,1.6 H11.6 V7.4 H10.2 V3 H6.2 Z"/>
+                                                            </Button>
+                                                            <Button x:Name="QuickFolderBtn" Grid.Column="4" Style="{StaticResource RowQuickButton}" ToolTip="{Binding Converter={StaticResource T}, ConverterParameter=OpenFolderTooltip}" Tag="{Binding}" Click="QuickFolder_Click" Margin="3,0,0,0">
+                                                                <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Stretch="Uniform" Width="10" Height="10" Data="M1,3 L1,10 L11,10 L11,5 L6.2,5 L5.2,3 Z"/>
+                                                            </Button>
+                                                            <Button x:Name="QuickRemoveBtn" Grid.Column="5" Content="✕" Style="{StaticResource RowDeleteButton}" ToolTip="{Binding Converter={StaticResource T}, ConverterParameter=RemoveRuleTooltip}" Tag="{Binding}" Click="QuickRemove_Click" Margin="3,0,0,0"/>
                                                         </Grid>
                                                         <DataTemplate.Triggers>
                                                             <DataTrigger Binding="{Binding Path=IsMouseOver, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="False">
+                                                                <Setter TargetName="QuickSearchBtn" Property="Visibility" Value="Collapsed"/>
+                                                                <Setter TargetName="QuickCopyBtn" Property="Visibility" Value="Collapsed"/>
                                                                 <Setter TargetName="QuickFolderBtn" Property="Visibility" Value="Collapsed"/>
                                                                 <Setter TargetName="QuickRemoveBtn" Property="Visibility" Value="Collapsed"/>
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding Path=IsMouseOver, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                                                <Setter TargetName="QuickSearchBtn" Property="Visibility" Value="Visible"/>
+                                                                <Setter TargetName="QuickCopyBtn" Property="Visibility" Value="Visible"/>
+                                                                <Setter TargetName="QuickFolderBtn" Property="Visibility" Value="Visible"/>
+                                                                <Setter TargetName="QuickRemoveBtn" Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Path=IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                                                <Setter TargetName="QuickSearchBtn" Property="Visibility" Value="Visible"/>
+                                                                <Setter TargetName="QuickCopyBtn" Property="Visibility" Value="Visible"/>
                                                                 <Setter TargetName="QuickFolderBtn" Property="Visibility" Value="Visible"/>
                                                                 <Setter TargetName="QuickRemoveBtn" Property="Visibility" Value="Visible"/>
                                                             </DataTrigger>
