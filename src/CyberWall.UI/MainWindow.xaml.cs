@@ -530,6 +530,28 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private void QuickFolder_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement btn) return;
+        var r = btn.Tag as AppRule ?? (btn.Tag as AppRuleRow)?.Rule;
+        var path = r?.AppPath;
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            if (File.Exists(path))
+            {
+                Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = true });
+                return;
+            }
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+            {
+                Process.Start(new ProcessStartInfo("explorer.exe", dir) { UseShellExecute = true });
+            }
+        }
+        catch { }
+    }
+
     private void QuickRemove_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement btn) return;

@@ -27,7 +27,7 @@ public sealed class AppSettings
     public PopupPosition NotificationPosition { get; set; } = PopupPosition.BottomRight;
     public int NotificationMonitor { get; set; } = -1; // -1 = Active monitor under cursor
     public bool AutoCheckForUpdates { get; set; } = true;
-    public bool RunAtStartup { get; set; } = false;
+    public bool RunAtStartup { get; set; } = true;
     public bool MinimizeToTrayOnClose { get; set; } = true;
     public bool PopupAutoBlockEnabled { get; set; } = true;
     public int PopupAutoBlockSeconds { get; set; } = 300;

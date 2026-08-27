@@ -2,6 +2,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Media.Imaging;
 using Color = System.Drawing.Color;
@@ -57,9 +58,22 @@ public static class AppIconHelper
         return fallbackIcon;
     }
 
-    public static WpfImageSource CreateShieldImageSource(int size = 64)
+    public static WpfImageSource CreateShieldImageSource(int size = 256)
     {
         if (_cachedImageSource != null) return _cachedImageSource;
+
+        try
+        {
+            var uri = new Uri("pack://application:,,,/Assets/CyberWall.ico", UriKind.Absolute);
+            var decoder = new IconBitmapDecoder(uri, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+            var bestFrame = decoder.Frames.OrderByDescending(f => f.Width).FirstOrDefault();
+            if (bestFrame != null)
+            {
+                _cachedImageSource = bestFrame;
+                return bestFrame;
+            }
+        }
+        catch { }
 
         try
         {
@@ -67,22 +81,6 @@ public static class AppIconHelper
             var bi = new BitmapImage();
             bi.BeginInit();
             bi.UriSource = uri;
-            bi.DecodePixelWidth = size;
-            bi.CacheOption = BitmapCacheOption.OnLoad;
-            bi.EndInit();
-            bi.Freeze();
-            _cachedImageSource = bi;
-            return bi;
-        }
-        catch { }
-
-        try
-        {
-            var uri = new Uri("pack://application:,,,/Assets/CyberWall.ico", UriKind.Absolute);
-            var bi = new BitmapImage();
-            bi.BeginInit();
-            bi.UriSource = uri;
-            bi.DecodePixelWidth = size;
             bi.CacheOption = BitmapCacheOption.OnLoad;
             bi.EndInit();
             bi.Freeze();
