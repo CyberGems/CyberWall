@@ -2,7 +2,7 @@
   <img src="src/CyberWall.UI/Assets/CyberWall.png" width="140" alt="CyberWall logo" />
 </p>
 
-# <p align="center">CyberWall — Per-App Windows Firewall (WFP)</p>
+# <p align="center">CyberWall — Application Layer Firewall &amp; Real-Time Network Filter</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License" />
@@ -20,7 +20,7 @@
   </a>
 </p>
 
-A modern, ultra-fast, and lightweight application-layer firewall for Windows, powered by the **Windows Filtering Platform (WFP)**. Built on a strict **default-deny (whitelist)** architecture, CyberWall intercepts unknown network connections and displays interactive real-time prompts per **application executable** — turning your PC into an impenetrable network fortress.
+A modern, ultra-fast, and lightweight **per-application firewall** for Windows, powered by the **Windows Filtering Platform (WFP)**. Built on a strict **default-deny (whitelist)** architecture, CyberWall intercepts unknown network connections and displays interactive real-time prompts per **application executable** — turning your PC into an impenetrable network fortress.
 
 *Free and open source (GPLv3) — no ads, no tracking, and no data collection. Just enjoy it.*
 
@@ -217,16 +217,14 @@ If you'd like to support this work, a donation would mean a lot. Thank you! 🙏
 
 </details>
 
-## 📄 License
+## License
 
-This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**. See the [LICENSE](LICENSE) file for details.
+CyberWall is distributed under the terms of the GNU General Public License v3.0. See [LICENSE](LICENSE) for the full license text.
+
 ---
 
-<div align="center" style="background:#0D0F17; border:1px solid rgba(0,255,255,0.12); border-radius:12px; padding:28px 20px; margin-top:32px;">
-
-### Thanks for using CyberWall! 🎉
-
-Made by [**CyberGems**](https://cybergems.org)
-
-</div>
+<p align="center">
+  <strong>Thanks for using CyberWall! 🎉</strong><br><br>
+  Made by <a href="https://cybergems.org">CyberGems</a>
+</p>
 
