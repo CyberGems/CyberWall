@@ -9,6 +9,7 @@ public static class ThemeManager
         string Bg,
         string Card,
         string CardSecondary,
+        string SelectionBg,
         string Border,
         string BorderLight,
         string Text,
@@ -36,6 +37,7 @@ public static class ThemeManager
             Bg: "#070B12",
             Card: "#0E1726",
             CardSecondary: "#131F33",
+            SelectionBg: "#162844",
             Border: "#1C2E4A",
             BorderLight: "#2A436A",
             Text: "#F0F6FC",
@@ -61,6 +63,7 @@ public static class ThemeManager
             Bg: "#121214",
             Card: "#1A1A1E",
             CardSecondary: "#222228",
+            SelectionBg: "#282834",
             Border: "#2E2E38",
             BorderLight: "#424250",
             Text: "#EDEDF0",
@@ -86,6 +89,7 @@ public static class ThemeManager
             Bg: "#F8FAFC",
             Card: "#FFFFFF",
             CardSecondary: "#F1F5F9",
+            SelectionBg: "#DBEAFE",
             Border: "#E2E8F0",
             BorderLight: "#CBD5E1",
             Text: "#0F172A",
@@ -115,6 +119,7 @@ public static class ThemeManager
         Set("BgBrush", p.Bg);
         Set("CardBrush", p.Card);
         Set("CardSecondaryBrush", p.CardSecondary);
+        Set("SelectionBgBrush", p.SelectionBg);
         Set("BorderBrush", p.Border);
         Set("BorderLightBrush", p.BorderLight);
         Set("TextBrush", p.Text);

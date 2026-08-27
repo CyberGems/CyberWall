@@ -742,41 +742,32 @@ public partial class MainWindow : Window
         }
         else if (e.Key == System.Windows.Input.Key.Down)
         {
-            if (grid == AllowedGrid && grid.SelectedIndex >= grid.Items.Count - 1)
+            e.Handled = true;
+            if (grid.SelectedIndex < grid.Items.Count - 1)
             {
-                if (BlockedGrid.Items.Count > 0)
-                {
-                    e.Handled = true;
-                    SelectAndFocusRow(BlockedGrid, 0);
-                }
+                SelectAndFocusRow(grid, grid.SelectedIndex + 1);
             }
-            else if (grid.SelectedIndex < 0 && grid.Items.Count > 0)
+            else if (grid == AllowedGrid && BlockedGrid.Items.Count > 0)
             {
-                e.Handled = true;
-                SelectAndFocusRow(grid, 0);
+                SelectAndFocusRow(BlockedGrid, 0);
             }
         }
         else if (e.Key == System.Windows.Input.Key.Up)
         {
-            if (grid == BlockedGrid && grid.SelectedIndex <= 0)
+            e.Handled = true;
+            if (grid.SelectedIndex > 0)
             {
-                if (AllowedGrid.Items.Count > 0)
-                {
-                    e.Handled = true;
-                    SelectAndFocusRow(AllowedGrid, AllowedGrid.Items.Count - 1);
-                }
+                SelectAndFocusRow(grid, grid.SelectedIndex - 1);
             }
-            else if (grid == AllowedGrid && grid.SelectedIndex <= 0)
+            else if (grid == BlockedGrid && AllowedGrid.Items.Count > 0)
             {
-                e.Handled = true;
+                SelectAndFocusRow(AllowedGrid, AllowedGrid.Items.Count - 1);
+            }
+            else if (grid == AllowedGrid)
+            {
                 SearchBox.Focus();
                 SearchBox.SelectAll();
                 AllowedGrid.UnselectAll();
-            }
-            else if (grid.SelectedIndex < 0 && grid.Items.Count > 0)
-            {
-                e.Handled = true;
-                SelectAndFocusRow(grid, grid.Items.Count - 1);
             }
         }
         else if (e.Key == System.Windows.Input.Key.Tab)

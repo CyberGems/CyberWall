@@ -440,9 +440,19 @@
                                 <Setter TargetName="DGR_Border" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="DGR_Border" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                <Setter TargetName="DGR_Border" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
                                 <Setter TargetName="DGR_Border" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="DGR_Border" Property="BorderThickness" Value="3,0,0,0"/>
                             </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="DGR_Border" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
+                                <Setter TargetName="DGR_Border" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="DGR_Border" Property="BorderThickness" Value="3,0,0,0"/>
+                            </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>

@@ -6,6 +6,7 @@
         <SolidColorBrush x:Key="BgBrush" Color="#070B12"/>
         <SolidColorBrush x:Key="CardBrush" Color="#0E1726"/>
         <SolidColorBrush x:Key="CardSecondaryBrush" Color="#131F33"/>
+        <SolidColorBrush x:Key="SelectionBgBrush" Color="#162844"/>
         <SolidColorBrush x:Key="BorderBrush" Color="#1C2E4A"/>
         <SolidColorBrush x:Key="BorderLightBrush" Color="#2A436A"/>
         <SolidColorBrush x:Key="TextBrush" Color="#F0F6FC"/>
