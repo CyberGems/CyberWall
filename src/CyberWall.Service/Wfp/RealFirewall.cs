@@ -23,6 +23,7 @@ public static class RealFirewall
             policy.DefaultInboundAction[1] = 0;
             RunNetsh("advfirewall set allprofiles firewallpolicy blockinbound,blockoutbound");
             EnsureSelfAllowed();
+            EnsureCoreServicesAllowed();
             return true;
         }
         catch (Exception ex)
@@ -30,6 +31,7 @@ public static class RealFirewall
             Debug.WriteLine(ex);
             var ok = RunNetsh("advfirewall set allprofiles firewallpolicy blockinbound,blockoutbound");
             EnsureSelfAllowed();
+            EnsureCoreServicesAllowed();
             return ok;
         }
     }
@@ -39,6 +41,7 @@ public static class RealFirewall
         if (!IsAdmin) return;
         try
         {
+            EnsureCoreServicesAllowed();
             var selfExe = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
             if (!string.IsNullOrEmpty(selfExe) && File.Exists(selfExe))
             {
@@ -53,6 +56,19 @@ public static class RealFirewall
                     ApplySingleAllow(exe);
                 }
             }
+        }
+        catch { }
+    }
+
+    public static void EnsureCoreServicesAllowed()
+    {
+        if (!IsAdmin) return;
+        try
+        {
+            AddFwPortRule("CyberWall-Allow-Core-DNS-UDP", 53, isUdp: true, outbound: true);
+            AddFwPortRule("CyberWall-Allow-Core-DNS-TCP", 53, isUdp: false, outbound: true);
+            AddFwPortRule("CyberWall-Allow-Core-DHCP-Out", 67, isUdp: true, outbound: true);
+            AddFwPortRule("CyberWall-Allow-Core-DHCP-Client-Out", 68, isUdp: true, outbound: true);
         }
         catch { }
     }
@@ -288,6 +304,31 @@ public static class RealFirewall
 
         var dir = outbound ? "out" : "in";
         RunNetsh($"advfirewall firewall add rule name=\"{name}\" dir={dir} action=block enable=yes profile=any");
+    }
+
+    private static void AddFwPortRule(string name, int port, bool isUdp, bool outbound)
+    {
+        try
+        {
+            var tRule = Type.GetTypeFromProgID("HNetCfg.FWRule");
+            if (tRule != null && GetFwPolicy() is { } policy && Activator.CreateInstance(tRule) is { } rule)
+            {
+                ((dynamic)rule).Name = name;
+                ((dynamic)rule).Protocol = isUdp ? 17 : 6; // 17 = UDP, 6 = TCP
+                ((dynamic)rule).RemotePorts = port.ToString();
+                ((dynamic)rule).Action = 1; // Allow
+                ((dynamic)rule).Direction = outbound ? 2 : 1; // 2 = Out, 1 = In
+                ((dynamic)rule).Profiles = 0x7FFFFFFF;
+                ((dynamic)rule).Enabled = true;
+                ((dynamic)policy).Rules.Add(rule);
+                return;
+            }
+        }
+        catch (Exception ex) { Debug.WriteLine(ex); }
+
+        var proto = isUdp ? "UDP" : "TCP";
+        var dir = outbound ? "out" : "in";
+        RunNetsh($"advfirewall firewall add rule name=\"{name}\" dir={dir} action=allow protocol={proto} remoteport={port} enable=yes profile=any");
     }
 
     private static List<string> GetCompanionBinaries(string appPath)

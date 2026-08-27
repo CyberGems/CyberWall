@@ -58,7 +58,10 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: deskto
 Name: "{userstartup}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: startup; IconFilename: "{app}\Assets\CyberWall.ico"
 
 [Registry]
-Root: HKCU; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"; ValueType: string; ValueName: "{app}\{#AppExeName}"; ValueData: "~ HIGHDPIAWARE"; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"; ValueType: string; ValueName: "{app}\{#AppExeName}"; ValueData: "~ RUNASADMIN HIGHDPIAWARE"; Flags: uninsdeletevalue
+Root: HKLM; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"; ValueType: string; ValueName: "{app}\{#AppExeName}"; ValueData: "~ RUNASADMIN HIGHDPIAWARE"; Flags: uninsdeletevalue
 
 [Run]
+Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""CyberWall-Allow-CyberWall"" dir=out action=allow program=""{app}\{#AppExeName}"" enable=yes profile=any"; Flags: runhidden
+Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""CyberWall-Allow-CyberWall-in"" dir=in action=allow program=""{app}\{#AppExeName}"" enable=yes profile=any"; Flags: runhidden
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall
