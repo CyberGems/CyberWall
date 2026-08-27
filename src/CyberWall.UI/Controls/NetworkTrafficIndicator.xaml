@@ -1,42 +1,128 @@
 <UserControl x:Class="CyberWall.UI.Controls.NetworkTrafficIndicator"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Width="360" Height="30"
+             Width="395" Height="30"
              SnapsToDevicePixels="True"
              UseLayoutRounding="True">
-    <Border x:Name="RootBorder" CornerRadius="15" Padding="10,0,6,0"
+    <UserControl.ToolTip>
+        <ToolTip Background="{DynamicResource HeaderBgBrush}"
+                 BorderBrush="{DynamicResource BorderLightBrush}"
+                 BorderThickness="1" Padding="12,10"
+                 HasDropShadow="True">
+            <StackPanel Width="230">
+                <!-- Header -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Path Data="M 12 2 L 2 6 L 2 13 C 2 19 6.5 24.5 12 26 C 17.5 24.5 22 19 22 13 L 22 6 Z" Width="12" Height="14" Stretch="Uniform" Fill="{DynamicResource AccentBrush}" Margin="0,0,6,0"/>
+                    <TextBlock x:Name="TooltipHeaderLbl" Text="Telemetría de Red en Vivo" FontWeight="Bold" FontSize="11.5" Foreground="{DynamicResource TextBrush}"/>
+                </StackPanel>
+
+                <!-- Adapter Info -->
+                <Grid Margin="0,2,0,4">
+                    <TextBlock x:Name="TooltipAdapterLbl" Text="Adaptador:" FontSize="10" Foreground="{DynamicResource SubTextBrush}"/>
+                    <TextBlock x:Name="TooltipAdapterVal" Text="Wi-Fi / Ethernet" HorizontalAlignment="Right" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" MaxWidth="140" TextTrimming="CharacterEllipsis"/>
+                </Grid>
+
+                <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,3"/>
+
+                <!-- Inbound Speed -->
+                <Grid Margin="0,2">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="↓" Foreground="{DynamicResource AccentBrush}" FontWeight="Bold" FontSize="10" Margin="0,0,4,0"/>
+                        <TextBlock x:Name="TooltipDownLbl" Text="Descarga:" FontSize="10" Foreground="{DynamicResource SubTextBrush}"/>
+                    </StackPanel>
+                    <TextBlock x:Name="TooltipDownVal" Text="0.0 B/s" HorizontalAlignment="Right" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                </Grid>
+
+                <!-- Outbound Speed -->
+                <Grid Margin="0,2">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="↑" Foreground="#22C55E" FontWeight="Bold" FontSize="10" Margin="0,0,4,0"/>
+                        <TextBlock x:Name="TooltipUpLbl" Text="Subida:" FontSize="10" Foreground="{DynamicResource SubTextBrush}"/>
+                    </StackPanel>
+                    <TextBlock x:Name="TooltipUpVal" Text="0.0 B/s" HorizontalAlignment="Right" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                </Grid>
+
+                <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,3"/>
+
+                <!-- Session Totals -->
+                <Grid Margin="0,2">
+                    <TextBlock x:Name="TooltipTotalDownLbl" Text="Recibido en sesión:" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}"/>
+                    <TextBlock x:Name="TooltipTotalDownVal" Text="0 MB" HorizontalAlignment="Right" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}"/>
+                </Grid>
+                <Grid Margin="0,2">
+                    <TextBlock x:Name="TooltipTotalUpLbl" Text="Enviado en sesión:" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}"/>
+                    <TextBlock x:Name="TooltipTotalUpVal" Text="0 MB" HorizontalAlignment="Right" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}"/>
+                </Grid>
+                
+                <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,3"/>
+
+                <!-- Filter State -->
+                <Grid Margin="0,2">
+                    <TextBlock x:Name="TooltipFilterLbl" Text="Estado del filtro:" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}"/>
+                    <TextBlock x:Name="TooltipFilterVal" Text="Protegido" HorizontalAlignment="Right" FontSize="9.5" FontWeight="SemiBold" Foreground="{DynamicResource BadgeAllowFgBrush}"/>
+                </Grid>
+            </StackPanel>
+        </ToolTip>
+    </UserControl.ToolTip>
+
+    <Border x:Name="RootBorder" CornerRadius="15" Padding="8,0,6,0"
             Background="{DynamicResource SearchBgBrush}"
-            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+            ToolTipService.InitialShowDelay="200"
+            ToolTipService.ShowDuration="15000">
         <Grid>
             <Grid.ColumnDefinitions>
+                <!-- 0: Left Live Status Dot & Live Label -->
                 <ColumnDefinition Width="Auto"/>
+                <!-- 1: Real-time In/Out Speed Readouts (TrafficMonitor style) -->
+                <ColumnDefinition Width="Auto"/>
+                <!-- 2: Dynamic Telemetry Flow Stream with edge masking -->
                 <ColumnDefinition Width="*"/>
+                <!-- 3: Right Status Badge Pill -->
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Left Status Dot with Ambient Halo and Live Label -->
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="2,0,0,0">
-                <Grid Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center">
-                    <Ellipse x:Name="StatusHalo" Width="14" Height="14"
+            <!-- Left Status Dot & Label -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="2,0,7,0">
+                <Grid Width="12" Height="12" Margin="0,0,5,0" VerticalAlignment="Center">
+                    <Ellipse x:Name="StatusHalo" Width="12" Height="12"
                              Fill="{DynamicResource AccentBrush}" Opacity="0.25"
                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    <Ellipse x:Name="StatusDot" Width="6" Height="6"
+                    <Ellipse x:Name="StatusDot" Width="5.5" Height="5.5"
                              Fill="{DynamicResource AccentBrush}"
                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Grid>
                 <TextBlock x:Name="LiveText" Foreground="{DynamicResource TextBrush}"
-                           FontSize="9.5" FontWeight="Bold" VerticalAlignment="Center"
-                           Opacity="0.9"/>
+                           FontSize="9" FontWeight="Bold" VerticalAlignment="Center"
+                           Opacity="0.85"/>
             </StackPanel>
 
+            <!-- Real-Time Traffic Rates (In / Out) -->
+            <Border Grid.Column="1" Background="{DynamicResource CardSecondaryBrush}"
+                    CornerRadius="5" Padding="5,2" Margin="0,0,5,0" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Download (In) Rate -->
+                    <TextBlock Text="↓" Foreground="{DynamicResource AccentBrush}" FontSize="9.5" FontWeight="Bold" Margin="0,0,2,0" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="DownloadSpeedText" Text="0.0 B/s" Foreground="{DynamicResource TextBrush}"
+                               FontSize="9.5" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,5,0"
+                               FontFamily="Consolas, Segoe UI Variable Text, Segoe UI, monospace"/>
+
+                    <!-- Upload (Out) Rate -->
+                    <TextBlock Text="↑" Foreground="#22C55E" FontSize="9.5" FontWeight="Bold" Margin="0,0,2,0" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="UploadSpeedText" Text="0.0 B/s" Foreground="{DynamicResource SubTextBrush}"
+                               FontSize="9.5" FontWeight="SemiBold" VerticalAlignment="Center"
+                               FontFamily="Consolas, Segoe UI Variable Text, Segoe UI, monospace"/>
+                </StackPanel>
+            </Border>
+
             <!-- Dynamic Telemetry Flow Stream with Smooth Edge Masking -->
-            <Grid Grid.Column="1" Height="16" Margin="10,0,10,0" ClipToBounds="True"
+            <Grid Grid.Column="2" Height="16" Margin="2,0,6,0" ClipToBounds="True"
                   VerticalAlignment="Center">
                 <Grid.OpacityMask>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                         <GradientStop Color="#00000000" Offset="0.0"/>
-                        <GradientStop Color="#FF000000" Offset="0.14"/>
-                        <GradientStop Color="#FF000000" Offset="0.86"/>
+                        <GradientStop Color="#FF000000" Offset="0.16"/>
+                        <GradientStop Color="#FF000000" Offset="0.84"/>
                         <GradientStop Color="#00000000" Offset="1.0"/>
                     </LinearGradientBrush>
                 </Grid.OpacityMask>
@@ -60,14 +146,14 @@
             </Grid>
 
             <!-- Right Status Badge Pill -->
-            <Border x:Name="StatePill" Grid.Column="2"
-                    CornerRadius="9" Padding="8,2" VerticalAlignment="Center"
+            <Border x:Name="StatePill" Grid.Column="3"
+                    CornerRadius="8" Padding="6,2" VerticalAlignment="Center"
                     Background="{DynamicResource BadgeAllowBgBrush}"
                     BorderBrush="{DynamicResource BadgeAllowFgBrush}"
                     BorderThickness="1">
                 <TextBlock x:Name="StateText"
                            Foreground="{DynamicResource BadgeAllowFgBrush}"
-                           FontSize="9.5" FontWeight="SemiBold"
+                           FontSize="9" FontWeight="SemiBold"
                            VerticalAlignment="Center"/>
             </Border>
         </Grid>

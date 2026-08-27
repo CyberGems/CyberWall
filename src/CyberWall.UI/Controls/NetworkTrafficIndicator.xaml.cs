@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
+using CyberWall.UI.Services;
 using MediaColor = System.Windows.Media.Color;
 using MediaBrush = System.Windows.Media.Brush;
 using WPoint = System.Windows.Point;
@@ -33,6 +34,7 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
     private bool _isActive;
     private FirewallMode _mode = FirewallMode.Ask;
     private ConnectivityState _connectivity = ConnectivityState.Unknown;
+    private NetworkSpeedSnapshot? _latestSnapshot;
 
     private static readonly HttpClient ConnectivityClient = new()
     {
@@ -60,6 +62,10 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
             _connectivityTimer.Start();
             _ = CheckConnectivityAsync();
             RefreshPackets();
+
+            NetworkSpeedService.Instance.SpeedUpdated += OnSpeedUpdated;
+            NetworkSpeedService.Instance.Start();
+            OnSpeedUpdated(NetworkSpeedService.Instance.CurrentSnapshot);
         };
         Unloaded += (_, _) =>
         {
@@ -68,9 +74,42 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
             _connectivityTimer.Stop();
             _connectivityCts?.Cancel();
             _connectivityCts = null;
+
+            NetworkSpeedService.Instance.SpeedUpdated -= OnSpeedUpdated;
+            NetworkSpeedService.Instance.Stop();
         };
         SizeChanged += (_, _) => RefreshPackets();
         NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
+    }
+
+    private void OnSpeedUpdated(NetworkSpeedSnapshot snapshot)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(() => OnSpeedUpdated(snapshot));
+            return;
+        }
+
+        _latestSnapshot = snapshot;
+
+        if (_connectivity == ConnectivityState.Offline || _mode == FirewallMode.Killswitch)
+        {
+            DownloadSpeedText.Text = "0.0 B/s";
+            UploadSpeedText.Text = "0.0 B/s";
+            TooltipDownVal.Text = "0.0 B/s";
+            TooltipUpVal.Text = "0.0 B/s";
+        }
+        else
+        {
+            DownloadSpeedText.Text = NetworkSpeedService.FormatSpeed(snapshot.DownloadBps);
+            UploadSpeedText.Text = NetworkSpeedService.FormatSpeed(snapshot.UploadBps);
+            TooltipDownVal.Text = NetworkSpeedService.FormatSpeed(snapshot.DownloadBps);
+            TooltipUpVal.Text = NetworkSpeedService.FormatSpeed(snapshot.UploadBps);
+        }
+
+        TooltipAdapterVal.Text = snapshot.AdapterName;
+        TooltipTotalDownVal.Text = NetworkSpeedService.FormatBytes(snapshot.TotalBytesReceived);
+        TooltipTotalUpVal.Text = NetworkSpeedService.FormatBytes(snapshot.TotalBytesSent);
     }
 
     public void SetActive(bool active, FirewallMode mode = FirewallMode.Ask)
@@ -97,7 +136,16 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
             })
         };
         StateText.Text = Strings.T(stateKey);
-        ToolTip = Strings.T(stateKey);
+
+        // Tooltip localization
+        TooltipHeaderLbl.Text = Strings.T("TrafficTelemetryTitle");
+        TooltipAdapterLbl.Text = Strings.T("TrafficActiveAdapter");
+        TooltipDownLbl.Text = Strings.T("TrafficDownload");
+        TooltipUpLbl.Text = Strings.T("TrafficUpload");
+        TooltipTotalDownLbl.Text = Strings.T("TrafficSessionIn");
+        TooltipTotalUpLbl.Text = Strings.T("TrafficSessionOut");
+        TooltipFilterLbl.Text = Strings.T("TrafficFilterStatus");
+        TooltipFilterVal.Text = Strings.T(stateKey);
     }
 
     private void CreatePackets()
@@ -106,10 +154,10 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         _packets.Clear();
         var random = new Random(9173);
 
-        for (var i = 0; i < 8; i++)
+        for (var i = 0; i < 7; i++)
         {
-            var length = 10.0 + random.Next(0, 15);
-            var height = (i % 3 == 0) ? 2.5 : 2.0;
+            var length = 8.0 + random.Next(0, 12);
+            var height = (i % 3 == 0) ? 2.2 : 1.8;
             var packet = new Border
             {
                 Width = length,
@@ -120,8 +168,8 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
             var item = new Packet
             {
                 Element = packet,
-                Position = -20 - random.NextDouble() * 200,
-                Speed = 42 + random.NextDouble() * 45,
+                Position = -20 - random.NextDouble() * 160,
+                Speed = 38 + random.NextDouble() * 40,
                 Top = 4.0 + random.NextDouble() * 6.5,
                 Phase = random.NextDouble() * Math.PI * 2,
                 Length = length
@@ -155,6 +203,15 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
             })
         };
 
+        // Real throughput speed modulation (TrafficMonitor inspired dynamic particle velocity)
+        double speedMod = 0.85;
+        if (_latestSnapshot != null && _latestSnapshot.IsConnected && (_latestSnapshot.DownloadBps + _latestSnapshot.UploadBps > 1024))
+        {
+            var totalThroughput = _latestSnapshot.DownloadBps + _latestSnapshot.UploadBps;
+            // Modulate between 0.9x and 2.6x based on log throughput
+            speedMod = Math.Min(2.6, 0.85 + Math.Log10(totalThroughput / 512.0) * 0.45);
+        }
+
         var nowSeconds = current.TotalSeconds;
         if (_connectivity == ConnectivityState.Offline || _mode == FirewallMode.Killswitch)
         {
@@ -170,7 +227,7 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         {
             if (flowFactor > 0)
             {
-                packet.Position += packet.Speed * elapsed * flowFactor;
+                packet.Position += packet.Speed * elapsed * flowFactor * speedMod;
                 if (packet.Position > width + packet.Length + 4)
                     packet.Position = -packet.Length - (packet.Speed * 0.15);
 
@@ -315,6 +372,11 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         StatePill.Background = bgBrush;
         StatePill.BorderBrush = new SolidColorBrush(MediaColor.FromArgb(_mode == FirewallMode.BlockAll ? (byte)120 : (byte)70, fgColor.R, fgColor.G, fgColor.B));
         RootBorder.BorderBrush = new SolidColorBrush(MediaColor.FromArgb(_mode == FirewallMode.BlockAll ? (byte)80 : (byte)45, fgColor.R, fgColor.G, fgColor.B));
+
+        if (TooltipFilterVal != null)
+        {
+            TooltipFilterVal.Foreground = fgBrush;
+        }
 
         foreach (var packet in _packets)
         {
