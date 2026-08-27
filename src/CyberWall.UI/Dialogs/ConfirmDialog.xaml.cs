@@ -74,7 +74,17 @@ public partial class ConfirmDialog : Window
         AlertPath.Visibility = Visibility.Collapsed;
         CheckPath.Visibility = Visibility.Collapsed;
 
-        if (iconType == ConfirmIconType.Check || title.Contains("día", StringComparison.OrdinalIgnoreCase) || message.Contains("día", StringComparison.OrdinalIgnoreCase) || title.Contains("up to date", StringComparison.OrdinalIgnoreCase) || message.Contains("up to date", StringComparison.OrdinalIgnoreCase))
+        if (iconType == ConfirmIconType.Check
+            || title.Contains("día", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("día", StringComparison.OrdinalIgnoreCase)
+            || title.Contains("up to date", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("up to date", StringComparison.OrdinalIgnoreCase)
+            || title.Contains("completa", StringComparison.OrdinalIgnoreCase)
+            || title.Contains("complete", StringComparison.OrdinalIgnoreCase)
+            || title.Contains("éxito", StringComparison.OrdinalIgnoreCase)
+            || title.Contains("success", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("descargó correctamente", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("successfully downloaded", StringComparison.OrdinalIgnoreCase))
         {
             CheckPath.Visibility = Visibility.Visible;
         }

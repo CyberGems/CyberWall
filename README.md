@@ -20,7 +20,7 @@
   </a>
 </p>
 
-A modern, ultra-fast, and lightweight **per-application firewall** for Windows, powered by the **Windows Filtering Platform (WFP)**. Built on a strict **default-deny (whitelist)** architecture, CyberWall intercepts unknown network connections and displays interactive real-time prompts per **application executable** — turning your PC into an impenetrable network fortress.
+A modern, high-performance, and lightweight **per-application firewall** for Windows, powered by the **Windows Filtering Platform (WFP)**. Built on a strict **default-deny (whitelist)** architecture, CyberWall intercepts unknown network connections and displays interactive real-time prompts per **application executable** — turning your PC into an impenetrable network fortress.
 
 *Free and open source (GPLv3) — no ads, no tracking, and no data collection. Just enjoy it.*
 

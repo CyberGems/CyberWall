@@ -8,6 +8,9 @@ using CyberWall.UI.Controls;
 using CyberWall.UI.Dialogs;
 using CyberWall.UI.Popup;
 using CyberWall.UI.Services;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using WpfBrush = System.Windows.Media.Brush;
 using WpfBrushes = System.Windows.Media.Brushes;
 using WpfColor = System.Windows.Media.Color;
@@ -19,6 +22,7 @@ public partial class SettingsWindow : Window
 {
     private readonly AppSettings _s;
     private bool _loading;
+    private DateTime _lastAttentionTime = DateTime.MinValue;
 
     public SettingsWindow(AppSettings s)
     {
@@ -309,6 +313,74 @@ public partial class SettingsWindow : Window
             _s.Save();
             TriggerPreviewPopup();
         }
+    }
+
+    public void TriggerAttention()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(TriggerAttention);
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        if ((now - _lastAttentionTime).TotalMilliseconds < 250)
+            return;
+        _lastAttentionTime = now;
+
+        try
+        {
+            // 1. Subtle scale pulse (1.0 -> 1.014 -> 1.0)
+            var scaleAnim = new DoubleAnimationUsingKeyFrames
+            {
+                Duration = TimeSpan.FromMilliseconds(300),
+                FillBehavior = FillBehavior.Stop
+            };
+            scaleAnim.KeyFrames.Add(new SplineDoubleKeyFrame(1.014, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(90)), new KeySpline(0.2, 0.8, 0.4, 1.0)));
+            scaleAnim.KeyFrames.Add(new SplineDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(300)), new KeySpline(0.4, 0.0, 0.2, 1.0)));
+
+            WindowScale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
+            WindowScale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+
+            // 2. Soft Accent Glow Flash
+            var accentBrush = TryFindResource("AccentBrush") as SolidColorBrush;
+            if (accentBrush != null)
+            {
+                WindowGlow.Color = accentBrush.Color;
+            }
+
+            var glowAnim = new DoubleAnimationUsingKeyFrames
+            {
+                Duration = TimeSpan.FromMilliseconds(380),
+                FillBehavior = FillBehavior.Stop
+            };
+            glowAnim.KeyFrames.Add(new LinearDoubleKeyFrame(0.85, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(80))));
+            glowAnim.KeyFrames.Add(new SplineDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(380)), new KeySpline(0.4, 0.0, 0.2, 1.0)));
+            WindowGlow.BeginAnimation(DropShadowEffect.OpacityProperty, glowAnim);
+
+            // 3. Border accent flash
+            if (accentBrush != null)
+            {
+                var originalBrush = TryFindResource("BorderBrush") as SolidColorBrush ?? new SolidColorBrush(WpfColor.FromArgb(40, 255, 255, 255));
+                var animBrush = new SolidColorBrush(originalBrush.Color);
+                OuterBorder.BorderBrush = animBrush;
+
+                var borderAnim = new ColorAnimationUsingKeyFrames
+                {
+                    Duration = TimeSpan.FromMilliseconds(380)
+                };
+                borderAnim.KeyFrames.Add(new LinearColorKeyFrame(accentBrush.Color, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(70))));
+                borderAnim.KeyFrames.Add(new SplineColorKeyFrame(originalBrush.Color, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(380)), new KeySpline(0.4, 0.0, 0.2, 1.0)));
+
+                borderAnim.Completed += (_, _) =>
+                {
+                    OuterBorder.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
+                };
+
+                animBrush.BeginAnimation(SolidColorBrush.ColorProperty, borderAnim);
+            }
+        }
+        catch { }
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();

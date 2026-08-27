@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:conv="clr-namespace:CyberWall.UI.Converters"
-        Title="Confirm" Height="205" Width="490" WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Title="Confirm" SizeToContent="Height" MinHeight="185" Width="500" WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent" ShowInTaskbar="False"
         TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType" TextOptions.TextHintingMode="Fixed"
         UseLayoutRounding="True" SnapsToDevicePixels="True"
@@ -75,14 +75,14 @@
             </Grid.RowDefinitions>
 
             <!-- Content Area -->
-            <Grid Margin="20,20,20,16">
+            <Grid VerticalAlignment="Center" Margin="24,20,24,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Icon Badge -->
-                <Border Width="48" Height="48" CornerRadius="14" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Top" Margin="0,0,16,0">
+                <Border Width="48" Height="48" CornerRadius="14" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,16,0">
                     <Grid>
                         <Image x:Name="AppIconImg" Width="26" Height="26" HorizontalAlignment="Center" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality" Visibility="Collapsed"/>
                         <Path x:Name="TrashPath" Data="M 3 6 H 17 M 7 6 V 4 C 7 3.4 7.4 3 8 3 H 12 C 12.6 3 13 3.4 13 4 V 6 M 5 6 L 6 17 C 6 17.6 6.4 18 7 18 H 13 C 13.6 18 14 17.6 14 17 L 15 6" Stroke="#EF4444" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
@@ -94,7 +94,7 @@
                 <!-- Text Content -->
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock x:Name="AppTitleLbl" Text="App Name" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis"/>
-                    <TextBlock x:Name="MessageLbl" Text="Are you sure you want to remove this app from the firewall list? It will re-appear if it accesses the network again." Foreground="{DynamicResource SubTextBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0" LineHeight="18"/>
+                    <TextBlock x:Name="MessageLbl" Text="Are you sure you want to remove this app from the firewall list? It will re-appear if it accesses the network again." Foreground="{DynamicResource SubTextBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" LineHeight="18"/>
                 </StackPanel>
             </Grid>
 

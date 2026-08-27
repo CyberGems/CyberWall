@@ -264,8 +264,16 @@
 
     <!-- Custom Window Frame Container with Smooth Anti-Aliasing Buffer Margin -->
     <Border Margin="5" CornerRadius="12">
-        <Border x:Name="OuterBorder" CornerRadius="12" ClipToBounds="True" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" Background="{DynamicResource BgBrush}" SnapsToDevicePixels="True">
-        <Grid Margin="0">
+        <Border x:Name="OuterBorder" CornerRadius="12" ClipToBounds="True" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" Background="{DynamicResource BgBrush}" SnapsToDevicePixels="True" RenderTransformOrigin="0.5,0.5">
+            <Border.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform x:Name="WindowScale" ScaleX="1" ScaleY="1"/>
+                </TransformGroup>
+            </Border.RenderTransform>
+            <Border.Effect>
+                <DropShadowEffect x:Name="WindowGlow" Color="#2563EB" Opacity="0" BlurRadius="20" ShadowDepth="0"/>
+            </Border.Effect>
+            <Grid Margin="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>

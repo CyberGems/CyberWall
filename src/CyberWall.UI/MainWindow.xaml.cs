@@ -73,7 +73,58 @@ public partial class MainWindow : Window
             UpdateNotifBadge();
             CheckForUpdatesOnStartup();
         };
+        PreviewMouseDown += (_, _) => NotifyActiveModalAttention();
         _loading = false;
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        var source = PresentationSource.FromVisual(this) as HwndSource;
+        source?.AddHook(WndProc);
+    }
+
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        const int WM_MOUSEACTIVATE = 0x0021;
+        const int WM_SETCURSOR = 0x0020;
+        const int WM_LBUTTONDOWN = 0x0201;
+        const int WM_NCLBUTTONDOWN = 0x00A1;
+        const int WM_RBUTTONDOWN = 0x0204;
+        const int WM_NCRBUTTONDOWN = 0x00A4;
+
+        if (msg == WM_MOUSEACTIVATE)
+        {
+            NotifyActiveModalAttention();
+        }
+        else if (msg == WM_SETCURSOR)
+        {
+            int mouseMsg = (int)((long)lParam >> 16) & 0xFFFF;
+            if (mouseMsg is WM_LBUTTONDOWN or WM_NCLBUTTONDOWN or WM_RBUTTONDOWN or WM_NCRBUTTONDOWN)
+            {
+                NotifyActiveModalAttention();
+            }
+        }
+
+        return IntPtr.Zero;
+    }
+
+    private void NotifyActiveModalAttention()
+    {
+        try
+        {
+            foreach (Window owned in OwnedWindows)
+            {
+                if (owned.IsVisible)
+                {
+                    if (owned is SettingsWindow sw)
+                    {
+                        sw.TriggerAttention();
+                    }
+                }
+            }
+        }
+        catch { }
     }
 
     private async void CheckForUpdatesOnStartup()
@@ -91,7 +142,7 @@ public partial class MainWindow : Window
                     var choice = ConfirmDialog.Show(
                         this,
                         Strings.T("UpdateAvailable", result.LatestVersionLabel),
-                        $"{result.StatusMessage}\n\n{Strings.T("Current")} {UpdateService.GetCurrentVersionLabel()}\n{Strings.T("Latest")} {result.LatestVersionLabel}\n\n{Strings.T("UpdatePrompt")}",
+                        $"{Strings.T("Current")} {UpdateService.GetCurrentVersionLabel()}\n{Strings.T("Latest")} {result.LatestVersionLabel}\n\n{Strings.T("UpdatePrompt")}",
                         Strings.T("Download"),
                         Strings.T("Later"));
 

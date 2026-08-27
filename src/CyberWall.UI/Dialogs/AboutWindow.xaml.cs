@@ -85,7 +85,7 @@ public partial class AboutWindow : Window
                 var latestLabel = Strings.T("Latest");
                 var promptMessage = Strings.T("UpdatePrompt");
                 var currentVerLabel = UpdateService.GetCurrentVersionLabel();
-                var msg = $"{result.StatusMessage}\n\n{currentLabel} {currentVerLabel}\n{latestLabel} {result.LatestVersionLabel}\n\n{promptMessage}";
+                var msg = $"{currentLabel} {currentVerLabel}\n{latestLabel} {result.LatestVersionLabel}\n\n{promptMessage}";
 
                 var choice = ConfirmDialog.Show(
                     this,
@@ -156,7 +156,8 @@ public partial class AboutWindow : Window
                 Strings.T("DownloadComplete"),
                 Strings.T("DownloadCompleteDesc"),
                 Strings.T("Ok"),
-                string.Empty);
+                string.Empty,
+                ConfirmIconType.Check);
 
             UpdateService.LaunchInstallerAndExit(installerPath);
         }

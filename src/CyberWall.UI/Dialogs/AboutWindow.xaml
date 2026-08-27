@@ -160,7 +160,7 @@
 
                             <!-- Description Box -->
                             <Border Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="20,16" Margin="28,0,0,0">
-                                <TextBlock x:Name="AboutDescriptionText" FontSize="12.5" Foreground="{DynamicResource TextBrush}" Opacity="0.85" LineHeight="22" LineStackingStrategy="BlockLineHeight" TextWrapping="Wrap" Text="CyberWall es un firewall de capa de aplicación ultrarrápido impulsado por el motor del kernel Windows Filtering Platform (WFP) para filtrado de red por programa en tiempo real."/>
+                                <TextBlock x:Name="AboutDescriptionText" FontSize="12.5" Foreground="{DynamicResource TextBrush}" Opacity="0.85" LineHeight="22" LineStackingStrategy="BlockLineHeight" TextWrapping="Wrap" Text="CyberWall es un firewall de capa de aplicación de alto rendimiento impulsado por el motor del kernel Windows Filtering Platform (WFP) para filtrado de red por programa en tiempo real."/>
                             </Border>
                         </Grid>
 

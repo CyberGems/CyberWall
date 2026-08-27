@@ -180,7 +180,7 @@ public static class Strings
         ["Now"] = ("Just now", "Ahora mismo"),
         ["About"] = ("About CyberWall", "Acerca de CyberWall"),
         ["AboutTitle"] = ("About ᐧ CyberWall", "Acerca de ᐧ CyberWall"),
-        ["AboutDescription"] = ("CyberWall is an ultra-fast application-layer firewall powered by the Windows Filtering Platform (WFP) kernel engine for real-time per-app network filtering.", "CyberWall es un firewall de capa de aplicación ultrarrápido impulsado por el motor del kernel Windows Filtering Platform (WFP) para filtrado de red por programa en tiempo real."),
+        ["AboutDescription"] = ("CyberWall is a high-performance application-layer firewall powered by the Windows Filtering Platform (WFP) kernel engine for real-time per-app network filtering.", "CyberWall es un firewall de capa de aplicación de alto rendimiento impulsado por el motor del kernel Windows Filtering Platform (WFP) para filtrado de red por programa en tiempo real."),
         ["UpdatesMaintenance"] = ("Updates & Maintenance", "Actualizaciones y Mantenimiento"),
         ["AutoUpdateTitle"] = ("Check for updates on startup", "Buscar actualizaciones al iniciar"),
         ["AutoUpdateDesc"] = ("Automatically check for new versions when CyberWall starts.", "Comprobar automáticamente si hay nuevas versiones al iniciar CyberWall."),
