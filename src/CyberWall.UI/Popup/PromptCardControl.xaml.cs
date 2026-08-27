@@ -2,62 +2,47 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Automation;
-using System.Windows.Input;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using CyberWall.Common;
 using CyberWall.Common.Geo;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
-using CyberWall.Common.Settings;
 using CyberWall.UI.Services;
 using Brush = System.Windows.Media.Brush;
 using Color = System.Windows.Media.Color;
+using UserControl = System.Windows.Controls.UserControl;
 
 namespace CyberWall.UI.Popup;
 
-public partial class ConnectionPopup : Window
+public partial class PromptCardControl : UserControl
 {
-    private const int DefaultTimeoutSeconds = 300;
-
-    private static ConnectionPopup? _activePreview;
-    private static DispatcherTimer? _previewTimer;
-
-    private readonly DispatcherTimer _countdownTimer;
     private readonly DispatcherTimer _feedbackTimer;
     private readonly CancellationTokenSource _cts = new();
-    private readonly bool _autoBlockEnabled;
-    private int _remaining = DefaultTimeoutSeconds;
-    private bool _countdownPaused;
-    private AppIdentityInfo _identity = AppIdentity.Resolve(null);
+    private AppIdentityInfo _identity;
+    private string? _resolvedHost;
 
     public ConnectionEvent Event { get; }
-    public PopupDecision Decision { get; private set; } = PopupDecision.None;
-    public bool TimedOut { get; private set; }
     public bool IsPreview { get; }
-    public event Action<ConnectionPopup>? ClosedWithVerdict;
+    public event Action<PromptCardControl, PopupDecision>? DecisionMade;
 
-    public ConnectionPopup(ConnectionEvent ev, bool isPreview = false)
+    public PromptCardControl(ConnectionEvent ev, bool isPreview = false)
     {
         InitializeComponent();
         Event = ev;
         IsPreview = isPreview;
         DataContext = this;
 
-        var timeoutSeconds = Math.Clamp(App.Settings.PopupAutoBlockSeconds, 15, 3600);
-        _autoBlockEnabled = !isPreview && App.Settings.PopupAutoBlockEnabled;
-        _remaining = timeoutSeconds;
+        _identity = isPreview
+            ? new AppIdentityInfo("DemoApp.exe", "Demo App", "Demo Software", true, false, false)
+            : AppIdentity.Resolve(ev.AppPath);
 
-        SourceInitialized += (_, _) => PopupWindowHelper.ApplyNoActivateChrome(this);
-        Loaded += OnLoaded;
-        PreviewKeyDown += OnPreviewKeyDown;
-        MouseEnter += (_, _) => _countdownPaused = true;
-        MouseLeave += (_, _) => _countdownPaused = false;
-        HeaderBar.MouseLeftButtonDown += (_, e) =>
+        _feedbackTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.6) };
+        _feedbackTimer.Tick += (_, _) =>
         {
-            if (e.ButtonState != MouseButtonState.Pressed) return;
-            if (IsInsideButton(e.OriginalSource as DependencyObject)) return;
-            try { DragMove(); } catch { }
+            _feedbackTimer.Stop();
+            FeedbackLbl.Visibility = Visibility.Collapsed;
         };
 
         ApplyCopy();
@@ -68,17 +53,22 @@ public partial class ConnectionPopup : Window
 
         PathLbl.Text = ev.AppPath;
         ScopeLbl.Text = Strings.T("DecisionAppliesToProgram");
-        GeoCountry.Updated += OnGeoUpdated;
-        Closed += (_, _) => GeoCountry.Updated -= OnGeoUpdated;
-        GeoCountry.Warm();
 
-        CloseBtn.ToolTip = Strings.T("CloseWithoutSaving");
-        SettingsBtn.ToolTip = Strings.T("Settings");
+        GeoCountry.Updated += OnGeoUpdated;
+        Unloaded += (_, _) =>
+        {
+            GeoCountry.Updated -= OnGeoUpdated;
+            _cts.Cancel();
+            _cts.Dispose();
+            _feedbackTimer.Stop();
+        };
+
+        DismissBtn.ToolTip = Strings.T("DismissPromptTooltip");
         SearchBtn.ToolTip = Strings.T("SearchProcessWeb");
         CopyPathBtn.ToolTip = Strings.T("CopyFullPath");
         OpenFolderBtn.ToolTip = Strings.T("OpenExeFolder");
-        AutomationProperties.SetName(CloseBtn, Strings.T("CloseWithoutSaving"));
-        AutomationProperties.SetName(SettingsBtn, Strings.T("Settings"));
+
+        AutomationProperties.SetName(DismissBtn, Strings.T("DismissPromptTooltip"));
         AutomationProperties.SetName(SearchBtn, Strings.T("SearchProcessWeb"));
         AutomationProperties.SetName(CopyPathBtn, Strings.T("CopyFullPath"));
         AutomationProperties.SetName(OpenFolderBtn, Strings.T("OpenExeFolder"));
@@ -86,45 +76,13 @@ public partial class ConnectionPopup : Window
         AutomationProperties.SetName(AllowOnceBtn, Strings.T("AllowOnce"));
         AutomationProperties.SetName(AllowBtn, Strings.T("AllowAlways"));
 
-        if (IsPreview)
-            SettingsBtn.Visibility = Visibility.Collapsed;
-
-        _countdownTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        _countdownTimer.Tick += (_, _) => TickCountdown();
-        _feedbackTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.6) };
-        _feedbackTimer.Tick += (_, _) =>
+        Loaded += (_, _) =>
         {
-            _feedbackTimer.Stop();
-            FeedbackLbl.Visibility = Visibility.Collapsed;
+            if (!IsPreview)
+            {
+                _ = ResolveHostAsync(Event);
+            }
         };
-
-        if (isPreview || !_autoBlockEnabled)
-        {
-            CountdownLbl.Visibility = Visibility.Collapsed;
-        }
-        else
-        {
-            UpdateCountdownLabel();
-        }
-    }
-
-    private void OnLoaded(object sender, RoutedEventArgs e)
-    {
-        UpdateLayout();
-        var pos = App.Settings.NotificationPosition;
-        var mon = App.Settings.NotificationMonitor;
-        PopupWindowHelper.PositionPopup(this, pos, mon, IsPreview ? 0 : null);
-        if (IsPreview) return;
-        if (_autoBlockEnabled && !_countdownTimer.IsEnabled)
-            _countdownTimer.Start();
-        _ = ResolveHostAsync(Event);
-    }
-
-    private void OnPreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-    {
-        if (e.Key != Key.Escape) return;
-        e.Handled = true;
-        Dismiss();
     }
 
     private void ApplyCopy()
@@ -214,6 +172,7 @@ public partial class ConnectionPopup : Window
             DirectionArrow.Stroke = fg;
             DirectionArrow.Fill = System.Windows.Media.Brushes.Transparent;
             DirectionArrow.Data = Geometry.Parse("M 5 11 L 5 1.5 M 5 1.5 L 1.6 5.8 M 5 1.5 L 8.4 5.8");
+            InboundWarn.Visibility = Visibility.Collapsed;
         }
     }
 
@@ -242,8 +201,6 @@ public partial class ConnectionPopup : Window
         }
     }
 
-    private string? _resolvedHost;
-
     private void OnGeoUpdated()
     {
         Dispatcher.BeginInvoke(() =>
@@ -266,91 +223,14 @@ public partial class ConnectionPopup : Window
         catch { }
     }
 
-    private void TickCountdown()
+    private void Allow_Click(object s, RoutedEventArgs e) => TriggerDecision(PopupDecision.AllowAlways);
+    private void AllowOnce_Click(object s, RoutedEventArgs e) => TriggerDecision(PopupDecision.AllowOnce);
+    private void Block_Click(object s, RoutedEventArgs e) => TriggerDecision(PopupDecision.BlockAlways);
+    private void Dismiss_Click(object s, RoutedEventArgs e) => TriggerDecision(PopupDecision.Dismiss);
+
+    public void TriggerDecision(PopupDecision decision)
     {
-        if (_countdownPaused) return;
-        _remaining--;
-        if (_remaining <= 0)
-        {
-            TimedOut = true;
-            Complete(PopupDecision.BlockAlways);
-            return;
-        }
-        UpdateCountdownLabel();
-    }
-
-    private void UpdateCountdownLabel()
-    {
-        var clock = TimeSpan.FromSeconds(Math.Max(0, _remaining)).ToString(@"m\:ss");
-        CountdownLbl.Text = Strings.T("BlockIn", clock);
-    }
-
-    public static void ShowPreview(PopupPosition position, int monitorIndex)
-    {
-        DismissPreview();
-
-        var ev = new ConnectionEvent
-        {
-            AppPath = @"C:\Program Files\Demo\DemoApp.exe",
-            RemoteAddress = "142.250.190.46",
-            RemotePort = 443,
-            Protocol = "TCP",
-            Direction = Direction.Outbound,
-            ProcessId = 1337
-        };
-
-        var popup = new ConnectionPopup(ev, isPreview: true);
-        _activePreview = popup;
-
-        popup.Loaded += (_, _) =>
-        {
-            popup.UpdateLayout();
-            PopupWindowHelper.PositionPopup(popup, position, monitorIndex, explicitStackIndex: 0);
-        };
-
-        popup.Show();
-
-        _previewTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
-        _previewTimer.Tick += (_, _) => DismissPreview();
-        _previewTimer.Start();
-    }
-
-    public static void DismissPreview()
-    {
-        if (_previewTimer != null)
-        {
-            _previewTimer.Stop();
-            _previewTimer = null;
-        }
-        if (_activePreview != null)
-        {
-            try { _activePreview.Close(); } catch { }
-            _activePreview = null;
-        }
-    }
-
-    private void Allow_Click(object s, RoutedEventArgs e) => Complete(PopupDecision.AllowAlways);
-    private void AllowOnce_Click(object s, RoutedEventArgs e) => Complete(PopupDecision.AllowOnce);
-    private void Block_Click(object s, RoutedEventArgs e) => Complete(PopupDecision.BlockAlways);
-    private void Close_Click(object s, RoutedEventArgs e) => Dismiss();
-
-    private void Settings_Click(object s, RoutedEventArgs e)
-    {
-        if (System.Windows.Application.Current.MainWindow is not MainWindow mw)
-            return;
-        var wasTop = Topmost;
-        Topmost = false;
-        try { mw.OpenSettings(); }
-        finally { Topmost = wasTop; }
-    }
-
-    private void Dismiss() => Complete(PopupDecision.Dismiss);
-
-    private void Complete(PopupDecision decision)
-    {
-        Decision = decision;
-        if (IsPreview) { DismissPreview(); return; }
-        Close();
+        DecisionMade?.Invoke(this, decision);
     }
 
     private void Search_Click(object s, RoutedEventArgs e)
@@ -414,34 +294,6 @@ public partial class ConnectionPopup : Window
         _feedbackTimer.Start();
     }
 
-    protected override void OnClosed(EventArgs e)
-    {
-        _countdownTimer.Stop();
-        _feedbackTimer.Stop();
-        _cts.Cancel();
-        _cts.Dispose();
-        base.OnClosed(e);
-        if (_activePreview == this) _activePreview = null;
-        if (!IsPreview)
-        {
-            if (Decision == PopupDecision.None)
-                Decision = PopupDecision.Dismiss;
-            var handler = ClosedWithVerdict;
-            ClosedWithVerdict = null;
-            handler?.Invoke(this);
-        }
-    }
-
     private static string Truncate(string value, int max) =>
         value.Length <= max ? value : value[..(max - 1)] + "…";
-
-    private static bool IsInsideButton(DependencyObject? source)
-    {
-        while (source != null)
-        {
-            if (source is System.Windows.Controls.Button) return true;
-            source = VisualTreeHelper.GetParent(source);
-        }
-        return false;
-    }
 }

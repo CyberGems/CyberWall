@@ -50,7 +50,7 @@ public static class PopupWindowHelper
         catch { }
     }
 
-    public static void PositionPopup(ConnectionPopup popup, PopupPosition position, int monitorIndex = -1, int? explicitStackIndex = null)
+    public static void PositionPopup(Window popup, PopupPosition position, int monitorIndex = -1, int? explicitStackIndex = null)
     {
         PositionWindow(popup, position, monitorIndex, explicitStackIndex);
     }
@@ -107,7 +107,7 @@ public static class PopupWindowHelper
             var existing = System.Windows.Application.Current.Windows
                 .OfType<Window>()
                 .Where(w => w != window && w.IsVisible && (
-                    w is ConnectionPopup cp && !cp.IsPreview ||
+                    w is PromptStackWindow psw && !psw.IsPreview ||
                     w is FirstActivityToast ||
                     (window is AutoBlockToast && w is AutoBlockToast)))
                 .ToList();
@@ -118,7 +118,7 @@ public static class PopupWindowHelper
         const double marginY = 20;
         const double gap = 10;
 
-        double width = window.ActualWidth > 1 ? window.ActualWidth : window.Width > 0 ? window.Width : 500;
+        double width = window.ActualWidth > 1 ? window.ActualWidth : window.Width > 0 ? window.Width : 516;
         double height = window.ActualHeight > 1 ? window.ActualHeight : window.Height > 0 ? window.Height : 280;
 
         double left;
@@ -198,8 +198,9 @@ public static class PopupWindowHelper
     {
         try
         {
+            if (PromptManager.Instance.HasOpenPrompts()) return true;
             return System.Windows.Application.Current?.Windows
-                .OfType<ConnectionPopup>()
+                .OfType<PromptStackWindow>()
                 .Any(p => p.IsVisible && !p.IsPreview) == true;
         }
         catch

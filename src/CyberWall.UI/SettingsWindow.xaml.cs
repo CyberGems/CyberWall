@@ -49,7 +49,7 @@ public partial class SettingsWindow : Window
         AutoBlockToggle.IsChecked = s.PopupAutoBlockEnabled;
         PopulateAutoBlockWait();
         UpdateTexts();
-        Closing += (_, _) => ConnectionPopup.DismissPreview();
+        Closing += (_, _) => PromptManager.Instance.DismissPreview();
         _loading = false;
     }
 
@@ -267,7 +267,7 @@ public partial class SettingsWindow : Window
 
     private void TriggerPreviewPopup()
     {
-        ConnectionPopup.ShowPreview(_s.NotificationPosition, _s.NotificationMonitor);
+        PromptManager.Instance.ShowPreview(_s.NotificationPosition, _s.NotificationMonitor);
     }
 
     private void PreviewBtn_Click(object sender, RoutedEventArgs e)

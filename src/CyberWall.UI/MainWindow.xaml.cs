@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Threading;
 using CyberWall.Common;
 using CyberWall.Common.Geo;
 using CyberWall.Common.I18n;
@@ -26,7 +27,6 @@ public partial class MainWindow : Window
     private bool _loading;
     private bool _notifOpen;
     private bool _layoutRestored;
-    private readonly HashSet<string> _pendingPopups = new();
     private readonly Dictionary<string, string> _lastRemoteByApp = new(StringComparer.OrdinalIgnoreCase);
     private TrayService? _tray;
 
@@ -38,6 +38,7 @@ public partial class MainWindow : Window
         _loading = true;
         Strings.Current = App.Settings.Language;
         ThemeManager.Apply(App.Settings.Theme);
+        PromptManager.Instance.Initialize(_svc, this);
         _svc.OnAskConnection += OnAskConnection;
         _svc.OnUnknownBlocked += OnUnknownBlocked;
         _notifications.Changed += () => Dispatcher.BeginInvoke(UpdateNotifBadge);
@@ -239,50 +240,8 @@ public partial class MainWindow : Window
 
     private void OnAskConnection(ConnectionEvent ev)
     {
-        Dispatcher.BeginInvoke(() =>
-        {
-            string? key = null;
-            try
-            {
-                RememberLastRemote(ev);
-                key = AppRule.Normalize(ev.AppPath);
-                if (!_pendingPopups.Add(key)) return;
-                AutoBlockToast.CloseAll();
-                var p = new ConnectionPopup(ev);
-                p.ClosedWithVerdict += popup =>
-                {
-                    _pendingPopups.Remove(key);
-                    switch (popup.Decision)
-                    {
-                        case PopupDecision.AllowAlways:
-                            _svc.SetVerdict(popup.Event.AppPath, Verdict.Allow, true, popup.Event);
-                            RefreshRules(SearchBox.Text);
-                            break;
-                        case PopupDecision.AllowOnce:
-                            _svc.SetVerdict(popup.Event.AppPath, Verdict.Allow, false, popup.Event);
-                            break;
-                        case PopupDecision.BlockAlways:
-                            _svc.SetVerdict(popup.Event.AppPath, Verdict.Block, true, popup.Event);
-                            RefreshRules(SearchBox.Text);
-                            if (popup.TimedOut)
-                            {
-                                RecordAutoBlock(popup.Event);
-                            }
-                            break;
-                        default:
-                            _svc.SetVerdict(popup.Event.AppPath, Verdict.Block, false, popup.Event);
-                            break;
-                    }
-                };
-                p.Closed += (_, _) => _pendingPopups.Remove(key);
-                p.Show();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex);
-                if (key != null) _pendingPopups.Remove(key);
-            }
-        });
+        RememberLastRemote(ev);
+        PromptManager.Instance.Enqueue(ev);
     }
 
     private void OnUnknownBlocked(ConnectionEvent ev)
@@ -295,7 +254,7 @@ public partial class MainWindow : Window
         });
     }
 
-    private void RecordAutoBlock(ConnectionEvent ev)
+    internal void RecordAutoBlock(ConnectionEvent ev)
     {
         _notifications.Add(AppNotificationKind.AutoBlocked, ev.AppPath, ev.DisplayName,
             string.IsNullOrEmpty(ev.RemoteAddress) ? null : $"{ev.RemoteAddress}:{ev.RemotePort}");
@@ -376,7 +335,26 @@ public partial class MainWindow : Window
 
     private void OnGeoUpdated() => Dispatcher.BeginInvoke(() => RefreshRules(SearchBox.Text));
 
-    private void RefreshRules(string? filter = null)
+    private DispatcherTimer? _refreshRulesDebounceTimer;
+    private string? _pendingFilter;
+
+    internal void RefreshRules(string? filter = null)
+    {
+        _pendingFilter = filter ?? SearchBox?.Text;
+        if (_refreshRulesDebounceTimer == null)
+        {
+            _refreshRulesDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
+            _refreshRulesDebounceTimer.Tick += (_, _) =>
+            {
+                _refreshRulesDebounceTimer.Stop();
+                ExecuteRefreshRules(_pendingFilter);
+            };
+        }
+        _refreshRulesDebounceTimer.Stop();
+        _refreshRulesDebounceTimer.Start();
+    }
+
+    private void ExecuteRefreshRules(string? filter = null)
     {
         _all = _svc.Store.All.ToList();
         var last = LastRemoteByApp();
