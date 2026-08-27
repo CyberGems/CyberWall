@@ -123,6 +123,7 @@ public partial class MainWindow : Window
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
         ViewLogBtnText.Text = Strings.T("ViewLog");
         TrafficIndicator.RefreshLanguage();
+        _tray?.RefreshLanguage();
 
         var progHdr = Strings.T("Program") + (_sortBy == "DisplayName" ? (_sortAsc ? " ▾" : " ▴") : "");
         var pathHdr = Strings.T("Path") + (_sortBy == "AppPath" ? (_sortAsc ? " ▾" : " ▴") : "");

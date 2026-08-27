@@ -159,16 +159,23 @@ public partial class PromptStackWindow : Window
         UpdateLayout();
 
         // Calculate card stack height dynamically
-        double headerH = 46;
+        double headerH = 48;
         double margins = 24;
-        double cardH = 220; // approximate baseline card height
+        double cardH = 265; // realistic full card height
 
-        int visibleCount = Math.Min(Math.Max(1, _cards.Count), MaxVisibleCards);
-        double targetHeight = headerH + margins + (visibleCount * cardH);
-
-        // Cap height so it fits comfortably on 1080p and laptop screens
-        Height = Math.Min(targetHeight, 560);
-        CardsScrollViewer.MaxHeight = Height - headerH - margins + 8;
+        if (_cards.Count <= 1)
+        {
+            // For a single card, provide generous space so action buttons never get clipped
+            Height = 342;
+            CardsScrollViewer.MaxHeight = 268;
+        }
+        else
+        {
+            int visibleCount = Math.Min(_cards.Count, MaxVisibleCards);
+            double targetHeight = headerH + margins + (visibleCount * cardH);
+            Height = Math.Min(targetHeight, 595);
+            CardsScrollViewer.MaxHeight = Height - headerH - margins + 8;
+        }
 
         var pos = App.Settings.NotificationPosition;
         var mon = App.Settings.NotificationMonitor;

@@ -329,7 +329,7 @@
                                 <!-- Description -->
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
                                     <TextBlock x:Name="PosTitleLbl" Text="Posición de notificación" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextBrush}"/>
-                                    <TextBlock x:Name="PosDescLbl" Text="Elegir dónde aparecen las alertas de conexión." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
+                                    <TextBlock x:Name="PosDescLbl" Text="Elegir dónde aparecen las alertas de conexión." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                                 </StackPanel>
 
                                 <!-- 16:9 Landscape Monitor Frame with 3x3 Position Grid -->
@@ -401,7 +401,7 @@
 
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
                                     <TextBlock x:Name="MonTitleLbl" Text="Monitor de notificación" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextBrush}"/>
-                                    <TextBlock x:Name="MonDescLbl" Text="Elegir en qué monitor mostrar los avisos." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
+                                    <TextBlock x:Name="MonDescLbl" Text="Elegir en qué monitor mostrar los avisos." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                                 </StackPanel>
 
                                 <ComboBox x:Name="MonBox" Grid.Column="2" Width="180" Height="34" Style="{StaticResource ModernComboBox}" SelectionChanged="MonBox_SelectionChanged"/>
@@ -425,7 +425,7 @@
 
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
                                     <TextBlock x:Name="TestTitleLbl" Text="Probar notificación" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextBrush}"/>
-                                    <TextBlock x:Name="TestDescLbl" Text="Envía un aviso para comprobar la posición y aspecto en pantalla." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
+                                    <TextBlock x:Name="TestDescLbl" Text="Envía un aviso para comprobar la posición y aspecto en pantalla." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                                 </StackPanel>
 
                                 <Button x:Name="PreviewBtn" Grid.Column="2" Content="Vista previa" Height="32" Padding="16,6" Style="{StaticResource SecondaryButtonStyle}" Click="PreviewBtn_Click"/>
@@ -453,7 +453,7 @@
 
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
                                     <TextBlock x:Name="StartupTitleLbl" Text="Ejecutar al iniciar Windows" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextBrush}"/>
-                                    <TextBlock x:Name="StartupDescLbl" Text="Inicia CyberWall minimizado en la bandeja del sistema al encender el equipo." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
+                                    <TextBlock x:Name="StartupDescLbl" Text="Inicia CyberWall minimizado en la bandeja del sistema al encender el equipo." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                                 </StackPanel>
 
                                 <CheckBox x:Name="StartupToggle" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}" VerticalAlignment="Center" Click="StartupToggle_Click"/>
@@ -477,7 +477,7 @@
 
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
                                     <TextBlock x:Name="MinimizeToTrayTitleLbl" Text="Enviar a la bandeja al cerrar" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextBrush}"/>
-                                    <TextBlock x:Name="MinimizeToTrayDescLbl" Text="Oculta la ventana en la bandeja del sistema al presionar cerrar en lugar de salir." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
+                                    <TextBlock x:Name="MinimizeToTrayDescLbl" Text="Oculta la ventana en la bandeja del sistema al presionar cerrar en lugar de salir." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                                 </StackPanel>
 
                                 <CheckBox x:Name="MinimizeToTrayToggle" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}" VerticalAlignment="Center" Click="MinimizeToTrayToggle_Click"/>
