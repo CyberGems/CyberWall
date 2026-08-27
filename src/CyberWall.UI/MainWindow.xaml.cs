@@ -186,7 +186,7 @@ public partial class MainWindow : Window
         var dirHdr = Strings.T("Direction");
         var stateHdr = Strings.T("State");
         var countryHdr = Strings.T("Country");
-        var activityHdr = Strings.T("ActivityHeader");
+        var activityHdr = Strings.T("ActivityHeader") + (_sortBy is "Activity" or "IsActiveTraffic" ? (_sortAsc ? " ▾" : " ▴") : "");
 
         StateHeaderText.Text = stateHdr;
         ActivityHeaderText.Text = activityHdr;
@@ -423,11 +423,25 @@ public partial class MainWindow : Window
         foreach (var entry in _lastRemoteByApp)
             last[entry.Key] = entry.Value;
         var q = string.IsNullOrWhiteSpace(filter) ? _all : _all.Where(r => r.DisplayName.Contains(filter!, StringComparison.OrdinalIgnoreCase) || r.AppPath.Contains(filter!, StringComparison.OrdinalIgnoreCase)).ToList();
-        Func<AppRule, object> key = _sortBy == "AppPath" ? r => r.AppPath : r => r.DisplayName;
-        var blocked = q.Where(r => r.Verdict == Verdict.Block);
-        var allowed = q.Where(r => r.Verdict == Verdict.Allow);
-        blocked = _sortAsc ? blocked.OrderBy(key) : blocked.OrderByDescending(key);
-        allowed = _sortAsc ? allowed.OrderBy(key) : allowed.OrderByDescending(key);
+
+        IEnumerable<AppRule> SortRules(IEnumerable<AppRule> items)
+        {
+            if (_sortBy is "Activity" or "IsActiveTraffic")
+            {
+                return _sortAsc
+                    ? items.OrderByDescending(r => ProcessTrafficTracker.Instance.GetActivity(r.AppPath).IsActive)
+                           .ThenByDescending(r => ProcessTrafficTracker.Instance.GetActivity(r.AppPath).ActiveSockets)
+                           .ThenBy(r => r.DisplayName)
+                    : items.OrderBy(r => ProcessTrafficTracker.Instance.GetActivity(r.AppPath).IsActive)
+                           .ThenBy(r => r.DisplayName);
+            }
+
+            Func<AppRule, object> key = _sortBy == "AppPath" ? r => r.AppPath : r => r.DisplayName;
+            return _sortAsc ? items.OrderBy(key) : items.OrderByDescending(key);
+        }
+
+        var blocked = SortRules(q.Where(r => r.Verdict == Verdict.Block));
+        var allowed = SortRules(q.Where(r => r.Verdict == Verdict.Allow));
         BlockedGrid.ItemsSource = blocked.Select(r => ToRow(r, last)).ToList();
         AllowedGrid.ItemsSource = allowed.Select(r => ToRow(r, last)).ToList();
         RefreshLanguage();
