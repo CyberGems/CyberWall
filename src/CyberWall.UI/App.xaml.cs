@@ -28,6 +28,11 @@ public partial class App : System.Windows.Application
         Settings = AppSettings.Load();
         Strings.Current = Settings.Language;
         ThemeManager.Apply(Settings.Theme);
+        try
+        {
+            CyberWall.Service.Wfp.RealFirewall.EnsureSelfAllowed();
+        }
+        catch { }
         base.OnStartup(e);
     }
 }

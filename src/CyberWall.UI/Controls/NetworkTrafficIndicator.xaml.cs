@@ -211,19 +211,35 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         var token = _connectivityCts.Token;
         try
         {
-            if (!NetworkInterface.GetIsNetworkAvailable() || !HasDefaultRoute())
+            if (!NetworkInterface.GetIsNetworkAvailable())
             {
                 SetConnectivity(ConnectivityState.Offline);
                 return;
             }
 
-            using var response = await ConnectivityClient.GetAsync(
-                "http://www.msftconnecttest.com/connecttest.txt",
-                HttpCompletionOption.ResponseHeadersRead,
-                token).ConfigureAwait(true);
-            SetConnectivity(response.IsSuccessStatusCode
-                ? ConnectivityState.Online
-                : ConnectivityState.Offline);
+            bool online = false;
+            try
+            {
+                using var response = await ConnectivityClient.GetAsync(
+                    "http://www.msftconnecttest.com/connecttest.txt",
+                    HttpCompletionOption.ResponseHeadersRead,
+                    token).ConfigureAwait(true);
+                online = response.IsSuccessStatusCode;
+            }
+            catch
+            {
+                try
+                {
+                    using var response = await ConnectivityClient.GetAsync(
+                        "http://www.google.com/generate_204",
+                        HttpCompletionOption.ResponseHeadersRead,
+                        token).ConfigureAwait(true);
+                    online = response.IsSuccessStatusCode;
+                }
+                catch { }
+            }
+
+            SetConnectivity(online ? ConnectivityState.Online : ConnectivityState.Offline);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
         catch
@@ -233,21 +249,6 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         finally
         {
             Interlocked.Exchange(ref _connectivityCheck, 0);
-        }
-    }
-
-    private static bool HasDefaultRoute()
-    {
-        try
-        {
-            return NetworkInterface.GetAllNetworkInterfaces().Any(nic =>
-                nic.OperationalStatus == OperationalStatus.Up &&
-                nic.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
-                nic.GetIPProperties().GatewayAddresses.Count > 0);
-        }
-        catch
-        {
-            return false;
         }
     }
 

@@ -77,14 +77,16 @@ public static class RealFirewall
         {
             if (enable)
             {
-                RunNetsh("advfirewall firewall add rule name=\"CyberWall-Killswitch-BlockAll-Out\" dir=out action=block enable=yes profile=any");
-                RunNetsh("advfirewall firewall add rule name=\"CyberWall-Killswitch-BlockAll-In\" dir=in action=block enable=yes profile=any");
+                RemoveRule("CyberWall-Killswitch-BlockAll-Out");
+                RemoveRule("CyberWall-Killswitch-BlockAll-In");
+                AddGlobalBlockRule("CyberWall-Killswitch-BlockAll-Out", outbound: true);
+                AddGlobalBlockRule("CyberWall-Killswitch-BlockAll-In", outbound: false);
                 ProcessIdentity.TerminateAllNonSelfConnections();
             }
             else
             {
-                RunNetsh("advfirewall firewall delete rule name=\"CyberWall-Killswitch-BlockAll-Out\"");
-                RunNetsh("advfirewall firewall delete rule name=\"CyberWall-Killswitch-BlockAll-In\"");
+                RemoveRule("CyberWall-Killswitch-BlockAll-Out");
+                RemoveRule("CyberWall-Killswitch-BlockAll-In");
             }
         }
         catch (Exception ex)
@@ -113,13 +115,18 @@ public static class RealFirewall
         try
         {
             var baseName = Path.GetFileNameWithoutExtension(appPath);
-            RunNetsh($"advfirewall firewall delete rule name=\"CyberWall-Block-{baseName}\"");
-            RunNetsh($"advfirewall firewall delete rule name=\"CyberWall-Block-{baseName}-in\"");
-            var name = $"CyberWall-Allow-{baseName}";
-            RunNetsh($"advfirewall firewall delete rule name=\"{name}\"");
-            RunNetsh($"advfirewall firewall delete rule name=\"{name}-in\"");
-            RunNetsh($"advfirewall firewall add rule name=\"{name}\" dir=out action=allow program=\"{appPath}\" enable=yes profile=any");
-            RunNetsh($"advfirewall firewall add rule name=\"{name}-in\" dir=in action=allow program=\"{appPath}\" enable=yes profile=any");
+            var allowOut = $"CyberWall-Allow-{baseName}";
+            var allowIn = $"CyberWall-Allow-{baseName}-in";
+            var blockOut = $"CyberWall-Block-{baseName}";
+            var blockIn = $"CyberWall-Block-{baseName}-in";
+
+            RemoveRule(blockOut);
+            RemoveRule(blockIn);
+            RemoveRule(allowOut);
+            RemoveRule(allowIn);
+
+            AddAppRule(allowOut, appPath, outbound: true, allow: true);
+            AddAppRule(allowIn, appPath, outbound: false, allow: true);
         }
         catch (Exception ex) { Debug.WriteLine(ex); }
     }
@@ -173,14 +180,19 @@ public static class RealFirewall
     {
         try
         {
-            var name = $"CyberWall-Allow-{Path.GetFileNameWithoutExtension(appPath)}";
-            RunNetsh($"advfirewall firewall delete rule name=\"{name}\"");
-            RunNetsh($"advfirewall firewall delete rule name=\"{name}-in\"");
-            var bname = $"CyberWall-Block-{Path.GetFileNameWithoutExtension(appPath)}";
-            RunNetsh($"advfirewall firewall delete rule name=\"{bname}\"");
-            RunNetsh($"advfirewall firewall delete rule name=\"{bname}-in\"");
-            RunNetsh($"advfirewall firewall add rule name=\"{bname}\" dir=out action=block program=\"{appPath}\" enable=yes profile=any");
-            RunNetsh($"advfirewall firewall add rule name=\"{bname}-in\" dir=in action=block program=\"{appPath}\" enable=yes profile=any");
+            var baseName = Path.GetFileNameWithoutExtension(appPath);
+            var allowOut = $"CyberWall-Allow-{baseName}";
+            var allowIn = $"CyberWall-Allow-{baseName}-in";
+            var blockOut = $"CyberWall-Block-{baseName}";
+            var blockIn = $"CyberWall-Block-{baseName}-in";
+
+            RemoveRule(allowOut);
+            RemoveRule(allowIn);
+            RemoveRule(blockOut);
+            RemoveRule(blockIn);
+
+            AddAppRule(blockOut, appPath, outbound: true, allow: false);
+            AddAppRule(blockIn, appPath, outbound: false, allow: false);
         }
         catch (Exception ex) { Debug.WriteLine(ex); }
     }
@@ -194,14 +206,88 @@ public static class RealFirewall
             try
             {
                 var baseName = Path.GetFileNameWithoutExtension(p);
-                RunNetsh($"advfirewall firewall delete rule name=\"CyberWall-Allow-{baseName}\"");
-                RunNetsh($"advfirewall firewall delete rule name=\"CyberWall-Allow-{baseName}-in\"");
-                RunNetsh($"advfirewall firewall delete rule name=\"CyberWall-Block-{baseName}\"");
-                RunNetsh($"advfirewall firewall delete rule name=\"CyberWall-Block-{baseName}-in\"");
+                RemoveRule($"CyberWall-Allow-{baseName}");
+                RemoveRule($"CyberWall-Allow-{baseName}-in");
+                RemoveRule($"CyberWall-Block-{baseName}");
+                RemoveRule($"CyberWall-Block-{baseName}-in");
             }
             catch { }
         }
         if (!string.IsNullOrEmpty(pfn)) RemovePackageRules(pfn);
+    }
+
+    private static dynamic? GetFwPolicy()
+    {
+        try
+        {
+            var type = Type.GetTypeFromProgID("HNetCfg.FwPolicy2");
+            return type != null ? Activator.CreateInstance(type) : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static void RemoveRule(string name)
+    {
+        try
+        {
+            dynamic? policy = GetFwPolicy();
+            if (policy != null)
+            {
+                policy.Rules.Remove(name);
+                return;
+            }
+        }
+        catch { }
+        RunNetsh($"advfirewall firewall delete rule name=\"{name}\"");
+    }
+
+    private static void AddAppRule(string name, string appPath, bool outbound, bool allow)
+    {
+        try
+        {
+            var tRule = Type.GetTypeFromProgID("HNetCfg.FWRule");
+            if (tRule != null && GetFwPolicy() is { } policy && Activator.CreateInstance(tRule) is { } rule)
+            {
+                ((dynamic)rule).Name = name;
+                ((dynamic)rule).ApplicationName = appPath;
+                ((dynamic)rule).Action = allow ? 1 : 0; // 1 = Allow, 0 = Block
+                ((dynamic)rule).Direction = outbound ? 2 : 1; // 2 = Out, 1 = In
+                ((dynamic)rule).Profiles = 0x7FFFFFFF;
+                ((dynamic)rule).Enabled = true;
+                ((dynamic)policy).Rules.Add(rule);
+                return;
+            }
+        }
+        catch (Exception ex) { Debug.WriteLine(ex); }
+
+        var dir = outbound ? "out" : "in";
+        var act = allow ? "allow" : "block";
+        RunNetsh($"advfirewall firewall add rule name=\"{name}\" dir={dir} action={act} program=\"{appPath}\" enable=yes profile=any");
+    }
+
+    private static void AddGlobalBlockRule(string name, bool outbound)
+    {
+        try
+        {
+            var tRule = Type.GetTypeFromProgID("HNetCfg.FWRule");
+            if (tRule != null && GetFwPolicy() is { } policy && Activator.CreateInstance(tRule) is { } rule)
+            {
+                ((dynamic)rule).Name = name;
+                ((dynamic)rule).Action = 0; // Block
+                ((dynamic)rule).Direction = outbound ? 2 : 1; // 2 = Out, 1 = In
+                ((dynamic)rule).Profiles = 0x7FFFFFFF;
+                ((dynamic)rule).Enabled = true;
+                ((dynamic)policy).Rules.Add(rule);
+                return;
+            }
+        }
+        catch (Exception ex) { Debug.WriteLine(ex); }
+
+        var dir = outbound ? "out" : "in";
+        RunNetsh($"advfirewall firewall add rule name=\"{name}\" dir={dir} action=block enable=yes profile=any");
     }
 
     private static List<string> GetCompanionBinaries(string appPath)
