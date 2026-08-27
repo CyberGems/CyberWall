@@ -8,7 +8,7 @@ public static class Strings
 
     private static readonly Dictionary<string, (string En, string Es)> Map = new()
     {
-        ["AppTitle"] = ("CyberWall — Per-app firewall", "CyberWall — Firewall por programa"),
+        ["AppTitle"] = ("CyberWall — Real-Time Network Filter", "CyberWall — Filtro de red en tiempo real"),
         ["AppSubtitle"] = ("Simple, robust protection with a real-time network filter", "Protección simple y robusta, con filtro de red en tiempo real"),
         ["Country"] = ("Country", "País"),
         ["LocalNetwork"] = ("Local network", "Red local"),
