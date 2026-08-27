@@ -143,6 +143,7 @@ public partial class TrayContextMenuWindow : Window
         NotifMenuText.Text = Strings.T("Notifications");
         SettingsText.Text = Strings.T("Settings");
         LogText.Text = Strings.T("OpenLog");
+        StatsText.Text = Strings.T("StatsMenu");
         AboutText.Text = Strings.T("About");
         ExitText.Text = Strings.T("ExitApp");
     }
@@ -246,6 +247,19 @@ public partial class TrayContextMenuWindow : Window
             _mainWindow.WindowState = WindowState.Normal;
             _mainWindow.Activate();
             var dlg = new Dialogs.LogViewerDialog { Owner = _mainWindow };
+            dlg.ShowDialog();
+        });
+    }
+
+    private void Stats_Click(object sender, RoutedEventArgs e)
+    {
+        CloseMenu();
+        _mainWindow.Dispatcher.Invoke(() =>
+        {
+            _mainWindow.Show();
+            _mainWindow.WindowState = WindowState.Normal;
+            _mainWindow.Activate();
+            var dlg = new Dialogs.StatisticsDialog { Owner = _mainWindow };
             dlg.ShowDialog();
         });
     }

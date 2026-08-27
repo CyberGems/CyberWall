@@ -174,9 +174,11 @@ public partial class MainWindow : Window
         SettingsBtn.ToolTip = Strings.T("Settings");
         AboutBtn.ToolTip = Strings.T("About");
         ViewLogBtn.ToolTip = Strings.T("ViewLog");
+        StatsBtn.ToolTip = Strings.T("StatsButton");
         ModeLbl.Text = Strings.T("Mode");
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
         ViewLogBtnText.Text = Strings.T("ViewLog");
+        StatsBtnText.Text = Strings.T("StatsButton");
         TrafficIndicator.RefreshLanguage();
         _tray?.RefreshLanguage();
 
@@ -709,6 +711,12 @@ public partial class MainWindow : Window
     private void OpenLog_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new LogViewerDialog { Owner = this };
+        dlg.ShowDialog();
+    }
+
+    private void OpenStats_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new StatisticsDialog { Owner = this };
         dlg.ShowDialog();
     }
 
