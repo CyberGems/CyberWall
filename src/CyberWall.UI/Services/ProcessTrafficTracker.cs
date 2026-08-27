@@ -1,9 +1,11 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
 using CyberWall.Common.I18n;
+using CyberWall.Service.Engine;
 using CyberWall.Service.Wfp;
 
 namespace CyberWall.UI.Services;
@@ -24,6 +26,7 @@ public sealed class ProcessTrafficTracker : IDisposable
     private readonly ConcurrentDictionary<string, ProcessActivityState> _activities = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<int, string?> _pidPathCache = new();
     private DateTime _lastCacheCleanup = DateTime.UtcNow;
+    private bool _seeded;
 
     public event Action? ActivityUpdated;
 
@@ -42,6 +45,12 @@ public sealed class ProcessTrafficTracker : IDisposable
 
     public void Start()
     {
+        if (!_seeded)
+        {
+            _seeded = true;
+            Task.Run(SeedHistoryFromLog);
+        }
+
         if (!_timer.IsEnabled)
         {
             Poll();
@@ -91,6 +100,11 @@ public sealed class ProcessTrafficTracker : IDisposable
             {
                 sb.AppendLine(Strings.T("ActivityConnections", info.ActiveSockets));
             }
+            if (info.LastActivityUtc > DateTime.MinValue)
+            {
+                var localTime = info.LastActivityUtc.ToLocalTime().ToString("HH:mm:ss");
+                sb.AppendLine(Strings.T("ActivityLastSeenActive", localTime));
+            }
             if (!string.IsNullOrEmpty(info.LastEndpoint))
             {
                 sb.Append(Strings.T("ActivityLastEndpoint", info.LastEndpoint));
@@ -102,19 +116,72 @@ public sealed class ProcessTrafficTracker : IDisposable
             if (info.LastActivityUtc > DateTime.MinValue)
             {
                 var elapsed = DateTime.UtcNow - info.LastActivityUtc;
-                string timeStr;
-                if (elapsed.TotalSeconds < 60)
-                    timeStr = Strings.Current == Lang.Es ? $"Hace {(int)elapsed.TotalSeconds}s" : $"{(int)elapsed.TotalSeconds}s ago";
-                else if (elapsed.TotalMinutes < 60)
-                    timeStr = Strings.Current == Lang.Es ? $"Hace {(int)elapsed.TotalMinutes}m" : $"{(int)elapsed.TotalMinutes}m ago";
-                else
-                    timeStr = Strings.Current == Lang.Es ? $"Hace {(int)elapsed.TotalHours}h" : $"{(int)elapsed.TotalHours}h ago";
+                var localDt = info.LastActivityUtc.ToLocalTime();
+                string timeFormatted = localDt.Date == DateTime.Today
+                    ? localDt.ToString("HH:mm:ss")
+                    : localDt.ToString("yyyy-MM-dd HH:mm");
 
-                sb.Append(Strings.T("ActivityLastSeen", timeStr));
+                string relativeStr;
+                if (elapsed.TotalSeconds < 10)
+                    relativeStr = Strings.T("TimeJustNow");
+                else if (elapsed.TotalSeconds < 60)
+                    relativeStr = Strings.T("TimeSecondsAgo", (int)elapsed.TotalSeconds);
+                else if (elapsed.TotalMinutes < 60)
+                    relativeStr = Strings.T("TimeMinutesAgo", (int)elapsed.TotalMinutes);
+                else if (elapsed.TotalHours < 24)
+                    relativeStr = Strings.T("TimeHoursAgo", (int)elapsed.TotalHours);
+                else
+                    relativeStr = Strings.T("TimeDaysAgo", (int)elapsed.TotalDays);
+
+                sb.AppendLine(Strings.T("ActivityLastSeenRelative", timeFormatted, relativeStr));
+
+                if (!string.IsNullOrEmpty(info.LastEndpoint))
+                {
+                    sb.Append(Strings.T("ActivityLastEndpoint", info.LastEndpoint));
+                }
+            }
+            else
+            {
+                sb.Append(Strings.T("ActivityNoHistory"));
             }
         }
 
         return sb.ToString().TrimEnd();
+    }
+
+    private void SeedHistoryFromLog()
+    {
+        try
+        {
+            var logPath = BlockedLog.LogPath;
+            if (!File.Exists(logPath)) return;
+
+            foreach (var line in File.ReadLines(logPath))
+            {
+                try
+                {
+                    var parts = line.Split('|', StringSplitOptions.TrimEntries);
+                    if (parts.Length < 5) continue;
+                    if (!DateTime.TryParse(parts[0], out var dt)) continue;
+                    var appPath = parts[3];
+                    if (string.IsNullOrWhiteSpace(appPath)) continue;
+
+                    var state = _activities.GetOrAdd(appPath, _ => new ProcessActivityState());
+                    lock (state)
+                    {
+                        var utc = dt.ToUniversalTime();
+                        if (utc > state.LastActivityUtc)
+                        {
+                            state.LastActivityUtc = utc;
+                            state.LastEndpoint = parts[4];
+                        }
+                    }
+                }
+                catch { }
+            }
+            ActivityUpdated?.Invoke();
+        }
+        catch { }
     }
 
     private void Poll()

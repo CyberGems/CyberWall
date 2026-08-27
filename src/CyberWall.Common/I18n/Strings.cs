@@ -237,6 +237,14 @@ public static class Strings
         ["ActivityConnections"] = ("Active connections: {0}", "Conexiones activas: {0}"),
         ["ActivityLastEndpoint"] = ("Last endpoint: {0}", "Último destino: {0}"),
         ["ActivityLastSeen"] = ("Last activity: {0}", "Última actividad: {0}"),
+        ["ActivityLastSeenActive"] = ("Last activity: {0} (active now)", "Última actividad: {0} (en curso)"),
+        ["ActivityLastSeenRelative"] = ("Last activity: {0} ({1})", "Última actividad: {0} ({1})"),
+        ["ActivityNoHistory"] = ("Last activity: No recorded history", "Última actividad: Sin registros en el historial"),
+        ["TimeJustNow"] = ("just now", "hace un instante"),
+        ["TimeSecondsAgo"] = ("{0}s ago", "hace {0}s"),
+        ["TimeMinutesAgo"] = ("{0}m ago", "hace {0} min"),
+        ["TimeHoursAgo"] = ("{0}h ago", "hace {0}h"),
+        ["TimeDaysAgo"] = ("{0}d ago", "hace {0}d"),
     };
 
     public static string T(string key, params object[] args)
