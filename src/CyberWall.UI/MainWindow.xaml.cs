@@ -53,8 +53,12 @@ public partial class MainWindow : Window
         _tray = new TrayService(this, _svc);
         GeoCountry.Updated += OnGeoUpdated;
         GeoCountry.Warm();
+        ProcessTrafficTracker.Instance.ActivityUpdated += OnActivityUpdated;
+        ProcessTrafficTracker.Instance.Start();
         Closed += (_, _) =>
         {
+            ProcessTrafficTracker.Instance.ActivityUpdated -= OnActivityUpdated;
+            ProcessTrafficTracker.Instance.Stop();
             GeoCountry.Updated -= OnGeoUpdated;
             App.Settings.FirewallEnabled = _svc.IsMasterOn;
             App.Settings.FirewallMode = (int)_svc.Mode;
@@ -182,8 +186,10 @@ public partial class MainWindow : Window
         var dirHdr = Strings.T("Direction");
         var stateHdr = Strings.T("State");
         var countryHdr = Strings.T("Country");
+        var activityHdr = Strings.T("ActivityHeader");
 
         StateHeaderText.Text = stateHdr;
+        ActivityHeaderText.Text = activityHdr;
         ProgramHeaderText.Text = progHdr;
         PathHeaderText.Text = pathHdr;
         ActionHeaderText.Text = actHdr;
@@ -191,6 +197,7 @@ public partial class MainWindow : Window
         DirectionHeaderText.Text = dirHdr;
 
         AllowColState.Header = stateHdr;
+        AllowColActivity.Header = activityHdr;
         AllowColProg.Header = progHdr;
         AllowColPath.Header = pathHdr;
         AllowColAction.Header = actHdr;
@@ -198,11 +205,14 @@ public partial class MainWindow : Window
         AllowColDir.Header = dirHdr;
 
         BlockColState.Header = stateHdr;
+        BlockColActivity.Header = activityHdr;
         BlockColProg.Header = progHdr;
         BlockColPath.Header = pathHdr;
         BlockColAction.Header = actHdr;
         BlockColCountry.Header = countryHdr;
         BlockColDir.Header = dirHdr;
+
+        OnActivityUpdated();
 
         AllowedExpander.Header = $"{Strings.T("Allowed")} ({_all.Count(r => r.Verdict == Verdict.Allow)})";
         BlockedExpander.Header = $"{Strings.T("Blocked")} ({_all.Count(r => r.Verdict == Verdict.Block)})";
@@ -437,6 +447,8 @@ public partial class MainWindow : Window
         {
             _lastRemoteByApp[ev.AppPath] = ev.RemoteAddress;
         }
+
+        ProcessTrafficTracker.Instance.RecordActivity(ev.AppPath, ev.RemoteAddress, ev.RemotePort);
     }
 
     private static AppRuleRow ToRow(AppRule rule, Dictionary<string, string> last)
@@ -451,7 +463,34 @@ public partial class MainWindow : Window
         {
             last.TryGetValue(rule.AppPath, out ip);
         }
-        return new AppRuleRow { Rule = rule, Geo = GeoCountry.Lookup(ip) };
+        var row = new AppRuleRow { Rule = rule, Geo = GeoCountry.Lookup(ip) };
+        row.UpdateActivity(ProcessTrafficTracker.Instance);
+        return row;
+    }
+
+    private void OnActivityUpdated()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(OnActivityUpdated);
+            return;
+        }
+
+        if (AllowedGrid.ItemsSource is IEnumerable<AppRuleRow> allowedRows)
+        {
+            foreach (var row in allowedRows)
+            {
+                row.UpdateActivity(ProcessTrafficTracker.Instance);
+            }
+        }
+
+        if (BlockedGrid.ItemsSource is IEnumerable<AppRuleRow> blockedRows)
+        {
+            foreach (var row in blockedRows)
+            {
+                row.UpdateActivity(ProcessTrafficTracker.Instance);
+            }
+        }
     }
 
     private static Dictionary<string, string> LastRemoteByApp()

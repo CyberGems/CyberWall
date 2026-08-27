@@ -748,7 +748,8 @@
                                 BorderThickness="0,1,0,1" SnapsToDevicePixels="True">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="72"/>
+                                    <ColumnDefinition Width="68"/>
+                                    <ColumnDefinition Width="42"/>
                                     <ColumnDefinition Width="1.4*"/>
                                     <ColumnDefinition Width="2.2*"/>
                                     <ColumnDefinition Width="100"/>
@@ -757,7 +758,9 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock x:Name="StateHeaderText" Grid.Column="0" Text="Estado" Foreground="{DynamicResource TextBrush}"
                                            FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <Border Grid.Column="1" Margin="4,2" CornerRadius="6" Cursor="Hand" Tag="DisplayName" MouseLeftButtonUp="RulesColumnHeader_Click">
+                                <TextBlock x:Name="ActivityHeaderText" Grid.Column="1" Text="Actividad" Foreground="{DynamicResource TextBrush}"
+                                           FontWeight="Bold" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Grid.Column="2" Margin="4,2" CornerRadius="6" Cursor="Hand" Tag="DisplayName" MouseLeftButtonUp="RulesColumnHeader_Click">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="Transparent"/>
@@ -774,7 +777,7 @@
                                     <TextBlock x:Name="ProgramHeaderText" Text="Programa" Foreground="{DynamicResource TextBrush}"
                                                FontWeight="Bold" FontSize="11" Margin="8,0" VerticalAlignment="Center"/>
                                 </Border>
-                                <Border Grid.Column="2" Margin="4,2" CornerRadius="6" Cursor="Hand" Tag="AppPath" MouseLeftButtonUp="RulesColumnHeader_Click">
+                                <Border Grid.Column="3" Margin="4,2" CornerRadius="6" Cursor="Hand" Tag="AppPath" MouseLeftButtonUp="RulesColumnHeader_Click">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="Transparent"/>
@@ -791,11 +794,11 @@
                                     <TextBlock x:Name="PathHeaderText" Text="Ruta del ejecutable" Foreground="{DynamicResource TextBrush}"
                                                FontWeight="Bold" FontSize="11" Margin="8,0" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock x:Name="ActionHeaderText" Grid.Column="3" Text="Acción" Foreground="{DynamicResource TextBrush}"
+                                <TextBlock x:Name="ActionHeaderText" Grid.Column="4" Text="Acción" Foreground="{DynamicResource TextBrush}"
                                            FontWeight="Bold" FontSize="11" Margin="6,0" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="CountryHeaderText" Grid.Column="4" Text="País" Foreground="{DynamicResource TextBrush}"
+                                <TextBlock x:Name="CountryHeaderText" Grid.Column="5" Text="País" Foreground="{DynamicResource TextBrush}"
                                            FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="DirectionHeaderText" Grid.Column="5" Text="Dirección" Foreground="{DynamicResource TextBrush}"
+                                <TextBlock x:Name="DirectionHeaderText" Grid.Column="6" Text="Dirección" Foreground="{DynamicResource TextBrush}"
                                            FontWeight="Bold" FontSize="11" Margin="6,0" VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
@@ -809,10 +812,40 @@
                                         <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" PreviewKeyDown="DataGrid_PreviewKeyDown" SelectionChanged="RulesGrid_SelectionChanged">
                                             <DataGrid.Columns>
                                                 <!-- Switch Column -->
-                                                <DataGridTemplateColumn x:Name="AllowColState" Header="Estado" Width="72" CanUserSort="False" HeaderStyle="{StaticResource StateColumnHeader}">
+                                                <DataGridTemplateColumn x:Name="AllowColState" Header="Estado" Width="68" CanUserSort="False" HeaderStyle="{StaticResource StateColumnHeader}">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <CheckBox IsChecked="{Binding Verdict, Converter={StaticResource VerdictToToggleConverter}, Mode=OneWay}" Style="{StaticResource MiniToggle}" HorizontalAlignment="Center" VerticalAlignment="Center" Click="RuleToggle_Click"/>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+
+                                                <!-- Traffic Activity LED Column -->
+                                                <DataGridTemplateColumn x:Name="AllowColActivity" Header="Actividad" Width="42" CanUserSort="True" SortMemberPath="IsActiveTraffic" HeaderStyle="{StaticResource StateColumnHeader}">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <Grid Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent"
+                                                                  ToolTip="{Binding ActivityTooltip}"
+                                                                  ToolTipService.InitialShowDelay="150" ToolTipService.ShowDuration="10000">
+                                                                <!-- Idle State Dot -->
+                                                                <Ellipse x:Name="IdleDot" Width="7" Height="7" Fill="{DynamicResource SubTextBrush}" Opacity="0.3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                                                <!-- Active State Glowing LED -->
+                                                                <Grid x:Name="ActiveLed" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                                    <!-- Soft Halo Pulse Ring -->
+                                                                    <Ellipse Width="16" Height="16" Fill="#22C55E" Opacity="0.22"/>
+                                                                    <!-- Solid Core Dot -->
+                                                                    <Ellipse Width="7.5" Height="7.5" Fill="#22C55E"/>
+                                                                    <!-- Crisp highlight dot -->
+                                                                    <Ellipse Width="2.5" Height="2.5" Fill="#FFFFFF" Opacity="0.75" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-1,-1,0,0"/>
+                                                                </Grid>
+                                                            </Grid>
+                                                            <DataTemplate.Triggers>
+                                                                <DataTrigger Binding="{Binding IsActiveTraffic}" Value="True">
+                                                                    <Setter TargetName="IdleDot" Property="Visibility" Value="Collapsed"/>
+                                                                    <Setter TargetName="ActiveLed" Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </DataTemplate.Triggers>
                                                         </DataTemplate>
                                                     </DataGridTemplateColumn.CellTemplate>
                                                 </DataGridTemplateColumn>
@@ -935,10 +968,40 @@
                                     <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" PreviewKeyDown="DataGrid_PreviewKeyDown" SelectionChanged="RulesGrid_SelectionChanged">
                                         <DataGrid.Columns>
                                             <!-- Switch Column -->
-                                            <DataGridTemplateColumn x:Name="BlockColState" Header="Estado" Width="72" CanUserSort="False" HeaderStyle="{StaticResource StateColumnHeader}">
+                                            <DataGridTemplateColumn x:Name="BlockColState" Header="Estado" Width="68" CanUserSort="False" HeaderStyle="{StaticResource StateColumnHeader}">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <CheckBox IsChecked="{Binding Verdict, Converter={StaticResource VerdictToToggleConverter}, Mode=OneWay}" Style="{StaticResource MiniToggle}" HorizontalAlignment="Center" VerticalAlignment="Center" Click="RuleToggle_Click"/>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+
+                                            <!-- Traffic Activity LED Column -->
+                                            <DataGridTemplateColumn x:Name="BlockColActivity" Header="Actividad" Width="42" CanUserSort="True" SortMemberPath="IsActiveTraffic" HeaderStyle="{StaticResource StateColumnHeader}">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent"
+                                                              ToolTip="{Binding ActivityTooltip}"
+                                                              ToolTipService.InitialShowDelay="150" ToolTipService.ShowDuration="10000">
+                                                            <!-- Idle State Dot -->
+                                                            <Ellipse x:Name="IdleDot" Width="7" Height="7" Fill="{DynamicResource SubTextBrush}" Opacity="0.3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                                            <!-- Active State Glowing LED -->
+                                                            <Grid x:Name="ActiveLed" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                                <!-- Soft Halo Pulse Ring -->
+                                                                <Ellipse Width="16" Height="16" Fill="#22C55E" Opacity="0.22"/>
+                                                                <!-- Solid Core Dot -->
+                                                                <Ellipse Width="7.5" Height="7.5" Fill="#22C55E"/>
+                                                                <!-- Crisp highlight dot -->
+                                                                <Ellipse Width="2.5" Height="2.5" Fill="#FFFFFF" Opacity="0.75" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-1,-1,0,0"/>
+                                                            </Grid>
+                                                        </Grid>
+                                                        <DataTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding IsActiveTraffic}" Value="True">
+                                                                <Setter TargetName="IdleDot" Property="Visibility" Value="Collapsed"/>
+                                                                <Setter TargetName="ActiveLed" Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </DataTemplate.Triggers>
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>

@@ -5,7 +5,7 @@ using CyberWall.Common;
 
 namespace CyberWall.Service.Wfp;
 
-internal static class ProcessIdentity
+public static class ProcessIdentity
 {
     private const uint ProcessQueryLimitedInformation = 0x1000;
     private const int AppmodelErrorNoPackage = 15700;

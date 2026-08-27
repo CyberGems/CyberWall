@@ -6,7 +6,7 @@ using CyberWall.Common;
 
 namespace CyberWall.Service.Wfp;
 
-internal static class HostAppResolver
+public static class HostAppResolver
 {
     private static readonly Regex WebViewExeName = new(
         @"--webview-exe-name=([^\s""]+)",
