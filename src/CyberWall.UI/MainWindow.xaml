@@ -397,6 +397,7 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Arrow"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Focusable" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
@@ -439,6 +440,7 @@
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Cursor" Value="Arrow"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Focusable" Value="False"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
                     <Setter Property="Background" Value="Transparent"/>
@@ -778,7 +780,7 @@
                                 <!-- Allowed Section -->
                                 <Border CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,10">
                                     <Expander x:Name="AllowedExpander" Style="{StaticResource ModernExpander}" Header="Permitidas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                        <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" PreviewKeyDown="DataGrid_PreviewKeyDown" SelectionChanged="RulesGrid_SelectionChanged">
+                                        <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" PreviewKeyDown="DataGrid_PreviewKeyDown" SelectionChanged="RulesGrid_SelectionChanged">
                                             <DataGrid.Columns>
                                                 <!-- Switch Column -->
                                                 <DataGridTemplateColumn x:Name="AllowColState" Header="Estado" Width="72" CanUserSort="False" HeaderStyle="{StaticResource StateColumnHeader}">
@@ -904,7 +906,7 @@
                             <!-- Blocked Section -->
                             <Border CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
                                 <Expander x:Name="BlockedExpander" Style="{StaticResource ModernExpander}" Header="Bloqueadas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                    <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" PreviewKeyDown="DataGrid_PreviewKeyDown" SelectionChanged="RulesGrid_SelectionChanged">
+                                    <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" PreviewKeyDown="DataGrid_PreviewKeyDown" SelectionChanged="RulesGrid_SelectionChanged">
                                         <DataGrid.Columns>
                                             <!-- Switch Column -->
                                             <DataGridTemplateColumn x:Name="BlockColState" Header="Estado" Width="72" CanUserSort="False" HeaderStyle="{StaticResource StateColumnHeader}">

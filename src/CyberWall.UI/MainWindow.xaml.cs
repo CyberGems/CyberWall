@@ -660,30 +660,23 @@ public partial class MainWindow : Window
     {
         if (grid == null || grid.Items.Count == 0) return;
         int targetIdx = Math.Clamp(index, 0, grid.Items.Count - 1);
+
         grid.Focus();
         grid.SelectedIndex = targetIdx;
+        grid.CurrentItem = grid.Items[targetIdx];
         grid.ScrollIntoView(grid.Items[targetIdx]);
 
-        var row = grid.ItemContainerGenerator.ContainerFromIndex(targetIdx) as DataGridRow;
-        if (row != null)
+        grid.UpdateLayout();
+        if (grid.ItemContainerGenerator.ContainerFromIndex(targetIdx) is DataGridRow row)
         {
             row.Focus();
             row.IsSelected = true;
-        }
-        else
-        {
-            grid.Dispatcher.BeginInvoke(() =>
-            {
-                var r = grid.ItemContainerGenerator.ContainerFromIndex(targetIdx) as DataGridRow;
-                r?.Focus();
-                if (r != null) r.IsSelected = true;
-            }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
     }
 
     private void ToggleRuleAndAdvanceSelection(System.Windows.Controls.DataGrid grid)
     {
-        if (grid == null) return;
+        if (grid == null || grid.Items.Count == 0) return;
         var rowItem = grid.SelectedItem ?? grid.CurrentItem;
         var r = rowItem as AppRule ?? (rowItem as AppRuleRow)?.Rule;
         if (r == null) return;
@@ -693,14 +686,16 @@ public partial class MainWindow : Window
         var newVerdict = r.Verdict == Verdict.Allow ? Verdict.Block : Verdict.Allow;
 
         _svc.SetVerdict(r.AppPath, newVerdict, true, null);
-        RefreshRules(SearchBox.Text);
+
+        _refreshRulesDebounceTimer?.Stop();
+        ExecuteRefreshRules(SearchBox?.Text);
 
         var targetGrid = isAllowed ? AllowedGrid : BlockedGrid;
         var otherGrid = isAllowed ? BlockedGrid : AllowedGrid;
 
         if (targetGrid.Items.Count > 0)
         {
-            int nextIdx = Math.Min(currentIdx, targetGrid.Items.Count - 1);
+            int nextIdx = Math.Clamp(currentIdx, 0, targetGrid.Items.Count - 1);
             SelectAndFocusRow(targetGrid, nextIdx);
         }
         else if (otherGrid.Items.Count > 0)
@@ -713,18 +708,17 @@ public partial class MainWindow : Window
     {
         if (e.Key == System.Windows.Input.Key.Down || e.Key == System.Windows.Input.Key.Enter)
         {
-            try
+            e.Handled = true;
+            if (_refreshRulesDebounceTimer != null && _refreshRulesDebounceTimer.IsEnabled)
             {
-                var targetGrid = AllowedGrid.Items.Count > 0 ? AllowedGrid : (BlockedGrid.Items.Count > 0 ? BlockedGrid : null);
-                if (targetGrid != null && targetGrid.Items.Count > 0)
-                {
-                    SelectAndFocusRow(targetGrid, 0);
-                    e.Handled = true;
-                }
+                _refreshRulesDebounceTimer.Stop();
+                ExecuteRefreshRules(SearchBox.Text);
             }
-            catch (Exception ex)
+
+            var targetGrid = AllowedGrid.Items.Count > 0 ? AllowedGrid : (BlockedGrid.Items.Count > 0 ? BlockedGrid : null);
+            if (targetGrid != null && targetGrid.Items.Count > 0)
             {
-                Debug.WriteLine($"Search navigation error: {ex}");
+                SelectAndFocusRow(targetGrid, 0);
             }
         }
         else if (e.Key == System.Windows.Input.Key.Escape)
@@ -743,46 +737,46 @@ public partial class MainWindow : Window
 
         if (e.Key == System.Windows.Input.Key.Space)
         {
-            ToggleRuleAndAdvanceSelection(grid);
             e.Handled = true;
+            ToggleRuleAndAdvanceSelection(grid);
         }
         else if (e.Key == System.Windows.Input.Key.Down)
         {
-            if (grid == AllowedGrid && (grid.SelectedIndex == grid.Items.Count - 1 || grid.SelectedIndex < 0))
+            if (grid == AllowedGrid && grid.SelectedIndex >= grid.Items.Count - 1)
             {
                 if (BlockedGrid.Items.Count > 0)
                 {
-                    SelectAndFocusRow(BlockedGrid, 0);
                     e.Handled = true;
+                    SelectAndFocusRow(BlockedGrid, 0);
                 }
             }
             else if (grid.SelectedIndex < 0 && grid.Items.Count > 0)
             {
-                SelectAndFocusRow(grid, 0);
                 e.Handled = true;
+                SelectAndFocusRow(grid, 0);
             }
         }
         else if (e.Key == System.Windows.Input.Key.Up)
         {
-            if (grid == BlockedGrid && (grid.SelectedIndex == 0 || grid.SelectedIndex < 0))
+            if (grid == BlockedGrid && grid.SelectedIndex <= 0)
             {
                 if (AllowedGrid.Items.Count > 0)
                 {
-                    SelectAndFocusRow(AllowedGrid, AllowedGrid.Items.Count - 1);
                     e.Handled = true;
+                    SelectAndFocusRow(AllowedGrid, AllowedGrid.Items.Count - 1);
                 }
             }
             else if (grid == AllowedGrid && grid.SelectedIndex <= 0)
             {
+                e.Handled = true;
                 SearchBox.Focus();
                 SearchBox.SelectAll();
                 AllowedGrid.UnselectAll();
-                e.Handled = true;
             }
             else if (grid.SelectedIndex < 0 && grid.Items.Count > 0)
             {
-                SelectAndFocusRow(grid, grid.Items.Count - 1);
                 e.Handled = true;
+                SelectAndFocusRow(grid, grid.Items.Count - 1);
             }
         }
     }
@@ -798,19 +792,6 @@ public partial class MainWindow : Window
         }
 
         if (Keyboard.FocusedElement is System.Windows.Controls.TextBox) return;
-
-        if (e.Key == System.Windows.Input.Key.Space)
-        {
-            var focused = Keyboard.FocusedElement as DependencyObject;
-            var dataGrid = FindAncestor<System.Windows.Controls.DataGrid>(focused)
-                           ?? (AllowedGrid.IsKeyboardFocusWithin ? AllowedGrid : (BlockedGrid.IsKeyboardFocusWithin ? BlockedGrid : null));
-            if (dataGrid != null)
-            {
-                ToggleRuleAndAdvanceSelection(dataGrid);
-                e.Handled = true;
-                return;
-            }
-        }
 
         if (e.Key == System.Windows.Input.Key.Home)
         {
