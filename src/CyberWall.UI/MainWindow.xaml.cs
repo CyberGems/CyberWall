@@ -661,6 +661,25 @@ public partial class MainWindow : Window
         }
     }
 
+    private void DataGrid_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Space)
+        {
+            if (sender is System.Windows.Controls.DataGrid grid)
+            {
+                var rowItem = grid.SelectedItem ?? grid.CurrentItem;
+                var r = rowItem as AppRule ?? (rowItem as AppRuleRow)?.Rule;
+                if (r != null)
+                {
+                    var newVerdict = r.Verdict == Verdict.Allow ? Verdict.Block : Verdict.Allow;
+                    _svc.SetVerdict(r.AppPath, newVerdict, true, null);
+                    RefreshRules(SearchBox.Text);
+                    e.Handled = true;
+                }
+            }
+        }
+    }
+
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == System.Windows.Input.Key.F && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
@@ -672,6 +691,25 @@ public partial class MainWindow : Window
         }
 
         if (Keyboard.FocusedElement is System.Windows.Controls.TextBox) return;
+
+        if (e.Key == System.Windows.Input.Key.Space)
+        {
+            var focused = Keyboard.FocusedElement as DependencyObject;
+            var dataGrid = FindAncestor<System.Windows.Controls.DataGrid>(focused);
+            if (dataGrid != null)
+            {
+                var rowItem = dataGrid.SelectedItem ?? dataGrid.CurrentItem;
+                var r = rowItem as AppRule ?? (rowItem as AppRuleRow)?.Rule;
+                if (r != null)
+                {
+                    var newVerdict = r.Verdict == Verdict.Allow ? Verdict.Block : Verdict.Allow;
+                    _svc.SetVerdict(r.AppPath, newVerdict, true, null);
+                    RefreshRules(SearchBox.Text);
+                    e.Handled = true;
+                    return;
+                }
+            }
+        }
 
         if (e.Key == System.Windows.Input.Key.Home)
         {
@@ -725,5 +763,15 @@ public partial class MainWindow : Window
             }
         }
         catch { }
+    }
+
+    private static T? FindAncestor<T>(DependencyObject? current) where T : DependencyObject
+    {
+        while (current != null)
+        {
+            if (current is T target) return target;
+            current = System.Windows.Media.VisualTreeHelper.GetParent(current);
+        }
+        return null;
     }
 }
