@@ -106,7 +106,8 @@ public partial class AboutWindow : Window
                     Strings.T("CheckUpdates"),
                     result.StatusMessage,
                     Strings.T("Ok"),
-                    string.Empty);
+                    string.Empty,
+                    ConfirmIconType.Check);
             }
         }
         catch (Exception ex)

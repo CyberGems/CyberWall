@@ -86,7 +86,8 @@
                     <Grid>
                         <Image x:Name="AppIconImg" Width="26" Height="26" HorizontalAlignment="Center" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality" Visibility="Collapsed"/>
                         <Path x:Name="TrashPath" Data="M 3 6 H 17 M 7 6 V 4 C 7 3.4 7.4 3 8 3 H 12 C 12.6 3 13 3.4 13 4 V 6 M 5 6 L 6 17 C 6 17.6 6.4 18 7 18 H 13 C 13.6 18 14 17.6 14 17 L 15 6" Stroke="#EF4444" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
-                        <Path x:Name="AlertPath" Data="M 12 2 L 2 22 H 22 Z M 12 9 V 13 M 12 17 H 12.01" Stroke="#F59E0B" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                        <Path x:Name="AlertPath" Data="M 12 3 L 2.5 19.5 C 2.1 20.2 2.6 21 3.4 21 H 20.6 C 21.4 21 21.9 20.2 21.5 19.5 L 12 3 Z M 12 9 V 13 M 12 16.5 H 12.01" Stroke="#F59E0B" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                        <Path x:Name="CheckPath" Data="M 20 6 L 9 17 L 4 12" Stroke="#10B981" StrokeThickness="2.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
                     </Grid>
                 </Border>
 

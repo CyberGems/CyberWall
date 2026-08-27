@@ -7,6 +7,15 @@ using CyberWall.UI.Services;
 
 namespace CyberWall.UI.Dialogs;
 
+public enum ConfirmIconType
+{
+    Default,
+    Trash,
+    Warning,
+    Check,
+    Info
+}
+
 public partial class ConfirmDialog : Window
 {
     private static readonly PathToIconConverter IconConv = new();
@@ -29,16 +38,18 @@ public partial class ConfirmDialog : Window
             AppIconImg.Visibility = Visibility.Visible;
             TrashPath.Visibility = Visibility.Collapsed;
             AlertPath.Visibility = Visibility.Collapsed;
+            CheckPath.Visibility = Visibility.Collapsed;
         }
         else
         {
             AppIconImg.Visibility = Visibility.Collapsed;
             TrashPath.Visibility = Visibility.Visible;
             AlertPath.Visibility = Visibility.Collapsed;
+            CheckPath.Visibility = Visibility.Collapsed;
         }
     }
 
-    public ConfirmDialog(string title, string message, string okText = "", string? cancelText = null)
+    public ConfirmDialog(string title, string message, string okText = "", string? cancelText = null, ConfirmIconType iconType = ConfirmIconType.Default)
     {
         InitializeComponent();
         CyberWallWindowChrome.Apply(this, 12);
@@ -59,21 +70,27 @@ public partial class ConfirmDialog : Window
         }
 
         AppIconImg.Visibility = Visibility.Collapsed;
-        if (title.Contains("Limpiar", StringComparison.OrdinalIgnoreCase) || title.Contains("Clear", StringComparison.OrdinalIgnoreCase) || title.Contains("Remove", StringComparison.OrdinalIgnoreCase) || title.Contains("Eliminar", StringComparison.OrdinalIgnoreCase))
+        TrashPath.Visibility = Visibility.Collapsed;
+        AlertPath.Visibility = Visibility.Collapsed;
+        CheckPath.Visibility = Visibility.Collapsed;
+
+        if (iconType == ConfirmIconType.Check || title.Contains("día", StringComparison.OrdinalIgnoreCase) || message.Contains("día", StringComparison.OrdinalIgnoreCase) || title.Contains("up to date", StringComparison.OrdinalIgnoreCase) || message.Contains("up to date", StringComparison.OrdinalIgnoreCase))
+        {
+            CheckPath.Visibility = Visibility.Visible;
+        }
+        else if (iconType == ConfirmIconType.Trash || title.Contains("Limpiar", StringComparison.OrdinalIgnoreCase) || title.Contains("Clear", StringComparison.OrdinalIgnoreCase) || title.Contains("Remove", StringComparison.OrdinalIgnoreCase) || title.Contains("Eliminar", StringComparison.OrdinalIgnoreCase))
         {
             TrashPath.Visibility = Visibility.Visible;
-            AlertPath.Visibility = Visibility.Collapsed;
         }
         else
         {
-            TrashPath.Visibility = Visibility.Collapsed;
             AlertPath.Visibility = Visibility.Visible;
         }
     }
 
-    public static bool Show(Window? owner, string title, string message, string okText, string? cancelText = null)
+    public static bool Show(Window? owner, string title, string message, string okText, string? cancelText = null, ConfirmIconType iconType = ConfirmIconType.Default)
     {
-        var dlg = new ConfirmDialog(title, message, okText, cancelText);
+        var dlg = new ConfirmDialog(title, message, okText, cancelText, iconType);
         if (owner != null) dlg.Owner = owner;
         return dlg.ShowDialog() == true;
     }
