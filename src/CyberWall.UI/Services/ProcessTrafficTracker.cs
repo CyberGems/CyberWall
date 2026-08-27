@@ -86,7 +86,7 @@ public sealed class ProcessTrafficTracker : IDisposable
 
         if (info.IsActive)
         {
-            sb.AppendLine($"🟢 {Strings.T("ActivityActiveStatus")}");
+            sb.AppendLine(Strings.T("ActivityActiveStatus"));
             if (info.ActiveSockets > 0)
             {
                 sb.AppendLine(Strings.T("ActivityConnections", info.ActiveSockets));
@@ -98,7 +98,7 @@ public sealed class ProcessTrafficTracker : IDisposable
         }
         else
         {
-            sb.AppendLine($"⚪ {Strings.T("ActivityIdleStatus")}");
+            sb.AppendLine(Strings.T("ActivityIdleStatus"));
             if (info.LastActivityUtc > DateTime.MinValue)
             {
                 var elapsed = DateTime.UtcNow - info.LastActivityUtc;

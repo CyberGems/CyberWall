@@ -826,7 +826,7 @@
                                                         <DataTemplate>
                                                             <Grid Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent"
                                                                   ToolTip="{Binding ActivityTooltip}"
-                                                                  ToolTipService.InitialShowDelay="150" ToolTipService.ShowDuration="10000">
+                                                                  ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="0" ToolTipService.ShowDuration="6000">
                                                                 <!-- Idle State Dot -->
                                                                 <Ellipse x:Name="IdleDot" Width="7" Height="7" Fill="{DynamicResource SubTextBrush}" Opacity="0.3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
@@ -982,7 +982,7 @@
                                                     <DataTemplate>
                                                         <Grid Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent"
                                                               ToolTip="{Binding ActivityTooltip}"
-                                                              ToolTipService.InitialShowDelay="150" ToolTipService.ShowDuration="10000">
+                                                              ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="0" ToolTipService.ShowDuration="6000">
                                                             <!-- Idle State Dot -->
                                                             <Ellipse x:Name="IdleDot" Width="7" Height="7" Fill="{DynamicResource SubTextBrush}" Opacity="0.3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
