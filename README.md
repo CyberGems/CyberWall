@@ -199,7 +199,7 @@ Check that you allowed the correct executable, including any helper process it u
 
 If you'd like to support this work, a donation would mean a lot. Thank you! 🙏
 
-[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-0070BA?style=for-the-badge&logo=paypal)](https://paypal.me/CyberGems) [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/cybergems)
+[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-0070BA?style=for-the-badge&logo=paypal)](https://www.paypal.com/donate/?hosted_button_id=M4PY3UPJA5Y6Q) [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/cybergems)
 
 <details>
 <summary><b>Crypto donations (BTC, ETH, USDT, LTC) — choose the correct network</b></summary>
