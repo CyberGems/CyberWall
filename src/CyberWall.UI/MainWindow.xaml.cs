@@ -706,7 +706,7 @@ public partial class MainWindow : Window
 
     private void SearchBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
-        if (e.Key == System.Windows.Input.Key.Down || e.Key == System.Windows.Input.Key.Enter)
+        if (e.Key == System.Windows.Input.Key.Down || e.Key == System.Windows.Input.Key.Enter || e.Key == System.Windows.Input.Key.Tab)
         {
             e.Handled = true;
             if (_refreshRulesDebounceTimer != null && _refreshRulesDebounceTimer.IsEnabled)
@@ -777,6 +777,36 @@ public partial class MainWindow : Window
             {
                 e.Handled = true;
                 SelectAndFocusRow(grid, grid.Items.Count - 1);
+            }
+        }
+        else if (e.Key == System.Windows.Input.Key.Tab)
+        {
+            e.Handled = true;
+            if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
+            {
+                if (grid == BlockedGrid && AllowedGrid.Items.Count > 0)
+                {
+                    SelectAndFocusRow(AllowedGrid, Math.Min(grid.SelectedIndex >= 0 ? grid.SelectedIndex : 0, AllowedGrid.Items.Count - 1));
+                }
+                else
+                {
+                    SearchBox.Focus();
+                    SearchBox.SelectAll();
+                    grid.UnselectAll();
+                }
+            }
+            else
+            {
+                if (grid == AllowedGrid && BlockedGrid.Items.Count > 0)
+                {
+                    SelectAndFocusRow(BlockedGrid, Math.Min(grid.SelectedIndex >= 0 ? grid.SelectedIndex : 0, BlockedGrid.Items.Count - 1));
+                }
+                else
+                {
+                    SearchBox.Focus();
+                    SearchBox.SelectAll();
+                    grid.UnselectAll();
+                }
             }
         }
     }

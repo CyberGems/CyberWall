@@ -102,6 +102,9 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
             <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
             <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
             <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
@@ -132,6 +135,9 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
             <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
             <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
             <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
@@ -164,6 +170,8 @@
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
             <Setter Property="ToolTipService.InitialShowDelay" Value="250"/>
             <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
             <Setter Property="ToolTipService.ShowDuration" Value="3000"/>
@@ -194,6 +202,8 @@
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
             <Setter Property="ToolTipService.InitialShowDelay" Value="250"/>
             <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
             <Setter Property="ToolTipService.ShowDuration" Value="3000"/>
@@ -331,6 +341,9 @@
         <!-- Master Hero Toggle Switch -->
         <Style x:Key="MasterToggleSwitch" TargetType="CheckBox">
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
@@ -363,6 +376,9 @@
         <!-- Mini Toggle Switch for DataGrid Rows -->
         <Style x:Key="MiniToggle" TargetType="CheckBox">
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
@@ -634,7 +650,7 @@
                         <!-- Right: Mode Dropdown -->
                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock x:Name="ModeLbl" Text="Modo:" Foreground="{DynamicResource SubTextBrush}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <ComboBox x:Name="ModeBox" Width="235" Height="34" Style="{StaticResource ModernComboBox}" SelectionChanged="ModeBox_SelectionChanged">
+                            <ComboBox x:Name="ModeBox" Width="235" Height="34" Style="{StaticResource ModernComboBox}" IsTabStop="False" FocusVisualStyle="{x:Null}" SelectionChanged="ModeBox_SelectionChanged">
                                 <ComboBoxItem Content="Preguntar para conectar"/>
                                 <ComboBoxItem Content="Bloquear sin preguntar"/>
                                 <ComboBoxItem Content="Bloqueo total (Killswitch)"/>
