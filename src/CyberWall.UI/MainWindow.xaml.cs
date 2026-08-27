@@ -189,8 +189,14 @@ public partial class MainWindow : Window
         else
         {
             MaximizeBtn.ToolTip = Strings.T("Maximize");
-            MaximizeIconPath.Data = Geometry.Parse("M 2 8 L 2 2 L 8 2 M 2 2 L 6 6 M 12 6 L 12 12 L 6 12 M 12 12 L 8 8");
+            MaximizeIconPath.Data = Geometry.Parse("M 3 7 L 3 3 L 7 3 M 3 3 L 6.5 6.5 M 11 7 L 11 11 L 7 11 M 11 11 L 7.5 7.5");
         }
+    }
+
+    public void ClearAllRulesFromSettings()
+    {
+        _svc.ClearAllRules();
+        RefreshRules(SearchBox.Text);
     }
 
     public void RefreshStatusFromExternal()
@@ -605,9 +611,31 @@ public partial class MainWindow : Window
             grid.UnselectAll();
     }
 
+    private void RulesScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        if (e.VerticalChange != 0 || e.HorizontalChange != 0)
+        {
+            DismissOpenToolTips();
+        }
+    }
+
     private void DataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
+        DismissOpenToolTips();
         RulesScrollViewer.ScrollToVerticalOffset(RulesScrollViewer.VerticalOffset - (e.Delta / 2.0));
         e.Handled = true;
+    }
+
+    private void DismissOpenToolTips()
+    {
+        try
+        {
+            if (RulesScrollViewer != null)
+            {
+                ToolTipService.SetIsEnabled(RulesScrollViewer, false);
+                ToolTipService.SetIsEnabled(RulesScrollViewer, true);
+            }
+        }
+        catch { }
     }
 }

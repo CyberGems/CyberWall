@@ -148,11 +148,14 @@
                             </Grid.ColumnDefinitions>
 
                             <!-- Brand Name + Version -->
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock FontSize="28" FontWeight="Bold" FontFamily="Segoe UI Variable Display">
-                                    <Run Text="Cyber" Foreground="{DynamicResource TextBrush}"/><Run Text="Wall" Foreground="{DynamicResource AccentBrush}"/>
-                                </TextBlock>
-                                <TextBlock x:Name="AboutVersionText" Text="Version v1.3.3" FontSize="13" Foreground="{DynamicResource SubTextBrush}" Margin="0,3,0,0"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Image Source="pack://application:,,,/Assets/CyberWall.png" Width="52" Height="52" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock FontSize="28" FontWeight="Bold" FontFamily="Segoe UI Variable Display">
+                                        <Run Text="Cyber" Foreground="{DynamicResource TextBrush}"/><Run Text="Wall" Foreground="{DynamicResource AccentBrush}"/>
+                                    </TextBlock>
+                                    <TextBlock x:Name="AboutVersionText" Text="Version v1.3.3" FontSize="13" Foreground="{DynamicResource SubTextBrush}" Margin="0,3,0,0"/>
+                                </StackPanel>
                             </StackPanel>
 
                             <!-- Description Box -->

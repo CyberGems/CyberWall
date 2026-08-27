@@ -86,16 +86,17 @@
         <Style x:Key="PrimaryButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource AccentFgBrush}"/>
-            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="16,6"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -118,13 +119,14 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="16,6"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -426,7 +428,7 @@
                                     <TextBlock x:Name="TestDescLbl" Text="Envía un aviso para comprobar la posición y aspecto en pantalla." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
                                 </StackPanel>
 
-                                <Button x:Name="PreviewBtn" Grid.Column="2" Content="Vista previa" Height="34" Padding="18,0" Style="{StaticResource SecondaryButtonStyle}" Click="PreviewBtn_Click"/>
+                                <Button x:Name="PreviewBtn" Grid.Column="2" Content="Vista previa" Height="32" Padding="16,6" Style="{StaticResource SecondaryButtonStyle}" Click="PreviewBtn_Click"/>
                             </Grid>
                         </StackPanel>
                     </Border>
@@ -511,6 +513,30 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock x:Name="AutoBlockWaitLbl" Text="Esperar antes de bloquear" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                 <ComboBox x:Name="AutoBlockWaitBox" Grid.Column="1" Width="150" Height="34" Style="{StaticResource ModernComboBox}" SelectionChanged="AutoBlockWaitBox_SelectionChanged"/>
+                            </Grid>
+
+                            <!-- Divider -->
+                            <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,10"/>
+
+                            <!-- 4. Clear all rules Item -->
+                            <Grid MinHeight="44">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Trash Icon -->
+                                <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <Path Data="M 3 6 H 17 M 7 6 V 4 C 7 3.4 7.4 3 8 3 H 12 C 12.6 3 13 3.4 13 4 V 6 M 5 6 L 6 17 C 6 17.6 6.4 18 7 18 H 13 C 13.6 18 14 17.6 14 17 L 15 6" Stroke="#FF5555" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="14" Height="14" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <TextBlock x:Name="ClearAllTitleLbl" Text="Limpiar todas las reglas" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextBrush}"/>
+                                    <TextBlock x:Name="ClearAllDescLbl" Text="Elimina todas las reglas de programas de la lista del firewall." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+
+                                <Button x:Name="ClearAllBtn" Grid.Column="2" Content="Limpiar reglas" Height="32" Padding="16,6" Style="{StaticResource SecondaryButtonStyle}" Click="ClearAllRules_Click"/>
                             </Grid>
                         </StackPanel>
                     </Border>

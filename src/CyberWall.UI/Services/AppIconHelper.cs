@@ -65,12 +65,17 @@ public static class AppIconHelper
         try
         {
             var uri = new Uri("pack://application:,,,/Assets/CyberWall.ico", UriKind.Absolute);
-            var decoder = new IconBitmapDecoder(uri, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-            var bestFrame = decoder.Frames.OrderByDescending(f => f.Width).FirstOrDefault();
-            if (bestFrame != null)
+            var sri = System.Windows.Application.GetResourceStream(uri);
+            if (sri != null)
             {
-                _cachedImageSource = bestFrame;
-                return bestFrame;
+                using var stream = sri.Stream;
+                var decoder = new IconBitmapDecoder(stream, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                var bestFrame = decoder.Frames.OrderByDescending(f => f.Width).FirstOrDefault();
+                if (bestFrame != null)
+                {
+                    _cachedImageSource = bestFrame;
+                    return bestFrame;
+                }
             }
         }
         catch { }
@@ -78,12 +83,7 @@ public static class AppIconHelper
         try
         {
             var uri = new Uri("pack://application:,,,/Assets/CyberWall.png", UriKind.Absolute);
-            var bi = new BitmapImage();
-            bi.BeginInit();
-            bi.UriSource = uri;
-            bi.CacheOption = BitmapCacheOption.OnLoad;
-            bi.EndInit();
-            bi.Freeze();
+            var bi = BitmapFrame.Create(uri, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
             _cachedImageSource = bi;
             return bi;
         }

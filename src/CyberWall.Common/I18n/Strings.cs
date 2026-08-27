@@ -205,6 +205,10 @@ public static class Strings
         ["PopupAutoBlock30m"] = ("30 minutes", "30 minutos"),
         ["CloseToTray"] = ("Close to tray", "Cerrar en la bandeja"),
         ["CloseApp"] = ("Close application", "Cerrar aplicación"),
+        ["ClearAllRules"] = ("Clear all rules", "Limpiar todas las reglas"),
+        ["ClearAllRulesShort"] = ("Clear rules", "Limpiar reglas"),
+        ["ClearAllRulesDesc"] = ("Remove all program rules from the firewall list.", "Elimina todas las reglas de programas de la lista del firewall."),
+        ["ClearAllRulesConfirm"] = ("Are you sure you want to remove ALL firewall rules? This action cannot be undone.", "¿Estás seguro de que deseas eliminar TODAS las reglas del firewall? Esta acción no se puede deshacer."),
     };
 
     public static string T(string key, params object[] args)

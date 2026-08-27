@@ -193,6 +193,15 @@ public sealed class FirewallService : IDisposable
         Wfp.RemoveApp(appPath);
     }
 
+    public void ClearAllRules()
+    {
+        var all = Store.All.ToList();
+        foreach (var r in all)
+        {
+            RemoveRule(r.AppPath);
+        }
+    }
+
     private static string SafeKey(string appPath)
     {
         try { return AppRule.Normalize(appPath); }

@@ -5,6 +5,7 @@ using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Common.Settings;
 using CyberWall.UI.Controls;
+using CyberWall.UI.Dialogs;
 using CyberWall.UI.Popup;
 using CyberWall.UI.Services;
 using WpfBrush = System.Windows.Media.Brush;
@@ -167,14 +168,27 @@ public partial class SettingsWindow : Window
         StartupDescLbl.Text = Strings.T("RunAtStartupDesc");
         MinimizeToTrayTitleLbl.Text = Strings.T("MinimizeToTrayOnClose");
         MinimizeToTrayDescLbl.Text = Strings.T("MinimizeToTrayOnCloseDesc");
-        AutoBlockTitleLbl.Text = Strings.T("PopupAutoBlock");
-        AutoBlockDescLbl.Text = Strings.T("PopupAutoBlockDesc");
         AutoBlockWaitLbl.Text = Strings.T("PopupAutoBlockWait");
+        ClearAllTitleLbl.Text = Strings.T("ClearAllRules");
+        ClearAllDescLbl.Text = Strings.T("ClearAllRulesDesc");
+        ClearAllBtn.Content = Strings.T("ClearAllRulesShort");
         PreviewBtn.Content = Strings.T("PreviewPopup");
         CloseBtn.Content = es ? "Cerrar" : "Close";
 
         PopulateMonitors();
         PopulateAutoBlockWait();
+    }
+
+    private void ClearAllRules_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new ConfirmDialog(Strings.T("ClearAllRules"), Strings.T("ClearAllRulesConfirm")) { Owner = this };
+        if (dlg.ShowDialog() == true)
+        {
+            if (Owner is MainWindow mw)
+            {
+                mw.ClearAllRulesFromSettings();
+            }
+        }
     }
 
     private void StartupToggle_Click(object sender, RoutedEventArgs e)
