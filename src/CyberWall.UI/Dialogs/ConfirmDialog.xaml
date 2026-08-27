@@ -67,44 +67,42 @@
         </Style>
     </Window.Resources>
     
-    <Border Margin="5" CornerRadius="12">
-        <Border CornerRadius="12" ClipToBounds="True" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" Background="{DynamicResource CardBrush}" SnapsToDevicePixels="True">
-            <Grid MouseLeftButtonDown="Window_MouseLeftButtonDown">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+    <Border CornerRadius="12" ClipToBounds="True" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" Background="{DynamicResource CardBrush}" SnapsToDevicePixels="True">
+        <Grid MouseLeftButtonDown="Window_MouseLeftButtonDown">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-                <!-- Content Area -->
-                <Grid Margin="20,20,20,16">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+            <!-- Content Area -->
+            <Grid Margin="20,20,20,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                    <!-- Icon Badge -->
-                    <Border Width="48" Height="48" CornerRadius="14" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Top" Margin="0,0,16,0">
-                        <Grid>
-                            <Image x:Name="AppIconImg" Width="26" Height="26" HorizontalAlignment="Center" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
-                            <Path x:Name="FlamePath" Data="M 12 2 L 2 6 L 2 13 C 2 19 6.5 24.5 12 26 C 17.5 24.5 22 19 22 13 L 22 6 Z" Fill="{DynamicResource AccentBrush}" Width="20" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
-                        </Grid>
-                    </Border>
-
-                    <!-- Text Content -->
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock x:Name="AppTitleLbl" Text="App Name" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis"/>
-                        <TextBlock x:Name="MessageLbl" Text="Are you sure you want to remove this app from the firewall list? It will re-appear if it accesses the network again." Foreground="{DynamicResource SubTextBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0" LineHeight="18"/>
-                    </StackPanel>
-                </Grid>
-
-                <!-- Bottom Action Button Bar -->
-                <Border Grid.Row="1" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,11,11" Padding="18,12">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button x:Name="OkBtn" Content="Aceptar" MinWidth="100" Height="34" Padding="14,0" Style="{StaticResource PrimaryButtonStyle}" Click="Ok_Click" IsDefault="True"/>
-                        <Button x:Name="CancelBtn" Content="Cancelar" MinWidth="100" Height="34" Padding="14,0" Margin="10,0,0,0" Style="{StaticResource SecondaryButtonStyle}" Click="Cancel_Click" IsCancel="True"/>
-                    </StackPanel>
+                <!-- Icon Badge -->
+                <Border Width="48" Height="48" CornerRadius="14" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Top" Margin="0,0,16,0">
+                    <Grid>
+                        <Image x:Name="AppIconImg" Width="26" Height="26" HorizontalAlignment="Center" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        <Path x:Name="FlamePath" Data="M 12 2 L 2 6 L 2 13 C 2 19 6.5 24.5 12 26 C 17.5 24.5 22 19 22 13 L 22 6 Z" Fill="{DynamicResource AccentBrush}" Width="20" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                    </Grid>
                 </Border>
+
+                <!-- Text Content -->
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock x:Name="AppTitleLbl" Text="App Name" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="MessageLbl" Text="Are you sure you want to remove this app from the firewall list? It will re-appear if it accesses the network again." Foreground="{DynamicResource SubTextBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0" LineHeight="18"/>
+                </StackPanel>
             </Grid>
-        </Border>
+
+            <!-- Bottom Action Button Bar -->
+            <Border Grid.Row="1" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,11,11" Padding="18,12">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="OkBtn" Content="Aceptar" MinWidth="100" Height="34" Padding="14,0" Style="{StaticResource PrimaryButtonStyle}" Click="Ok_Click" IsDefault="True"/>
+                    <Button x:Name="CancelBtn" Content="Cancelar" MinWidth="100" Height="34" Padding="14,0" Margin="10,0,0,0" Style="{StaticResource SecondaryButtonStyle}" Click="Cancel_Click" IsCancel="True"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Border>
 </Window>

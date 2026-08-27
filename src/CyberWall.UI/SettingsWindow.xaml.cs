@@ -171,7 +171,6 @@ public partial class SettingsWindow : Window
         AutoBlockDescLbl.Text = Strings.T("PopupAutoBlockDesc");
         AutoBlockWaitLbl.Text = Strings.T("PopupAutoBlockWait");
         PreviewBtn.Content = Strings.T("PreviewPopup");
-        AboutBtn.Content = Strings.T("About");
         CloseBtn.Content = es ? "Cerrar" : "Close";
 
         PopulateMonitors();
@@ -297,12 +296,6 @@ public partial class SettingsWindow : Window
             _s.Save();
             TriggerPreviewPopup();
         }
-    }
-
-    private void About_Click(object sender, RoutedEventArgs e)
-    {
-        var dlg = new Dialogs.AboutWindow(_s) { Owner = this };
-        dlg.ShowDialog();
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();

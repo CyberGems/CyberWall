@@ -113,9 +113,11 @@ public partial class MainWindow : Window
         TitleText.Text = "CyberWall";
         WfpBadgeText.Text = Strings.T("WfpEngineBadge");
         SubtitleText.Text = Strings.T("AppSubtitle");
-        SettingsBtnText.Text = Strings.T("Settings");
         FooterStatusText.Text = Strings.T("StatusFooter");
         NotifBtn.ToolTip = Strings.T("Notifications");
+        SettingsBtn.ToolTip = Strings.T("Settings");
+        AboutBtn.ToolTip = Strings.T("About");
+        ViewLogBtn.ToolTip = Strings.T("ViewLog");
         ModeLbl.Text = Strings.T("Mode");
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
         ViewLogBtnText.Text = Strings.T("ViewLog");
@@ -562,6 +564,12 @@ public partial class MainWindow : Window
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
+
+    private void About_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new AboutWindow(App.Settings) { Owner = this };
+        dlg.ShowDialog();
+    }
     
     private void OpenLog_Click(object sender, RoutedEventArgs e)
     {

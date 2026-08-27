@@ -80,6 +80,7 @@ public partial class AboutWindow : Window
 
             if (result.IsUpdateAvailable)
             {
+                new CyberWall.Common.Notifications.NotificationStore().Add(CyberWall.Common.Models.AppNotificationKind.UpdateAvailable, detail: result.LatestVersionLabel);
                 var currentLabel = Strings.T("Current");
                 var latestLabel = Strings.T("Latest");
                 var promptMessage = Strings.T("UpdatePrompt");

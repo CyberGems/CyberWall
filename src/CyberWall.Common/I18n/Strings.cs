@@ -174,6 +174,8 @@ public static class Strings
         ["DownloadCompleted"] = ("Download completed. Launching installer...", "Descarga completada. Iniciando instalador..."),
         ["UpToDate"] = ("You're up to date on {0}", "Estás al día con la versión {0}"),
         ["UpdateAvailable"] = ("Update {0} available", "Actualización {0} disponible"),
+        ["NotifUpdateTitle"] = ("Update Available", "Actualización disponible"),
+        ["NotifUpdateDesc"] = ("CyberWall {0} is available to download.", "CyberWall {0} está disponible para descargar."),
         ["UpdatePrompt"] = ("Download and install now?", "¿Descargar e instalar ahora?"),
         ["Download"] = ("Download", "Descargar"),
         ["Later"] = ("Later", "Más tarde"),
