@@ -27,16 +27,18 @@ public partial class ConfirmDialog : Window
         {
             AppIconImg.Source = icon;
             AppIconImg.Visibility = Visibility.Visible;
-            FlamePath.Visibility = Visibility.Collapsed;
+            TrashPath.Visibility = Visibility.Collapsed;
+            AlertPath.Visibility = Visibility.Collapsed;
         }
         else
         {
             AppIconImg.Visibility = Visibility.Collapsed;
-            FlamePath.Visibility = Visibility.Visible;
+            TrashPath.Visibility = Visibility.Visible;
+            AlertPath.Visibility = Visibility.Collapsed;
         }
     }
 
-    public ConfirmDialog(string title, string message, string okText, string? cancelText = null)
+    public ConfirmDialog(string title, string message, string okText = "", string? cancelText = null)
     {
         InitializeComponent();
         CyberWallWindowChrome.Apply(this, 12);
@@ -57,7 +59,16 @@ public partial class ConfirmDialog : Window
         }
 
         AppIconImg.Visibility = Visibility.Collapsed;
-        FlamePath.Visibility = Visibility.Visible;
+        if (title.Contains("Limpiar", StringComparison.OrdinalIgnoreCase) || title.Contains("Clear", StringComparison.OrdinalIgnoreCase) || title.Contains("Remove", StringComparison.OrdinalIgnoreCase) || title.Contains("Eliminar", StringComparison.OrdinalIgnoreCase))
+        {
+            TrashPath.Visibility = Visibility.Visible;
+            AlertPath.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            TrashPath.Visibility = Visibility.Collapsed;
+            AlertPath.Visibility = Visibility.Visible;
+        }
     }
 
     public static bool Show(Window? owner, string title, string message, string okText, string? cancelText = null)

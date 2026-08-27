@@ -626,14 +626,22 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private static readonly DependencyPropertyKey? ToolTipIsOpenKey =
+        typeof(ToolTipService).GetField("IsOpenPropertyKey", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)?.GetValue(null) as DependencyPropertyKey;
+
     private void DismissOpenToolTips()
     {
         try
         {
-            if (RulesScrollViewer != null)
+            if (ToolTipIsOpenKey == null) return;
+            var cur = Mouse.DirectlyOver as DependencyObject;
+            while (cur != null)
             {
-                ToolTipService.SetIsEnabled(RulesScrollViewer, false);
-                ToolTipService.SetIsEnabled(RulesScrollViewer, true);
+                if (cur is UIElement elem)
+                {
+                    elem.SetValue(ToolTipIsOpenKey, false);
+                }
+                cur = System.Windows.Media.VisualTreeHelper.GetParent(cur);
             }
         }
         catch { }
