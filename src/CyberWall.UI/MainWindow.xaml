@@ -644,18 +644,55 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- Search Filter Box -->
-                            <Border Width="340" Height="36" HorizontalAlignment="Left" CornerRadius="8" Background="{DynamicResource SearchBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center">
-                                <Grid Margin="12,0">
+                            <!-- Search Filter Box with Focus Glow, Clear Button, and Ctrl+F Hotkey Badge -->
+                            <Border x:Name="SearchBorder" Width="340" Height="36" HorizontalAlignment="Left" CornerRadius="8"
+                                    Background="{DynamicResource SearchBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                    VerticalAlignment="Center">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                                <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid Margin="10,0,8,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="🔍" FontSize="12" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="🔍" FontSize="11.5" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <Grid Grid.Column="1" VerticalAlignment="Center">
                                         <TextBlock x:Name="SearchPlaceholder" Text="Buscar programa o ruta..." Foreground="{DynamicResource SubTextBrush}" FontSize="12" VerticalAlignment="Center" IsHitTestVisible="False" Opacity="0.55"/>
-                                        <TextBox x:Name="SearchBox" Background="Transparent" Foreground="{DynamicResource TextBrush}" CaretBrush="{DynamicResource AccentBrush}" BorderThickness="0" VerticalAlignment="Center" FontSize="12" TextChanged="SearchBox_TextChanged"/>
+                                        <TextBox x:Name="SearchBox" Background="Transparent" Foreground="{DynamicResource TextBrush}" CaretBrush="{DynamicResource AccentBrush}" BorderThickness="0" VerticalAlignment="Center" FontSize="12" TextChanged="SearchBox_TextChanged" PreviewKeyDown="SearchBox_PreviewKeyDown"/>
                                     </Grid>
+
+                                    <!-- Right Side: Ctrl+F Hotkey Hint or Clear '✕' Button -->
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <!-- Ctrl+F Hotkey Hint -->
+                                        <Border x:Name="SearchHotkeyHint" CornerRadius="4" Padding="5,1.5" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="4,0,0,0" IsHitTestVisible="False">
+                                            <TextBlock Text="Ctrl+F" FontSize="9.5" FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
+                                        </Border>
+
+                                        <!-- Clear (✕) Button -->
+                                        <Button x:Name="SearchClearBtn" Width="20" Height="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Visibility="Collapsed" Click="SearchClearBtn_Click" Margin="2,0,0,0">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="Bd" Background="Transparent" CornerRadius="10">
+                                                        <Path Data="M 1 1 L 7 7 M 7 1 L 1 7" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="8" Height="8" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </StackPanel>
                                 </Grid>
                             </Border>
                             <ctrl:NetworkTrafficIndicator x:Name="TrafficIndicator" Grid.Column="1"

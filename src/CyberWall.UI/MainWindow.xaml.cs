@@ -492,12 +492,6 @@ public partial class MainWindow : Window
         UpdateStatus();
     }
 
-    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        SearchPlaceholder.Visibility = string.IsNullOrEmpty(SearchBox.Text) ? Visibility.Visible : Visibility.Collapsed;
-        RefreshRules(SearchBox.Text);
-    }
-
     private void RulesColumnHeader_Click(object sender, MouseButtonEventArgs e)
     {
         if (sender is not FrameworkElement header || header.Tag is not string sortBy)
@@ -598,8 +592,74 @@ public partial class MainWindow : Window
         }
     }
 
+    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        var text = SearchBox.Text;
+        bool hasText = !string.IsNullOrEmpty(text);
+
+        if (SearchPlaceholder != null)
+            SearchPlaceholder.Visibility = hasText ? Visibility.Collapsed : Visibility.Visible;
+        if (SearchClearBtn != null)
+            SearchClearBtn.Visibility = hasText ? Visibility.Visible : Visibility.Collapsed;
+        if (SearchHotkeyHint != null)
+            SearchHotkeyHint.Visibility = hasText ? Visibility.Collapsed : Visibility.Visible;
+
+        // Skip heavy search on 1 single char to avoid freezes on large rule sets; search on empty or >= 2 chars
+        if (string.IsNullOrEmpty(text))
+        {
+            RefreshRules("");
+        }
+        else if (text.Length >= 2)
+        {
+            RefreshRules(text);
+        }
+    }
+
+    private void SearchClearBtn_Click(object sender, RoutedEventArgs e)
+    {
+        SearchBox.Text = "";
+        SearchBox.Focus();
+    }
+
+    private void SearchBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Down || e.Key == System.Windows.Input.Key.Enter)
+        {
+            if (AllowedGrid.Items.Count > 0)
+            {
+                AllowedGrid.Focus();
+                AllowedGrid.SelectedIndex = 0;
+                AllowedGrid.ScrollIntoView(AllowedGrid.SelectedItem);
+                e.Handled = true;
+            }
+            else if (BlockedGrid.Items.Count > 0)
+            {
+                BlockedGrid.Focus();
+                BlockedGrid.SelectedIndex = 0;
+                BlockedGrid.ScrollIntoView(BlockedGrid.SelectedItem);
+                e.Handled = true;
+            }
+        }
+        else if (e.Key == System.Windows.Input.Key.Escape)
+        {
+            if (!string.IsNullOrEmpty(SearchBox.Text))
+            {
+                SearchBox.Text = "";
+                e.Handled = true;
+            }
+        }
+    }
+
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
+        if (e.Key == System.Windows.Input.Key.F && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            SearchBox.Focus();
+            SearchBox.SelectAll();
+            e.Handled = true;
+            return;
+        }
+
         if (Keyboard.FocusedElement is System.Windows.Controls.TextBox) return;
 
         if (e.Key == System.Windows.Input.Key.Home)

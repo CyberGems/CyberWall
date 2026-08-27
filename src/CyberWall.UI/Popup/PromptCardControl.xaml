@@ -180,11 +180,11 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Grid Width="42" Height="42" Margin="0,2,2,0">
-                    <Image Source="{Binding Event.AppPath, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource PathToIconConverter}}" Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Bottom" RenderOptions.BitmapScalingMode="HighQuality" RenderOptions.EdgeMode="Unspecified"/>
-                    <Path x:Name="ShieldPath" Data="M 12 2 L 2 6 L 2 13 C 2 19 6.5 24.5 12 26 C 17.5 24.5 22 19 22 13 L 22 6 Z" Width="15" Height="17" Stretch="Uniform" Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-1,-1,0">
+                <Grid Width="46" Height="44" Margin="0,2,2,0">
+                    <Image Source="{Binding Event.AppPath, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource PathToIconConverter}}" Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="1,0,0,1" RenderOptions.BitmapScalingMode="HighQuality" RenderOptions.EdgeMode="Unspecified"/>
+                    <Path x:Name="ShieldPath" Data="M 12 2 L 2 6 L 2 13 C 2 19 6.5 24.5 12 26 C 17.5 24.5 22 19 22 13 L 22 6 Z" Width="14" Height="16" Stretch="Uniform" Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,2,0">
                         <Path.Effect>
-                            <DropShadowEffect Color="Black" Opacity="0.75" BlurRadius="4" ShadowDepth="1"/>
+                            <DropShadowEffect Color="Black" Opacity="0.6" BlurRadius="4" ShadowDepth="1"/>
                         </Path.Effect>
                     </Path>
                 </Grid>

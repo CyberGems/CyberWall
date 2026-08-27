@@ -148,11 +148,14 @@ public partial class PromptCardControl : UserControl
 
     private void ApplyDirection(ConnectionEvent ev)
     {
+        var isLight = App.Settings.Theme == CyberWall.Common.Settings.AppTheme.Light;
+
         if (ev.Direction == Direction.Inbound)
         {
-            var fg = new SolidColorBrush(Color.FromRgb(192, 132, 252));
-            DirectionPill.Background = new SolidColorBrush(Color.FromArgb(45, 168, 85, 247));
-            DirectionPill.BorderBrush = new SolidColorBrush(Color.FromArgb(90, 168, 85, 247));
+            var fgColor = isLight ? Color.FromRgb(126, 34, 206) : Color.FromRgb(192, 132, 252);
+            var fg = new SolidColorBrush(fgColor);
+            DirectionPill.Background = new SolidColorBrush(Color.FromArgb(isLight ? (byte)30 : (byte)45, fgColor.R, fgColor.G, fgColor.B));
+            DirectionPill.BorderBrush = new SolidColorBrush(Color.FromArgb(isLight ? (byte)90 : (byte)90, fgColor.R, fgColor.G, fgColor.B));
             DirectionPill.BorderThickness = new Thickness(1);
             DirectionPillText.Foreground = fg;
             DirectionPillText.Text = Strings.T("Inbound");
@@ -163,13 +166,14 @@ public partial class PromptCardControl : UserControl
         }
         else
         {
-            var fg = new SolidColorBrush(Color.FromRgb(0, 229, 255));
-            DirectionPill.Background = new SolidColorBrush(Color.FromArgb(40, 0, 229, 255));
-            DirectionPill.BorderBrush = new SolidColorBrush(Color.FromArgb(80, 0, 229, 255));
+            var fgBrush = FindResource("AccentBrush") is SolidColorBrush ab ? ab : new SolidColorBrush(Color.FromRgb(0, 229, 255));
+            var fgColor = fgBrush.Color;
+            DirectionPill.Background = new SolidColorBrush(Color.FromArgb(isLight ? (byte)28 : (byte)40, fgColor.R, fgColor.G, fgColor.B));
+            DirectionPill.BorderBrush = new SolidColorBrush(Color.FromArgb(isLight ? (byte)80 : (byte)80, fgColor.R, fgColor.G, fgColor.B));
             DirectionPill.BorderThickness = new Thickness(1);
-            DirectionPillText.Foreground = fg;
+            DirectionPillText.Foreground = fgBrush;
             DirectionPillText.Text = Strings.T("Outbound");
-            DirectionArrow.Stroke = fg;
+            DirectionArrow.Stroke = fgBrush;
             DirectionArrow.Fill = System.Windows.Media.Brushes.Transparent;
             DirectionArrow.Data = Geometry.Parse("M 5 11 L 5 1.5 M 5 1.5 L 1.6 5.8 M 5 1.5 L 8.4 5.8");
             InboundWarn.Visibility = Visibility.Collapsed;
