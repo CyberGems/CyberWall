@@ -173,7 +173,6 @@ public partial class SettingsWindow : Window
         ClearAllDescLbl.Text = Strings.T("ClearAllRulesDesc");
         ClearAllBtn.Content = Strings.T("ClearAllRulesShort");
         PreviewBtn.Content = Strings.T("PreviewPopup");
-        CloseBtn.Content = es ? "Cerrar" : "Close";
 
         PopulateMonitors();
         PopulateAutoBlockWait();

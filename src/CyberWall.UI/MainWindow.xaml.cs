@@ -619,6 +619,36 @@ public partial class MainWindow : Window
         }
     }
 
+    private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (Keyboard.FocusedElement is System.Windows.Controls.TextBox) return;
+
+        if (e.Key == System.Windows.Input.Key.Home)
+        {
+            DismissOpenToolTips();
+            RulesScrollViewer.ScrollToHome();
+            e.Handled = true;
+        }
+        else if (e.Key == System.Windows.Input.Key.End)
+        {
+            DismissOpenToolTips();
+            RulesScrollViewer.ScrollToEnd();
+            e.Handled = true;
+        }
+        else if (e.Key == System.Windows.Input.Key.PageUp)
+        {
+            DismissOpenToolTips();
+            RulesScrollViewer.PageUp();
+            e.Handled = true;
+        }
+        else if (e.Key == System.Windows.Input.Key.PageDown)
+        {
+            DismissOpenToolTips();
+            RulesScrollViewer.PageDown();
+            e.Handled = true;
+        }
+    }
+
     private void DataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
         DismissOpenToolTips();

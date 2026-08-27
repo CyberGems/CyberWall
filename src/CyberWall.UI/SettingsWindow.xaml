@@ -543,9 +543,15 @@
                 </StackPanel>
             </ScrollViewer>
 
-            <!-- Footer -->
-            <Border Grid.Row="2" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,11,11" Padding="20,12">
-                <Button x:Name="CloseBtn" Content="Cerrar" Width="110" Height="34" HorizontalAlignment="Right" Style="{StaticResource PrimaryButtonStyle}" Click="Close_Click"/>
+            <!-- Footer (CyberSnap Style) -->
+            <Border Grid.Row="2" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,11,11" Padding="14,10">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,2">
+                        <Image Source="pack://application:,,,/Assets/CyberWall.png" Width="14" Height="14" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock x:Name="FooterVerText" Text="CyberWall 1.3.3" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="© 2026 CyberGems" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Opacity="0.75" HorizontalAlignment="Center"/>
+                </StackPanel>
             </Border>
         </Grid>
     </Border>
