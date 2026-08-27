@@ -124,14 +124,16 @@ public partial class PromptCardControl : UserControl
             badge = Strings.T("Unsigned");
 
         PublisherLbl.Text = badge;
-        if (trusted && FindResource("AccentBrush") is SolidColorBrush accent)
+        var isLight = App.Settings.Theme == CyberWall.Common.Settings.AppTheme.Light;
+        if (trusted)
         {
-            var c = accent.Color;
-            PublisherPill.Background = new SolidColorBrush(Color.FromArgb(40, c.R, c.G, c.B));
-            PublisherPill.BorderBrush = new SolidColorBrush(Color.FromArgb(80, c.R, c.G, c.B));
+            var fgColor = isLight ? Color.FromRgb(29, 78, 216) : Color.FromRgb(0, 229, 255);
+            var fgBrush = new SolidColorBrush(fgColor);
+            PublisherPill.Background = new SolidColorBrush(Color.FromArgb(isLight ? (byte)30 : (byte)40, fgColor.R, fgColor.G, fgColor.B));
+            PublisherPill.BorderBrush = new SolidColorBrush(Color.FromArgb(isLight ? (byte)90 : (byte)80, fgColor.R, fgColor.G, fgColor.B));
             PublisherPill.BorderThickness = new Thickness(1);
-            PublisherLbl.Foreground = accent;
-            ShieldPath.Fill = accent;
+            PublisherLbl.Foreground = fgBrush;
+            ShieldPath.Fill = fgBrush;
         }
         else
         {
@@ -166,10 +168,10 @@ public partial class PromptCardControl : UserControl
         }
         else
         {
-            var fgBrush = FindResource("AccentBrush") is SolidColorBrush ab ? ab : new SolidColorBrush(Color.FromRgb(0, 229, 255));
-            var fgColor = fgBrush.Color;
-            DirectionPill.Background = new SolidColorBrush(Color.FromArgb(isLight ? (byte)28 : (byte)40, fgColor.R, fgColor.G, fgColor.B));
-            DirectionPill.BorderBrush = new SolidColorBrush(Color.FromArgb(isLight ? (byte)80 : (byte)80, fgColor.R, fgColor.G, fgColor.B));
+            var fgColor = isLight ? Color.FromRgb(29, 78, 216) : Color.FromRgb(0, 229, 255);
+            var fgBrush = new SolidColorBrush(fgColor);
+            DirectionPill.Background = new SolidColorBrush(Color.FromArgb(isLight ? (byte)30 : (byte)40, fgColor.R, fgColor.G, fgColor.B));
+            DirectionPill.BorderBrush = new SolidColorBrush(Color.FromArgb(isLight ? (byte)90 : (byte)80, fgColor.R, fgColor.G, fgColor.B));
             DirectionPill.BorderThickness = new Thickness(1);
             DirectionPillText.Foreground = fgBrush;
             DirectionPillText.Text = Strings.T("Outbound");

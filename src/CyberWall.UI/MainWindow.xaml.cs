@@ -625,19 +625,30 @@ public partial class MainWindow : Window
     {
         if (e.Key == System.Windows.Input.Key.Down || e.Key == System.Windows.Input.Key.Enter)
         {
-            if (AllowedGrid.Items.Count > 0)
+            try
             {
-                AllowedGrid.Focus();
-                AllowedGrid.SelectedIndex = 0;
-                AllowedGrid.ScrollIntoView(AllowedGrid.SelectedItem);
-                e.Handled = true;
+                if (AllowedGrid.Items.Count > 0)
+                {
+                    AllowedGrid.Focus();
+                    if (AllowedGrid.Items[0] != null)
+                    {
+                        AllowedGrid.CurrentItem = AllowedGrid.Items[0];
+                    }
+                    e.Handled = true;
+                }
+                else if (BlockedGrid.Items.Count > 0)
+                {
+                    BlockedGrid.Focus();
+                    if (BlockedGrid.Items[0] != null)
+                    {
+                        BlockedGrid.CurrentItem = BlockedGrid.Items[0];
+                    }
+                    e.Handled = true;
+                }
             }
-            else if (BlockedGrid.Items.Count > 0)
+            catch (Exception ex)
             {
-                BlockedGrid.Focus();
-                BlockedGrid.SelectedIndex = 0;
-                BlockedGrid.ScrollIntoView(BlockedGrid.SelectedItem);
-                e.Handled = true;
+                Debug.WriteLine($"Search navigation error: {ex}");
             }
         }
         else if (e.Key == System.Windows.Input.Key.Escape)
