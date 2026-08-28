@@ -123,7 +123,9 @@ public partial class LogViewerDialog : Window
                 i.Timestamp.Contains(q, StringComparison.OrdinalIgnoreCase) ||
                 i.Verdict.ToString().Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
 
+        LogGrid.ItemsSource = null;
         LogGrid.ItemsSource = filtered;
+        LogGrid.Visibility = filtered.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
         CountBadge.Text = Strings.T("EntriesCount", filtered.Count);
         EmptyMsg.Visibility = filtered.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
@@ -159,11 +161,9 @@ public partial class LogViewerDialog : Window
         {
             try
             {
-                if (File.Exists(BlockedLog.LogPath))
-                {
-                    File.WriteAllText(BlockedLog.LogPath, string.Empty);
-                }
-                LoadLogs();
+                BlockedLog.Clear();
+                _allItems.Clear();
+                ApplyFilter();
             }
             catch { }
         }

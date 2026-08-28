@@ -52,6 +52,9 @@ public sealed class ConnectionMonitor : IDisposable
             ev = ev with { AppPath = hostPath, ProcessId = hostPid };
         }
 
+        // Always record blocked activity for blocked apps
+        _svc.RecordBlockedActivity(ev);
+
         if (ShouldSkipPrompt(ev.AppPath, ev.ProcessId)) return;
 
         _svc.HoldPending(ev);
@@ -93,8 +96,6 @@ public sealed class ConnectionMonitor : IDisposable
                     pid = hostPid;
                 }
 
-                if (ShouldSkipPrompt(path, pid)) continue;
-
                 var ev = new ConnectionEvent
                 {
                     AppPath = path,
@@ -105,10 +106,20 @@ public sealed class ConnectionMonitor : IDisposable
                     Protocol = "TCP"
                 };
 
+                if (ShouldSkipPrompt(path, pid))
+                {
+                    if (_svc.Store.TryGet(path, out var rule) && rule.Verdict == Verdict.Block)
+                    {
+                        _svc.RecordBlockedActivity(ev);
+                    }
+                    continue;
+                }
+
                 _svc.HoldPending(ev);
                 if (_svc.Mode == FirewallMode.BlockAll || _svc.Mode == FirewallMode.Killswitch)
                 {
                     _svc.NotifyUnknownBlocked(ev);
+                    _svc.RecordBlockedActivity(ev);
                     continue;
                 }
                 OnNewConnection?.Invoke(ev);
@@ -170,7 +181,8 @@ public sealed class ConnectionMonitor : IDisposable
             for (int i = 0; i < count; i++)
             {
                 var r = Marshal.PtrToStructure<MIB_TCPROW_OWNER_PID>(row + i * rowSize);
-                if (r.state is 2 or 5)
+                // 3 = SYN_SENT, 5 = ESTABLISHED
+                if ((r.state is 3 or 5) && r.remoteAddr != 0)
                 {
                     var ip = new IPAddress(BitConverter.GetBytes(r.remoteAddr));
                     int port = (int)((r.remotePort >> 8) | ((r.remotePort & 0xFF) << 8));
@@ -197,7 +209,7 @@ public sealed class ConnectionMonitor : IDisposable
             for (int i = 0; i < count; i++)
             {
                 var r = Marshal.PtrToStructure<MIB_TCP6ROW_OWNER_PID>(row + i * rowSize);
-                if (r.remoteAddr == null || r.state is not (2 or 5)) continue;
+                if (r.remoteAddr == null || r.state is not (3 or 5)) continue;
                 var ip = new IPAddress(r.remoteAddr);
                 int port = (int)((r.remotePort >> 8) | ((r.remotePort & 0xFF) << 8));
                 list.Add(((int)r.owningPid, ip.ToString(), port));

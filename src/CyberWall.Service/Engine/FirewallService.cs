@@ -14,6 +14,7 @@ public sealed class FirewallService : IDisposable
     public bool IsEnabled => Wfp.IsEnabled;
     public event Action<ConnectionEvent>? OnAskConnection;
     public event Action<ConnectionEvent>? OnUnknownBlocked;
+    public event Action<ConnectionEvent>? OnBlockedActivity;
     private readonly HashSet<string> _pendingHolds = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _pendingLock = new();
     private readonly Dictionary<string, (Verdict Verdict, int Pid, DateTime ExpiresUtc)> _sessions = new(StringComparer.OrdinalIgnoreCase);
@@ -77,6 +78,12 @@ public sealed class FirewallService : IDisposable
     }
 
     public void NotifyUnknownBlocked(ConnectionEvent ev) => OnUnknownBlocked?.Invoke(ev);
+
+    public void RecordBlockedActivity(ConnectionEvent ev)
+    {
+        BlockedLog.Append(ev, Verdict.Block);
+        OnBlockedActivity?.Invoke(ev);
+    }
 
     public void HoldPending(ConnectionEvent ev)
     {

@@ -42,6 +42,7 @@ public partial class MainWindow : Window
         PromptManager.Instance.Initialize(_svc, this);
         _svc.OnAskConnection += OnAskConnection;
         _svc.OnUnknownBlocked += OnUnknownBlocked;
+        _svc.OnBlockedActivity += OnBlockedActivity;
         _notifications.Changed += () => Dispatcher.BeginInvoke(UpdateNotifBadge);
         if (App.Settings.FirewallEnabled)
             _svc.Enable((FirewallMode)App.Settings.FirewallMode);
@@ -343,6 +344,14 @@ public partial class MainWindow : Window
             RememberLastRemote(ev, isBlocked: true);
             _notifications.Add(AppNotificationKind.SilentBlock, ev.AppPath, ev.DisplayName,
                 string.IsNullOrEmpty(ev.RemoteAddress) ? null : $"{ev.RemoteAddress}:{ev.RemotePort}");
+        });
+    }
+
+    private void OnBlockedActivity(ConnectionEvent ev)
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            RememberLastRemote(ev, isBlocked: true);
         });
     }
 
