@@ -379,6 +379,10 @@
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="600"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="100"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
+            <Setter Property="ToolTip" Value="{Binding Converter={StaticResource T}, ConverterParameter=ToggleRuleTooltip}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">

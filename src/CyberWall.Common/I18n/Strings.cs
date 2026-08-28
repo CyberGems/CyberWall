@@ -242,6 +242,7 @@ public static class Strings
         ["CopyPathTooltip"] = ("Copy path to clipboard", "Copiar ruta al portapapeles"),
         ["OpenFolderTooltip"] = ("Open executable folder", "Abrir carpeta del ejecutable"),
         ["RemoveRuleTooltip"] = ("Remove firewall rule", "Eliminar regla del firewall"),
+        ["ToggleRuleTooltip"] = ("Toggle rule (Space)", "Alternar regla (Espacio)"),
         ["ActivityHeader"] = ("Activity", "Actividad"),
         ["ActivityActiveStatus"] = ("Live Network Traffic", "Tráfico de Red en Vivo"),
         ["ActivityIdleStatus"] = ("Idle (No recent traffic)", "En reposo (Sin tráfico reciente)"),
