@@ -1,7 +1,8 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
-using System.Security.Cryptography.X509Certificates;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace CyberWall.Common;
 
@@ -66,20 +67,7 @@ public static class AppIdentity
             catch { }
         }
 
-        string? publisher = null;
-        bool signed = false;
-        if (File.Exists(path))
-        {
-            try
-            {
-#pragma warning disable SYSLIB0057
-                using var cert = new X509Certificate2(X509Certificate.CreateFromSignedFile(path));
-#pragma warning restore SYSLIB0057
-                publisher = Clean(cert.GetNameInfo(X509NameType.SimpleName, false));
-                signed = !string.IsNullOrEmpty(publisher);
-            }
-            catch { }
-        }
+        var (signed, publisher) = TryExtractSigner(path);
 
         var systemPath = IsWindowsSystemPath(path);
         var microsoft = systemPath
@@ -88,6 +76,73 @@ public static class AppIdentity
 
         var hero = PickHero(fileName, description, product);
         return new AppIdentityInfo(fileName, hero, publisher, signed, microsoft, systemPath);
+    }
+
+    private static (bool isSigned, string? publisher) TryExtractSigner(string path)
+    {
+        if (!File.Exists(path)) return (false, null);
+
+        IntPtr hCertStore = IntPtr.Zero;
+        IntPtr hMsg = IntPtr.Zero;
+        IntPtr pCertContext = IntPtr.Zero;
+        IntPtr pSignerCertInfo = IntPtr.Zero;
+
+        try
+        {
+            bool ok = CryptQueryObject(
+                CERT_QUERY_OBJECT_FILE,
+                path,
+                CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED_EMBED,
+                CERT_QUERY_FORMAT_FLAG_ALL,
+                0,
+                out _, out _, out _,
+                out hCertStore,
+                out hMsg,
+                out _);
+
+            if (!ok || hMsg == IntPtr.Zero || hCertStore == IntPtr.Zero)
+                return (false, null);
+
+            int cbData = 0;
+            if (!CryptMsgGetParam(hMsg, CMSG_SIGNER_CERT_INFO_PARAM, 0, IntPtr.Zero, ref cbData) || cbData <= 0)
+                return (false, null);
+
+            pSignerCertInfo = Marshal.AllocHGlobal(cbData);
+            if (!CryptMsgGetParam(hMsg, CMSG_SIGNER_CERT_INFO_PARAM, 0, pSignerCertInfo, ref cbData))
+                return (false, null);
+
+            pCertContext = CertFindCertificateInStore(
+                hCertStore,
+                X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+                0,
+                CERT_FIND_CERT_INFO,
+                pSignerCertInfo,
+                IntPtr.Zero);
+
+            if (pCertContext == IntPtr.Zero)
+                return (false, null);
+
+            var sb = new StringBuilder(256);
+            int len = CertGetNameString(pCertContext, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0, IntPtr.Zero, sb, sb.Capacity);
+            if (len > 1)
+            {
+                var pub = Clean(sb.ToString());
+                return (!string.IsNullOrEmpty(pub), pub);
+            }
+
+            return (true, null);
+        }
+        catch
+        {
+            return (false, null);
+        }
+        finally
+        {
+            if (pSignerCertInfo != IntPtr.Zero) Marshal.FreeHGlobal(pSignerCertInfo);
+            if (pCertContext != IntPtr.Zero) CertFreeCertificateContext(pCertContext);
+            if (hCertStore != IntPtr.Zero) CertCloseStore(hCertStore, 0);
+            if (hMsg != IntPtr.Zero) CryptMsgClose(hMsg);
+        }
     }
 
     private static string PickHero(string fileName, string? description, string? product)
@@ -144,4 +199,64 @@ public static class AppIdentity
         var trimmed = value.Trim();
         return trimmed.Length == 0 ? null : trimmed;
     }
+
+    #region Win32 Crypto P/Invoke
+    private const int CERT_QUERY_OBJECT_FILE = 1;
+    private const int CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED_EMBED = 1 << 10;
+    private const int CERT_QUERY_FORMAT_FLAG_ALL = 0x0E;
+    private const int CMSG_SIGNER_CERT_INFO_PARAM = 7;
+    private const int X509_ASN_ENCODING = 0x00000001;
+    private const int PKCS_7_ASN_ENCODING = 0x00010000;
+    private const int CERT_FIND_CERT_INFO = 11 << 16;
+    private const int CERT_NAME_SIMPLE_DISPLAY_TYPE = 4;
+
+    [DllImport("crypt32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern bool CryptQueryObject(
+        int dwObjectType,
+        [MarshalAs(UnmanagedType.LPWStr)] string pvObject,
+        int dwExpectedContentTypeFlags,
+        int dwExpectedFormatTypeFlags,
+        int dwFlags,
+        out int pdwMsgAndCertEncodingType,
+        out int pdwContentType,
+        out int pdwFormatType,
+        out IntPtr phCertStore,
+        out IntPtr phMsg,
+        out IntPtr ppvContext);
+
+    [DllImport("crypt32.dll", SetLastError = true)]
+    private static extern bool CryptMsgGetParam(
+        IntPtr hCryptMsg,
+        int dwParamType,
+        int dwIndex,
+        IntPtr pvData,
+        ref int pcbData);
+
+    [DllImport("crypt32.dll", SetLastError = true)]
+    private static extern IntPtr CertFindCertificateInStore(
+        IntPtr hCertStore,
+        int dwCertEncodingType,
+        int dwFindFlags,
+        int dwFindType,
+        IntPtr pvFindPara,
+        IntPtr pPrevCertContext);
+
+    [DllImport("crypt32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern int CertGetNameString(
+        IntPtr pCertContext,
+        int dwType,
+        int dwFlags,
+        IntPtr pvTypePara,
+        StringBuilder pszNameString,
+        int cchNameString);
+
+    [DllImport("crypt32.dll")]
+    private static extern bool CertCloseStore(IntPtr hCertStore, int dwFlags);
+
+    [DllImport("crypt32.dll")]
+    private static extern bool CryptMsgClose(IntPtr hCryptMsg);
+
+    [DllImport("crypt32.dll")]
+    private static extern bool CertFreeCertificateContext(IntPtr pCertContext);
+    #endregion
 }
