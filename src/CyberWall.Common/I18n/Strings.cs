@@ -287,6 +287,8 @@ public static class Strings
         ["StatsSummaryHeader"] = ("CyberWall — Traffic & Security Statistics Summary", "CyberWall — Resumen de Estadísticas de Tráfico y Seguridad"),
         ["StatsPeriodLabel"] = ("Period:", "Período:"),
         ["StatsEventsCount"] = ("{0} events", "{0} eventos"),
+        ["StatsUniqueIps"] = ("{0} unique IPs", "{0} IPs únicas"),
+        ["StatsUniqueIpsWithLocal"] = ("{0} unique IPs ({1} local)", "{0} IPs únicas ({1} locales)"),
     };
 
     public static string T(string key, params object[] args)

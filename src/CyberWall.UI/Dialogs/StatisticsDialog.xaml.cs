@@ -247,7 +247,11 @@ public partial class StatisticsDialog : Window
         AllowedPctVal.Text = $" ({allowedPct:F1}%)";
 
         ScopeVal.Text = Strings.T("StatsScopeDesc", uniqueCountries, uniqueApps);
-        CardScopeDesc.Text = $"{events.Select(e => e.RemoteAddress).Where(a => !string.IsNullOrEmpty(a)).Distinct().Count()} IPs únicas";
+        int uniqueIps = events.Select(e => e.RemoteAddress).Where(a => !string.IsNullOrEmpty(a)).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+        int localCount = events.Count(e => e.Geo.Kind == GeoKind.Local);
+        CardScopeDesc.Text = localCount > 0
+            ? Strings.T("StatsUniqueIpsWithLocal", uniqueIps, localCount)
+            : Strings.T("StatsUniqueIps", uniqueIps);
 
         // 2. Top 5 Applications
         var topApps = events
@@ -279,17 +283,17 @@ public partial class StatisticsDialog : Window
         OutboundBarCol.Width = new GridLength(starOut, GridUnitType.Star);
         InboundBarCol.Width = new GridLength(starIn, GridUnitType.Star);
 
-        // 4. Top 5 Destination Countries
+        // 4. Top 5 Destination Countries (Strictly real external countries)
         var countryGroups = events
-            .Where(e => e.Geo.Kind == GeoKind.Country || e.Geo.Kind == GeoKind.Local)
-            .GroupBy(e => e.Geo.Kind == GeoKind.Local ? "LOCAL" : (e.Geo.Iso2 ?? "UNK"))
+            .Where(e => e.Geo.Kind == GeoKind.Country && e.Geo.HasCountry)
+            .GroupBy(e => e.Geo.Iso2 ?? "")
             .Select(g =>
             {
                 var first = g.First();
                 return new StatItem
                 {
                     CountryCode = first.Geo.Iso2 ?? "",
-                    HasCountry = first.Geo.HasCountry,
+                    HasCountry = true,
                     CountryLabel = CountryDisplay.Label(first.Geo),
                     Count = g.Count(),
                     Percentage = (g.Count() * 100.0) / total
