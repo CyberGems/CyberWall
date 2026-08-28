@@ -18,6 +18,8 @@ public sealed class AppRuleRow : INotifyPropertyChanged
     public string DisplayName => Rule.DisplayName;
     public Verdict Verdict => Rule.Verdict;
     public Direction Direction => Rule.Direction;
+    public Verdict InboundVerdict => Rule.EffectiveInboundVerdict;
+    public Verdict OutboundVerdict => Rule.EffectiveOutboundVerdict;
     public bool HasCountry => Geo.HasCountry;
     public string CountryCode => Geo.HasCountry ? Geo.Iso2 ?? "" : "";
     public string CountryLabel => CountryDisplay.Label(Geo);

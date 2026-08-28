@@ -180,6 +180,43 @@ public sealed class FirewallService : IDisposable
         {
             AppPath = appPath,
             Verdict = verdict,
+            Direction = Direction.Both,
+            InboundVerdict = verdict,
+            OutboundVerdict = verdict,
+            PackageFamilyName = string.IsNullOrEmpty(pfn) ? null : pfn
+        });
+    }
+
+    public void UpdateRule(string appPath, Verdict inVerdict, Verdict outVerdict, int pid = 0)
+    {
+        var key = SafeKey(appPath);
+        lock (_pendingLock) _pendingHolds.Remove(key);
+        lock (_sessionLock) _sessions.Remove(key);
+
+        if (inVerdict == Verdict.Allow || outVerdict == Verdict.Allow)
+        {
+            lock (_sessionLock) _reappliedAllows.Add(key);
+        }
+        else
+        {
+            lock (_sessionLock) _reappliedAllows.Remove(key);
+        }
+
+        Wfp.ApplyAppRule(appPath, inVerdict, outVerdict, pid);
+
+        ProcessIdentity.TryGetPackageFamilyName(pid, appPath, out var pfn);
+        var overallVerdict = (inVerdict == Verdict.Allow || outVerdict == Verdict.Allow) ? Verdict.Allow : Verdict.Block;
+        var direction = (inVerdict == Verdict.Allow && outVerdict == Verdict.Allow) || (inVerdict == Verdict.Block && outVerdict == Verdict.Block)
+            ? Direction.Both
+            : (inVerdict == Verdict.Allow ? Direction.Inbound : Direction.Outbound);
+
+        Store.Upsert(new AppRule
+        {
+            AppPath = appPath,
+            Verdict = overallVerdict,
+            Direction = direction,
+            InboundVerdict = inVerdict,
+            OutboundVerdict = outVerdict,
             PackageFamilyName = string.IsNullOrEmpty(pfn) ? null : pfn
         });
     }

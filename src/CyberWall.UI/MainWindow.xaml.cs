@@ -16,6 +16,7 @@ using CyberWall.Service.Engine;
 using CyberWall.UI.Dialogs;
 using CyberWall.UI.Popup;
 using CyberWall.UI.Services;
+using MenuItem = System.Windows.Controls.MenuItem;
 
 namespace CyberWall.UI;
 
@@ -212,9 +213,9 @@ public partial class MainWindow : Window
         var progHdr = Strings.T("Program") + (_sortBy == "DisplayName" ? (_sortAsc ? " ▾" : " ▴") : "");
         var pathHdr = Strings.T("Path") + (_sortBy == "AppPath" ? (_sortAsc ? " ▾" : " ▴") : "");
         var actHdr = Strings.T("Action");
-        var dirHdr = Strings.T("Direction");
+        var dirHdr = Strings.T("Direction") + (_sortBy == "Direction" ? (_sortAsc ? " ▾" : " ▴") : "");
         var stateHdr = Strings.T("State");
-        var countryHdr = Strings.T("Country");
+        var countryHdr = Strings.T("Country") + (_sortBy == "Country" ? (_sortAsc ? " ▾" : " ▴") : "");
         var activityHdr = Strings.T("ActivityHeader") + (_sortBy is "Activity" or "IsActiveTraffic" ? (_sortAsc ? " ▾" : " ▴") : "");
 
         StateHeaderText.Text = stateHdr;
@@ -472,7 +473,37 @@ public partial class MainWindow : Window
                            .ThenBy(r => r.DisplayName);
             }
 
-            Func<AppRule, object> key = _sortBy == "AppPath" ? r => r.AppPath : r => r.DisplayName;
+            Func<AppRule, object> key = _sortBy switch
+            {
+                "AppPath" => r => r.AppPath,
+                "Direction" => r => (int)r.EffectiveInboundVerdict * 2 + (int)r.EffectiveOutboundVerdict,
+                "Country" => r =>
+                {
+                    string? ip = null;
+                    try
+                    {
+                        last.TryGetValue(AppRule.Normalize(r.AppPath), out ip);
+                        ip ??= last.GetValueOrDefault(r.AppPath);
+                    }
+                    catch
+                    {
+                        last.TryGetValue(r.AppPath, out ip);
+                    }
+                    var geo = GeoCountry.Lookup(ip);
+                    if (!geo.HasCountry)
+                    {
+                        var activity = ProcessTrafficTracker.Instance.GetActivity(r.AppPath);
+                        if (!string.IsNullOrEmpty(activity.LastEndpoint))
+                        {
+                            var liveIp = NetworkEndpoint.ExtractAddress(activity.LastEndpoint);
+                            var liveGeo = GeoCountry.Lookup(liveIp);
+                            if (liveGeo.HasCountry) geo = liveGeo;
+                        }
+                    }
+                    return CountryDisplay.Label(geo);
+                },
+                _ => r => r.DisplayName
+            };
             return _sortAsc ? items.OrderBy(key) : items.OrderByDescending(key);
         }
 
@@ -491,7 +522,21 @@ public partial class MainWindow : Window
 
         try
         {
-            _lastRemoteByApp[AppRule.Normalize(ev.AppPath)] = ev.RemoteAddress;
+            var normKey = AppRule.Normalize(ev.AppPath);
+            var newGeo = GeoCountry.Lookup(ev.RemoteAddress);
+
+            // Prioritize public external country IPs: do not overwrite a known country IP with a local/private IP
+            if (_lastRemoteByApp.TryGetValue(normKey, out var existingIp))
+            {
+                var existingGeo = GeoCountry.Lookup(existingIp);
+                if (existingGeo.HasCountry && !newGeo.HasCountry)
+                {
+                    ProcessTrafficTracker.Instance.RecordActivity(ev.AppPath, ev.RemoteAddress, ev.RemotePort);
+                    return;
+                }
+            }
+
+            _lastRemoteByApp[normKey] = ev.RemoteAddress;
         }
         catch
         {
@@ -513,7 +558,24 @@ public partial class MainWindow : Window
         {
             last.TryGetValue(rule.AppPath, out ip);
         }
-        var row = new AppRuleRow { Rule = rule, Geo = GeoCountry.Lookup(ip) };
+
+        var geo = GeoCountry.Lookup(ip);
+        if (!geo.HasCountry)
+        {
+            // If stored IP is local or unknown, check if live activity has a public internet destination
+            var activity = ProcessTrafficTracker.Instance.GetActivity(rule.AppPath);
+            if (!string.IsNullOrEmpty(activity.LastEndpoint))
+            {
+                var liveIp = NetworkEndpoint.ExtractAddress(activity.LastEndpoint);
+                var liveGeo = GeoCountry.Lookup(liveIp);
+                if (liveGeo.HasCountry)
+                {
+                    geo = liveGeo;
+                }
+            }
+        }
+
+        var row = new AppRuleRow { Rule = rule, Geo = geo };
         row.UpdateActivity(ProcessTrafficTracker.Instance);
         return row;
     }
@@ -561,6 +623,15 @@ public partial class MainWindow : Window
                     string key;
                     try { key = AppRule.Normalize(parts[3]); }
                     catch { key = parts[3]; }
+
+                    var newGeo = GeoCountry.Lookup(ip);
+                    if (map.TryGetValue(key, out var existingIp))
+                    {
+                        var existingGeo = GeoCountry.Lookup(existingIp);
+                        if (existingGeo.HasCountry && !newGeo.HasCountry)
+                            continue;
+                    }
+
                     map[key] = ip;
                 }
                 catch { }
@@ -649,21 +720,161 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
-    private void QuickSearch_Click(object sender, RoutedEventArgs e)
+    private static void ExecuteSearchOnline(AppRule r)
     {
-        if (sender is not FrameworkElement btn) return;
-        var r = btn.Tag as AppRule ?? (btn.Tag as AppRuleRow)?.Rule;
-        if (r == null) return;
-        var query = !string.IsNullOrWhiteSpace(r.DisplayName) ? r.DisplayName : Path.GetFileName(r.AppPath);
+        var exeName = Path.GetFileName(r.AppPath);
+        var displayName = !string.IsNullOrWhiteSpace(r.DisplayName) ? r.DisplayName.Trim() : Path.GetFileNameWithoutExtension(r.AppPath);
+        string query;
+        if (string.Equals(exeName, displayName, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(Path.GetFileNameWithoutExtension(exeName), displayName, StringComparison.OrdinalIgnoreCase))
+        {
+            query = $"{exeName} {Path.GetFileNameWithoutExtension(exeName)}";
+        }
+        else
+        {
+            query = $"{exeName} {displayName}";
+        }
+
         try
         {
             Process.Start(new ProcessStartInfo
             {
-                FileName = $"https://www.google.com/search?q={Uri.EscapeDataString(query + " process")}",
+                FileName = $"https://www.google.com/search?q={Uri.EscapeDataString(query)}",
                 UseShellExecute = true
             });
         }
         catch { }
+    }
+
+    private void QuickSearch_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement btn) return;
+        var r = btn.Tag as AppRule ?? (btn.Tag as AppRuleRow)?.Rule;
+        if (r != null) ExecuteSearchOnline(r);
+    }
+
+    private void OpenEditRule(AppRule rule, GeoResult? geo = null)
+    {
+        if (geo == null)
+        {
+            var last = LastRemoteByApp();
+            foreach (var entry in _lastRemoteByApp)
+                last[entry.Key] = entry.Value;
+            string? ip = null;
+            try { last.TryGetValue(AppRule.Normalize(rule.AppPath), out ip); } catch { }
+            ip ??= last.GetValueOrDefault(rule.AppPath);
+            geo = GeoCountry.Lookup(ip);
+        }
+
+        var dlg = new EditRuleDialog(rule, geo) { Owner = this };
+        if (dlg.ShowDialog() == true)
+        {
+            _svc.UpdateRule(rule.AppPath, dlg.InboundVerdict, dlg.OutboundVerdict);
+            RefreshRules(SearchBox.Text);
+        }
+    }
+
+    private void QuickEdit_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement btn) return;
+        var row = btn.Tag as AppRuleRow;
+        var r = row?.Rule ?? btn.Tag as AppRule;
+        if (r != null) OpenEditRule(r, row?.Geo);
+    }
+
+    private void DirectionBadge_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement elem) return;
+        var row = elem.Tag as AppRuleRow;
+        var r = row?.Rule ?? elem.Tag as AppRule;
+        if (r != null)
+        {
+            e.Handled = true;
+            OpenEditRule(r, row?.Geo);
+        }
+    }
+
+    private void RulesGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement elem)
+        {
+            var row = elem.DataContext as AppRuleRow;
+            var r = row?.Rule ?? elem.DataContext as AppRule;
+            if (r != null)
+            {
+                e.Handled = true;
+                OpenEditRule(r, row?.Geo);
+            }
+        }
+    }
+
+    private void ContextEditRule_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem item) return;
+        var row = item.DataContext as AppRuleRow ?? (item.Tag as AppRuleRow);
+        var r = row?.Rule ?? item.DataContext as AppRule ?? (item.Tag as AppRule);
+        if (r == null && AllowedGrid.SelectedItem is AppRuleRow selRow) { row = selRow; r = selRow.Rule; }
+        if (r == null && BlockedGrid.SelectedItem is AppRuleRow selBlockRow) { row = selBlockRow; r = selBlockRow.Rule; }
+        if (r != null) OpenEditRule(r, row?.Geo);
+    }
+
+    private void ContextSearch_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem item) return;
+        var r = item.DataContext as AppRule ?? (item.DataContext as AppRuleRow)?.Rule ?? (item.Tag as AppRule) ?? (item.Tag as AppRuleRow)?.Rule;
+        if (r == null && (AllowedGrid.SelectedItem as AppRuleRow)?.Rule is { } selRow) r = selRow;
+        if (r == null && (BlockedGrid.SelectedItem as AppRuleRow)?.Rule is { } selBlockRow) r = selBlockRow;
+        if (r != null) ExecuteSearchOnline(r);
+    }
+
+    private void ContextCopy_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem item) return;
+        var r = item.DataContext as AppRule ?? (item.DataContext as AppRuleRow)?.Rule ?? (item.Tag as AppRule) ?? (item.Tag as AppRuleRow)?.Rule;
+        if (r == null && (AllowedGrid.SelectedItem as AppRuleRow)?.Rule is { } selRow) r = selRow;
+        if (r == null && (BlockedGrid.SelectedItem as AppRuleRow)?.Rule is { } selBlockRow) r = selBlockRow;
+        var path = r?.AppPath;
+        if (string.IsNullOrEmpty(path)) return;
+        try { System.Windows.Clipboard.SetText(path); } catch { }
+    }
+
+    private void ContextFolder_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem item) return;
+        var r = item.DataContext as AppRule ?? (item.DataContext as AppRuleRow)?.Rule ?? (item.Tag as AppRule) ?? (item.Tag as AppRuleRow)?.Rule;
+        if (r == null && (AllowedGrid.SelectedItem as AppRuleRow)?.Rule is { } selRow) r = selRow;
+        if (r == null && (BlockedGrid.SelectedItem as AppRuleRow)?.Rule is { } selBlockRow) r = selBlockRow;
+        var path = r?.AppPath;
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            if (File.Exists(path))
+            {
+                Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = true });
+                return;
+            }
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+            {
+                Process.Start(new ProcessStartInfo("explorer.exe", dir) { UseShellExecute = true });
+            }
+        }
+        catch { }
+    }
+
+    private void ContextRemove_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem item) return;
+        var r = item.DataContext as AppRule ?? (item.DataContext as AppRuleRow)?.Rule ?? (item.Tag as AppRule) ?? (item.Tag as AppRuleRow)?.Rule;
+        if (r == null && (AllowedGrid.SelectedItem as AppRuleRow)?.Rule is { } selRow) r = selRow;
+        if (r == null && (BlockedGrid.SelectedItem as AppRuleRow)?.Rule is { } selBlockRow) r = selBlockRow;
+        if (r == null) return;
+        var dlg = new ConfirmDialog(r.DisplayName, r.AppPath) { Owner = this };
+        if (dlg.ShowDialog() == true)
+        {
+            _svc.RemoveRule(r.AppPath);
+            RefreshRules(SearchBox.Text);
+        }
     }
 
     private void QuickCopy_Click(object sender, RoutedEventArgs e)

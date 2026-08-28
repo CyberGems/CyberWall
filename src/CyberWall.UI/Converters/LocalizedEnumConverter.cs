@@ -15,8 +15,39 @@ public sealed class VerdictDisplayConverter : IValueConverter
 
 public sealed class DirectionDisplayConverter : IValueConverter
 {
-    public object Convert(object v, Type _, object __, CultureInfo ___) =>
-        v is Direction d ? (d == Direction.Inbound ? $"↓ {Strings.T("Inbound")}" : d == Direction.Outbound ? $"↑ {Strings.T("Outbound")}" : $"⇄ {Strings.T("Both")}") : v?.ToString() ?? "";
+    public object Convert(object v, Type _, object __, CultureInfo ___)
+    {
+        if (v is AppRuleRow row)
+        {
+            if (row.InboundVerdict == Verdict.Allow && row.OutboundVerdict == Verdict.Allow)
+                return $"⇄ {Strings.T("Both")}";
+            if (row.InboundVerdict == Verdict.Block && row.OutboundVerdict == Verdict.Allow)
+                return $"↑ {Strings.T("DirectionOutboundOnly")}";
+            if (row.InboundVerdict == Verdict.Allow && row.OutboundVerdict == Verdict.Block)
+                return $"↓ {Strings.T("DirectionInboundOnly")}";
+            return $"⛔ {Strings.T("DirectionNone")}";
+        }
+        if (v is AppRule rule)
+        {
+            if (rule.EffectiveInboundVerdict == Verdict.Allow && rule.EffectiveOutboundVerdict == Verdict.Allow)
+                return $"⇄ {Strings.T("Both")}";
+            if (rule.EffectiveInboundVerdict == Verdict.Block && rule.EffectiveOutboundVerdict == Verdict.Allow)
+                return $"↑ {Strings.T("DirectionOutboundOnly")}";
+            if (rule.EffectiveInboundVerdict == Verdict.Allow && rule.EffectiveOutboundVerdict == Verdict.Block)
+                return $"↓ {Strings.T("DirectionInboundOnly")}";
+            return $"⛔ {Strings.T("DirectionNone")}";
+        }
+        if (v is Direction d)
+        {
+            return d switch
+            {
+                Direction.Inbound => $"↓ {Strings.T("Inbound")}",
+                Direction.Outbound => $"↑ {Strings.T("Outbound")}",
+                _ => $"⇄ {Strings.T("Both")}"
+            };
+        }
+        return v?.ToString() ?? "";
+    }
 
     public object ConvertBack(object v, Type _, object __, CultureInfo ___) => throw new NotSupportedException();
 }

@@ -1,6 +1,7 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using CyberWall.Common;
+using CyberWall.Common.Models;
 using Microsoft.Win32;
 
 namespace CyberWall.Service.Wfp;
@@ -115,20 +116,49 @@ public static class RealFirewall
 
     public static void AllowApp(string appPath, int pid = 0)
     {
+        ApplyAppRule(appPath, Verdict.Allow, Verdict.Allow, pid);
+    }
+
+    public static void BlockApp(string appPath, int pid = 0)
+    {
+        ApplyAppRule(appPath, Verdict.Block, Verdict.Block, pid);
+    }
+
+    public static void ApplyAppRule(string appPath, Verdict inVerdict, Verdict outVerdict, int pid = 0)
+    {
         if (!IsAdmin) return;
         ProcessIdentity.TryGetPackageFamilyName(pid, appPath, out var pfn);
         ProcessIdentity.TryGetPackageSid(pfn, out var sid);
         var paths = GetCompanionBinaries(appPath);
         foreach (var p in paths)
         {
-            ApplySingleAllow(p);
+            ApplySingleCustomRule(p, inVerdict, outVerdict);
         }
-        if (!string.IsNullOrEmpty(pfn)) ApplyPackageAllow(pfn);
-        EnableMatchingAllowRules(sid, pfn);
-        ProcessIdentity.ResumeProcesses(appPath, pid);
+        if (!string.IsNullOrEmpty(pfn)) ApplyPackageRuleWithDirection(pfn, inVerdict, outVerdict);
+
+        if (inVerdict == Verdict.Allow || outVerdict == Verdict.Allow)
+        {
+            EnableMatchingAllowRules(sid, pfn);
+            ProcessIdentity.ResumeProcesses(appPath, pid);
+        }
+        else
+        {
+            DisableMatchingAllowRules(sid, pfn);
+            StopLiveTraffic(appPath, pid, pfn);
+        }
     }
 
     private static void ApplySingleAllow(string appPath)
+    {
+        ApplySingleCustomRule(appPath, Verdict.Allow, Verdict.Allow);
+    }
+
+    private static void ApplySingleBlock(string appPath)
+    {
+        ApplySingleCustomRule(appPath, Verdict.Block, Verdict.Block);
+    }
+
+    private static void ApplySingleCustomRule(string appPath, Verdict inVerdict, Verdict outVerdict)
     {
         try
         {
@@ -138,30 +168,43 @@ public static class RealFirewall
             var blockOut = $"CyberWall-Block-{baseName}";
             var blockIn = $"CyberWall-Block-{baseName}-in";
 
-            RemoveRule(blockOut);
-            RemoveRule(blockIn);
             RemoveRule(allowOut);
             RemoveRule(allowIn);
+            RemoveRule(blockOut);
+            RemoveRule(blockIn);
 
-            AddAppRule(allowOut, appPath, outbound: true, allow: true);
-            AddAppRule(allowIn, appPath, outbound: false, allow: true);
+            if (outVerdict == Verdict.Allow)
+                AddAppRule(allowOut, appPath, outbound: true, allow: true);
+            else
+                AddAppRule(blockOut, appPath, outbound: true, allow: false);
+
+            if (inVerdict == Verdict.Allow)
+                AddAppRule(allowIn, appPath, outbound: false, allow: true);
+            else
+                AddAppRule(blockIn, appPath, outbound: false, allow: false);
         }
         catch (Exception ex) { Debug.WriteLine(ex); }
     }
 
-    public static void BlockApp(string appPath, int pid = 0)
+    private static void ApplyPackageRuleWithDirection(string pfn, Verdict inVerdict, Verdict outVerdict)
     {
-        if (!IsAdmin) return;
-        ProcessIdentity.TryGetPackageFamilyName(pid, appPath, out var pfn);
-        ProcessIdentity.TryGetPackageSid(pfn, out var sid);
-        var paths = GetCompanionBinaries(appPath);
-        foreach (var p in paths)
-        {
-            ApplySingleBlock(p);
-        }
-        if (!string.IsNullOrEmpty(pfn)) ApplyPackageBlock(pfn);
-        DisableMatchingAllowRules(sid, pfn);
-        StopLiveTraffic(appPath, pid, pfn);
+        var allow = PackageRuleName("Allow", pfn);
+        var block = PackageRuleName("Block", pfn);
+        RunNetsh($"advfirewall firewall delete rule name=\"{allow}\"");
+        RunNetsh($"advfirewall firewall delete rule name=\"{allow}-in\"");
+        RunNetsh($"advfirewall firewall delete rule name=\"{block}\"");
+        RunNetsh($"advfirewall firewall delete rule name=\"{block}-in\"");
+        var id = PackageIdForRule(pfn);
+
+        if (outVerdict == Verdict.Allow)
+            AddPackageRule(allow, id, outbound: true, allow: true);
+        else
+            AddPackageRule(block, id, outbound: true, allow: false);
+
+        if (inVerdict == Verdict.Allow)
+            AddPackageRule(allow + "-in", id, outbound: false, allow: true);
+        else
+            AddPackageRule(block + "-in", id, outbound: false, allow: false);
     }
 
     /// <summary>
@@ -192,27 +235,6 @@ public static class RealFirewall
         HostAppResolver.TerminateHelpers(appPath);
         ProcessIdentity.TerminateTcpConnections(pid, appPath);
         ProcessIdentity.SuspendProcess(pid);
-    }
-
-    private static void ApplySingleBlock(string appPath)
-    {
-        try
-        {
-            var baseName = Path.GetFileNameWithoutExtension(appPath);
-            var allowOut = $"CyberWall-Allow-{baseName}";
-            var allowIn = $"CyberWall-Allow-{baseName}-in";
-            var blockOut = $"CyberWall-Block-{baseName}";
-            var blockIn = $"CyberWall-Block-{baseName}-in";
-
-            RemoveRule(allowOut);
-            RemoveRule(allowIn);
-            RemoveRule(blockOut);
-            RemoveRule(blockIn);
-
-            AddAppRule(blockOut, appPath, outbound: true, allow: false);
-            AddAppRule(blockIn, appPath, outbound: false, allow: false);
-        }
-        catch (Exception ex) { Debug.WriteLine(ex); }
     }
 
     public static void RemoveApp(string appPath, int pid = 0)

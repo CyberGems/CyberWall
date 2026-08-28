@@ -79,7 +79,7 @@ public static class GeoCountry
 
     private static bool IsLocal(IPAddress ip)
     {
-        if (IPAddress.IsLoopback(ip) || ip.IsIPv6LinkLocal || ip.IsIPv6SiteLocal || ip.IsIPv6UniqueLocal)
+        if (IPAddress.IsLoopback(ip) || ip.IsIPv6LinkLocal || ip.IsIPv6SiteLocal || ip.IsIPv6UniqueLocal || ip.IsIPv6Multicast)
             return true;
         if (ip.AddressFamily != AddressFamily.InterNetwork) return false;
         var b = ip.GetAddressBytes();
@@ -88,7 +88,9 @@ public static class GeoCountry
             || (b[0] == 169 && b[1] == 254)
             || (b[0] == 172 && b[1] is >= 16 and <= 31)
             || (b[0] == 192 && b[1] == 168)
-            || (b[0] == 100 && b[1] is >= 64 and <= 127);
+            || (b[0] == 100 && b[1] is >= 64 and <= 127)
+            || (b[0] >= 224 && b[0] <= 239)
+            || (b[0] == 255 && b[1] == 255 && b[2] == 255 && b[3] == 255);
     }
 
     private static GeoResult FindV4(IPAddress ip)
