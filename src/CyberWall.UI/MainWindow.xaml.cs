@@ -468,7 +468,7 @@ public partial class MainWindow : Window
             {
                 return _sortAsc
                     ? items.OrderByDescending(r => (int)ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).Level)
-                           .ThenByDescending(r => ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).ActiveSockets + ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).BlockedSockets)
+                           .ThenByDescending(r => ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).ActiveSockets)
                            .ThenBy(r => r.DisplayName)
                     : items.OrderBy(r => (int)ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).Level)
                            .ThenBy(r => r.DisplayName);

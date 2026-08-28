@@ -21,7 +21,6 @@ public enum ProcessActivityLevel
 public sealed record ProcessActivityInfo(
     ProcessActivityLevel Level,
     int ActiveSockets,
-    int BlockedSockets,
     string? LastEndpoint,
     string? LastBlockedEndpoint,
     DateTime LastActivityUtc,
@@ -48,7 +47,6 @@ public sealed class ProcessTrafficTracker : IDisposable
     private sealed class ProcessActivityState
     {
         public int ActiveSockets { get; set; }
-        public int BlockedSockets { get; set; }
         public string? LastEndpoint { get; set; }
         public string? LastBlockedEndpoint { get; set; }
         public DateTime LastActivityUtc { get; set; } = DateTime.MinValue;
@@ -84,6 +82,8 @@ public sealed class ProcessTrafficTracker : IDisposable
     public void RecordActivity(string appPath, string remoteAddress, int remotePort, bool isBlocked = false)
     {
         if (string.IsNullOrWhiteSpace(appPath)) return;
+        if (string.IsNullOrWhiteSpace(remoteAddress) || remoteAddress == "0.0.0.0" || remoteAddress == "::") return;
+
         var state = _activities.GetOrAdd(appPath, _ => new ProcessActivityState());
         lock (state)
         {
@@ -104,51 +104,29 @@ public sealed class ProcessTrafficTracker : IDisposable
     {
         if (string.IsNullOrWhiteSpace(appPath) || !_activities.TryGetValue(appPath, out var state))
         {
-            return new ProcessActivityInfo(ProcessActivityLevel.Idle, 0, 0, null, null, DateTime.MinValue, DateTime.MinValue);
+            return new ProcessActivityInfo(ProcessActivityLevel.Idle, 0, null, null, DateTime.MinValue, DateTime.MinValue);
         }
 
         lock (state)
         {
-            bool hasActiveSockets = state.ActiveSockets > 0;
-            bool hasRecentAllowed = (DateTime.UtcNow - state.LastActivityUtc).TotalSeconds < 3.5;
-            bool hasBlockedSockets = state.BlockedSockets > 0;
-            bool hasRecentBlocked = (DateTime.UtcNow - state.LastBlockedUtc).TotalSeconds < 3.5;
-
             ProcessActivityLevel level;
             if (verdict == Verdict.Block)
             {
-                // For a blocked rule, if there are active connection attempts or recent blocked events, show BlockedAttempts (Orange)
-                if (hasBlockedSockets || hasRecentBlocked || hasActiveSockets)
-                {
-                    level = ProcessActivityLevel.BlockedAttempts;
-                }
-                else
-                {
-                    level = ProcessActivityLevel.Idle;
-                }
+                // In Block list: Orange LED if WFP intercepted connection attempts in the last 4 seconds
+                bool hasRecentBlocked = (DateTime.UtcNow - state.LastBlockedUtc).TotalSeconds < 4.0;
+                level = hasRecentBlocked ? ProcessActivityLevel.BlockedAttempts : ProcessActivityLevel.Idle;
             }
             else
             {
-                // For an allowed rule, if there are established sockets or recent allowed traffic, show ActiveAllowed (Green)
-                if (hasActiveSockets || hasRecentAllowed)
-                {
-                    level = ProcessActivityLevel.ActiveAllowed;
-                }
-                else if (hasBlockedSockets || hasRecentBlocked)
-                {
-                    // Directional block or dropped attempts on allowed app
-                    level = ProcessActivityLevel.BlockedAttempts;
-                }
-                else
-                {
-                    level = ProcessActivityLevel.Idle;
-                }
+                // In Allow list: Green LED only if there are active established sockets or recent permitted data flow
+                bool hasActiveSockets = state.ActiveSockets > 0;
+                bool hasRecentAllowed = (DateTime.UtcNow - state.LastActivityUtc).TotalSeconds < 3.5;
+                level = (hasActiveSockets || hasRecentAllowed) ? ProcessActivityLevel.ActiveAllowed : ProcessActivityLevel.Idle;
             }
 
             return new ProcessActivityInfo(
                 level,
                 state.ActiveSockets,
-                state.BlockedSockets,
                 state.LastEndpoint,
                 state.LastBlockedEndpoint,
                 state.LastActivityUtc,
@@ -163,26 +141,22 @@ public sealed class ProcessTrafficTracker : IDisposable
 
         if (info.Level == ProcessActivityLevel.BlockedAttempts)
         {
-            sb.AppendLine("🟠 " + Strings.T("ActivityBlockedStatus"));
+            sb.AppendLine(Strings.T("ActivityBlockedStatus"));
             sb.AppendLine(Strings.T("ActivityBlockedDesc"));
-            if (info.BlockedSockets > 0)
-            {
-                sb.AppendLine(Strings.T("ActivityBlockedConnections", info.BlockedSockets));
-            }
             if (info.LastBlockedUtc > DateTime.MinValue)
             {
                 var localTime = info.LastBlockedUtc.ToLocalTime().ToString("HH:mm:ss");
                 sb.AppendLine(Strings.T("ActivityLastBlockedSeenActive", localTime));
             }
             var endpoint = info.LastBlockedEndpoint ?? info.LastEndpoint;
-            if (!string.IsNullOrEmpty(endpoint))
+            if (!string.IsNullOrEmpty(endpoint) && !endpoint.StartsWith("0.0.0.0"))
             {
                 sb.Append(Strings.T("ActivityBlockedEndpoint", endpoint));
             }
         }
         else if (info.Level == ProcessActivityLevel.ActiveAllowed)
         {
-            sb.AppendLine("🟢 " + Strings.T("ActivityActiveStatus"));
+            sb.AppendLine(Strings.T("ActivityActiveStatus"));
             if (info.ActiveSockets > 0)
             {
                 sb.AppendLine(Strings.T("ActivityConnections", info.ActiveSockets));
@@ -192,16 +166,19 @@ public sealed class ProcessTrafficTracker : IDisposable
                 var localTime = info.LastActivityUtc.ToLocalTime().ToString("HH:mm:ss");
                 sb.AppendLine(Strings.T("ActivityLastSeenActive", localTime));
             }
-            if (!string.IsNullOrEmpty(info.LastEndpoint))
+            if (!string.IsNullOrEmpty(info.LastEndpoint) && !info.LastEndpoint.StartsWith("0.0.0.0"))
             {
                 sb.Append(Strings.T("ActivityLastEndpoint", info.LastEndpoint));
             }
         }
         else
         {
-            sb.AppendLine("⚪ " + Strings.T("ActivityIdleStatus"));
-            var mostRecent = info.LastBlockedUtc > info.LastActivityUtc ? info.LastBlockedUtc : info.LastActivityUtc;
-            bool wasBlocked = info.LastBlockedUtc > info.LastActivityUtc;
+            sb.AppendLine(Strings.T("ActivityIdleStatus"));
+            var mostRecent = (verdict == Verdict.Block && info.LastBlockedUtc > DateTime.MinValue)
+                ? info.LastBlockedUtc
+                : (info.LastActivityUtc > DateTime.MinValue ? info.LastActivityUtc : info.LastBlockedUtc);
+
+            bool wasBlocked = verdict == Verdict.Block && info.LastBlockedUtc > DateTime.MinValue;
 
             if (mostRecent > DateTime.MinValue)
             {
@@ -227,7 +204,7 @@ public sealed class ProcessTrafficTracker : IDisposable
                 {
                     sb.AppendLine(Strings.T("ActivityLastBlockedRelative", timeFormatted, relativeStr));
                     var ep = info.LastBlockedEndpoint ?? info.LastEndpoint;
-                    if (!string.IsNullOrEmpty(ep))
+                    if (!string.IsNullOrEmpty(ep) && !ep.StartsWith("0.0.0.0"))
                     {
                         sb.Append(Strings.T("ActivityBlockedEndpoint", ep));
                     }
@@ -235,7 +212,7 @@ public sealed class ProcessTrafficTracker : IDisposable
                 else
                 {
                     sb.AppendLine(Strings.T("ActivityLastSeenRelative", timeFormatted, relativeStr));
-                    if (!string.IsNullOrEmpty(info.LastEndpoint))
+                    if (!string.IsNullOrEmpty(info.LastEndpoint) && !info.LastEndpoint.StartsWith("0.0.0.0"))
                     {
                         sb.Append(Strings.T("ActivityLastEndpoint", info.LastEndpoint));
                     }
@@ -266,6 +243,8 @@ public sealed class ProcessTrafficTracker : IDisposable
                     if (!DateTime.TryParse(parts[0], out var dt)) continue;
                     var appPath = parts[3];
                     if (string.IsNullOrWhiteSpace(appPath)) continue;
+                    var endpoint = parts[4];
+                    if (endpoint.StartsWith("0.0.0.0") || endpoint.StartsWith("::")) continue;
 
                     var state = _activities.GetOrAdd(appPath, _ => new ProcessActivityState());
                     lock (state)
@@ -274,7 +253,7 @@ public sealed class ProcessTrafficTracker : IDisposable
                         if (utc > state.LastBlockedUtc)
                         {
                             state.LastBlockedUtc = utc;
-                            state.LastBlockedEndpoint = parts[4];
+                            state.LastBlockedEndpoint = endpoint;
                         }
                     }
                 }
@@ -296,7 +275,7 @@ public sealed class ProcessTrafficTracker : IDisposable
                 _lastCacheCleanup = DateTime.UtcNow;
             }
 
-            var activeByPath = new Dictionary<string, (int Established, int SynSent, string? Endpoint)>(StringComparer.OrdinalIgnoreCase);
+            var activeByPath = new Dictionary<string, (int Established, string? Endpoint)>(StringComparer.OrdinalIgnoreCase);
 
             var connections = GetActiveTcpConnections();
             foreach (var conn in connections)
@@ -313,18 +292,14 @@ public sealed class ProcessTrafficTracker : IDisposable
 
                 if (string.IsNullOrWhiteSpace(path)) continue;
 
-                bool isEstablished = conn.State == 5;
-                bool isSynSent = conn.State == 2;
-
                 if (!activeByPath.TryGetValue(path, out var current))
                 {
-                    activeByPath[path] = (isEstablished ? 1 : 0, isSynSent ? 1 : 0, $"{conn.Remote}:{conn.Port}");
+                    activeByPath[path] = (1, $"{conn.Remote}:{conn.Port}");
                 }
                 else
                 {
                     activeByPath[path] = (
-                        current.Established + (isEstablished ? 1 : 0),
-                        current.SynSent + (isSynSent ? 1 : 0),
+                        current.Established + 1,
                         current.Endpoint ?? $"{conn.Remote}:{conn.Port}");
                 }
             }
@@ -338,17 +313,8 @@ public sealed class ProcessTrafficTracker : IDisposable
                 lock (state)
                 {
                     state.ActiveSockets = kvp.Value.Established;
-                    state.BlockedSockets = kvp.Value.SynSent;
-                    if (kvp.Value.Established > 0)
-                    {
-                        state.LastEndpoint = kvp.Value.Endpoint;
-                        state.LastActivityUtc = now;
-                    }
-                    if (kvp.Value.SynSent > 0)
-                    {
-                        state.LastBlockedEndpoint = kvp.Value.Endpoint;
-                        state.LastBlockedUtc = now;
-                    }
+                    state.LastEndpoint = kvp.Value.Endpoint;
+                    state.LastActivityUtc = now;
                 }
             }
 
@@ -360,7 +326,6 @@ public sealed class ProcessTrafficTracker : IDisposable
                     lock (kvp.Value)
                     {
                         kvp.Value.ActiveSockets = 0;
-                        kvp.Value.BlockedSockets = 0;
                     }
                 }
             }
@@ -370,20 +335,21 @@ public sealed class ProcessTrafficTracker : IDisposable
         catch { }
     }
 
-    private static List<(int Pid, string Remote, int Port, int State)> GetActiveTcpConnections()
+    private static List<(int Pid, string Remote, int Port)> GetActiveTcpConnections()
     {
-        var list = new List<(int, string, int, int)>();
+        var list = new List<(int, string, int)>();
         CollectTcp4(list);
         CollectTcp6(list);
         return list;
     }
 
-    private static void CollectTcp4(List<(int, string, int, int)> list)
+    private static void CollectTcp4(List<(int, string, int)> list)
     {
         nint table = 0;
         try
         {
             int size = 0;
+            // Class 5: MIB_TCP_TABLE_OWNER_PID
             GetExtendedTcpTable(nint.Zero, ref size, false, 2, 5, 0);
             if (size <= 0) return;
             table = Marshal.AllocHGlobal(size);
@@ -394,11 +360,12 @@ public sealed class ProcessTrafficTracker : IDisposable
             for (int i = 0; i < count; i++)
             {
                 var r = Marshal.PtrToStructure<MIB_TCPROW_OWNER_PID>(row + i * rowSize);
-                if (r.state is 2 or 5) // SYN_SENT (2) or ESTABLISHED (5)
+                // Only count MIB_TCP_STATE_ESTAB (5) with a valid remote IP
+                if (r.state == 5 && r.remoteAddr != 0)
                 {
                     var ip = new IPAddress(BitConverter.GetBytes(r.remoteAddr));
                     int port = (int)((r.remotePort >> 8) | ((r.remotePort & 0xFF) << 8));
-                    list.Add(((int)r.owningPid, ip.ToString(), port, (int)r.state));
+                    list.Add(((int)r.owningPid, ip.ToString(), port));
                 }
             }
         }
@@ -406,12 +373,13 @@ public sealed class ProcessTrafficTracker : IDisposable
         finally { if (table != 0) Marshal.FreeHGlobal(table); }
     }
 
-    private static void CollectTcp6(List<(int, string, int, int)> list)
+    private static void CollectTcp6(List<(int, string, int)> list)
     {
         nint table = 0;
         try
         {
             int size = 0;
+            // Class 5: MIB_TCP6TABLE_OWNER_PID
             GetExtendedTcpTable(nint.Zero, ref size, false, 23, 5, 0);
             if (size <= 0) return;
             table = Marshal.AllocHGlobal(size);
@@ -422,14 +390,26 @@ public sealed class ProcessTrafficTracker : IDisposable
             for (int i = 0; i < count; i++)
             {
                 var r = Marshal.PtrToStructure<MIB_TCP6ROW_OWNER_PID>(row + i * rowSize);
-                if (r.remoteAddr == null || r.state is not (2 or 5)) continue;
-                var ip = new IPAddress(r.remoteAddr);
-                int port = (int)((r.remotePort >> 8) | ((r.remotePort & 0xFF) << 8));
-                list.Add(((int)r.owningPid, ip.ToString(), port, (int)r.state));
+                // Only count MIB_TCP_STATE_ESTAB (5)
+                if (r.state == 5 && r.remoteAddr != null && !IsIPv6Zero(r.remoteAddr))
+                {
+                    var ip = new IPAddress(r.remoteAddr);
+                    int port = (int)((r.remotePort >> 8) | ((r.remotePort & 0xFF) << 8));
+                    list.Add(((int)r.owningPid, ip.ToString(), port));
+                }
             }
         }
         catch { }
         finally { if (table != 0) Marshal.FreeHGlobal(table); }
+    }
+
+    private static bool IsIPv6Zero(byte[] bytes)
+    {
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            if (bytes[i] != 0) return false;
+        }
+        return true;
     }
 
     [DllImport("iphlpapi.dll")] private static extern uint GetExtendedTcpTable(nint pTable, ref int pdwSize, bool sort, int family, int tableClass, int reserved);
