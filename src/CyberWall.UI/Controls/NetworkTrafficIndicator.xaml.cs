@@ -254,11 +254,11 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         // Exponential smoothing (smooth acceleration/deceleration)
         _smoothedRatio += (rawRatio - _smoothedRatio) * Math.Min(1.0, elapsed * 2.0);
 
-        // Dynamic density: 2 packets at idle -> up to 12 packets at max capacity
-        int activeCount = flowFactor > 0 ? Math.Clamp(2 + (int)Math.Round(_smoothedRatio * 10.0), 2, _packets.Count) : 0;
+        // Dynamic density: 4 packets at low/idle -> up to 12 packets at max capacity
+        int activeCount = flowFactor > 0 ? Math.Clamp(4 + (int)Math.Round(_smoothedRatio * 8.0), 4, _packets.Count) : 0;
 
-        // Dynamic velocity multiplier: 0.65x at idle -> up to 2.5x at max capacity
-        double speedMultiplier = 0.65 + _smoothedRatio * 1.85;
+        // Dynamic velocity multiplier: 0.85x at idle -> up to 2.5x at max capacity
+        double speedMultiplier = 0.85 + _smoothedRatio * 1.65;
 
         for (var i = 0; i < _packets.Count; i++)
         {
@@ -281,7 +281,7 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
                 // Smooth edge fade
                 var progress = Math.Clamp((packet.Position + dynamicLength) / (width + dynamicLength * 2), 0.0, 1.0);
                 var edgeFade = Math.Sin(progress * Math.PI);
-                var targetOpacity = (0.25 + _smoothedRatio * 0.65) * edgeFade;
+                var targetOpacity = (0.35 + _smoothedRatio * 0.55) * edgeFade;
 
                 packet.CurrentOpacity += (targetOpacity - packet.CurrentOpacity) * Math.Min(1.0, elapsed * 4.0);
             }
