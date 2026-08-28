@@ -8,13 +8,19 @@ using CyberWall.UI.Services;
 
 namespace CyberWall.UI.Dialogs;
 
-public partial class AboutWindow : Window
+public partial class AboutWindow : Window, IModalAttentionWindow
 {
     private const string RepoUrl = "https://github.com/CyberGems/CyberWall";
     private const string WebsiteUrl = "https://cybergems.org";
 
     private readonly AppSettings _settings;
     private bool _suppressAutoCheckUpdateChange;
+    private DateTime _lastAttentionTime = DateTime.MinValue;
+
+    public void TriggerAttention()
+    {
+        ModalAttentionHelper.Trigger(this, OuterBorder, WindowScale, WindowGlow, ref _lastAttentionTime);
+    }
 
     public AboutWindow(AppSettings settings)
     {

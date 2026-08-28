@@ -7,7 +7,7 @@ using CyberWall.UI.Services;
 
 namespace CyberWall.UI.Dialogs;
 
-public partial class NotificationsDialog : Window
+public partial class NotificationsDialog : Window, IModalAttentionWindow
 {
     private readonly NotificationStore _store;
     private readonly HashSet<Guid> _openedUnread;
@@ -15,7 +15,13 @@ public partial class NotificationsDialog : Window
     private readonly Action _onEnableProtection;
     private readonly Action _onDownloadUpdate;
     private bool _busy;
+    private DateTime _lastAttentionTime = DateTime.MinValue;
     public bool OpenSettingsAfterClose { get; private set; }
+
+    public void TriggerAttention()
+    {
+        ModalAttentionHelper.Trigger(this, OuterBorder, WindowScale, WindowGlow, ref _lastAttentionTime);
+    }
 
     public NotificationsDialog(NotificationStore store, Func<string, Task> onAllow, Action onEnableProtection, Action onDownloadUpdate)
     {

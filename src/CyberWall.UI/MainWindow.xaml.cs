@@ -135,9 +135,9 @@ public partial class MainWindow : Window
             {
                 if (owned.IsVisible)
                 {
-                    if (owned is SettingsWindow sw)
+                    if (owned is IModalAttentionWindow maw)
                     {
-                        sw.TriggerAttention();
+                        maw.TriggerAttention();
                     }
                 }
             }
