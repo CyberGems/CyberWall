@@ -20,10 +20,10 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
     {
         public required Border Element { get; init; }
         public double Position { get; set; }
-        public double Speed { get; init; }
+        public double BaseSpeed { get; init; }
         public double Top { get; init; }
-        public double Phase { get; init; }
-        public double Length { get; init; }
+        public double BaseLength { get; init; }
+        public double CurrentOpacity { get; set; }
     }
 
     private readonly Stopwatch _stopwatch = new();
@@ -33,6 +33,10 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
     private FirewallMode _mode = FirewallMode.Ask;
     private ConnectivityState _connectivity = ConnectivityState.Unknown;
     private NetworkSpeedSnapshot? _latestSnapshot;
+
+    private double _smoothedRatio = 0.0;
+    private double _observedPeakBps = 2_000_000.0; // Starts with 2 MB/s minimum baseline
+    private DateTime _lastPeakDecay = DateTime.UtcNow;
 
     private enum ConnectivityState
     {
@@ -144,33 +148,33 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         TooltipFilterVal.Text = Strings.T(stateKey);
     }
 
-    private double _smoothedSpeedMod = 1.0;
-
     private void CreatePackets()
     {
         TrafficCanvas.Children.Clear();
         _packets.Clear();
         var random = new Random(9173);
 
-        for (var i = 0; i < 6; i++)
+        // Pool of 12 scalable packets for dynamic density
+        for (var i = 0; i < 12; i++)
         {
-            var length = 10.0 + (i % 3) * 4;
+            var length = 8.0 + (i % 4) * 3.5;
             var height = 2.0;
             var packet = new Border
             {
                 Width = length,
                 Height = height,
                 CornerRadius = new CornerRadius(1.0),
-                IsHitTestVisible = false
+                IsHitTestVisible = false,
+                Opacity = 0
             };
             var item = new Packet
             {
                 Element = packet,
-                Position = -20 - (i * 35.0) - random.NextDouble() * 10,
-                Speed = 42.0 + (i % 2) * 8.0,
-                Top = 5.0 + (i % 3) * 2.2,
-                Phase = i * 0.8,
-                Length = length
+                Position = -20 - (i * 22.0) - random.NextDouble() * 8,
+                BaseSpeed = 36.0 + (i % 3) * 6.0,
+                Top = 4.5 + (i % 3) * 2.4,
+                BaseLength = length,
+                CurrentOpacity = 0
             };
             _packets.Add(item);
             TrafficCanvas.Children.Add(packet);
@@ -199,14 +203,7 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
             StatusHalo.Opacity = haloPulse;
         }
 
-        if (animMode == Common.Settings.TrafficAnimationMode.Disabled)
-        {
-            if (TrafficCanvas.Visibility != Visibility.Collapsed)
-                TrafficCanvas.Visibility = Visibility.Collapsed;
-            return;
-        }
-
-        if (animMode == Common.Settings.TrafficAnimationMode.PulseGlow)
+        if (animMode == Common.Settings.TrafficAnimationMode.Disabled || animMode == Common.Settings.TrafficAnimationMode.PulseGlow)
         {
             if (TrafficCanvas.Visibility != Visibility.Collapsed)
                 TrafficCanvas.Visibility = Visibility.Collapsed;
@@ -231,36 +228,70 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
             })
         };
 
-        // Smooth continuous exponential interpolation (removes jerky speed snapping)
-        double targetSpeedMod = 0.95;
-        if (_latestSnapshot != null && _latestSnapshot.IsConnected && (_latestSnapshot.DownloadBps + _latestSnapshot.UploadBps > 1024))
+        // Track live throughput and adapt peak bandwidth
+        double currentThroughput = 0;
+        if (_latestSnapshot != null && _latestSnapshot.IsConnected)
         {
-            var totalThroughput = _latestSnapshot.DownloadBps + _latestSnapshot.UploadBps;
-            targetSpeedMod = Math.Min(2.1, 0.95 + Math.Log10(totalThroughput / 1024.0) * 0.32);
+            currentThroughput = _latestSnapshot.DownloadBps + _latestSnapshot.UploadBps;
         }
 
-        _smoothedSpeedMod += (targetSpeedMod - _smoothedSpeedMod) * Math.Min(1.0, elapsed * 2.5);
-
-        foreach (var packet in _packets)
+        if (currentThroughput > _observedPeakBps)
         {
-            if (flowFactor > 0)
+            _observedPeakBps = currentThroughput;
+        }
+
+        // Slow decay of peak to allow recalibration over time
+        var now = DateTime.UtcNow;
+        if ((now - _lastPeakDecay).TotalSeconds > 10)
+        {
+            _lastPeakDecay = now;
+            _observedPeakBps = Math.Max(2_000_000.0, _observedPeakBps * 0.995);
+        }
+
+        // Calculate instantaneous utilization ratio [0.0 = idle, 1.0 = 100% capacity]
+        double rawRatio = currentThroughput > 1024 ? Math.Clamp(currentThroughput / _observedPeakBps, 0.0, 1.0) : 0.0;
+
+        // Exponential smoothing (smooth acceleration/deceleration)
+        _smoothedRatio += (rawRatio - _smoothedRatio) * Math.Min(1.0, elapsed * 2.0);
+
+        // Dynamic density: 2 packets at idle -> up to 12 packets at max capacity
+        int activeCount = flowFactor > 0 ? Math.Clamp(2 + (int)Math.Round(_smoothedRatio * 10.0), 2, _packets.Count) : 0;
+
+        // Dynamic velocity multiplier: 0.65x at idle -> up to 2.5x at max capacity
+        double speedMultiplier = 0.65 + _smoothedRatio * 1.85;
+
+        for (var i = 0; i < _packets.Count; i++)
+        {
+            var packet = _packets[i];
+            var isActive = i < activeCount && flowFactor > 0;
+
+            if (isActive)
             {
-                packet.Position += packet.Speed * elapsed * flowFactor * _smoothedSpeedMod;
-                if (packet.Position > width + packet.Length + 4)
-                    packet.Position = -packet.Length - 10;
+                // Dynamic packet stretch at high speeds
+                var dynamicLength = packet.BaseLength * (1.0 + _smoothedRatio * 0.6);
+                packet.Element.Width = dynamicLength;
+
+                packet.Position += packet.BaseSpeed * elapsed * flowFactor * speedMultiplier;
+                if (packet.Position > width + dynamicLength + 4)
+                    packet.Position = -dynamicLength - 10;
 
                 Canvas.SetLeft(packet.Element, packet.Position);
                 Canvas.SetTop(packet.Element, packet.Top);
 
-                // Smooth edge fade without abrupt popping
-                var progress = Math.Clamp((packet.Position + packet.Length) / (width + packet.Length * 2), 0.0, 1.0);
+                // Smooth edge fade
+                var progress = Math.Clamp((packet.Position + dynamicLength) / (width + dynamicLength * 2), 0.0, 1.0);
                 var edgeFade = Math.Sin(progress * Math.PI);
-                packet.Element.Opacity = Math.Max(0.1, edgeFade * 0.92);
+                var targetOpacity = (0.25 + _smoothedRatio * 0.65) * edgeFade;
+
+                packet.CurrentOpacity += (targetOpacity - packet.CurrentOpacity) * Math.Min(1.0, elapsed * 4.0);
             }
             else
             {
-                packet.Element.Opacity = 0.06;
+                // Inactive packet fades out smoothly
+                packet.CurrentOpacity += (0.0 - packet.CurrentOpacity) * Math.Min(1.0, elapsed * 4.0);
             }
+
+            packet.Element.Opacity = Math.Max(0.0, packet.CurrentOpacity);
         }
     }
 
