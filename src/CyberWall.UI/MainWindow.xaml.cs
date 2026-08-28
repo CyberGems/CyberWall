@@ -150,6 +150,8 @@ public partial class MainWindow : Window
     internal async void CheckForUpdatesOnStartup()
     {
         _notifications.PurgeObsoleteUpdateNotifications(UpdateService.GetCurrentVersion());
+        if (_svc.IsMasterOn)
+            _notifications.PurgeObsoleteProtectionOffNotifications();
         if (_hasCheckedUpdates || !App.Settings.AutoCheckForUpdates) return;
         _hasCheckedUpdates = true;
         try
@@ -376,6 +378,9 @@ public partial class MainWindow : Window
         _notifOpen = true;
         try
         {
+            if (_svc.IsMasterOn)
+                _notifications.PurgeObsoleteProtectionOffNotifications();
+
             var dlg = new NotificationsDialog(
                 _notifications,
                 async path =>
@@ -387,8 +392,11 @@ public partial class MainWindow : Window
                 {
                     if (MasterToggle.IsChecked != true)
                         MasterToggle.IsChecked = true;
+                    else
+                        _notifications.PurgeObsoleteProtectionOffNotifications();
                 },
-                OpenUpdateFromNotification)
+                OpenUpdateFromNotification,
+                isProtectionOn: () => _svc.IsMasterOn)
             { Owner = this };
             dlg.ShowDialog();
             if (dlg.OpenSettingsAfterClose)
@@ -593,7 +601,7 @@ public partial class MainWindow : Window
                 _ => FirewallMode.Ask
             };
             _svc.Enable(m);
-            _notifications.MarkRelatedRead(AppNotificationKind.ProtectionOff, null);
+            _notifications.PurgeObsoleteProtectionOffNotifications();
         }
         else
         {

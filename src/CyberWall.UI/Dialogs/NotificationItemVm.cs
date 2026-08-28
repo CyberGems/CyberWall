@@ -86,7 +86,7 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
         ActionLabel = title;
     }
 
-    public static NotificationItemVm From(AppNotification n, bool highlight)
+    public static NotificationItemVm From(AppNotification n, bool highlight, bool isProtectionOn = false)
     {
         var name = string.IsNullOrWhiteSpace(n.AppName)
             ? (string.IsNullOrWhiteSpace(n.AppPath) ? "" : System.IO.Path.GetFileName(n.AppPath))
@@ -102,6 +102,8 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
             }
         }
 
+        bool isProtectionOffActionActive = (n.Kind == AppNotificationKind.ProtectionOff) && !isProtectionOn;
+
         var (title, desc) = n.Kind switch
         {
             AppNotificationKind.SilentBlock => (
@@ -109,7 +111,7 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
                 Strings.T("SilentBlockDesc", string.IsNullOrEmpty(name) ? "?" : name)),
             AppNotificationKind.ProtectionOff => (
                 Strings.T("NotifProtectionOffTitle"),
-                Strings.T("NotifProtectionOffDesc")),
+                isProtectionOn ? Strings.T("NotifProtectionOnDesc") : Strings.T("NotifProtectionOffDesc")),
             AppNotificationKind.UpdateAvailable => (
                 Strings.T("NotifUpdateTitle"),
                 isUpdateActive ? Strings.T("NotifUpdateDesc", n.Detail ?? "") : Strings.T("AlreadyUpdated")),
@@ -131,7 +133,7 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
             TimeLabel = FormatRelative(n.Timestamp),
             Title = title,
             Description = desc,
-            ShowAction = showAllow || n.Kind is AppNotificationKind.ProtectionOff || (n.Kind is AppNotificationKind.UpdateAvailable && isUpdateActive),
+            ShowAction = showAllow || isProtectionOffActionActive || (n.Kind is AppNotificationKind.UpdateAvailable && isUpdateActive),
             ActionLabel = n.Kind switch
             {
                 AppNotificationKind.ProtectionOff => Strings.T("TurnProtectionOn"),

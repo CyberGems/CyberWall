@@ -14,6 +14,7 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
     private readonly Func<string, Task> _onAllow;
     private readonly Action _onEnableProtection;
     private readonly Action _onDownloadUpdate;
+    private readonly Func<bool>? _isProtectionOn;
     private bool _busy;
     private DateTime _lastAttentionTime = DateTime.MinValue;
     public bool OpenSettingsAfterClose { get; private set; }
@@ -23,13 +24,18 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
         ModalAttentionHelper.Trigger(this, OuterBorder, WindowScale, WindowGlow, ref _lastAttentionTime);
     }
 
-    public NotificationsDialog(NotificationStore store, Func<string, Task> onAllow, Action onEnableProtection, Action onDownloadUpdate)
+    public NotificationsDialog(NotificationStore store, Func<string, Task> onAllow, Action onEnableProtection, Action onDownloadUpdate, Func<bool>? isProtectionOn = null)
     {
         _store = store;
         _onAllow = onAllow;
         _onEnableProtection = onEnableProtection;
         _onDownloadUpdate = onDownloadUpdate;
+        _isProtectionOn = isProtectionOn;
         store.PurgeObsoleteUpdateNotifications(UpdateService.GetCurrentVersion());
+        if (_isProtectionOn?.Invoke() == true)
+        {
+            store.PurgeObsoleteProtectionOffNotifications();
+        }
         _openedUnread = store.All.Where(n => !n.Read).Select(n => n.Id).ToHashSet();
         store.MarkAllRead();
 
@@ -60,7 +66,8 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
 
     private void BindList()
     {
-        var items = _store.All.Select(n => NotificationItemVm.From(n, _openedUnread.Contains(n.Id))).ToList();
+        bool isProt = _isProtectionOn?.Invoke() ?? false;
+        var items = _store.All.Select(n => NotificationItemVm.From(n, _openedUnread.Contains(n.Id), isProt)).ToList();
         NotifList.ItemsSource = items;
         CountBadge.Text = _openedUnread.Count > 0
             ? Strings.T("NotifUnread", _openedUnread.Count)

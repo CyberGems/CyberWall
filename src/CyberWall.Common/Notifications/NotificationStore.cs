@@ -156,6 +156,17 @@ public sealed class NotificationStore
         Changed?.Invoke();
     }
 
+    public void PurgeObsoleteProtectionOffNotifications()
+    {
+        lock (_lock)
+        {
+            var removed = _items.RemoveAll(n => n.Kind == AppNotificationKind.ProtectionOff);
+            if (removed <= 0) return;
+            Save();
+        }
+        Changed?.Invoke();
+    }
+
     private void Load()
     {
         try
