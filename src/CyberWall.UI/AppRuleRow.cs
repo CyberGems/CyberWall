@@ -11,7 +11,7 @@ public sealed class AppRuleRow : INotifyPropertyChanged
     public required AppRule Rule { get; init; }
     public GeoResult Geo { get; init; }
 
-    private bool _isActiveTraffic;
+    private ProcessActivityLevel _activityLevel = ProcessActivityLevel.Idle;
     private string _activityTooltip = string.Empty;
 
     public string AppPath => Rule.AppPath;
@@ -24,18 +24,23 @@ public sealed class AppRuleRow : INotifyPropertyChanged
     public string CountryCode => Geo.HasCountry ? Geo.Iso2 ?? "" : "";
     public string CountryLabel => CountryDisplay.Label(Geo);
 
-    public bool IsActiveTraffic
+    public ProcessActivityLevel ActivityLevel
     {
-        get => _isActiveTraffic;
+        get => _activityLevel;
         set
         {
-            if (_isActiveTraffic != value)
+            if (_activityLevel != value)
             {
-                _isActiveTraffic = value;
+                _activityLevel = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(IsActiveTraffic));
+                OnPropertyChanged(nameof(IsBlockedAttempts));
             }
         }
     }
+
+    public bool IsActiveTraffic => ActivityLevel == ProcessActivityLevel.ActiveAllowed;
+    public bool IsBlockedAttempts => ActivityLevel == ProcessActivityLevel.BlockedAttempts;
 
     public string ActivityTooltip
     {
@@ -52,9 +57,9 @@ public sealed class AppRuleRow : INotifyPropertyChanged
 
     public void UpdateActivity(ProcessTrafficTracker tracker)
     {
-        var activity = tracker.GetActivity(AppPath);
-        IsActiveTraffic = activity.IsActive;
-        ActivityTooltip = tracker.FormatTooltip(AppPath);
+        var activity = tracker.GetActivity(AppPath, Verdict);
+        ActivityLevel = activity.Level;
+        ActivityTooltip = tracker.FormatTooltip(AppPath, Verdict);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

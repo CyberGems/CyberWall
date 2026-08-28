@@ -332,7 +332,7 @@ public partial class MainWindow : Window
 
     private void OnAskConnection(ConnectionEvent ev)
     {
-        RememberLastRemote(ev);
+        RememberLastRemote(ev, isBlocked: false);
         PromptManager.Instance.Enqueue(ev);
     }
 
@@ -340,7 +340,7 @@ public partial class MainWindow : Window
     {
         Dispatcher.BeginInvoke(() =>
         {
-            RememberLastRemote(ev);
+            RememberLastRemote(ev, isBlocked: true);
             _notifications.Add(AppNotificationKind.SilentBlock, ev.AppPath, ev.DisplayName,
                 string.IsNullOrEmpty(ev.RemoteAddress) ? null : $"{ev.RemoteAddress}:{ev.RemotePort}");
         });
@@ -348,6 +348,7 @@ public partial class MainWindow : Window
 
     internal void RecordAutoBlock(ConnectionEvent ev)
     {
+        RememberLastRemote(ev, isBlocked: true);
         _notifications.Add(AppNotificationKind.AutoBlocked, ev.AppPath, ev.DisplayName,
             string.IsNullOrEmpty(ev.RemoteAddress) ? null : $"{ev.RemoteAddress}:{ev.RemotePort}");
         _tray?.NotifyAutoBlock(ev.DisplayName);
@@ -463,13 +464,13 @@ public partial class MainWindow : Window
 
         IEnumerable<AppRule> SortRules(IEnumerable<AppRule> items)
         {
-            if (_sortBy is "Activity" or "IsActiveTraffic")
+            if (_sortBy is "Activity" or "IsActiveTraffic" or "ActivityLevel")
             {
                 return _sortAsc
-                    ? items.OrderByDescending(r => ProcessTrafficTracker.Instance.GetActivity(r.AppPath).IsActive)
-                           .ThenByDescending(r => ProcessTrafficTracker.Instance.GetActivity(r.AppPath).ActiveSockets)
+                    ? items.OrderByDescending(r => (int)ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).Level)
+                           .ThenByDescending(r => ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).ActiveSockets + ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).BlockedSockets)
                            .ThenBy(r => r.DisplayName)
-                    : items.OrderBy(r => ProcessTrafficTracker.Instance.GetActivity(r.AppPath).IsActive)
+                    : items.OrderBy(r => (int)ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).Level)
                            .ThenBy(r => r.DisplayName);
             }
 
@@ -492,10 +493,11 @@ public partial class MainWindow : Window
                     var geo = GeoCountry.Lookup(ip);
                     if (!geo.HasCountry)
                     {
-                        var activity = ProcessTrafficTracker.Instance.GetActivity(r.AppPath);
-                        if (!string.IsNullOrEmpty(activity.LastEndpoint))
+                        var activity = ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict);
+                        var ep = activity.LastEndpoint ?? activity.LastBlockedEndpoint;
+                        if (!string.IsNullOrEmpty(ep))
                         {
-                            var liveIp = NetworkEndpoint.ExtractAddress(activity.LastEndpoint);
+                            var liveIp = NetworkEndpoint.ExtractAddress(ep);
                             var liveGeo = GeoCountry.Lookup(liveIp);
                             if (liveGeo.HasCountry) geo = liveGeo;
                         }
@@ -514,7 +516,7 @@ public partial class MainWindow : Window
         RefreshLanguage();
     }
 
-    private void RememberLastRemote(ConnectionEvent ev)
+    private void RememberLastRemote(ConnectionEvent ev, bool isBlocked = false)
     {
         if (string.IsNullOrWhiteSpace(ev.RemoteAddress) ||
             !System.Net.IPAddress.TryParse(ev.RemoteAddress, out _))
@@ -531,7 +533,7 @@ public partial class MainWindow : Window
                 var existingGeo = GeoCountry.Lookup(existingIp);
                 if (existingGeo.HasCountry && !newGeo.HasCountry)
                 {
-                    ProcessTrafficTracker.Instance.RecordActivity(ev.AppPath, ev.RemoteAddress, ev.RemotePort);
+                    ProcessTrafficTracker.Instance.RecordActivity(ev.AppPath, ev.RemoteAddress, ev.RemotePort, isBlocked);
                     return;
                 }
             }
@@ -543,7 +545,7 @@ public partial class MainWindow : Window
             _lastRemoteByApp[ev.AppPath] = ev.RemoteAddress;
         }
 
-        ProcessTrafficTracker.Instance.RecordActivity(ev.AppPath, ev.RemoteAddress, ev.RemotePort);
+        ProcessTrafficTracker.Instance.RecordActivity(ev.AppPath, ev.RemoteAddress, ev.RemotePort, isBlocked);
     }
 
     private static AppRuleRow ToRow(AppRule rule, Dictionary<string, string> last)
@@ -563,10 +565,11 @@ public partial class MainWindow : Window
         if (!geo.HasCountry)
         {
             // If stored IP is local or unknown, check if live activity has a public internet destination
-            var activity = ProcessTrafficTracker.Instance.GetActivity(rule.AppPath);
-            if (!string.IsNullOrEmpty(activity.LastEndpoint))
+            var activity = ProcessTrafficTracker.Instance.GetActivity(rule.AppPath, rule.Verdict);
+            var liveEp = activity.LastEndpoint ?? activity.LastBlockedEndpoint;
+            if (!string.IsNullOrEmpty(liveEp))
             {
-                var liveIp = NetworkEndpoint.ExtractAddress(activity.LastEndpoint);
+                var liveIp = NetworkEndpoint.ExtractAddress(liveEp);
                 var liveGeo = GeoCountry.Lookup(liveIp);
                 if (liveGeo.HasCountry)
                 {

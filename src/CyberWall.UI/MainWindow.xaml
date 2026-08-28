@@ -977,7 +977,7 @@
                                                 </DataGridTemplateColumn>
 
                                                 <!-- Traffic Activity LED Column -->
-                                                <DataGridTemplateColumn x:Name="AllowColActivity" Header="Actividad" Width="78" CanUserSort="True" SortMemberPath="IsActiveTraffic" HeaderStyle="{StaticResource StateColumnHeader}">
+                                                <DataGridTemplateColumn x:Name="AllowColActivity" Header="Actividad" Width="78" CanUserSort="True" SortMemberPath="ActivityLevel" HeaderStyle="{StaticResource StateColumnHeader}">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <Grid Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent"
@@ -986,20 +986,66 @@
                                                                 <!-- Idle State Dot -->
                                                                 <Ellipse x:Name="IdleDot" Width="7" Height="7" Fill="{DynamicResource SubTextBrush}" Opacity="0.3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-                                                                <!-- Active State Glowing LED -->
+                                                                <!-- Active State Glowing Green LED with Pulse Halo -->
                                                                 <Grid x:Name="ActiveLed" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                                     <!-- Soft Halo Pulse Ring -->
-                                                                    <Ellipse Width="16" Height="16" Fill="#22C55E" Opacity="0.22"/>
+                                                                    <Ellipse Width="16" Height="16" Fill="#22C55E" Opacity="0.22" RenderTransformOrigin="0.5,0.5">
+                                                                        <Ellipse.RenderTransform>
+                                                                            <ScaleTransform ScaleX="1.0" ScaleY="1.0"/>
+                                                                        </Ellipse.RenderTransform>
+                                                                        <Ellipse.Triggers>
+                                                                            <EventTrigger RoutedEvent="Loaded">
+                                                                                <BeginStoryboard>
+                                                                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.12" To="0.38" Duration="0:0:1.4"/>
+                                                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="0.88" To="1.15" Duration="0:0:1.4"/>
+                                                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.88" To="1.15" Duration="0:0:1.4"/>
+                                                                                    </Storyboard>
+                                                                                </BeginStoryboard>
+                                                                            </EventTrigger>
+                                                                        </Ellipse.Triggers>
+                                                                    </Ellipse>
                                                                     <!-- Solid Core Dot -->
                                                                     <Ellipse Width="7.5" Height="7.5" Fill="#22C55E"/>
                                                                     <!-- Crisp highlight dot -->
                                                                     <Ellipse Width="2.5" Height="2.5" Fill="#FFFFFF" Opacity="0.75" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-1,-1,0,0"/>
+                                                                </Grid>
+
+                                                                <!-- Blocked Attempts Glowing Orange LED with Pulse Halo -->
+                                                                <Grid x:Name="BlockedLed" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                                    <!-- Soft Halo Pulse Ring -->
+                                                                    <Ellipse Width="16" Height="16" Fill="#F97316" Opacity="0.28" RenderTransformOrigin="0.5,0.5">
+                                                                        <Ellipse.RenderTransform>
+                                                                            <ScaleTransform ScaleX="1.0" ScaleY="1.0"/>
+                                                                        </Ellipse.RenderTransform>
+                                                                        <Ellipse.Triggers>
+                                                                            <EventTrigger RoutedEvent="Loaded">
+                                                                                <BeginStoryboard>
+                                                                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.14" To="0.42" Duration="0:0:1.1"/>
+                                                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="0.88" To="1.15" Duration="0:0:1.1"/>
+                                                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.88" To="1.15" Duration="0:0:1.1"/>
+                                                                                    </Storyboard>
+                                                                                </BeginStoryboard>
+                                                                            </EventTrigger>
+                                                                        </Ellipse.Triggers>
+                                                                    </Ellipse>
+                                                                    <!-- Solid Core Dot -->
+                                                                    <Ellipse Width="7.5" Height="7.5" Fill="#F97316"/>
+                                                                    <!-- Crisp highlight dot -->
+                                                                    <Ellipse Width="2.5" Height="2.5" Fill="#FFFFFF" Opacity="0.8" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-1,-1,0,0"/>
                                                                 </Grid>
                                                             </Grid>
                                                             <DataTemplate.Triggers>
                                                                 <DataTrigger Binding="{Binding IsActiveTraffic}" Value="True">
                                                                     <Setter TargetName="IdleDot" Property="Visibility" Value="Collapsed"/>
                                                                     <Setter TargetName="ActiveLed" Property="Visibility" Value="Visible"/>
+                                                                    <Setter TargetName="BlockedLed" Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsBlockedAttempts}" Value="True">
+                                                                    <Setter TargetName="IdleDot" Property="Visibility" Value="Collapsed"/>
+                                                                    <Setter TargetName="ActiveLed" Property="Visibility" Value="Collapsed"/>
+                                                                    <Setter TargetName="BlockedLed" Property="Visibility" Value="Visible"/>
                                                                 </DataTrigger>
                                                             </DataTemplate.Triggers>
                                                         </DataTemplate>
@@ -1152,34 +1198,80 @@
                                             </DataGridTemplateColumn>
 
                                             <!-- Traffic Activity LED Column -->
-                                            <DataGridTemplateColumn x:Name="BlockColActivity" Header="Actividad" Width="78" CanUserSort="True" SortMemberPath="IsActiveTraffic" HeaderStyle="{StaticResource StateColumnHeader}">
-                                                <DataGridTemplateColumn.CellTemplate>
-                                                    <DataTemplate>
-                                                        <Grid Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent"
-                                                              ToolTip="{Binding ActivityTooltip}"
-                                                              ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="0" ToolTipService.ShowDuration="6000">
-                                                            <!-- Idle State Dot -->
-                                                            <Ellipse x:Name="IdleDot" Width="7" Height="7" Fill="{DynamicResource SubTextBrush}" Opacity="0.3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <DataGridTemplateColumn x:Name="BlockColActivity" Header="Actividad" Width="78" CanUserSort="True" SortMemberPath="ActivityLevel" HeaderStyle="{StaticResource StateColumnHeader}">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <Grid Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent"
+                                                                  ToolTip="{Binding ActivityTooltip}"
+                                                                  ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="0" ToolTipService.ShowDuration="6000">
+                                                                <!-- Idle State Dot -->
+                                                                <Ellipse x:Name="IdleDot" Width="7" Height="7" Fill="{DynamicResource SubTextBrush}" Opacity="0.3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-                                                            <!-- Active State Glowing LED -->
-                                                            <Grid x:Name="ActiveLed" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                                <!-- Soft Halo Pulse Ring -->
-                                                                <Ellipse Width="16" Height="16" Fill="#22C55E" Opacity="0.22"/>
-                                                                <!-- Solid Core Dot -->
-                                                                <Ellipse Width="7.5" Height="7.5" Fill="#22C55E"/>
-                                                                <!-- Crisp highlight dot -->
-                                                                <Ellipse Width="2.5" Height="2.5" Fill="#FFFFFF" Opacity="0.75" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-1,-1,0,0"/>
+                                                                <!-- Active State Glowing Green LED with Pulse Halo -->
+                                                                <Grid x:Name="ActiveLed" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                                    <!-- Soft Halo Pulse Ring -->
+                                                                    <Ellipse Width="16" Height="16" Fill="#22C55E" Opacity="0.22" RenderTransformOrigin="0.5,0.5">
+                                                                        <Ellipse.RenderTransform>
+                                                                            <ScaleTransform ScaleX="1.0" ScaleY="1.0"/>
+                                                                        </Ellipse.RenderTransform>
+                                                                        <Ellipse.Triggers>
+                                                                            <EventTrigger RoutedEvent="Loaded">
+                                                                                <BeginStoryboard>
+                                                                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.12" To="0.38" Duration="0:0:1.4"/>
+                                                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="0.88" To="1.15" Duration="0:0:1.4"/>
+                                                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.88" To="1.15" Duration="0:0:1.4"/>
+                                                                                    </Storyboard>
+                                                                                </BeginStoryboard>
+                                                                            </EventTrigger>
+                                                                        </Ellipse.Triggers>
+                                                                    </Ellipse>
+                                                                    <!-- Solid Core Dot -->
+                                                                    <Ellipse Width="7.5" Height="7.5" Fill="#22C55E"/>
+                                                                    <!-- Crisp highlight dot -->
+                                                                    <Ellipse Width="2.5" Height="2.5" Fill="#FFFFFF" Opacity="0.75" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-1,-1,0,0"/>
+                                                                </Grid>
+
+                                                                <!-- Blocked Attempts Glowing Orange LED with Pulse Halo -->
+                                                                <Grid x:Name="BlockedLed" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                                    <!-- Soft Halo Pulse Ring -->
+                                                                    <Ellipse Width="16" Height="16" Fill="#F97316" Opacity="0.28" RenderTransformOrigin="0.5,0.5">
+                                                                        <Ellipse.RenderTransform>
+                                                                            <ScaleTransform ScaleX="1.0" ScaleY="1.0"/>
+                                                                        </Ellipse.RenderTransform>
+                                                                        <Ellipse.Triggers>
+                                                                            <EventTrigger RoutedEvent="Loaded">
+                                                                                <BeginStoryboard>
+                                                                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.14" To="0.42" Duration="0:0:1.1"/>
+                                                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="0.88" To="1.15" Duration="0:0:1.1"/>
+                                                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.88" To="1.15" Duration="0:0:1.1"/>
+                                                                                    </Storyboard>
+                                                                                </BeginStoryboard>
+                                                                            </EventTrigger>
+                                                                        </Ellipse.Triggers>
+                                                                    </Ellipse>
+                                                                    <!-- Solid Core Dot -->
+                                                                    <Ellipse Width="7.5" Height="7.5" Fill="#F97316"/>
+                                                                    <!-- Crisp highlight dot -->
+                                                                    <Ellipse Width="2.5" Height="2.5" Fill="#FFFFFF" Opacity="0.8" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-1,-1,0,0"/>
+                                                                </Grid>
                                                             </Grid>
-                                                        </Grid>
-                                                        <DataTemplate.Triggers>
-                                                            <DataTrigger Binding="{Binding IsActiveTraffic}" Value="True">
-                                                                <Setter TargetName="IdleDot" Property="Visibility" Value="Collapsed"/>
-                                                                <Setter TargetName="ActiveLed" Property="Visibility" Value="Visible"/>
-                                                            </DataTrigger>
-                                                        </DataTemplate.Triggers>
-                                                    </DataTemplate>
-                                                </DataGridTemplateColumn.CellTemplate>
-                                            </DataGridTemplateColumn>
+                                                            <DataTemplate.Triggers>
+                                                                <DataTrigger Binding="{Binding IsActiveTraffic}" Value="True">
+                                                                    <Setter TargetName="IdleDot" Property="Visibility" Value="Collapsed"/>
+                                                                    <Setter TargetName="ActiveLed" Property="Visibility" Value="Visible"/>
+                                                                    <Setter TargetName="BlockedLed" Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsBlockedAttempts}" Value="True">
+                                                                    <Setter TargetName="IdleDot" Property="Visibility" Value="Collapsed"/>
+                                                                    <Setter TargetName="ActiveLed" Property="Visibility" Value="Collapsed"/>
+                                                                    <Setter TargetName="BlockedLed" Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </DataTemplate.Triggers>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
 
                                             <!-- Program Name + Clean Bare Icon + Quick Action Buttons (Search, Copy, Folder, Remove) -->
                                             <!-- Program Name + Clean Bare Icon + Quick Action Buttons (Edit, Search, Copy, Folder, Remove) -->
