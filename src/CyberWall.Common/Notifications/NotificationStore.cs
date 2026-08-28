@@ -135,6 +135,27 @@ public sealed class NotificationStore
         Changed?.Invoke();
     }
 
+    public void PurgeObsoleteUpdateNotifications(Version currentVersion)
+    {
+        lock (_lock)
+        {
+            var removed = _items.RemoveAll(n =>
+            {
+                if (n.Kind != AppNotificationKind.UpdateAvailable) return false;
+                var verStr = (n.Detail ?? n.AppName ?? "").Trim().TrimStart('v', 'V');
+                if (Version.TryParse(verStr, out var v))
+                {
+                    return currentVersion >= v;
+                }
+                return false;
+            });
+
+            if (removed <= 0) return;
+            Save();
+        }
+        Changed?.Invoke();
+    }
+
     private void Load()
     {
         try

@@ -30,6 +30,8 @@ public sealed class AppSettings
     public bool RunAtStartup { get; set; } = true;
     public bool StartMinimized { get; set; } = true;
     public bool MinimizeToTrayOnClose { get; set; } = true;
+    public bool PlaySoundOnPrompt { get; set; } = true;
+    public string? CustomSoundPath { get; set; } = null;
     public bool PopupAutoBlockEnabled { get; set; } = true;
     public int PopupAutoBlockSeconds { get; set; } = 300;
     public bool MainWindowBoundsSaved { get; set; } = false;

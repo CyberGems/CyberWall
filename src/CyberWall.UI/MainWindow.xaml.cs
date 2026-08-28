@@ -149,6 +149,7 @@ public partial class MainWindow : Window
 
     internal async void CheckForUpdatesOnStartup()
     {
+        _notifications.PurgeObsoleteUpdateNotifications(UpdateService.GetCurrentVersion());
         if (_hasCheckedUpdates || !App.Settings.AutoCheckForUpdates) return;
         _hasCheckedUpdates = true;
         try
@@ -159,6 +160,7 @@ public partial class MainWindow : Window
             {
                 Dispatcher.Invoke(() =>
                 {
+                    _notifications.PurgeObsoleteUpdateNotifications(UpdateService.GetCurrentVersion());
                     _notifications.Add(AppNotificationKind.UpdateAvailable, detail: result.LatestVersionLabel);
                     var choice = ConfirmDialog.Show(
                         this,
@@ -175,6 +177,10 @@ public partial class MainWindow : Window
                         _ = about.StartUpdateDownloadAsync(result);
                     }
                 });
+            }
+            else
+            {
+                Dispatcher.Invoke(() => _notifications.PurgeObsoleteUpdateNotifications(UpdateService.GetCurrentVersion()));
             }
         }
         catch { }

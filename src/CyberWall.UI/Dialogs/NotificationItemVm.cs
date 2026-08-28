@@ -92,6 +92,16 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
             ? (string.IsNullOrWhiteSpace(n.AppPath) ? "" : System.IO.Path.GetFileName(n.AppPath))
             : n.AppName;
 
+        bool isUpdateActive = true;
+        if (n.Kind == AppNotificationKind.UpdateAvailable)
+        {
+            var verStr = (n.Detail ?? n.AppName ?? "").Trim().TrimStart('v', 'V');
+            if (Version.TryParse(verStr, out var v))
+            {
+                isUpdateActive = v > Services.UpdateService.GetCurrentVersion();
+            }
+        }
+
         var (title, desc) = n.Kind switch
         {
             AppNotificationKind.SilentBlock => (
@@ -102,7 +112,7 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
                 Strings.T("NotifProtectionOffDesc")),
             AppNotificationKind.UpdateAvailable => (
                 Strings.T("NotifUpdateTitle"),
-                Strings.T("NotifUpdateDesc", n.Detail ?? "")),
+                isUpdateActive ? Strings.T("NotifUpdateDesc", n.Detail ?? "") : Strings.T("AlreadyUpdated")),
             _ => (
                 Strings.T("AutoBlockedTitle"),
                 Strings.T("AutoBlockedDesc", string.IsNullOrEmpty(name) ? "?" : name))
@@ -121,7 +131,7 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
             TimeLabel = FormatRelative(n.Timestamp),
             Title = title,
             Description = desc,
-            ShowAction = showAllow || n.Kind is AppNotificationKind.ProtectionOff or AppNotificationKind.UpdateAvailable,
+            ShowAction = showAllow || n.Kind is AppNotificationKind.ProtectionOff || (n.Kind is AppNotificationKind.UpdateAvailable && isUpdateActive),
             ActionLabel = n.Kind switch
             {
                 AppNotificationKind.ProtectionOff => Strings.T("TurnProtectionOn"),

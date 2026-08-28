@@ -58,6 +58,8 @@ public class PromptManager
                 {
                     _activeStack.AddCard(ev);
                 }
+
+                PromptSoundService.PlayPromptSound();
             }
             catch
             {

@@ -48,6 +48,7 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
 
         SelectPositionUi(s.NotificationPosition);
         PopulateMonitors();
+        SoundToggle.IsChecked = s.PlaySoundOnPrompt;
         StartupToggle.IsChecked = StartupHelper.IsStartupEnabled();
         StartMinimizedToggle.IsChecked = s.StartMinimized;
         MinimizeToTrayToggle.IsChecked = s.MinimizeToTrayOnClose;
@@ -173,6 +174,11 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
         PosDescLbl.Text = Strings.T("PosDesc");
         MonTitleLbl.Text = Strings.T("NotificationMonitor");
         MonDescLbl.Text = Strings.T("MonDesc");
+        SoundTitleLbl.Text = Strings.T("PromptSoundToggle");
+        SoundDescLbl.Text = Strings.T("PromptSoundDesc");
+        BrowseSoundBtn.Content = Strings.T("BrowseSound");
+        ResetSoundBtn.Content = Strings.T("ResetSound");
+        PreviewSoundBtn.ToolTip = Strings.T("PreviewSound");
         TestTitleLbl.Text = Strings.T("TestNotification");
         TestDescLbl.Text = Strings.T("TestNotifDesc");
         SystemHdrLbl.Text = Strings.T("SystemHeader");
@@ -188,9 +194,66 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
         ClearAllBtn.Content = Strings.T("ClearAllRulesShort");
         PreviewBtn.Content = Strings.T("PreviewPopup");
 
+        UpdateSoundUiState();
         UpdateStartupTogglesState();
         PopulateMonitors();
         PopulateAutoBlockWait();
+    }
+
+    private void UpdateSoundUiState()
+    {
+        var soundOn = _s.PlaySoundOnPrompt;
+        SoundToggle.IsChecked = soundOn;
+        CustomSoundRow.IsEnabled = soundOn;
+        CustomSoundRow.Opacity = soundOn ? 1.0 : 0.45;
+        if (string.IsNullOrWhiteSpace(_s.CustomSoundPath))
+        {
+            SoundPathDisplay.Text = Strings.T("DefaultSound");
+            ResetSoundBtn.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            SoundPathDisplay.Text = System.IO.Path.GetFileName(_s.CustomSoundPath);
+            ResetSoundBtn.Visibility = Visibility.Visible;
+        }
+    }
+
+    private void SoundToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        _s.PlaySoundOnPrompt = SoundToggle.IsChecked == true;
+        _s.Save();
+        UpdateSoundUiState();
+    }
+
+    private void BrowseSound_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = Strings.T("CustomSound"),
+            Filter = Strings.T("SoundFilter"),
+            CheckFileExists = true
+        };
+        if (dlg.ShowDialog(this) == true)
+        {
+            _s.CustomSoundPath = dlg.FileName;
+            _s.Save();
+            UpdateSoundUiState();
+            PromptSoundService.PreviewSound(_s.CustomSoundPath);
+        }
+    }
+
+    private void ResetSound_Click(object sender, RoutedEventArgs e)
+    {
+        _s.CustomSoundPath = null;
+        _s.Save();
+        UpdateSoundUiState();
+        PromptSoundService.PreviewSound(null);
+    }
+
+    private void PreviewSound_Click(object sender, RoutedEventArgs e)
+    {
+        PromptSoundService.PreviewSound(_s.CustomSoundPath);
     }
 
     private void ClearAllRules_Click(object sender, RoutedEventArgs e)

@@ -29,6 +29,7 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
         _onAllow = onAllow;
         _onEnableProtection = onEnableProtection;
         _onDownloadUpdate = onDownloadUpdate;
+        store.PurgeObsoleteUpdateNotifications(UpdateService.GetCurrentVersion());
         _openedUnread = store.All.Where(n => !n.Read).Select(n => n.Id).ToHashSet();
         store.MarkAllRead();
 
