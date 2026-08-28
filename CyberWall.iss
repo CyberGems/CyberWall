@@ -1,4 +1,4 @@
-; Script generated for CyberWall
+﻿; Script generated for CyberWall
 ; Windows Filtering Platform Application Firewall
 ; Built by CyberGems (https://cybergems.org)
 
@@ -55,13 +55,19 @@ Source: ".\publish-win64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdi
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"; IconFilename: "{app}\Assets\CyberWall.ico"
 Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon; IconFilename: "{app}\Assets\CyberWall.ico"
-Name: "{userstartup}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: startup; IconFilename: "{app}\Assets\CyberWall.ico"
+; Startup is managed via Task Scheduler in [Run] for admin elevation
 
 [Registry]
 Root: HKCU; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"; ValueType: string; ValueName: "{app}\{#AppExeName}"; ValueData: "~ RUNASADMIN HIGHDPIAWARE"; Flags: uninsdeletevalue
 Root: HKLM; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"; ValueType: string; ValueName: "{app}\{#AppExeName}"; ValueData: "~ RUNASADMIN HIGHDPIAWARE"; Flags: uninsdeletevalue
 
 [Run]
+Filename: "schtasks"; Parameters: "create /tn ""CyberWall"" /tr """"{app}\{#AppExeName}"""" /sc onlogon /rl highest /f"; Tasks: startup; Flags: runhidden
 Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""CyberWall-Allow-CyberWall"" dir=out action=allow program=""{app}\{#AppExeName}"" enable=yes profile=any"; Flags: runhidden
 Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""CyberWall-Allow-CyberWall-in"" dir=in action=allow program=""{app}\{#AppExeName}"" enable=yes profile=any"; Flags: runhidden
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall shellexec runascurrentuser
+
+[UninstallRun]
+Filename: "schtasks"; Parameters: "delete /tn ""CyberWall"" /f"; Flags: runhidden
+Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""CyberWall-Allow-CyberWall"""; Flags: runhidden
+Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""CyberWall-Allow-CyberWall-in"""; Flags: runhidden

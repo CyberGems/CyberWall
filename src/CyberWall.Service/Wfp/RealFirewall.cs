@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using CyberWall.Common;
 using Microsoft.Win32;
@@ -69,6 +69,8 @@ public static class RealFirewall
             AddFwPortRule("CyberWall-Allow-Core-DNS-TCP", 53, isUdp: false, outbound: true);
             AddFwPortRule("CyberWall-Allow-Core-DHCP-Out", 67, isUdp: true, outbound: true);
             AddFwPortRule("CyberWall-Allow-Core-DHCP-Client-Out", 68, isUdp: true, outbound: true);
+            AddFwIpRule("CyberWall-Allow-Core-Loopback-Out", "127.0.0.1/8,::1", outbound: true);
+            AddFwIpRule("CyberWall-Allow-Core-Loopback-In", "127.0.0.1/8,::1", outbound: false);
         }
         catch { }
     }
@@ -304,6 +306,29 @@ public static class RealFirewall
 
         var dir = outbound ? "out" : "in";
         RunNetsh($"advfirewall firewall add rule name=\"{name}\" dir={dir} action=block enable=yes profile=any");
+    }
+
+    private static void AddFwIpRule(string name, string ipAddresses, bool outbound)
+    {
+        try
+        {
+            var tRule = Type.GetTypeFromProgID("HNetCfg.FWRule");
+            if (tRule != null && GetFwPolicy() is { } policy && Activator.CreateInstance(tRule) is { } rule)
+            {
+                ((dynamic)rule).Name = name;
+                ((dynamic)rule).RemoteAddresses = ipAddresses;
+                ((dynamic)rule).Action = 1; // Allow
+                ((dynamic)rule).Direction = outbound ? 2 : 1; // 2 = Out, 1 = In
+                ((dynamic)rule).Profiles = 0x7FFFFFFF;
+                ((dynamic)rule).Enabled = true;
+                ((dynamic)policy).Rules.Add(rule);
+                return;
+            }
+        }
+        catch (Exception ex) { Debug.WriteLine(ex); }
+
+        var dir = outbound ? "out" : "in";
+        RunNetsh($"advfirewall firewall add rule name=\"{name}\" dir={dir} action=allow remoteip=\"{ipAddresses}\" enable=yes profile=any");
     }
 
     private static void AddFwPortRule(string name, int port, bool isUdp, bool outbound)

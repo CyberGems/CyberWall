@@ -1,4 +1,4 @@
-<Window x:Class="CyberWall.UI.Dialogs.AboutWindow"
+﻿<Window x:Class="CyberWall.UI.Dialogs.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="About ᐧ CyberWall"
@@ -154,7 +154,7 @@
                                     <TextBlock FontSize="28" FontWeight="Bold" FontFamily="Segoe UI Variable Display">
                                         <Run Text="Cyber" Foreground="{DynamicResource TextBrush}"/><Run Text="Wall" Foreground="{DynamicResource AccentBrush}"/>
                                     </TextBlock>
-                                    <TextBlock x:Name="AboutVersionText" Text="Version v1.6.0" FontSize="13" Foreground="{DynamicResource SubTextBrush}" Margin="0,3,0,0"/>
+                                    <TextBlock x:Name="AboutVersionText" Text="Version v1.6.1" FontSize="13" Foreground="{DynamicResource SubTextBrush}" Margin="0,3,0,0"/>
                                 </StackPanel>
                             </StackPanel>
 
