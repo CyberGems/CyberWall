@@ -1,4 +1,4 @@
-﻿<Window x:Class="CyberWall.UI.SettingsWindow"
+<Window x:Class="CyberWall.UI.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:CyberWall.UI.Controls"
@@ -461,10 +461,23 @@
 
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
                                     <TextBlock x:Name="StartupTitleLbl" Text="Ejecutar al iniciar Windows" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextBrush}"/>
-                                    <TextBlock x:Name="StartupDescLbl" Text="Inicia CyberWall minimizado en la bandeja del sistema al encender el equipo." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                    <TextBlock x:Name="StartupDescLbl" Text="Inicia CyberWall automáticamente al iniciar sesión en Windows." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                                 </StackPanel>
 
                                 <CheckBox x:Name="StartupToggle" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}" VerticalAlignment="Center" Click="StartupToggle_Click"/>
+                            </Grid>
+
+                            <!-- 1.1 Conditional Start Minimized Sub-item -->
+                            <Grid x:Name="StartMinimizedRow" MinHeight="38" Margin="44,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <TextBlock x:Name="StartMinimizedTitleLbl" Text="Iniciar minimizado" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                                    <TextBlock x:Name="StartMinimizedDescLbl" Text="Inicia CyberWall oculto en la bandeja del sistema en lugar de abrir la ventana." FontSize="10.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <CheckBox x:Name="StartMinimizedToggle" Grid.Column="1" Style="{StaticResource ModernToggleSwitch}" VerticalAlignment="Center" Click="StartMinimizedToggle_Click"/>
                             </Grid>
 
                             <!-- Divider -->

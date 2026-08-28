@@ -97,6 +97,20 @@ public partial class MainWindow : Window
         const int WM_RBUTTONDOWN = 0x0204;
         const int WM_NCRBUTTONDOWN = 0x00A4;
 
+        if (App.WM_SHOW_MAIN_WINDOW != 0 && msg == App.WM_SHOW_MAIN_WINDOW)
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                Show();
+                if (WindowState == WindowState.Minimized)
+                    WindowState = WindowState.Normal;
+                Activate();
+                Focus();
+            });
+            handled = true;
+            return IntPtr.Zero;
+        }
+
         if (msg == WM_MOUSEACTIVATE)
         {
             NotifyActiveModalAttention();
@@ -131,9 +145,12 @@ public partial class MainWindow : Window
         catch { }
     }
 
-    private async void CheckForUpdatesOnStartup()
+    private bool _hasCheckedUpdates;
+
+    internal async void CheckForUpdatesOnStartup()
     {
-        if (!App.Settings.AutoCheckForUpdates) return;
+        if (_hasCheckedUpdates || !App.Settings.AutoCheckForUpdates) return;
+        _hasCheckedUpdates = true;
         try
         {
             await Task.Delay(3000);

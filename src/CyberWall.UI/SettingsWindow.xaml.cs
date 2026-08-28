@@ -49,6 +49,7 @@ public partial class SettingsWindow : Window
         SelectPositionUi(s.NotificationPosition);
         PopulateMonitors();
         StartupToggle.IsChecked = StartupHelper.IsStartupEnabled();
+        StartMinimizedToggle.IsChecked = s.StartMinimized;
         MinimizeToTrayToggle.IsChecked = s.MinimizeToTrayOnClose;
         AutoBlockToggle.IsChecked = s.PopupAutoBlockEnabled;
         PopulateAutoBlockWait();
@@ -146,6 +147,13 @@ public partial class SettingsWindow : Window
         _loading = false;
     }
 
+    private void UpdateStartupTogglesState()
+    {
+        var startupOn = StartupToggle.IsChecked == true;
+        StartMinimizedRow.IsEnabled = startupOn;
+        StartMinimizedRow.Opacity = startupOn ? 1.0 : 0.45;
+    }
+
     private void UpdateTexts()
     {
         var es = _s.Language == Lang.Es;
@@ -170,6 +178,8 @@ public partial class SettingsWindow : Window
         SystemHdrLbl.Text = Strings.T("SystemHeader");
         StartupTitleLbl.Text = Strings.T("RunAtStartup");
         StartupDescLbl.Text = Strings.T("RunAtStartupDesc");
+        StartMinimizedTitleLbl.Text = Strings.T("StartMinimized");
+        StartMinimizedDescLbl.Text = Strings.T("StartMinimizedDesc");
         MinimizeToTrayTitleLbl.Text = Strings.T("MinimizeToTrayOnClose");
         MinimizeToTrayDescLbl.Text = Strings.T("MinimizeToTrayOnCloseDesc");
         AutoBlockWaitLbl.Text = Strings.T("PopupAutoBlockWait");
@@ -178,6 +188,7 @@ public partial class SettingsWindow : Window
         ClearAllBtn.Content = Strings.T("ClearAllRulesShort");
         PreviewBtn.Content = Strings.T("PreviewPopup");
 
+        UpdateStartupTogglesState();
         PopulateMonitors();
         PopulateAutoBlockWait();
     }
@@ -199,8 +210,20 @@ public partial class SettingsWindow : Window
         if (_loading) return;
         var enabled = StartupToggle.IsChecked == true;
         _s.RunAtStartup = enabled;
-        StartupHelper.SetStartupEnabled(enabled);
+        StartupHelper.SetStartupEnabled(enabled, _s.StartMinimized);
         _s.Save();
+        UpdateStartupTogglesState();
+    }
+
+    private void StartMinimizedToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        _s.StartMinimized = StartMinimizedToggle.IsChecked == true;
+        _s.Save();
+        if (StartupToggle.IsChecked == true)
+        {
+            StartupHelper.SetStartupEnabled(true, _s.StartMinimized);
+        }
     }
 
     private void MinimizeToTrayToggle_Click(object sender, RoutedEventArgs e)

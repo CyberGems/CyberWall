@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using Microsoft.Win32;
 
@@ -35,7 +35,7 @@ public static class StartupHelper
         }
     }
 
-    public static void SetStartupEnabled(bool enable)
+    public static void SetStartupEnabled(bool enable, bool startMinimized = true)
     {
         try
         {
@@ -48,7 +48,7 @@ public static class StartupHelper
                 if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
                 {
                     // Elevated apps require a Scheduled Task with HIGHEST runlevel to start at logon without UAC prompts
-                    CreateScheduledTask(exePath);
+                    CreateScheduledTask(exePath, startMinimized);
                 }
             }
             else
@@ -86,7 +86,7 @@ public static class StartupHelper
         }
     }
 
-    private static void CreateScheduledTask(string exePath)
+    private static void CreateScheduledTask(string exePath, bool startMinimized = true)
     {
         try
         {
@@ -102,7 +102,8 @@ public static class StartupHelper
             psi.ArgumentList.Add("/TN");
             psi.ArgumentList.Add(TaskName);
             psi.ArgumentList.Add("/TR");
-            psi.ArgumentList.Add($"\"{exePath}\"");
+            var trCommand = startMinimized ? $"\"{exePath}\" --minimized" : $"\"{exePath}\"";
+            psi.ArgumentList.Add(trCommand);
             psi.ArgumentList.Add("/SC");
             psi.ArgumentList.Add("ONLOGON");
             psi.ArgumentList.Add("/RL");
