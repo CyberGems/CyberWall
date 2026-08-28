@@ -980,38 +980,38 @@
                                                 <DataGridTemplateColumn x:Name="AllowColActivity" Header="Actividad" Width="78" CanUserSort="True" SortMemberPath="ActivityLevel" HeaderStyle="{StaticResource StateColumnHeader}">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
-                                                            <Grid Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent"
+                                                            <Grid Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent"
                                                                   ToolTip="{Binding ActivityTooltip}"
                                                                   ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="0" ToolTipService.ShowDuration="6000">
                                                                 <!-- Idle State Dot -->
-                                                                <Ellipse x:Name="IdleDot" Width="7" Height="7" Fill="{DynamicResource SubTextBrush}" Opacity="0.3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                <Ellipse x:Name="IdleDot" Width="5.5" Height="5.5" Fill="{DynamicResource SubTextBrush}" Opacity="0.3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
                                                                 <!-- Active State Glowing Green LED -->
                                                                 <Grid x:Name="ActiveLed" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                                     <!-- Soft Halo Pulse Ring -->
-                                                                    <Ellipse x:Name="ActiveHalo" Width="16" Height="16" Fill="#22C55E" Opacity="0.22" RenderTransformOrigin="0.5,0.5">
+                                                                    <Ellipse x:Name="ActiveHalo" Width="12" Height="12" Fill="#22C55E" Opacity="0.22" RenderTransformOrigin="0.5,0.5">
                                                                         <Ellipse.RenderTransform>
                                                                             <ScaleTransform ScaleX="1.0" ScaleY="1.0"/>
                                                                         </Ellipse.RenderTransform>
                                                                     </Ellipse>
                                                                     <!-- Solid Core Dot -->
-                                                                    <Ellipse Width="7.5" Height="7.5" Fill="#22C55E"/>
+                                                                    <Ellipse Width="5.5" Height="5.5" Fill="#22C55E"/>
                                                                     <!-- Crisp highlight dot -->
-                                                                    <Ellipse Width="2.5" Height="2.5" Fill="#FFFFFF" Opacity="0.75" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-1,-1,0,0"/>
+                                                                    <Ellipse Width="2" Height="2" Fill="#FFFFFF" Opacity="0.75" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-0.7,-0.7,0,0"/>
                                                                 </Grid>
 
                                                                 <!-- Blocked Attempts Glowing Orange LED -->
                                                                 <Grid x:Name="BlockedLed" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                                     <!-- Soft Halo Pulse Ring -->
-                                                                    <Ellipse x:Name="BlockedHalo" Width="16" Height="16" Fill="#F97316" Opacity="0.28" RenderTransformOrigin="0.5,0.5">
+                                                                    <Ellipse x:Name="BlockedHalo" Width="12" Height="12" Fill="#F97316" Opacity="0.25" RenderTransformOrigin="0.5,0.5">
                                                                         <Ellipse.RenderTransform>
                                                                             <ScaleTransform ScaleX="1.0" ScaleY="1.0"/>
                                                                         </Ellipse.RenderTransform>
                                                                     </Ellipse>
                                                                     <!-- Solid Core Dot -->
-                                                                    <Ellipse Width="7.5" Height="7.5" Fill="#F97316"/>
+                                                                    <Ellipse Width="5.5" Height="5.5" Fill="#F97316"/>
                                                                     <!-- Crisp highlight dot -->
-                                                                    <Ellipse Width="2.5" Height="2.5" Fill="#FFFFFF" Opacity="0.8" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-1,-1,0,0"/>
+                                                                    <Ellipse Width="2" Height="2" Fill="#FFFFFF" Opacity="0.8" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-0.7,-0.7,0,0"/>
                                                                 </Grid>
                                                             </Grid>
                                                             <DataTemplate.Triggers>
@@ -1022,9 +1022,9 @@
                                                                     <DataTrigger.EnterActions>
                                                                         <BeginStoryboard x:Name="GreenPulseAllow">
                                                                             <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                                                <DoubleAnimation Storyboard.TargetName="ActiveHalo" Storyboard.TargetProperty="Opacity" From="0.10" To="0.45" Duration="0:0:1.3"/>
-                                                                                <DoubleAnimation Storyboard.TargetName="ActiveHalo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="0.82" To="1.22" Duration="0:0:1.3"/>
-                                                                                <DoubleAnimation Storyboard.TargetName="ActiveHalo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.82" To="1.22" Duration="0:0:1.3"/>
+                                                                                <DoubleAnimation Storyboard.TargetName="ActiveHalo" Storyboard.TargetProperty="Opacity" From="0.14" To="0.30" Duration="0:0:1.6"/>
+                                                                                <DoubleAnimation Storyboard.TargetName="ActiveHalo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="0.94" To="1.06" Duration="0:0:1.6"/>
+                                                                                <DoubleAnimation Storyboard.TargetName="ActiveHalo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.94" To="1.06" Duration="0:0:1.6"/>
                                                                             </Storyboard>
                                                                         </BeginStoryboard>
                                                                     </DataTrigger.EnterActions>
@@ -1039,9 +1039,9 @@
                                                                     <DataTrigger.EnterActions>
                                                                         <BeginStoryboard x:Name="OrangePulseAllow">
                                                                             <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                                                <DoubleAnimation Storyboard.TargetName="BlockedHalo" Storyboard.TargetProperty="Opacity" From="0.12" To="0.48" Duration="0:0:1.0"/>
-                                                                                <DoubleAnimation Storyboard.TargetName="BlockedHalo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="0.82" To="1.22" Duration="0:0:1.0"/>
-                                                                                <DoubleAnimation Storyboard.TargetName="BlockedHalo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.82" To="1.22" Duration="0:0:1.0"/>
+                                                                                <DoubleAnimation Storyboard.TargetName="BlockedHalo" Storyboard.TargetProperty="Opacity" From="0.15" To="0.32" Duration="0:0:1.3"/>
+                                                                                <DoubleAnimation Storyboard.TargetName="BlockedHalo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="0.94" To="1.06" Duration="0:0:1.3"/>
+                                                                                <DoubleAnimation Storyboard.TargetName="BlockedHalo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.94" To="1.06" Duration="0:0:1.3"/>
                                                                             </Storyboard>
                                                                         </BeginStoryboard>
                                                                     </DataTrigger.EnterActions>
