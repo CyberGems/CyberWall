@@ -206,7 +206,7 @@ If you'd like to support this work, a donation would mean a lot. Thank you! 🙏
 </p>
 
 <details>
-<summary><b>Crypto donations (BTC, ETH, USDT, LTC) — choose the correct network</b> &nbsp;<span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#F7931A;color:#fff;text-align:center;font-size:11px;line-height:18px;vertical-align:middle" title="BTC">₿</span> <span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#627EEA;color:#fff;text-align:center;font-size:10px;line-height:18px;vertical-align:middle" title="ETH">♦</span> <span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#26A17B;color:#fff;text-align:center;font-size:11px;line-height:18px;vertical-align:middle" title="USDT">₮</span> <span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#345D9D;color:#fff;text-align:center;font-size:11px;line-height:18px;vertical-align:middle" title="LTC">Ł</span></summary>
+<summary style="text-align:center"><b>Crypto donations (BTC, ETH, USDT, LTC)</b></summary>
 
 | Asset | Network | Address | QR |
 |---|---|---|---|
