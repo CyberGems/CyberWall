@@ -205,8 +205,12 @@ If you'd like to support this work, a donation would mean a lot. Thank you! 🙏
   <a href="https://buymeacoffee.com/cybergems"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee" /></a>
 </p>
 
+<div align="center">
+
 <details>
-<summary style="text-align:center"><b>Crypto donations (BTC, ETH, USDT, LTC)</b></summary>
+<summary><b>Crypto donations (BTC, ETH, USDT, LTC) — click to view addresses</b></summary>
+
+<div align="left">
 
 | Asset | Network | Address | QR |
 |---|---|---|---|
@@ -219,7 +223,11 @@ If you'd like to support this work, a donation would mean a lot. Thank you! 🙏
 
 > ⚠️ Send only the selected asset on the indicated network. Using the wrong network will result in permanent loss of funds.
 
+</div>
+
 </details>
+
+</div>
 
 ## License
 
