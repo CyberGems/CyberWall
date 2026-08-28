@@ -126,7 +126,8 @@ public sealed class AppInfoMonitorService
                     var oldVer = rule.LastKnownVersion!;
                     var msg = Strings.T("NotifAppVersionChangedDesc", rule.DisplayName, oldVer, currentVersion!);
                     notifications.Add(AppNotificationKind.AppVersionChanged, rule.AppPath, rule.DisplayName, msg);
-                    AppInfoToast.ShowToast(Strings.T("NotifAppVersionChangedTitle"), msg, rule.AppPath);
+                    if (App.Settings.ToastAppInfoEnabled)
+                        AppInfoToast.ShowToast(Strings.T("NotifAppVersionChangedTitle"), msg, rule.AppPath);
 
                     var updatedRule = rule with
                     {
@@ -140,7 +141,8 @@ public sealed class AppInfoMonitorService
                 {
                     var msg = Strings.T("NotifAppExecutableChangedDesc", rule.DisplayName);
                     notifications.Add(AppNotificationKind.AppExecutableChanged, rule.AppPath, rule.DisplayName, msg);
-                    AppInfoToast.ShowToast(Strings.T("NotifAppExecutableChangedTitle"), msg, rule.AppPath);
+                    if (App.Settings.ToastAppInfoEnabled)
+                        AppInfoToast.ShowToast(Strings.T("NotifAppExecutableChangedTitle"), msg, rule.AppPath);
 
                     var updatedRule = rule with
                     {
@@ -182,13 +184,15 @@ public sealed class AppInfoMonitorService
                 var oldVer = cached.Version!;
                 var msg = Strings.T("NotifAppVersionChangedDesc", rule.DisplayName, oldVer, currentVersion!);
                 notifications.Add(AppNotificationKind.AppVersionChanged, rule.AppPath, rule.DisplayName, msg);
-                AppInfoToast.ShowToast(Strings.T("NotifAppVersionChangedTitle"), msg, rule.AppPath);
+                if (App.Settings.ToastAppInfoEnabled)
+                    AppInfoToast.ShowToast(Strings.T("NotifAppVersionChangedTitle"), msg, rule.AppPath);
             }
             else
             {
                 var msg = Strings.T("NotifAppExecutableChangedDesc", rule.DisplayName);
                 notifications.Add(AppNotificationKind.AppExecutableChanged, rule.AppPath, rule.DisplayName, msg);
-                AppInfoToast.ShowToast(Strings.T("NotifAppExecutableChangedTitle"), msg, rule.AppPath);
+                if (App.Settings.ToastAppInfoEnabled)
+                    AppInfoToast.ShowToast(Strings.T("NotifAppExecutableChangedTitle"), msg, rule.AppPath);
             }
 
             var updatedRule = rule with
@@ -206,6 +210,11 @@ public sealed class AppInfoMonitorService
     {
         if (string.IsNullOrWhiteSpace(val)) return null;
         var trimmed = val.Trim();
+        var plusIdx = trimmed.IndexOf('+');
+        if (plusIdx > 0)
+        {
+            trimmed = trimmed[..plusIdx].Trim();
+        }
         return trimmed.Length == 0 ? null : trimmed;
     }
 }

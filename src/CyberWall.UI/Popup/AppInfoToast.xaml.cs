@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Automation;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -9,13 +10,21 @@ using CyberWall.UI.Services;
 
 namespace CyberWall.UI.Popup;
 
+public enum ToastBadgeType
+{
+    Info,
+    Success,
+    Warning,
+    Danger
+}
+
 public partial class AppInfoToast : Window
 {
     private static readonly List<AppInfoToast> _active = new();
     private static readonly PathToIconConverter IconConv = new();
     private readonly DispatcherTimer _autoCloseTimer;
 
-    public AppInfoToast(string title, string message, string? appPath)
+    public AppInfoToast(string title, string message, string? appPath = null, ToastBadgeType badgeType = ToastBadgeType.Info, string? badgeText = null)
     {
         InitializeComponent();
 
@@ -28,17 +37,13 @@ public partial class AppInfoToast : Window
 
         TitleLbl.Text = string.IsNullOrWhiteSpace(title) ? Strings.T("AppInfoMonitor") : title;
         DescLbl.Text = message;
-        BadgeLbl.Text = "INFO";
         CloseBtn.ToolTip = Strings.T("Close");
         AutomationProperties.SetName(CloseBtn, Strings.T("Close"));
 
-        if (!string.IsNullOrWhiteSpace(appPath))
-        {
-            var icon = IconConv.Convert(appPath, typeof(ImageSource), null!, null!) as ImageSource;
-            if (icon != null) AppIconImg.Source = icon;
-        }
+        ApplyBadgeStyle(badgeType, badgeText);
+        ApplyIcon(appPath, badgeType);
 
-        _autoCloseTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(9) };
+        _autoCloseTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(7) };
         _autoCloseTimer.Tick += (_, _) =>
         {
             _autoCloseTimer.Stop();
@@ -55,12 +60,81 @@ public partial class AppInfoToast : Window
         MouseLeftButtonDown += OnBodyClick;
     }
 
-    public static void ShowToast(string title, string message, string? appPath)
+    private void ApplyBadgeStyle(ToastBadgeType type, string? customBadge)
+    {
+        switch (type)
+        {
+            case ToastBadgeType.Success:
+                BadgeBorder.SetResourceReference(Border.BackgroundProperty, "BadgeAllowBgBrush");
+                BadgeBorder.SetResourceReference(Border.BorderBrushProperty, "BadgeAllowFgBrush");
+                BadgeLbl.SetResourceReference(TextBlock.ForegroundProperty, "BadgeAllowFgBrush");
+                BadgeLbl.Text = customBadge ?? (Strings.Current == Lang.Es ? "ACTIVO" : "ONLINE");
+                break;
+            case ToastBadgeType.Danger:
+                BadgeBorder.SetResourceReference(Border.BackgroundProperty, "BadgeBlockBgBrush");
+                BadgeBorder.SetResourceReference(Border.BorderBrushProperty, "BadgeBlockFgBrush");
+                BadgeLbl.SetResourceReference(TextBlock.ForegroundProperty, "BadgeBlockFgBrush");
+                BadgeLbl.Text = customBadge ?? (Strings.Current == Lang.Es ? "ALERTA" : "OFFLINE");
+                break;
+            case ToastBadgeType.Warning:
+                BadgeBorder.SetResourceReference(Border.BackgroundProperty, "BadgeWarnBgBrush");
+                BadgeBorder.SetResourceReference(Border.BorderBrushProperty, "BadgeWarnFgBrush");
+                BadgeLbl.SetResourceReference(TextBlock.ForegroundProperty, "BadgeWarnFgBrush");
+                BadgeLbl.Text = customBadge ?? (Strings.Current == Lang.Es ? "AVISO" : "WARN");
+                break;
+            case ToastBadgeType.Info:
+            default:
+                BadgeBorder.SetResourceReference(Border.BackgroundProperty, "BadgeWarnBgBrush");
+                BadgeBorder.SetResourceReference(Border.BorderBrushProperty, "BadgeWarnFgBrush");
+                BadgeLbl.SetResourceReference(TextBlock.ForegroundProperty, "BadgeWarnFgBrush");
+                BadgeLbl.Text = customBadge ?? "INFO";
+                break;
+        }
+    }
+
+    private void ApplyIcon(string? appPath, ToastBadgeType type)
+    {
+        AppIconImg.Visibility = Visibility.Collapsed;
+        WifiOffIcon.Visibility = Visibility.Collapsed;
+        WifiOnIcon.Visibility = Visibility.Collapsed;
+        ShieldWarnIcon.Visibility = Visibility.Collapsed;
+        ShieldSuccessIcon.Visibility = Visibility.Collapsed;
+        InfoIcon.Visibility = Visibility.Collapsed;
+
+        if (!string.IsNullOrWhiteSpace(appPath))
+        {
+            var icon = IconConv.Convert(appPath, typeof(ImageSource), null!, null!) as ImageSource;
+            if (icon != null)
+            {
+                AppIconImg.Source = icon;
+                AppIconImg.Visibility = Visibility.Visible;
+                return;
+            }
+        }
+
+        switch (type)
+        {
+            case ToastBadgeType.Danger:
+                WifiOffIcon.Visibility = Visibility.Visible;
+                break;
+            case ToastBadgeType.Success:
+                WifiOnIcon.Visibility = Visibility.Visible;
+                break;
+            case ToastBadgeType.Warning:
+                ShieldWarnIcon.Visibility = Visibility.Visible;
+                break;
+            default:
+                InfoIcon.Visibility = Visibility.Visible;
+                break;
+        }
+    }
+
+    public static void ShowToast(string title, string message, string? appPath = null, ToastBadgeType badgeType = ToastBadgeType.Info, string? badgeText = null)
     {
         System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
         {
             if (PopupWindowHelper.HasOpenPermissionPopup()) return;
-            var toast = new AppInfoToast(title, message, appPath);
+            var toast = new AppInfoToast(title, message, appPath, badgeType, badgeText);
             _active.Add(toast);
             toast.Show();
         });

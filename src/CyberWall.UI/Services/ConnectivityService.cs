@@ -157,10 +157,26 @@ public sealed class ConnectivityService
                 if (!online && (wasOnline || isFirstCheck))
                 {
                     _store.Add(AppNotificationKind.InternetLost);
+                    if (App.Settings.ToastInternetEventsEnabled)
+                    {
+                        Popup.AppInfoToast.ShowToast(
+                            Common.I18n.Strings.T("NotifInternetLostTitle"),
+                            Common.I18n.Strings.T("NotifInternetLostDesc"),
+                            appPath: null,
+                            Popup.ToastBadgeType.Danger);
+                    }
                 }
                 else if (online && !wasOnline && !isFirstCheck)
                 {
                     _store.Add(AppNotificationKind.InternetRestored);
+                    if (App.Settings.ToastInternetEventsEnabled)
+                    {
+                        Popup.AppInfoToast.ShowToast(
+                            Common.I18n.Strings.T("NotifInternetRestoredTitle"),
+                            Common.I18n.Strings.T("NotifInternetRestoredDesc"),
+                            appPath: null,
+                            Popup.ToastBadgeType.Success);
+                    }
                 }
             }
 

@@ -366,12 +366,15 @@ public partial class MainWindow : Window
         _notifications.Add(AppNotificationKind.AutoBlocked, ev.AppPath, ev.DisplayName,
             string.IsNullOrEmpty(ev.RemoteAddress) ? null : $"{ev.RemoteAddress}:{ev.RemotePort}");
         _tray?.NotifyAutoBlock(ev.DisplayName);
-        AutoBlockToast.ShowToast(ev, () =>
+        if (App.Settings.ToastAutoBlockEnabled)
         {
-            _svc.SetVerdict(ev.AppPath, Verdict.Allow, true, ev);
-            _notifications.MarkRelatedRead(AppNotificationKind.AutoBlocked, ev.AppPath);
-            RefreshRules(SearchBox.Text);
-        });
+            AutoBlockToast.ShowToast(ev, () =>
+            {
+                _svc.SetVerdict(ev.AppPath, Verdict.Allow, true, ev);
+                _notifications.MarkRelatedRead(AppNotificationKind.AutoBlocked, ev.AppPath);
+                RefreshRules(SearchBox.Text);
+            });
+        }
     }
 
     private void UpdateNotifBadge()
@@ -693,11 +696,19 @@ public partial class MainWindow : Window
             };
             _svc.Enable(m);
             _notifications.PurgeObsoleteProtectionOffNotifications();
+            if (App.Settings.ToastProtectionEventsEnabled)
+            {
+                AppInfoToast.ShowToast(Strings.T("NotifProtectionOn"), Strings.T("NotifProtectionOnDesc"), appPath: null, ToastBadgeType.Success);
+            }
         }
         else
         {
             _svc.Disable();
             _notifications.Add(AppNotificationKind.ProtectionOff);
+            if (App.Settings.ToastProtectionEventsEnabled)
+            {
+                AppInfoToast.ShowToast(Strings.T("NotifProtectionOffTitle"), Strings.T("NotifProtectionOffDesc"), appPath: null, ToastBadgeType.Warning);
+            }
         }
         App.Settings.FirewallEnabled = _svc.IsMasterOn;
         App.Settings.FirewallMode = (int)_svc.Mode;

@@ -34,6 +34,10 @@ public sealed class AppSettings
     public string? CustomSoundPath { get; set; } = null;
     public bool PopupAutoBlockEnabled { get; set; } = true;
     public int PopupAutoBlockSeconds { get; set; } = 300;
+    public bool ToastAppInfoEnabled { get; set; } = true;
+    public bool ToastInternetEventsEnabled { get; set; } = true;
+    public bool ToastProtectionEventsEnabled { get; set; } = true;
+    public bool ToastAutoBlockEnabled { get; set; } = true;
     public bool MainWindowBoundsSaved { get; set; } = false;
     public string MainWindowMonitor { get; set; } = "";
     public double MainWindowLeft { get; set; }

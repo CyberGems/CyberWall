@@ -49,6 +49,10 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
         SelectPositionUi(s.NotificationPosition);
         PopulateMonitors();
         SoundToggle.IsChecked = s.PlaySoundOnPrompt;
+        ToastAppInfoToggle.IsChecked = s.ToastAppInfoEnabled;
+        ToastInternetToggle.IsChecked = s.ToastInternetEventsEnabled;
+        ToastProtectionToggle.IsChecked = s.ToastProtectionEventsEnabled;
+        ToastAutoBlockToggle.IsChecked = s.ToastAutoBlockEnabled;
         StartupToggle.IsChecked = StartupHelper.IsStartupEnabled();
         StartMinimizedToggle.IsChecked = s.StartMinimized;
         MinimizeToTrayToggle.IsChecked = s.MinimizeToTrayOnClose;
@@ -181,6 +185,15 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
         PreviewSoundBtn.ToolTip = Strings.T("PreviewSound");
         TestTitleLbl.Text = Strings.T("TestNotification");
         TestDescLbl.Text = Strings.T("TestNotifDesc");
+        ToastHdrLbl.Text = Strings.T("ToastNotificationsHdr");
+        ToastAppInfoTitleLbl.Text = Strings.T("ToastAppInfoTitle");
+        ToastAppInfoDescLbl.Text = Strings.T("ToastAppInfoDesc");
+        ToastInternetTitleLbl.Text = Strings.T("ToastInternetTitle");
+        ToastInternetDescLbl.Text = Strings.T("ToastInternetDesc");
+        ToastProtectionTitleLbl.Text = Strings.T("ToastProtectionTitle");
+        ToastProtectionDescLbl.Text = Strings.T("ToastProtectionDesc");
+        ToastAutoBlockTitleLbl.Text = Strings.T("ToastAutoBlockTitle");
+        ToastAutoBlockDescLbl.Text = Strings.T("ToastAutoBlockDesc");
         SystemHdrLbl.Text = Strings.T("SystemHeader");
         StartupTitleLbl.Text = Strings.T("RunAtStartup");
         StartupDescLbl.Text = Strings.T("RunAtStartupDesc");
@@ -224,6 +237,16 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
         _s.PlaySoundOnPrompt = SoundToggle.IsChecked == true;
         _s.Save();
         UpdateSoundUiState();
+    }
+
+    private void ToastToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        _s.ToastAppInfoEnabled = ToastAppInfoToggle.IsChecked == true;
+        _s.ToastInternetEventsEnabled = ToastInternetToggle.IsChecked == true;
+        _s.ToastProtectionEventsEnabled = ToastProtectionToggle.IsChecked == true;
+        _s.ToastAutoBlockEnabled = ToastAutoBlockToggle.IsChecked == true;
+        _s.Save();
     }
 
     private void BrowseSound_Click(object sender, RoutedEventArgs e)
