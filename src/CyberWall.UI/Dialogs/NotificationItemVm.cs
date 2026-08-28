@@ -122,7 +122,7 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
                 isUpdateActive ? Strings.T("NotifUpdateDesc", n.Detail ?? "") : Strings.T("AlreadyUpdated")),
             AppNotificationKind.InternetLost => (
                 Strings.T("NotifInternetLostTitle"),
-                isOnline ? Strings.T("NotifInternetRestoredDesc") : Strings.T("NotifInternetLostDesc")),
+                Strings.T("NotifInternetLostDesc")),
             AppNotificationKind.InternetRestored => (
                 Strings.T("NotifInternetRestoredTitle"),
                 Strings.T("NotifInternetRestoredDesc")),

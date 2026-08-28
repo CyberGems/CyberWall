@@ -58,8 +58,10 @@ public partial class MainWindow : Window
         ProcessTrafficTracker.Instance.ActivityUpdated += OnActivityUpdated;
         ProcessTrafficTracker.Instance.Start();
         ConnectivityService.Instance.Start(_notifications);
+        AppInfoMonitorService.Instance.Start(_notifications, _svc);
         Closed += (_, _) =>
         {
+            AppInfoMonitorService.Instance.Stop();
             ConnectivityService.Instance.Stop();
             ProcessTrafficTracker.Instance.ActivityUpdated -= OnActivityUpdated;
             ProcessTrafficTracker.Instance.Stop();
@@ -334,7 +336,7 @@ public partial class MainWindow : Window
     private void OnAskConnection(ConnectionEvent ev)
     {
         RememberLastRemote(ev, isBlocked: false);
-        AppInfoMonitorService.Instance.CheckApp(ev.AppPath, _notifications, _svc);
+        AppInfoMonitorService.Instance.CheckApp(ev.AppPath);
         PromptManager.Instance.Enqueue(ev);
     }
 
@@ -343,7 +345,7 @@ public partial class MainWindow : Window
         Dispatcher.BeginInvoke(() =>
         {
             RememberLastRemote(ev, isBlocked: true);
-            AppInfoMonitorService.Instance.CheckApp(ev.AppPath, _notifications, _svc);
+            AppInfoMonitorService.Instance.CheckApp(ev.AppPath);
             _notifications.Add(AppNotificationKind.SilentBlock, ev.AppPath, ev.DisplayName,
                 string.IsNullOrEmpty(ev.RemoteAddress) ? null : $"{ev.RemoteAddress}:{ev.RemotePort}");
         });
@@ -354,7 +356,7 @@ public partial class MainWindow : Window
         Dispatcher.BeginInvoke(() =>
         {
             RememberLastRemote(ev, isBlocked: true);
-            AppInfoMonitorService.Instance.CheckApp(ev.AppPath, _notifications, _svc);
+            AppInfoMonitorService.Instance.CheckApp(ev.AppPath);
         });
     }
 
