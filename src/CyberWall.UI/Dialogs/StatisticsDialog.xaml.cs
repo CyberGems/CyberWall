@@ -12,7 +12,6 @@ using CyberWall.Common.Models;
 using CyberWall.Service.Engine;
 using CyberWall.UI.Services;
 using WpfClipboard = System.Windows.Clipboard;
-using WpfMessageBox = System.Windows.MessageBox;
 
 namespace CyberWall.UI.Dialogs;
 
@@ -395,7 +394,7 @@ public partial class StatisticsDialog : Window
             sb.AppendLine("==================================================");
 
             WpfClipboard.SetText(sb.ToString());
-            WpfMessageBox.Show(Strings.T("StatsSummaryCopied"), "CyberWall", MessageBoxButton.OK, MessageBoxImage.Information);
+            ConfirmDialog.Show(this, "CyberWall", Strings.T("StatsSummaryCopied"), Strings.T("Ok"), null, ConfirmIconType.Check);
         }
         catch { }
     }

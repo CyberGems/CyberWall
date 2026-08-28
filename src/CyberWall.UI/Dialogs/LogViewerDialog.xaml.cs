@@ -10,7 +10,6 @@ using CyberWall.Common.Models;
 using CyberWall.Service.Engine;
 using CyberWall.UI.Services;
 using WpfClipboard = System.Windows.Clipboard;
-using WpfMessageBox = System.Windows.MessageBox;
 
 namespace CyberWall.UI.Dialogs;
 
@@ -148,7 +147,7 @@ public partial class LogViewerDialog : Window
             if (!string.IsNullOrEmpty(text))
             {
                 WpfClipboard.SetText(text);
-                WpfMessageBox.Show(Strings.T("CopiedToClipboard"), "CyberWall", MessageBoxButton.OK, MessageBoxImage.Information);
+                ConfirmDialog.Show(this, "CyberWall", Strings.T("CopiedToClipboard"), Strings.T("Ok"), null, ConfirmIconType.Check);
             }
         }
         catch { }
@@ -156,8 +155,15 @@ public partial class LogViewerDialog : Window
 
     private void Clear_Click(object sender, RoutedEventArgs e)
     {
-        var res = WpfMessageBox.Show(Strings.T("ClearLogConfirm"), "CyberWall", MessageBoxButton.YesNo, MessageBoxImage.Question);
-        if (res == MessageBoxResult.Yes)
+        var confirmed = ConfirmDialog.Show(
+            this,
+            Strings.T("ClearLog"),
+            Strings.T("ClearLogConfirm"),
+            Strings.T("ClearLog"),
+            Strings.T("Cancel"),
+            ConfirmIconType.Trash);
+
+        if (confirmed)
         {
             try
             {
