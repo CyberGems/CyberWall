@@ -22,7 +22,11 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
     public string? AppName { get; init; }
     public bool Highlight { get; init; }
     public string TimeLabel { get; init; } = "";
-    public bool HasAppIcon => !string.IsNullOrWhiteSpace(AppPath);
+    public bool HasAppIcon => (Kind is AppNotificationKind.AutoBlocked or AppNotificationKind.SilentBlock) && !string.IsNullOrWhiteSpace(AppPath);
+    public bool IsInternetLost => Kind == AppNotificationKind.InternetLost;
+    public bool IsInternetRestored => Kind == AppNotificationKind.InternetRestored;
+    public bool IsProtectionOff => Kind == AppNotificationKind.ProtectionOff;
+    public bool IsUpdate => Kind == AppNotificationKind.UpdateAvailable;
 
     public string Title
     {
@@ -86,7 +90,7 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
         ActionLabel = title;
     }
 
-    public static NotificationItemVm From(AppNotification n, bool highlight, bool isProtectionOn = false)
+    public static NotificationItemVm From(AppNotification n, bool highlight, bool isProtectionOn = false, bool isOnline = true)
     {
         var name = string.IsNullOrWhiteSpace(n.AppName)
             ? (string.IsNullOrWhiteSpace(n.AppPath) ? "" : System.IO.Path.GetFileName(n.AppPath))
@@ -115,6 +119,12 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
             AppNotificationKind.UpdateAvailable => (
                 Strings.T("NotifUpdateTitle"),
                 isUpdateActive ? Strings.T("NotifUpdateDesc", n.Detail ?? "") : Strings.T("AlreadyUpdated")),
+            AppNotificationKind.InternetLost => (
+                Strings.T("NotifInternetLostTitle"),
+                isOnline ? Strings.T("NotifInternetRestoredDesc") : Strings.T("NotifInternetLostDesc")),
+            AppNotificationKind.InternetRestored => (
+                Strings.T("NotifInternetRestoredTitle"),
+                Strings.T("NotifInternetRestoredDesc")),
             _ => (
                 Strings.T("AutoBlockedTitle"),
                 Strings.T("AutoBlockedDesc", string.IsNullOrEmpty(name) ? "?" : name))
@@ -122,6 +132,7 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
 
         var showAllow = (n.Kind is AppNotificationKind.AutoBlocked or AppNotificationKind.SilentBlock)
                         && !string.IsNullOrWhiteSpace(n.AppPath);
+        var showInternetRecheck = n.Kind == AppNotificationKind.InternetLost && !isOnline;
 
         return new NotificationItemVm
         {
@@ -133,11 +144,12 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
             TimeLabel = FormatRelative(n.Timestamp),
             Title = title,
             Description = desc,
-            ShowAction = showAllow || isProtectionOffActionActive || (n.Kind is AppNotificationKind.UpdateAvailable && isUpdateActive),
+            ShowAction = showAllow || isProtectionOffActionActive || (n.Kind is AppNotificationKind.UpdateAvailable && isUpdateActive) || showInternetRecheck,
             ActionLabel = n.Kind switch
             {
                 AppNotificationKind.ProtectionOff => Strings.T("TurnProtectionOn"),
                 AppNotificationKind.UpdateAvailable => Strings.T("Download"),
+                AppNotificationKind.InternetLost => Strings.T("NotifInternetRecheck"),
                 _ => Strings.T("AutoBlockedUndo")
             }
         };

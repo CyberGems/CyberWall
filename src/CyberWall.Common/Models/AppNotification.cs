@@ -5,7 +5,9 @@ public enum AppNotificationKind
     AutoBlocked = 0,
     SilentBlock = 1,
     ProtectionOff = 2,
-    UpdateAvailable = 3
+    UpdateAvailable = 3,
+    InternetLost = 4,
+    InternetRestored = 5
 }
 
 public sealed class AppNotification

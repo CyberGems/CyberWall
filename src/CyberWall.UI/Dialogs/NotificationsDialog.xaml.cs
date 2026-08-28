@@ -15,6 +15,7 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
     private readonly Action _onEnableProtection;
     private readonly Action _onDownloadUpdate;
     private readonly Func<bool>? _isProtectionOn;
+    private readonly Func<bool>? _isOnline;
     private bool _busy;
     private DateTime _lastAttentionTime = DateTime.MinValue;
     public bool OpenSettingsAfterClose { get; private set; }
@@ -24,13 +25,14 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
         ModalAttentionHelper.Trigger(this, OuterBorder, WindowScale, WindowGlow, ref _lastAttentionTime);
     }
 
-    public NotificationsDialog(NotificationStore store, Func<string, Task> onAllow, Action onEnableProtection, Action onDownloadUpdate, Func<bool>? isProtectionOn = null)
+    public NotificationsDialog(NotificationStore store, Func<string, Task> onAllow, Action onEnableProtection, Action onDownloadUpdate, Func<bool>? isProtectionOn = null, Func<bool>? isOnline = null)
     {
         _store = store;
         _onAllow = onAllow;
         _onEnableProtection = onEnableProtection;
         _onDownloadUpdate = onDownloadUpdate;
         _isProtectionOn = isProtectionOn;
+        _isOnline = isOnline;
         store.PurgeObsoleteUpdateNotifications(UpdateService.GetCurrentVersion());
         if (_isProtectionOn?.Invoke() == true)
         {
@@ -67,7 +69,8 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
     private void BindList()
     {
         bool isProt = _isProtectionOn?.Invoke() ?? false;
-        var items = _store.All.Select(n => NotificationItemVm.From(n, _openedUnread.Contains(n.Id), isProt)).ToList();
+        bool isOnline = _isOnline?.Invoke() ?? ConnectivityService.Instance.IsOnline;
+        var items = _store.All.Select(n => NotificationItemVm.From(n, _openedUnread.Contains(n.Id), isProt, isOnline)).ToList();
         NotifList.ItemsSource = items;
         CountBadge.Text = _openedUnread.Count > 0
             ? Strings.T("NotifUnread", _openedUnread.Count)
@@ -93,6 +96,9 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
             case AppNotificationKind.UpdateAvailable:
                 Close();
                 _onDownloadUpdate();
+                break;
+            case AppNotificationKind.InternetLost:
+                await CheckInternetAsync(vm);
                 break;
         }
     }
@@ -140,6 +146,37 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
             await Task.Delay(700);
             _store.Remove(vm.Id);
             _openedUnread.Remove(vm.Id);
+        }
+        finally
+        {
+            _busy = false;
+            BindList();
+        }
+    }
+
+    private async Task CheckInternetAsync(NotificationItemVm vm)
+    {
+        _busy = true;
+        vm.MarkBusy(Strings.T("NotifInternetChecking"));
+        await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Render);
+        try
+        {
+            bool online = await ConnectivityService.Instance.CheckConnectivityAsync(force: true);
+            if (online)
+            {
+                vm.MarkResolved(Strings.T("NotifInternetRestoredTitle"), Strings.T("NotifInternetRestoredDesc"));
+                await Task.Delay(900);
+                _store.Remove(vm.Id);
+                _openedUnread.Remove(vm.Id);
+            }
+            else
+            {
+                vm.IsBusy = false;
+                vm.ShowAction = true;
+                vm.ActionLabel = Strings.T("NotifInternetStillOffline");
+                await Task.Delay(1400);
+                vm.ActionLabel = Strings.T("NotifInternetRecheck");
+            }
         }
         finally
         {

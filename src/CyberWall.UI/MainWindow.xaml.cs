@@ -55,8 +55,10 @@ public partial class MainWindow : Window
         GeoCountry.Warm();
         ProcessTrafficTracker.Instance.ActivityUpdated += OnActivityUpdated;
         ProcessTrafficTracker.Instance.Start();
+        ConnectivityService.Instance.Start(_notifications);
         Closed += (_, _) =>
         {
+            ConnectivityService.Instance.Stop();
             ProcessTrafficTracker.Instance.ActivityUpdated -= OnActivityUpdated;
             ProcessTrafficTracker.Instance.Stop();
             GeoCountry.Updated -= OnGeoUpdated;
@@ -396,7 +398,8 @@ public partial class MainWindow : Window
                         _notifications.PurgeObsoleteProtectionOffNotifications();
                 },
                 OpenUpdateFromNotification,
-                isProtectionOn: () => _svc.IsMasterOn)
+                isProtectionOn: () => _svc.IsMasterOn,
+                isOnline: () => ConnectivityService.Instance.IsOnline)
             { Owner = this };
             dlg.ShowDialog();
             if (dlg.OpenSettingsAfterClose)

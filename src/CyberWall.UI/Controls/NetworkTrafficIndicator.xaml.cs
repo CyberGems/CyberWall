@@ -28,18 +28,11 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
 
     private readonly Stopwatch _stopwatch = new();
     private TimeSpan _lastRenderingTime;
-    private readonly DispatcherTimer _connectivityTimer = new() { Interval = TimeSpan.FromSeconds(30) };
     private readonly List<Packet> _packets = new();
-    private CancellationTokenSource? _connectivityCts;
     private bool _isActive;
     private FirewallMode _mode = FirewallMode.Ask;
     private ConnectivityState _connectivity = ConnectivityState.Unknown;
     private NetworkSpeedSnapshot? _latestSnapshot;
-
-    private static readonly HttpClient ConnectivityClient = new()
-    {
-        Timeout = TimeSpan.FromSeconds(3)
-    };
 
     private enum ConnectivityState
     {
@@ -53,15 +46,15 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         InitializeComponent();
         CreatePackets();
         RefreshLanguage();
-        _connectivityTimer.Tick += (_, _) => _ = CheckConnectivityAsync();
         Loaded += (_, _) =>
         {
             _stopwatch.Restart();
             _lastRenderingTime = _stopwatch.Elapsed;
             CompositionTarget.Rendering += OnRendering;
-            _connectivityTimer.Start();
-            _ = CheckConnectivityAsync();
             RefreshPackets();
+
+            ConnectivityService.Instance.ConnectivityChanged += OnConnectivityChanged;
+            SetConnectivity(ConnectivityService.Instance.IsOnline ? ConnectivityState.Online : ConnectivityState.Offline);
 
             NetworkSpeedService.Instance.SpeedUpdated += OnSpeedUpdated;
             NetworkSpeedService.Instance.Start();
@@ -71,15 +64,18 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         {
             CompositionTarget.Rendering -= OnRendering;
             _stopwatch.Stop();
-            _connectivityTimer.Stop();
-            _connectivityCts?.Cancel();
-            _connectivityCts = null;
+
+            ConnectivityService.Instance.ConnectivityChanged -= OnConnectivityChanged;
 
             NetworkSpeedService.Instance.SpeedUpdated -= OnSpeedUpdated;
             NetworkSpeedService.Instance.Stop();
         };
         SizeChanged += (_, _) => RefreshPackets();
-        NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
+    }
+
+    private void OnConnectivityChanged(bool online)
+    {
+        SetConnectivity(online ? ConnectivityState.Online : ConnectivityState.Offline);
     }
 
     private void OnSpeedUpdated(NetworkSpeedSnapshot snapshot)
@@ -244,72 +240,6 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
             };
         }
     }
-
-    private void OnNetworkAvailabilityChanged(object? sender, NetworkAvailabilityEventArgs e)
-    {
-        Dispatcher.BeginInvoke(() =>
-        {
-            if (!IsLoaded) return;
-            if (!e.IsAvailable)
-                SetConnectivity(ConnectivityState.Offline);
-            else
-                _ = CheckConnectivityAsync();
-        });
-    }
-
-    private async Task CheckConnectivityAsync()
-    {
-        if (!IsLoaded || Interlocked.CompareExchange(ref _connectivityCheck, 1, 0) != 0)
-            return;
-
-        _connectivityCts?.Cancel();
-        _connectivityCts?.Dispose();
-        _connectivityCts = new CancellationTokenSource();
-        var token = _connectivityCts.Token;
-        try
-        {
-            if (!NetworkInterface.GetIsNetworkAvailable())
-            {
-                SetConnectivity(ConnectivityState.Offline);
-                return;
-            }
-
-            bool online = false;
-            try
-            {
-                using var response = await ConnectivityClient.GetAsync(
-                    "http://www.msftconnecttest.com/connecttest.txt",
-                    HttpCompletionOption.ResponseHeadersRead,
-                    token).ConfigureAwait(true);
-                online = response.IsSuccessStatusCode;
-            }
-            catch
-            {
-                try
-                {
-                    using var response = await ConnectivityClient.GetAsync(
-                        "http://www.google.com/generate_204",
-                        HttpCompletionOption.ResponseHeadersRead,
-                        token).ConfigureAwait(true);
-                    online = response.IsSuccessStatusCode;
-                }
-                catch { }
-            }
-
-            SetConnectivity(online ? ConnectivityState.Online : ConnectivityState.Offline);
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch
-        {
-            SetConnectivity(ConnectivityState.Offline);
-        }
-        finally
-        {
-            Interlocked.Exchange(ref _connectivityCheck, 0);
-        }
-    }
-
-    private int _connectivityCheck;
 
     private void SetConnectivity(ConnectivityState state)
     {

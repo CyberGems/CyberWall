@@ -271,21 +271,48 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <Grid Width="36" Height="36" Margin="0,0,12,0" VerticalAlignment="Top">
-                                            <Border Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8">
-                                                <Image Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="20" Height="20" Visibility="{Binding HasAppIcon, Converter={StaticResource BoolToVis}}" RenderOptions.BitmapScalingMode="HighQuality" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                            <Path Data="M 6,8 C 6,4.7 8.7,2 12,2 C 15.3,2 18,4.7 18,8 L 18,13 L 21,17 L 3,17 L 6,13 Z" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.2" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent">
-                                                <Path.Style>
-                                                    <Style TargetType="Path">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Border CornerRadius="8" BorderThickness="1">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding HasAppIcon}" Value="False">
-                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            <DataTrigger Binding="{Binding IsInternetLost}" Value="True">
+                                                                <Setter Property="Background" Value="{DynamicResource BadgeBlockBgBrush}"/>
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource BadgeBlockFgBrush}"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsInternetRestored}" Value="True">
+                                                                <Setter Property="Background" Value="{DynamicResource BadgeAllowBgBrush}"/>
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource BadgeAllowFgBrush}"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsProtectionOff}" Value="True">
+                                                                <Setter Property="Background" Value="{DynamicResource BadgeWarnBgBrush}"/>
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource BadgeWarnFgBrush}"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsUpdate}" Value="True">
+                                                                <Setter Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
-                                                </Path.Style>
-                                            </Path>
+                                                </Border.Style>
+                                                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <!-- App Icon -->
+                                                    <Image Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="20" Height="20" Visibility="{Binding HasAppIcon, Converter={StaticResource BoolToVis}}" RenderOptions.BitmapScalingMode="HighQuality" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                                    <!-- Internet Lost Icon (WiFi with strike slash) -->
+                                                    <Path Data="M 12,19 L 12,19.01 M 8.5,15.5 C 10.5,13.8 13.5,13.8 15.5,15.5 M 5.5,12 C 9.2,8.5 14.8,8.5 18.5,12 M 2.5,8.5 C 8,3.5 16,3.5 21.5,8.5 M 3,3 L 21,21" Stroke="{DynamicResource BadgeBlockFgBrush}" StrokeThickness="1.5" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="17" Height="17" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent" Visibility="{Binding IsInternetLost, Converter={StaticResource BoolToVis}}"/>
+
+                                                    <!-- Internet Restored Icon (WiFi online / Waves) -->
+                                                    <Path Data="M 12,19 L 12,19.01 M 8.5,15.5 C 10.5,13.8 13.5,13.8 15.5,15.5 M 5.5,12 C 9.2,8.5 14.8,8.5 18.5,12 M 2.5,8.5 C 8,3.5 16,3.5 21.5,8.5" Stroke="{DynamicResource BadgeAllowFgBrush}" StrokeThickness="1.5" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="17" Height="17" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent" Visibility="{Binding IsInternetRestored, Converter={StaticResource BoolToVis}}"/>
+
+                                                    <!-- Protection Off Icon (Shield Exclamation) -->
+                                                    <Path Data="M 12,2 L 4,5 L 4,11 C 4,16.5 7.5,21.3 12,22.5 C 16.5,21.3 20,16.5 20,11 L 20,5 Z M 12,7 L 12,13 M 12,16 L 12,17" Stroke="{DynamicResource BadgeWarnFgBrush}" StrokeThickness="1.4" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent" Visibility="{Binding IsProtectionOff, Converter={StaticResource BoolToVis}}"/>
+
+                                                    <!-- Update Available Icon (Download Arrow) -->
+                                                    <Path Data="M 12,3 L 12,14 M 7.5,10 L 12,14.5 L 16.5,10 M 4,18 L 20,18" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.5" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="15" Height="15" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent" Visibility="{Binding IsUpdate, Converter={StaticResource BoolToVis}}"/>
+                                                </Grid>
+                                            </Border>
                                         </Grid>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <DockPanel LastChildFill="True">
