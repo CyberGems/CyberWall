@@ -1,4 +1,4 @@
-﻿<p align="center">
+<p align="center">
   <img src="src/CyberWall.UI/Assets/CyberWall.png" width="140" alt="CyberWall logo" />
 </p>
 
@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License" />
   <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D4.svg?logo=windows&logoColor=white" alt="Platform" />
   <img src="https://img.shields.io/badge/.NET-10.0-512BD4.svg?logo=dotnet&logoColor=white" alt=".NET" />
-  <img src="https://img.shields.io/badge/version-1.6.1-00F0FF.svg" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.7.0-00F0FF.svg" alt="Version" />
 </p>
 
 <p align="center">

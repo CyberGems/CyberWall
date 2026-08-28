@@ -613,7 +613,7 @@
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,2">
                         <Image Source="pack://application:,,,/Assets/CyberWall.png" Width="14" Height="14" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <TextBlock x:Name="FooterVerText" Text="CyberWall 1.6.1" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="FooterVerText" Text="CyberWall 1.7.0" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
                     </StackPanel>
                     <TextBlock Text="© 2026 CyberGems" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Opacity="0.75" HorizontalAlignment="Center"/>
                 </StackPanel>
