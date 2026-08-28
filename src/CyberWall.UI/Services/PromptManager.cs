@@ -73,27 +73,35 @@ public class PromptManager
 
         if (_svc == null) return;
 
-        switch (decision)
+        var ev = card.Event;
+        Task.Run(() =>
         {
-            case PopupDecision.AllowAlways:
-                _svc.SetVerdict(card.Event.AppPath, Verdict.Allow, true, card.Event);
-                _mainWindow?.RefreshRules();
-                break;
-            case PopupDecision.AllowOnce:
-                _svc.SetVerdict(card.Event.AppPath, Verdict.Allow, false, card.Event);
-                break;
-            case PopupDecision.BlockAlways:
-                _svc.SetVerdict(card.Event.AppPath, Verdict.Block, true, card.Event);
-                _mainWindow?.RefreshRules();
-                if (timedOut)
+            try
+            {
+                switch (decision)
                 {
-                    _mainWindow?.RecordAutoBlock(card.Event);
+                    case PopupDecision.AllowAlways:
+                        _svc.SetVerdict(ev.AppPath, Verdict.Allow, true, ev);
+                        _mainWindow?.Dispatcher.BeginInvoke(() => _mainWindow.RefreshRules());
+                        break;
+                    case PopupDecision.AllowOnce:
+                        _svc.SetVerdict(ev.AppPath, Verdict.Allow, false, ev);
+                        break;
+                    case PopupDecision.BlockAlways:
+                        _svc.SetVerdict(ev.AppPath, Verdict.Block, true, ev);
+                        _mainWindow?.Dispatcher.BeginInvoke(() => _mainWindow.RefreshRules());
+                        if (timedOut)
+                        {
+                            _mainWindow?.Dispatcher.BeginInvoke(() => _mainWindow.RecordAutoBlock(ev));
+                        }
+                        break;
+                    default:
+                        _svc.SetVerdict(ev.AppPath, Verdict.Block, false, ev);
+                        break;
                 }
-                break;
-            default:
-                _svc.SetVerdict(card.Event.AppPath, Verdict.Block, false, card.Event);
-                break;
-        }
+            }
+            catch { }
+        });
     }
 
     public void ShowPreview(PopupPosition position, int monitorIndex)

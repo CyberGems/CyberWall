@@ -234,8 +234,13 @@ public partial class PromptCardControl : UserControl
     private void Block_Click(object s, RoutedEventArgs e) => TriggerDecision(PopupDecision.BlockAlways);
     private void Dismiss_Click(object s, RoutedEventArgs e) => TriggerDecision(PopupDecision.Dismiss);
 
+    private bool _isHandlingDecision;
+
     public void TriggerDecision(PopupDecision decision)
     {
+        if (_isHandlingDecision) return;
+        _isHandlingDecision = true;
+        IsEnabled = false;
         DecisionMade?.Invoke(this, decision);
     }
 
