@@ -6,5 +6,6 @@
     <Company>CyberGems</Company>
     <Product>CyberWall</Product>
     <NuGetAudit>false</NuGetAudit>
+    <SatelliteResourceLanguages>en;es</SatelliteResourceLanguages>
   </PropertyGroup>
 </Project>
