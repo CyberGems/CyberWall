@@ -144,30 +144,32 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         TooltipFilterVal.Text = Strings.T(stateKey);
     }
 
+    private double _smoothedSpeedMod = 1.0;
+
     private void CreatePackets()
     {
         TrafficCanvas.Children.Clear();
         _packets.Clear();
         var random = new Random(9173);
 
-        for (var i = 0; i < 7; i++)
+        for (var i = 0; i < 6; i++)
         {
-            var length = 8.0 + random.Next(0, 12);
-            var height = (i % 3 == 0) ? 2.2 : 1.8;
+            var length = 10.0 + (i % 3) * 4;
+            var height = 2.0;
             var packet = new Border
             {
                 Width = length,
                 Height = height,
-                CornerRadius = new CornerRadius(height / 2.0),
+                CornerRadius = new CornerRadius(1.0),
                 IsHitTestVisible = false
             };
             var item = new Packet
             {
                 Element = packet,
-                Position = -20 - random.NextDouble() * 160,
-                Speed = 38 + random.NextDouble() * 40,
-                Top = 4.0 + random.NextDouble() * 6.5,
-                Phase = random.NextDouble() * Math.PI * 2,
+                Position = -20 - (i * 35.0) - random.NextDouble() * 10,
+                Speed = 42.0 + (i % 2) * 8.0,
+                Top = 5.0 + (i % 3) * 2.2,
+                Phase = i * 0.8,
                 Length = length
             };
             _packets.Add(item);
@@ -184,6 +186,36 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         if (elapsed <= 0.0) return;
         if (elapsed > 0.1) elapsed = 0.033;
 
+        var animMode = App.Settings?.TrafficAnimation ?? Common.Settings.TrafficAnimationMode.FluidStream;
+
+        var nowSeconds = current.TotalSeconds;
+        if (_connectivity == ConnectivityState.Offline || _mode == FirewallMode.Killswitch)
+        {
+            StatusHalo.Opacity = 0.08;
+        }
+        else
+        {
+            var haloPulse = 0.16 + (Math.Sin(nowSeconds * 2.8) + 1.0) * 0.10;
+            StatusHalo.Opacity = haloPulse;
+        }
+
+        if (animMode == Common.Settings.TrafficAnimationMode.Disabled)
+        {
+            if (TrafficCanvas.Visibility != Visibility.Collapsed)
+                TrafficCanvas.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        if (animMode == Common.Settings.TrafficAnimationMode.PulseGlow)
+        {
+            if (TrafficCanvas.Visibility != Visibility.Collapsed)
+                TrafficCanvas.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        if (TrafficCanvas.Visibility != Visibility.Visible)
+            TrafficCanvas.Visibility = Visibility.Visible;
+
         var width = TrafficCanvas.ActualWidth;
         if (width <= 0) return;
 
@@ -194,50 +226,41 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
             _ => !_isActive ? 0.45 : (_mode switch
             {
                 FirewallMode.Killswitch => 0.0,
-                FirewallMode.BlockAll => 1.25,
+                FirewallMode.BlockAll => 1.15,
                 _ => 1.0
             })
         };
 
-        // Real throughput speed modulation (TrafficMonitor inspired dynamic particle velocity)
-        double speedMod = 0.85;
+        // Smooth continuous exponential interpolation (removes jerky speed snapping)
+        double targetSpeedMod = 0.95;
         if (_latestSnapshot != null && _latestSnapshot.IsConnected && (_latestSnapshot.DownloadBps + _latestSnapshot.UploadBps > 1024))
         {
             var totalThroughput = _latestSnapshot.DownloadBps + _latestSnapshot.UploadBps;
-            // Modulate between 0.9x and 2.6x based on log throughput
-            speedMod = Math.Min(2.6, 0.85 + Math.Log10(totalThroughput / 512.0) * 0.45);
+            targetSpeedMod = Math.Min(2.1, 0.95 + Math.Log10(totalThroughput / 1024.0) * 0.32);
         }
 
-        var nowSeconds = current.TotalSeconds;
-        if (_connectivity == ConnectivityState.Offline || _mode == FirewallMode.Killswitch)
-        {
-            StatusHalo.Opacity = 0.08;
-        }
-        else
-        {
-            var haloPulse = 0.16 + (Math.Sin(nowSeconds * 3.2) + 1.0) * 0.12;
-            StatusHalo.Opacity = haloPulse;
-        }
+        _smoothedSpeedMod += (targetSpeedMod - _smoothedSpeedMod) * Math.Min(1.0, elapsed * 2.5);
 
         foreach (var packet in _packets)
         {
             if (flowFactor > 0)
             {
-                packet.Position += packet.Speed * elapsed * flowFactor * speedMod;
+                packet.Position += packet.Speed * elapsed * flowFactor * _smoothedSpeedMod;
                 if (packet.Position > width + packet.Length + 4)
-                    packet.Position = -packet.Length - (packet.Speed * 0.15);
+                    packet.Position = -packet.Length - 10;
 
                 Canvas.SetLeft(packet.Element, packet.Position);
                 Canvas.SetTop(packet.Element, packet.Top);
-            }
 
-            var pulse = 0.65 + (Math.Sin(nowSeconds * 3.5 + packet.Phase) + 1.0) * 0.175;
-            packet.Element.Opacity = _connectivity switch
+                // Smooth edge fade without abrupt popping
+                var progress = Math.Clamp((packet.Position + packet.Length) / (width + packet.Length * 2), 0.0, 1.0);
+                var edgeFade = Math.Sin(progress * Math.PI);
+                packet.Element.Opacity = Math.Max(0.1, edgeFade * 0.92);
+            }
+            else
             {
-                ConnectivityState.Offline => 0.08,
-                ConnectivityState.Unknown => pulse * 0.5,
-                _ => _mode == FirewallMode.Killswitch ? 0.08 : (!_isActive ? pulse * 0.5 : pulse)
-            };
+                packet.Element.Opacity = 0.06;
+            }
         }
     }
 

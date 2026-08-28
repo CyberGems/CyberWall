@@ -194,6 +194,8 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
         ToastProtectionDescLbl.Text = Strings.T("ToastProtectionDesc");
         ToastAutoBlockTitleLbl.Text = Strings.T("ToastAutoBlockTitle");
         ToastAutoBlockDescLbl.Text = Strings.T("ToastAutoBlockDesc");
+        TrafficAnimTitleLbl.Text = Strings.T("TrafficAnimationHdr");
+        TrafficAnimDescLbl.Text = Strings.T("TrafficAnimationDesc");
         SystemHdrLbl.Text = Strings.T("SystemHeader");
         StartupTitleLbl.Text = Strings.T("RunAtStartup");
         StartupDescLbl.Text = Strings.T("RunAtStartupDesc");
@@ -211,6 +213,7 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
         UpdateStartupTogglesState();
         PopulateMonitors();
         PopulateAutoBlockWait();
+        PopulateTrafficAnim();
     }
 
     private void UpdateSoundUiState()
@@ -421,6 +424,34 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
             _s.NotificationMonitor = mon;
             _s.Save();
             TriggerPreviewPopup();
+        }
+    }
+
+    private void PopulateTrafficAnim()
+    {
+        var wasLoading = _loading;
+        _loading = true;
+        TrafficAnimBox.Items.Clear();
+        TrafficAnimBox.Items.Add(new ComboBoxItem { Content = Strings.T("TrafficAnimFluid"), Tag = Common.Settings.TrafficAnimationMode.FluidStream });
+        TrafficAnimBox.Items.Add(new ComboBoxItem { Content = Strings.T("TrafficAnimPulse"), Tag = Common.Settings.TrafficAnimationMode.PulseGlow });
+        TrafficAnimBox.Items.Add(new ComboBoxItem { Content = Strings.T("TrafficAnimDisabled"), Tag = Common.Settings.TrafficAnimationMode.Disabled });
+
+        TrafficAnimBox.SelectedIndex = _s.TrafficAnimation switch
+        {
+            Common.Settings.TrafficAnimationMode.PulseGlow => 1,
+            Common.Settings.TrafficAnimationMode.Disabled => 2,
+            _ => 0
+        };
+        _loading = wasLoading;
+    }
+
+    private void TrafficAnimBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loading) return;
+        if (TrafficAnimBox.SelectedItem is ComboBoxItem { Tag: Common.Settings.TrafficAnimationMode mode })
+        {
+            _s.TrafficAnimation = mode;
+            _s.Save();
         }
     }
 

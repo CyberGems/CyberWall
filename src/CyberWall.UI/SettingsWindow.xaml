@@ -556,6 +556,26 @@
                                 </StackPanel>
                                 <CheckBox x:Name="ToastAutoBlockToggle" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}" VerticalAlignment="Center" Click="ToastToggle_Click"/>
                             </Grid>
+
+                            <!-- Separator -->
+                            <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,10,0,10"/>
+
+                            <!-- Traffic Animation Style Setting -->
+                            <Grid Margin="0,4,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <Path Data="M 3 17 L 9 11 L 13 15 L 21 7 M 21 7 L 16 7 M 21 7 L 21 12" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeLineJoin="Round" Width="14" Height="14" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <TextBlock x:Name="TrafficAnimTitleLbl" Text="Animación de flujo de tráfico" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextBrush}"/>
+                                    <TextBlock x:Name="TrafficAnimDescLbl" Text="Estilo visual del flujo de telemetría en tiempo real en la cabecera." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <ComboBox x:Name="TrafficAnimBox" Grid.Column="2" Width="180" Height="34" Style="{StaticResource ModernComboBox}" SelectionChanged="TrafficAnimBox_SelectionChanged"/>
+                            </Grid>
                         </StackPanel>
                     </Border>
 

@@ -98,23 +98,26 @@ public sealed class AppInfoMonitorService
         }
         catch { }
 
+        var cleanCurrent = Clean(currentVersion);
+
         if (!svc.Store.TryGet(appPath, out var rule))
         {
-            _sessionCache[key] = (currentVersion, currentSize, currentWriteTime);
+            _sessionCache[key] = (cleanCurrent, currentSize, currentWriteTime);
             return;
         }
 
         if (!_sessionCache.TryGetValue(key, out var cached))
         {
             // First time seen in this runtime session
-            var hasStoredMeta = !string.IsNullOrEmpty(rule.LastKnownVersion) || rule.LastKnownFileSize.HasValue;
+            var cleanOld = Clean(rule.LastKnownVersion);
+            var hasStoredMeta = !string.IsNullOrEmpty(cleanOld) || rule.LastKnownFileSize.HasValue;
 
             if (hasStoredMeta)
             {
                 // Check if file was modified/updated while CyberWall was closed
-                var versionChanged = !string.IsNullOrEmpty(rule.LastKnownVersion) &&
-                                     !string.IsNullOrEmpty(currentVersion) &&
-                                     !rule.LastKnownVersion.Equals(currentVersion, StringComparison.OrdinalIgnoreCase);
+                var versionChanged = !string.IsNullOrEmpty(cleanOld) &&
+                                     !string.IsNullOrEmpty(cleanCurrent) &&
+                                     !cleanOld.Equals(cleanCurrent, StringComparison.OrdinalIgnoreCase);
 
                 var binaryChanged = rule.LastKnownFileSize.HasValue &&
                                     (rule.LastKnownFileSize.Value != currentSize ||
@@ -123,30 +126,32 @@ public sealed class AppInfoMonitorService
 
                 if (versionChanged)
                 {
-                    var oldVer = rule.LastKnownVersion!;
-                    var msg = Strings.T("NotifAppVersionChangedDesc", rule.DisplayName, oldVer, currentVersion!);
+                    var msg = Strings.T("NotifAppVersionChangedDesc", rule.DisplayName, cleanOld!, cleanCurrent!);
                     notifications.Add(AppNotificationKind.AppVersionChanged, rule.AppPath, rule.DisplayName, msg);
                     if (App.Settings.ToastAppInfoEnabled)
                         AppInfoToast.ShowToast(Strings.T("NotifAppVersionChangedTitle"), msg, rule.AppPath);
 
                     var updatedRule = rule with
                     {
-                        LastKnownVersion = currentVersion,
+                        LastKnownVersion = cleanCurrent,
                         LastKnownFileSize = currentSize,
                         LastKnownWriteTimeUtc = currentWriteTime
                     };
                     svc.Store.Upsert(updatedRule);
                 }
-                else if (binaryChanged && string.IsNullOrEmpty(currentVersion))
+                else if (binaryChanged || (rule.LastKnownVersion != cleanCurrent))
                 {
-                    var msg = Strings.T("NotifAppExecutableChangedDesc", rule.DisplayName);
-                    notifications.Add(AppNotificationKind.AppExecutableChanged, rule.AppPath, rule.DisplayName, msg);
-                    if (App.Settings.ToastAppInfoEnabled)
-                        AppInfoToast.ShowToast(Strings.T("NotifAppExecutableChangedTitle"), msg, rule.AppPath);
+                    if (binaryChanged)
+                    {
+                        var msg = Strings.T("NotifAppExecutableChangedDesc", rule.DisplayName);
+                        notifications.Add(AppNotificationKind.AppExecutableChanged, rule.AppPath, rule.DisplayName, msg);
+                        if (App.Settings.ToastAppInfoEnabled)
+                            AppInfoToast.ShowToast(Strings.T("NotifAppExecutableChangedTitle"), msg, rule.AppPath);
+                    }
 
                     var updatedRule = rule with
                     {
-                        LastKnownVersion = currentVersion,
+                        LastKnownVersion = cleanCurrent,
                         LastKnownFileSize = currentSize,
                         LastKnownWriteTimeUtc = currentWriteTime
                     };
@@ -158,14 +163,14 @@ public sealed class AppInfoMonitorService
                 // First initialization of baseline metadata for this rule
                 var initialRule = rule with
                 {
-                    LastKnownVersion = currentVersion,
+                    LastKnownVersion = cleanCurrent,
                     LastKnownFileSize = currentSize,
                     LastKnownWriteTimeUtc = currentWriteTime
                 };
                 svc.Store.Upsert(initialRule);
             }
 
-            _sessionCache[key] = (currentVersion, currentSize, currentWriteTime);
+            _sessionCache[key] = (cleanCurrent, currentSize, currentWriteTime);
             return;
         }
 
@@ -175,14 +180,14 @@ public sealed class AppInfoMonitorService
 
         if (fileModified)
         {
-            var versionChanged = !string.IsNullOrEmpty(cached.Version) &&
-                                 !string.IsNullOrEmpty(currentVersion) &&
-                                 !cached.Version.Equals(currentVersion, StringComparison.OrdinalIgnoreCase);
+            var cleanCached = Clean(cached.Version);
+            var versionChanged = !string.IsNullOrEmpty(cleanCached) &&
+                                 !string.IsNullOrEmpty(cleanCurrent) &&
+                                 !cleanCached.Equals(cleanCurrent, StringComparison.OrdinalIgnoreCase);
 
             if (versionChanged)
             {
-                var oldVer = cached.Version!;
-                var msg = Strings.T("NotifAppVersionChangedDesc", rule.DisplayName, oldVer, currentVersion!);
+                var msg = Strings.T("NotifAppVersionChangedDesc", rule.DisplayName, cleanCached!, cleanCurrent!);
                 notifications.Add(AppNotificationKind.AppVersionChanged, rule.AppPath, rule.DisplayName, msg);
                 if (App.Settings.ToastAppInfoEnabled)
                     AppInfoToast.ShowToast(Strings.T("NotifAppVersionChangedTitle"), msg, rule.AppPath);
@@ -197,12 +202,12 @@ public sealed class AppInfoMonitorService
 
             var updatedRule = rule with
             {
-                LastKnownVersion = currentVersion,
+                LastKnownVersion = cleanCurrent,
                 LastKnownFileSize = currentSize,
                 LastKnownWriteTimeUtc = currentWriteTime
             };
             svc.Store.Upsert(updatedRule);
-            _sessionCache[key] = (currentVersion, currentSize, currentWriteTime);
+            _sessionCache[key] = (cleanCurrent, currentSize, currentWriteTime);
         }
     }
 
@@ -210,11 +215,22 @@ public sealed class AppInfoMonitorService
     {
         if (string.IsNullOrWhiteSpace(val)) return null;
         var trimmed = val.Trim();
+
+        // Strip +buildmetadata / +git_hash
         var plusIdx = trimmed.IndexOf('+');
         if (plusIdx > 0)
-        {
             trimmed = trimmed[..plusIdx].Trim();
-        }
+
+        // Strip " SHA: ..." or " SHA ..."
+        var shaIdx = trimmed.IndexOf(" SHA", StringComparison.OrdinalIgnoreCase);
+        if (shaIdx > 0)
+            trimmed = trimmed[..shaIdx].Trim();
+
+        // Strip " Commit: ..." or " commit ..."
+        var commitIdx = trimmed.IndexOf(" Commit", StringComparison.OrdinalIgnoreCase);
+        if (commitIdx > 0)
+            trimmed = trimmed[..commitIdx].Trim();
+
         return trimmed.Length == 0 ? null : trimmed;
     }
 }

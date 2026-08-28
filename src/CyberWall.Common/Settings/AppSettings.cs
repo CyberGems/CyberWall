@@ -18,10 +18,13 @@ public enum PopupPosition
     BottomRight
 }
 
+public enum TrafficAnimationMode { FluidStream, PulseGlow, Disabled }
+
 public sealed class AppSettings
 {
     public Lang Language { get; set; } = Lang.Es;
     public AppTheme Theme { get; set; } = AppTheme.CyberWall;
+    public TrafficAnimationMode TrafficAnimation { get; set; } = TrafficAnimationMode.FluidStream;
     public bool FirewallEnabled { get; set; } = true;
     public int FirewallMode { get; set; } = 2;
     public PopupPosition NotificationPosition { get; set; } = PopupPosition.BottomRight;
