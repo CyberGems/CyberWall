@@ -334,6 +334,7 @@ public partial class MainWindow : Window
     private void OnAskConnection(ConnectionEvent ev)
     {
         RememberLastRemote(ev, isBlocked: false);
+        AppInfoMonitorService.Instance.CheckApp(ev.AppPath, _notifications, _svc);
         PromptManager.Instance.Enqueue(ev);
     }
 
@@ -342,6 +343,7 @@ public partial class MainWindow : Window
         Dispatcher.BeginInvoke(() =>
         {
             RememberLastRemote(ev, isBlocked: true);
+            AppInfoMonitorService.Instance.CheckApp(ev.AppPath, _notifications, _svc);
             _notifications.Add(AppNotificationKind.SilentBlock, ev.AppPath, ev.DisplayName,
                 string.IsNullOrEmpty(ev.RemoteAddress) ? null : $"{ev.RemoteAddress}:{ev.RemotePort}");
         });
@@ -352,6 +354,7 @@ public partial class MainWindow : Window
         Dispatcher.BeginInvoke(() =>
         {
             RememberLastRemote(ev, isBlocked: true);
+            AppInfoMonitorService.Instance.CheckApp(ev.AppPath, _notifications, _svc);
         });
     }
 

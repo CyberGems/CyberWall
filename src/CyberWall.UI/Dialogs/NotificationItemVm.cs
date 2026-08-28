@@ -22,11 +22,12 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
     public string? AppName { get; init; }
     public bool Highlight { get; init; }
     public string TimeLabel { get; init; } = "";
-    public bool HasAppIcon => (Kind is AppNotificationKind.AutoBlocked or AppNotificationKind.SilentBlock) && !string.IsNullOrWhiteSpace(AppPath);
+    public bool HasAppIcon => (Kind is AppNotificationKind.AutoBlocked or AppNotificationKind.SilentBlock or AppNotificationKind.AppVersionChanged or AppNotificationKind.AppExecutableChanged) && !string.IsNullOrWhiteSpace(AppPath);
     public bool IsInternetLost => Kind == AppNotificationKind.InternetLost;
     public bool IsInternetRestored => Kind == AppNotificationKind.InternetRestored;
     public bool IsProtectionOff => Kind == AppNotificationKind.ProtectionOff;
     public bool IsUpdate => Kind == AppNotificationKind.UpdateAvailable;
+    public bool IsAppInfo => Kind is AppNotificationKind.AppVersionChanged or AppNotificationKind.AppExecutableChanged;
 
     public string Title
     {
@@ -125,6 +126,12 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
             AppNotificationKind.InternetRestored => (
                 Strings.T("NotifInternetRestoredTitle"),
                 Strings.T("NotifInternetRestoredDesc")),
+            AppNotificationKind.AppVersionChanged => (
+                Strings.T("NotifAppVersionChangedTitle"),
+                string.IsNullOrWhiteSpace(n.Detail) ? Strings.T("NotifAppVersionChangedTitle") : n.Detail),
+            AppNotificationKind.AppExecutableChanged => (
+                Strings.T("NotifAppExecutableChangedTitle"),
+                string.IsNullOrWhiteSpace(n.Detail) ? Strings.T("NotifAppExecutableChangedDesc", name) : n.Detail),
             _ => (
                 Strings.T("AutoBlockedTitle"),
                 Strings.T("AutoBlockedDesc", string.IsNullOrEmpty(name) ? "?" : name))

@@ -62,6 +62,59 @@ jobs:
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAppVersion="${{ github.ref_name }}" CyberWall.iss
 
+      - name: Scan Binaries with VirusTotal
+        id: virustotal
+        shell: powershell
+        env:
+          VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
+        run: |
+          $installerPath = "./CyberWall-Setup-${{ github.ref_name }}.exe"
+          $portablePath = "./CyberWall-${{ github.ref_name }}-Portable-win-x64.zip"
+
+          $installerHash = (Get-FileHash $installerPath -Algorithm SHA256).Hash.ToLower()
+          $portableHash = (Get-FileHash $portablePath -Algorithm SHA256).Hash.ToLower()
+
+          Write-Host "Installer SHA256: $installerHash"
+          Write-Host "Portable SHA256: $portableHash"
+
+          if ($env:VIRUSTOTAL_API_KEY) {
+            Write-Host "Uploading installer to VirusTotal..."
+            try {
+              $headers = @{ "x-apikey" = $env:VIRUSTOTAL_API_KEY }
+              $form = @{ file = Get-Item $installerPath }
+              $res = Invoke-RestMethod -Uri "https://www.virustotal.com/api/v3/files" -Method Post -Headers $headers -Form $form -TimeoutSec 180
+              Write-Host "Installer uploaded successfully. Analysis ID: $($res.data.id)"
+            } catch {
+              Write-Warning "VirusTotal installer upload warning: $_"
+            }
+
+            Write-Host "Uploading portable archive to VirusTotal..."
+            try {
+              $headers = @{ "x-apikey" = $env:VIRUSTOTAL_API_KEY }
+              $form = @{ file = Get-Item $portablePath }
+              $res = Invoke-RestMethod -Uri "https://www.virustotal.com/api/v3/files" -Method Post -Headers $headers -Form $form -TimeoutSec 180
+              Write-Host "Portable archive uploaded successfully. Analysis ID: $($res.data.id)"
+            } catch {
+              Write-Warning "VirusTotal portable upload warning: $_"
+            }
+          } else {
+            Write-Host "VIRUSTOTAL_API_KEY secret not found; skipping direct upload and using computed SHA256 hashes for reports."
+          }
+
+          $vtSection = @"
+
+---
+
+### 🔍 VirusTotal Scan Results (70+ Antivirus Engines)
+
+- 🛡️ **Setup Installer**: [View VirusTotal Inspection Report](https://www.virustotal.com/gui/file/$installerHash)  
+  *(SHA256: ``$installerHash``)*
+- 💼 **Portable Archive**: [View VirusTotal Inspection Report](https://www.virustotal.com/gui/file/$portableHash)  
+  *(SHA256: ``$portableHash``)*
+"@
+
+          [System.IO.File]::WriteAllText("vt_section.txt", $vtSection)
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
@@ -97,6 +150,7 @@ jobs:
 
             - 🔔 **GlassWire-Style Toast Alerts**:
               - "First Network Activity" notification toasts for new connections.
+              - "Application info changed" alerts when an app version changes or executable binary is modified.
               - Graphic direction indicators with color-coded badges (`↑ Outbound` / `↓ Inbound`).
 
             - 📋 **Dedicated Connection Log Viewer**:
@@ -121,6 +175,13 @@ jobs:
             | :--- | :--- | :--- |
             | **`CyberWall-Setup-${{ github.ref_name }}.exe`** | 🚀 **Recommended Installer** (Inno Setup with Start Menu, Desktop & Auto-Startup options) | Windows 10 / 11 (x64) |
             | **`CyberWall-${{ github.ref_name }}-Portable-win-x64.zip`** | 💼 **Portable Archive** (Extract and run with Administrator privileges) | Windows 10 / 11 (x64) |
+
+            ---
+
+            ### 🔍 VirusTotal Scan Results (70+ Antivirus Engines)
+
+            - 🛡️ **Setup Installer**: [View VirusTotal Scan Report](https://www.virustotal.com/gui/search/CyberWall-Setup-${{ github.ref_name }}.exe)
+            - 💼 **Portable Archive**: [View VirusTotal Scan Report](https://www.virustotal.com/gui/search/CyberWall-${{ github.ref_name }}-Portable-win-x64.zip)
 
             ---
 

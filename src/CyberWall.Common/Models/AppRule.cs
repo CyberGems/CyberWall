@@ -14,6 +14,9 @@ public sealed record AppRule
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
     public string? IconBase64 { get; init; }
     public string? PackageFamilyName { get; init; }
+    public string? LastKnownVersion { get; init; }
+    public long? LastKnownFileSize { get; init; }
+    public DateTime? LastKnownWriteTimeUtc { get; init; }
 
     [JsonIgnore]
     public Verdict EffectiveInboundVerdict => InboundVerdict ?? (Direction switch
