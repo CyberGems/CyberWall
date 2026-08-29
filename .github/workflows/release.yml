@@ -92,10 +92,8 @@ jobs:
                 Write-Host "Using dedicated endpoint: $url"
               }
 
-              $form = @{ file = $item }
-              $res = Invoke-RestMethod -Uri $url -Method Post -Headers $headers -Form $form -TimeoutSec 300
-              Write-Host "Upload successful. Analysis ID: $($res.data.id)"
-              return $res
+              $resp = & curl.exe -s -S --fail -X POST -H "x-apikey: $apiKey" -F "file=@$filePath" "$url"
+              Write-Host "Upload successful. Response: $resp"
             }
 
             try {
