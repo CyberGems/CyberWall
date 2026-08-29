@@ -78,22 +78,34 @@ jobs:
           Write-Host "Portable SHA256: $portableHash"
 
           if ($env:VIRUSTOTAL_API_KEY) {
-            Write-Host "Uploading installer to VirusTotal..."
+            function Upload-VirusTotal($filePath, $apiKey) {
+              $item = Get-Item $filePath
+              $sizeMb = [Math]::Round($item.Length / 1MB, 2)
+              Write-Host "Uploading $filePath ($sizeMb MB) to VirusTotal..."
+              $headers = @{ "x-apikey" = $apiKey }
+              $url = "https://www.virustotal.com/api/v3/files"
+
+              if ($item.Length -gt 30MB) {
+                Write-Host "File exceeds 30MB ($sizeMb MB), requesting dedicated large-file upload endpoint from VirusTotal..."
+                $urlResp = Invoke-RestMethod -Uri "https://www.virustotal.com/api/v3/files/upload_url" -Method Get -Headers $headers -TimeoutSec 60
+                $url = $urlResp.data
+                Write-Host "Using dedicated endpoint: $url"
+              }
+
+              $form = @{ file = $item }
+              $res = Invoke-RestMethod -Uri $url -Method Post -Headers $headers -Form $form -TimeoutSec 300
+              Write-Host "Upload successful. Analysis ID: $($res.data.id)"
+              return $res
+            }
+
             try {
-              $headers = @{ "x-apikey" = $env:VIRUSTOTAL_API_KEY }
-              $form = @{ file = Get-Item $installerPath }
-              $res = Invoke-RestMethod -Uri "https://www.virustotal.com/api/v3/files" -Method Post -Headers $headers -Form $form -TimeoutSec 180
-              Write-Host "Installer uploaded successfully. Analysis ID: $($res.data.id)"
+              Upload-VirusTotal $installerPath $env:VIRUSTOTAL_API_KEY
             } catch {
               Write-Warning "VirusTotal installer upload warning: $_"
             }
 
-            Write-Host "Uploading portable archive to VirusTotal..."
             try {
-              $headers = @{ "x-apikey" = $env:VIRUSTOTAL_API_KEY }
-              $form = @{ file = Get-Item $portablePath }
-              $res = Invoke-RestMethod -Uri "https://www.virustotal.com/api/v3/files" -Method Post -Headers $headers -Form $form -TimeoutSec 180
-              Write-Host "Portable archive uploaded successfully. Analysis ID: $($res.data.id)"
+              Upload-VirusTotal $portablePath $env:VIRUSTOTAL_API_KEY
             } catch {
               Write-Warning "VirusTotal portable upload warning: $_"
             }
