@@ -15,6 +15,12 @@ public sealed record NetworkSpeedSnapshot(
     bool IsConnected
 );
 
+public sealed record TrafficHistoryPoint(
+    DateTime Timestamp,
+    double DownloadBps,
+    double UploadBps
+);
+
 public sealed class NetworkSpeedService
 {
     private static readonly Lazy<NetworkSpeedService> _instance = new(() => new NetworkSpeedService());
@@ -27,6 +33,19 @@ public sealed class NetworkSpeedService
     private TimeSpan _lastTime;
     private long _sessionReceivedBase = -1;
     private long _sessionSentBase = -1;
+
+    private readonly List<TrafficHistoryPoint> _history = new();
+    private readonly object _historyLock = new();
+
+    public IReadOnlyList<TrafficHistoryPoint> GetHistory(int maxPoints = 60)
+    {
+        lock (_historyLock)
+        {
+            if (_history.Count == 0) return Array.Empty<TrafficHistoryPoint>();
+            var skip = Math.Max(0, _history.Count - maxPoints);
+            return _history.Skip(skip).ToList();
+        }
+    }
 
     public NetworkSpeedSnapshot CurrentSnapshot { get; private set; } = new(0, 0, 0, 0, "None", false);
 
@@ -115,6 +134,15 @@ public sealed class NetworkSpeedService
                 hasActive ? primaryAdapter : "Offline",
                 hasActive
             );
+
+            lock (_historyLock)
+            {
+                _history.Add(new TrafficHistoryPoint(DateTime.UtcNow, downBps, upBps));
+                if (_history.Count > 120)
+                {
+                    _history.RemoveRange(0, _history.Count - 120);
+                }
+            }
 
             SpeedUpdated?.Invoke(CurrentSnapshot);
         }

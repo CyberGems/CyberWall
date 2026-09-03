@@ -1,8 +1,8 @@
 using System.Diagnostics;
-using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using CyberWall.Common.I18n;
@@ -16,27 +16,16 @@ namespace CyberWall.UI.Controls;
 
 public partial class NetworkTrafficIndicator : System.Windows.Controls.UserControl
 {
-    private sealed class Packet
-    {
-        public required Border Element { get; init; }
-        public double Position { get; set; }
-        public double BaseSpeed { get; init; }
-        public double Top { get; init; }
-        public double BaseLength { get; init; }
-        public double CurrentOpacity { get; set; }
-    }
-
     private readonly Stopwatch _stopwatch = new();
     private TimeSpan _lastRenderingTime;
-    private readonly List<Packet> _packets = new();
     private bool _isActive;
     private FirewallMode _mode = FirewallMode.Ask;
     private ConnectivityState _connectivity = ConnectivityState.Unknown;
     private NetworkSpeedSnapshot? _latestSnapshot;
 
     private double _smoothedRatio = 0.0;
-    private double _observedPeakBps = 2_000_000.0; // Starts with 2 MB/s minimum baseline
-    private DateTime _lastPeakDecay = DateTime.UtcNow;
+    private double _wavePhase = 0.0;
+    private const int WaveSegments = 48;
 
     private enum ConnectivityState
     {
@@ -48,14 +37,12 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
     public NetworkTrafficIndicator()
     {
         InitializeComponent();
-        CreatePackets();
         RefreshLanguage();
         Loaded += (_, _) =>
         {
             _stopwatch.Restart();
             _lastRenderingTime = _stopwatch.Elapsed;
             CompositionTarget.Rendering += OnRendering;
-            RefreshPackets();
 
             ConnectivityService.Instance.ConnectivityChanged += OnConnectivityChanged;
             SetConnectivity(ConnectivityService.Instance.IsOnline ? ConnectivityState.Online : ConnectivityState.Offline);
@@ -74,7 +61,6 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
             NetworkSpeedService.Instance.SpeedUpdated -= OnSpeedUpdated;
             NetworkSpeedService.Instance.Stop();
         };
-        SizeChanged += (_, _) => RefreshPackets();
     }
 
     private void OnConnectivityChanged(bool online)
@@ -146,40 +132,7 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         TooltipTotalUpLbl.Text = Strings.T("TrafficSessionOut");
         TooltipFilterLbl.Text = Strings.T("TrafficFilterStatus");
         TooltipFilterVal.Text = Strings.T(stateKey);
-    }
-
-    private void CreatePackets()
-    {
-        TrafficCanvas.Children.Clear();
-        _packets.Clear();
-        var random = new Random(9173);
-
-        // Pool of 12 scalable packets for dynamic density
-        for (var i = 0; i < 12; i++)
-        {
-            var length = 8.0 + (i % 4) * 3.5;
-            var height = 2.0;
-            var packet = new Border
-            {
-                Width = length,
-                Height = height,
-                CornerRadius = new CornerRadius(1.0),
-                IsHitTestVisible = false,
-                Opacity = 0
-            };
-            var item = new Packet
-            {
-                Element = packet,
-                Position = -20 - (i * 22.0) - random.NextDouble() * 8,
-                BaseSpeed = 36.0 + (i % 3) * 6.0,
-                Top = 4.5 + (i % 3) * 2.4,
-                BaseLength = length,
-                CurrentOpacity = 0
-            };
-            _packets.Add(item);
-            TrafficCanvas.Children.Add(packet);
-        }
-        RefreshAppearance();
+        TooltipClickHint.Text = Strings.T("TrafficHistoryTooltip");
     }
 
     private void OnRendering(object? sender, EventArgs e)
@@ -205,16 +158,17 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
 
         if (animMode == Common.Settings.TrafficAnimationMode.Disabled || animMode == Common.Settings.TrafficAnimationMode.PulseGlow)
         {
-            if (TrafficCanvas.Visibility != Visibility.Collapsed)
-                TrafficCanvas.Visibility = Visibility.Collapsed;
+            if (TrafficWaveCanvas.Visibility != Visibility.Collapsed)
+                TrafficWaveCanvas.Visibility = Visibility.Collapsed;
             return;
         }
 
-        if (TrafficCanvas.Visibility != Visibility.Visible)
-            TrafficCanvas.Visibility = Visibility.Visible;
+        if (TrafficWaveCanvas.Visibility != Visibility.Visible)
+            TrafficWaveCanvas.Visibility = Visibility.Visible;
 
-        var width = TrafficCanvas.ActualWidth;
-        if (width <= 0) return;
+        var width = TrafficWaveCanvas.ActualWidth;
+        var height = TrafficWaveCanvas.ActualHeight;
+        if (width <= 10 || height <= 6) return;
 
         var flowFactor = _connectivity switch
         {
@@ -228,71 +182,81 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
             })
         };
 
-        // Track live throughput and adapt peak bandwidth
         double currentThroughput = 0;
-        if (_latestSnapshot != null && _latestSnapshot.IsConnected)
+        if (_latestSnapshot != null && _latestSnapshot.IsConnected && flowFactor > 0)
         {
             currentThroughput = _latestSnapshot.DownloadBps + _latestSnapshot.UploadBps;
         }
 
-        if (currentThroughput > _observedPeakBps)
+        // Perceptual logarithmic / power scaling: visible even at 10 KB/s, scaled up at 5 MB/s
+        double targetRatio = currentThroughput > 100 ? Math.Min(1.0, Math.Pow(currentThroughput / 4_000_000.0, 0.38)) : 0.0;
+
+        // Smooth acceleration / deceleration without freeze
+        _smoothedRatio += (targetRatio - _smoothedRatio) * Math.Min(1.0, elapsed * 3.0);
+
+        // Advance wave phase continuously (2.5 rad/s idle to 8.5 rad/s max)
+        double phaseSpeed = (2.5 + _smoothedRatio * 6.0) * flowFactor;
+        _wavePhase += elapsed * phaseSpeed;
+
+        // Generate wave points
+        var points = new WPoint[WaveSegments + 1];
+        double stepX = width / WaveSegments;
+
+        if (flowFactor <= 0.0)
         {
-            _observedPeakBps = currentThroughput;
-        }
-
-        // Slow decay of peak to allow recalibration over time
-        var now = DateTime.UtcNow;
-        if ((now - _lastPeakDecay).TotalSeconds > 10)
-        {
-            _lastPeakDecay = now;
-            _observedPeakBps = Math.Max(2_000_000.0, _observedPeakBps * 0.995);
-        }
-
-        // Calculate instantaneous utilization ratio [0.0 = idle, 1.0 = 100% capacity]
-        double rawRatio = currentThroughput > 1024 ? Math.Clamp(currentThroughput / _observedPeakBps, 0.0, 1.0) : 0.0;
-
-        // Exponential smoothing (smooth acceleration/deceleration)
-        _smoothedRatio += (rawRatio - _smoothedRatio) * Math.Min(1.0, elapsed * 2.0);
-
-        // Dynamic density: 4 packets at low/idle -> up to 12 packets at max capacity
-        int activeCount = flowFactor > 0 ? Math.Clamp(4 + (int)Math.Round(_smoothedRatio * 8.0), 4, _packets.Count) : 0;
-
-        // Dynamic velocity multiplier: 0.85x at idle -> up to 2.5x at max capacity
-        double speedMultiplier = 0.85 + _smoothedRatio * 1.65;
-
-        for (var i = 0; i < _packets.Count; i++)
-        {
-            var packet = _packets[i];
-            var isActive = i < activeCount && flowFactor > 0;
-
-            if (isActive)
+            // Flat baseline when offline or killswitch
+            for (int i = 0; i <= WaveSegments; i++)
             {
-                // Dynamic packet stretch at high speeds
-                var dynamicLength = packet.BaseLength * (1.0 + _smoothedRatio * 0.6);
-                packet.Element.Width = dynamicLength;
-
-                packet.Position += packet.BaseSpeed * elapsed * flowFactor * speedMultiplier;
-                if (packet.Position > width + dynamicLength + 4)
-                    packet.Position = -dynamicLength - 10;
-
-                Canvas.SetLeft(packet.Element, packet.Position);
-                Canvas.SetTop(packet.Element, packet.Top);
-
-                // Smooth edge fade
-                var progress = Math.Clamp((packet.Position + dynamicLength) / (width + dynamicLength * 2), 0.0, 1.0);
-                var edgeFade = Math.Sin(progress * Math.PI);
-                var targetOpacity = (0.35 + _smoothedRatio * 0.55) * edgeFade;
-
-                packet.CurrentOpacity += (targetOpacity - packet.CurrentOpacity) * Math.Min(1.0, elapsed * 4.0);
+                points[i] = new WPoint(i * stepX, height - 2);
             }
-            else
-            {
-                // Inactive packet fades out smoothly
-                packet.CurrentOpacity += (0.0 - packet.CurrentOpacity) * Math.Min(1.0, elapsed * 4.0);
-            }
-
-            packet.Element.Opacity = Math.Max(0.0, packet.CurrentOpacity);
         }
+        else
+        {
+            // Alive wave: subtle idle breathing (1.5 - 2.5px) + dynamic throughput activity
+            double idleBreathing = (1.5 + Math.Sin(nowSeconds * 2.2) * 0.6);
+            double activeAmp = _smoothedRatio * (height - 5);
+            double totalAmp = Math.Min(height - 3, idleBreathing + activeAmp);
+
+            for (int i = 0; i <= WaveSegments; i++)
+            {
+                double x = i * stepX;
+                // Spatial frequency across width
+                double spatial = (x / width) * 3.5 * Math.PI;
+                // Double harmonic sine wave for organic oscilloscope pulse
+                double wave = Math.Sin(spatial - _wavePhase) * 0.68 + Math.Sin(spatial * 2.2 - _wavePhase * 1.5) * 0.32;
+                // Invert Y coordinate so peaks rise from bottom baseline
+                double y = (height - 2) - Math.Clamp(totalAmp * (0.5 + wave * 0.5), 1.0, height - 2);
+                points[i] = new WPoint(x, y);
+            }
+        }
+
+        // Render Stroke Line
+        var lineGeom = new StreamGeometry();
+        using (var ctx = lineGeom.Open())
+        {
+            ctx.BeginFigure(points[0], false, false);
+            for (int i = 1; i <= WaveSegments; i++)
+            {
+                ctx.LineTo(points[i], true, true);
+            }
+        }
+        lineGeom.Freeze();
+        WaveLinePath.Data = lineGeom;
+
+        // Render Area Fill
+        var areaGeom = new StreamGeometry();
+        using (var ctx = areaGeom.Open())
+        {
+            ctx.BeginFigure(new WPoint(0, height), true, true);
+            ctx.LineTo(points[0], true, false);
+            for (int i = 1; i <= WaveSegments; i++)
+            {
+                ctx.LineTo(points[i], true, true);
+            }
+            ctx.LineTo(new WPoint(width, height), true, false);
+        }
+        areaGeom.Freeze();
+        WaveAreaPath.Data = areaGeom;
     }
 
     private void SetConnectivity(ConnectivityState state)
@@ -307,15 +271,6 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         _connectivity = state;
         RefreshAppearance();
         RefreshLanguage();
-    }
-
-    private void RefreshPackets()
-    {
-        foreach (var packet in _packets)
-        {
-            Canvas.SetLeft(packet.Element, packet.Position);
-            Canvas.SetTop(packet.Element, packet.Top);
-        }
     }
 
     private void RefreshAppearance()
@@ -362,19 +317,19 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
             TooltipFilterVal.Foreground = fgBrush;
         }
 
-        foreach (var packet in _packets)
-        {
-            var trailBrush = new LinearGradientBrush
-            {
-                StartPoint = new WPoint(0, 0.5),
-                EndPoint = new WPoint(1, 0.5)
-            };
-            trailBrush.GradientStops.Add(new GradientStop(MediaColor.FromArgb(20, fgColor.R, fgColor.G, fgColor.B), 0.0));
-            trailBrush.GradientStops.Add(new GradientStop(MediaColor.FromArgb(140, fgColor.R, fgColor.G, fgColor.B), 0.65));
-            trailBrush.GradientStops.Add(new GradientStop(MediaColor.FromArgb(250, fgColor.R, fgColor.G, fgColor.B), 1.0));
-            trailBrush.Freeze();
+        WaveLinePath.Stroke = fgBrush;
+        WaveGradientStop1.Color = MediaColor.FromArgb(60, fgColor.R, fgColor.G, fgColor.B);
+        WaveGradientStop2.Color = MediaColor.FromArgb(0, fgColor.R, fgColor.G, fgColor.B);
+    }
 
-            packet.Element.Background = trailBrush;
+    private void RootBorder_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        try
+        {
+            var win = Window.GetWindow(this);
+            var dlg = new Dialogs.TrafficHistoryDialog { Owner = win };
+            dlg.ShowDialog();
         }
+        catch { }
     }
 }
