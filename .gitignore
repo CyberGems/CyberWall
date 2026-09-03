@@ -10,5 +10,6 @@ artifacts/
 AGENTS.md
 CLAUDE.md
 .cursor/
+.kilo/
 .cursorrules
 .github/copilot-instructions.md
