@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
@@ -23,9 +25,11 @@ public partial class AppInfoToast : Window
     private static readonly List<AppInfoToast> _active = new();
     private static readonly PathToIconConverter IconConv = new();
     private readonly DispatcherTimer _autoCloseTimer;
+    private readonly string? _appPath;
 
     public AppInfoToast(string title, string message, string? appPath = null, ToastBadgeType badgeType = ToastBadgeType.Info, string? badgeText = null)
     {
+        _appPath = appPath;
         InitializeComponent();
 
         SourceInitialized += (_, _) => PopupWindowHelper.ApplyNoActivateChrome(this);
@@ -39,11 +43,27 @@ public partial class AppInfoToast : Window
         DescLbl.Text = message;
         CloseBtn.ToolTip = Strings.T("Close");
         AutomationProperties.SetName(CloseBtn, Strings.T("Close"));
+        SettingsBtn.ToolTip = Strings.T("Settings");
+        AutomationProperties.SetName(SettingsBtn, Strings.T("Settings"));
 
         ApplyBadgeStyle(badgeType, badgeText);
         ApplyIcon(appPath, badgeType);
 
-        _autoCloseTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(7) };
+        if (!string.IsNullOrWhiteSpace(_appPath))
+        {
+            ProcessActionsPanel.Visibility = Visibility.Visible;
+            PathLbl.Text = Path.GetFileName(_appPath);
+            PathLbl.ToolTip = _appPath;
+            SearchBtn.ToolTip = Strings.T("SearchOnline");
+            CopyPathBtn.ToolTip = Strings.T("CopyPath");
+            OpenFolderBtn.ToolTip = Strings.T("OpenFolder");
+        }
+        else
+        {
+            ProcessActionsPanel.Visibility = Visibility.Collapsed;
+        }
+
+        _autoCloseTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
         _autoCloseTimer.Tick += (_, _) =>
         {
             _autoCloseTimer.Stop();
@@ -153,10 +173,64 @@ public partial class AppInfoToast : Window
 
     private void OnBodyClick(object sender, MouseButtonEventArgs e)
     {
-        if (e.OriginalSource is System.Windows.Controls.Button) return;
+        if (FindParent<System.Windows.Controls.Button>(e.OriginalSource as DependencyObject) != null) return;
         _autoCloseTimer.Stop();
         CloseToast();
         OpenNotifications();
+    }
+
+    private void Settings_Click(object sender, RoutedEventArgs e)
+    {
+        _autoCloseTimer.Stop();
+        CloseToast();
+        if (System.Windows.Application.Current.MainWindow is MainWindow mw)
+        {
+            mw.Dispatcher.Invoke(() => mw.OpenSettings());
+        }
+    }
+
+    private void Search_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_appPath)) return;
+        try
+        {
+            var fn = Path.GetFileName(_appPath);
+            Process.Start(new ProcessStartInfo("https://www.google.com/search?q=" + Uri.EscapeDataString($"{fn} process"))
+            {
+                UseShellExecute = true
+            });
+        }
+        catch { }
+    }
+
+    private void CopyPath_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_appPath)) return;
+        try
+        {
+            System.Windows.Clipboard.SetText(_appPath);
+            CopyPathBtn.ToolTip = Strings.T("CopiedToClipboard");
+        }
+        catch { }
+    }
+
+    private void OpenFolder_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_appPath)) return;
+        try
+        {
+            if (File.Exists(_appPath))
+            {
+                Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{_appPath}\"") { UseShellExecute = true });
+                return;
+            }
+            var dir = Path.GetDirectoryName(_appPath);
+            if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+            {
+                Process.Start(new ProcessStartInfo("explorer.exe", dir) { UseShellExecute = true });
+            }
+        }
+        catch { }
     }
 
     private void Close_Click(object sender, RoutedEventArgs e)
@@ -175,5 +249,15 @@ public partial class AppInfoToast : Window
     {
         if (System.Windows.Application.Current.MainWindow is not MainWindow mw) return;
         mw.ShowNotifications();
+    }
+
+    private static T? FindParent<T>(DependencyObject? child) where T : DependencyObject
+    {
+        while (child != null)
+        {
+            if (child is T target) return target;
+            child = VisualTreeHelper.GetParent(child);
+        }
+        return null;
     }
 }

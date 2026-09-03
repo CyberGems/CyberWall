@@ -360,6 +360,15 @@ public static class Strings
         ["StatsResetBtn"] = ("Reset", "Restablecer"),
         ["StatsCountriesCount"] = ("{0} countries", "{0} países"),
         ["StatsScopeDetail"] = ("{0} apps · {1} unique IPs", "{0} apps · {1} IPs únicas"),
+        ["Help"] = ("Help", "Ayuda"),
+        ["Faq"] = ("Frequently Asked Questions", "Preguntas Frecuentes"),
+        ["Changelog"] = ("Changelog", "Historial de cambios"),
+        ["Website"] = ("Website", "Sitio web"),
+        ["Donate"] = ("Donate", "Donar"),
+        ["CheckForUpdates"] = ("Check for updates...", "Buscar actualizaciones..."),
+        ["SearchOnline"] = ("Search online", "Buscar en línea"),
+        ["CopyPath"] = ("Copy path", "Copiar ruta"),
+        ["OpenFolder"] = ("Open folder", "Abrir carpeta"),
     };
 
     public static string T(string key, params object[] args)

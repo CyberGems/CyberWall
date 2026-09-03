@@ -198,13 +198,85 @@
                     </StackPanel>
                 </Button>
 
-                <!-- About -->
-                <Button x:Name="AboutBtn" Style="{StaticResource MenuActionButtonStyle}" Click="About_Click">
-                    <StackPanel Orientation="Horizontal">
-                        <Path Data="M 12 2 C 6.48 2 2 6.48 2 12 C 2 17.52 6.48 22 12 22 C 17.52 22 22 17.52 22 12 C 22 6.48 17.52 2 12 2 Z M 13 17 L 11 17 L 11 11 L 13 11 Z M 13 9 L 11 9 L 11 7 L 13 7 Z" Fill="{DynamicResource SubTextBrush}" Width="13" Height="13" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="AboutText" Text="Acerca de CyberWall" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    </StackPanel>
+                <!-- Help (Expandable Accordion) -->
+                <Button x:Name="HelpBtn" Style="{StaticResource MenuActionButtonStyle}" Click="Help_Click">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Path Data="M 12 22 A 10 10 0 1 0 12 2 A 10 10 0 0 0 12 22 M 9 9 A 3 3 0 0 1 12 6 A 3 3 0 0 1 15 9 C 15 11 12 11.5 12 14 M 12 18 H 12.01" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" Width="13" Height="14" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center" Fill="Transparent"/>
+                            <TextBlock x:Name="HelpText" Text="Ayuda" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Path x:Name="HelpChevron" Grid.Column="1" Data="M 6 9 L 12 15 L 18 9" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" Width="9" Height="9" Stretch="Uniform" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                            <Path.RenderTransform>
+                                <RotateTransform x:Name="HelpChevronRotate" Angle="0"/>
+                            </Path.RenderTransform>
+                        </Path>
+                    </Grid>
                 </Button>
+
+                <!-- Help Sub-Items (Collapsible Accordion matching CyberManager) -->
+                <StackPanel x:Name="HelpSubPanel" Visibility="Collapsed" Margin="14,0,0,2">
+                    <!-- 1. Help (Wiki) -->
+                    <Button x:Name="SubHelpBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,5" Click="SubHelp_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="M 12 22 A 10 10 0 1 0 12 2 A 10 10 0 0 0 12 22 M 9 9 A 3 3 0 0 1 12 6 A 3 3 0 0 1 15 9 C 15 11 12 11.5 12 14 M 12 18 H 12.01" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.2" Width="12" Height="13" Stretch="Uniform" Margin="0,0,9,0" VerticalAlignment="Center" Fill="Transparent"/>
+                            <TextBlock x:Name="SubHelpText" Text="Ayuda" FontSize="11" FontWeight="Normal" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 2. FAQ -->
+                    <Button x:Name="SubFaqBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,5" Click="SubFaq_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="M 21 15 A 2 2 0 0 1 19 17 H 7 L 3 21 V 5 A 2 2 0 0 1 5 3 H 19 A 2 2 0 0 1 21 5 Z" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.2" Width="12" Height="13" Stretch="Uniform" Margin="0,0,9,0" VerticalAlignment="Center" Fill="Transparent"/>
+                            <TextBlock x:Name="SubFaqText" Text="Preguntas Frecuentes" FontSize="11" FontWeight="Normal" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 3. Changelog -->
+                    <Button x:Name="SubChangelogBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,5" Click="SubChangelog_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="M 9 6 H 20 M 9 12 H 20 M 9 18 H 20 M 4 6 H 5 M 4 12 H 5 M 4 18 H 5" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.2" Width="12" Height="13" Stretch="Uniform" Margin="0,0,9,0" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="SubChangelogText" Text="Historial de cambios" FontSize="11" FontWeight="Normal" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 4. Website -->
+                    <Button x:Name="SubWebsiteBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,5" Click="SubWebsite_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="M 12 2 A 10 10 0 1 0 12 22 A 10 10 0 0 0 12 2 M 2 12 H 22 M 12 2 A 15 15 0 0 0 12 22 A 15 15 0 0 0 12 2" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.2" Width="12" Height="13" Stretch="Uniform" Margin="0,0,9,0" VerticalAlignment="Center" Fill="Transparent"/>
+                            <TextBlock x:Name="SubWebsiteText" Text="Sitio web" FontSize="11" FontWeight="Normal" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 5. Donate -->
+                    <Button x:Name="SubDonateBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,5" Click="SubDonate_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="M 12 21.35 L 10.55 20.03 C 5.4 15.36 2 12.28 2 8.5 C 2 5.42 4.42 3 7.5 3 C 9.24 3 10.91 3.81 12 5.09 C 13.09 3.81 14.76 3 16.5 3 C 19.58 3 22 5.42 22 8.5 C 22 12.28 18.6 15.36 13.45 20.04 L 12 21.35 Z" Fill="#F43F5E" Width="12" Height="13" Stretch="Uniform" Margin="0,0,9,0" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="SubDonateText" Text="Donar" FontSize="11" FontWeight="Normal" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="4,3,4,3" Opacity="0.5"/>
+
+                    <!-- 6. About CyberWall -->
+                    <Button x:Name="SubAboutBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,5" Click="SubAbout_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="M 12 22 A 10 10 0 1 0 12 2 A 10 10 0 0 0 12 22 M 12 16 V 12 M 12 8 H 12.01" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.2" Width="12" Height="13" Stretch="Uniform" Margin="0,0,9,0" VerticalAlignment="Center" Fill="Transparent"/>
+                            <TextBlock x:Name="SubAboutText" Text="Acerca de CyberWall..." FontSize="11" FontWeight="Normal" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 7. Check for Updates -->
+                    <Button x:Name="SubCheckUpdateBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,5" Click="SubCheckUpdate_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="M 12 4 V 15 M 7 10 L 12 15 L 17 10 M 5 20 H 19" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="12" Height="13" Stretch="Uniform" Margin="0,0,9,0" VerticalAlignment="Center" Fill="Transparent"/>
+                            <TextBlock x:Name="SubCheckUpdateText" Text="Buscar actualizaciones..." FontSize="11" FontWeight="Normal" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </StackPanel>
 
             <!-- 4. Separator -->

@@ -22,13 +22,24 @@ public partial class AboutWindow : Window, IModalAttentionWindow
         ModalAttentionHelper.Trigger(this, OuterBorder, WindowScale, WindowGlow, ref _lastAttentionTime);
     }
 
-    public AboutWindow(AppSettings settings)
+    public AboutWindow(AppSettings settings, bool checkUpdatesNow = false)
     {
         _settings = settings;
         InitializeComponent();
         Icon = AppIconHelper.CreateShieldImageSource(64);
         CyberWallWindowChrome.Apply(this, 12);
         LoadContent();
+
+        if (checkUpdatesNow)
+        {
+            Loaded += (_, _) =>
+            {
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, () =>
+                {
+                    UpdateCheckButton_Click(UpdateBtn, new RoutedEventArgs());
+                });
+            };
+        }
     }
 
     private void LoadContent()

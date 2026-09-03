@@ -4,7 +4,7 @@
         xmlns:conv="clr-namespace:CyberWall.UI.Converters"
         Title="CyberWall — Notifications" Height="520" Width="520" MinHeight="380" MinWidth="420"
         WindowStartupLocation="CenterOwner" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
-        ResizeMode="NoResize"
+        ResizeMode="NoResize" ShowInTaskbar="False"
         TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType"
         UseLayoutRounding="True" SnapsToDevicePixels="True"
         FontFamily="Segoe UI Variable Text, Segoe UI, -apple-system, BlinkMacSystemFont, Roboto, sans-serif">

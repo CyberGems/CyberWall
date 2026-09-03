@@ -40,6 +40,7 @@ public partial class TrayContextMenuWindow : Window
         UpdateProtectionState();
 
         WindowStartupLocation = WindowStartupLocation.Manual;
+        SizeChanged += (_, _) => PositionWindow();
         PositionWindow();
     }
 
@@ -144,7 +145,14 @@ public partial class TrayContextMenuWindow : Window
         SettingsText.Text = Strings.T("Settings");
         LogText.Text = Strings.T("OpenLog");
         StatsText.Text = Strings.T("StatsMenu");
-        AboutText.Text = Strings.T("About");
+        HelpText.Text = Strings.T("Help");
+        SubHelpText.Text = Strings.T("Help");
+        SubFaqText.Text = Strings.T("Faq");
+        SubChangelogText.Text = Strings.T("Changelog");
+        SubWebsiteText.Text = Strings.T("Website");
+        SubDonateText.Text = Strings.T("Donate");
+        SubAboutText.Text = $"{Strings.T("About")}...";
+        SubCheckUpdateText.Text = Strings.T("CheckForUpdates");
         ExitText.Text = Strings.T("ExitApp");
     }
 
@@ -228,10 +236,12 @@ public partial class TrayContextMenuWindow : Window
         CloseMenu();
         _mainWindow.Dispatcher.Invoke(() =>
         {
-            _mainWindow.Show();
-            _mainWindow.WindowState = WindowState.Normal;
-            _mainWindow.Activate();
-            var w = new SettingsWindow(App.Settings) { Owner = _mainWindow };
+            var isMainVisible = _mainWindow.IsVisible && _mainWindow.WindowState != WindowState.Minimized;
+            var w = new SettingsWindow(App.Settings)
+            {
+                Owner = isMainVisible ? _mainWindow : null,
+                WindowStartupLocation = isMainVisible ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen
+            };
             w.ShowDialog();
             _mainWindow.RefreshLanguage();
             _mainWindow.RefreshStatusFromExternal();
@@ -243,10 +253,12 @@ public partial class TrayContextMenuWindow : Window
         CloseMenu();
         _mainWindow.Dispatcher.Invoke(() =>
         {
-            _mainWindow.Show();
-            _mainWindow.WindowState = WindowState.Normal;
-            _mainWindow.Activate();
-            var dlg = new Dialogs.LogViewerDialog { Owner = _mainWindow };
+            var isMainVisible = _mainWindow.IsVisible && _mainWindow.WindowState != WindowState.Minimized;
+            var dlg = new Dialogs.LogViewerDialog
+            {
+                Owner = isMainVisible ? _mainWindow : null,
+                WindowStartupLocation = isMainVisible ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen
+            };
             dlg.ShowDialog();
         });
     }
@@ -256,25 +268,90 @@ public partial class TrayContextMenuWindow : Window
         CloseMenu();
         _mainWindow.Dispatcher.Invoke(() =>
         {
-            _mainWindow.Show();
-            _mainWindow.WindowState = WindowState.Normal;
-            _mainWindow.Activate();
-            var dlg = new Dialogs.StatisticsDialog { Owner = _mainWindow };
+            var isMainVisible = _mainWindow.IsVisible && _mainWindow.WindowState != WindowState.Minimized;
+            var dlg = new Dialogs.StatisticsDialog
+            {
+                Owner = isMainVisible ? _mainWindow : null,
+                WindowStartupLocation = isMainVisible ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen
+            };
             dlg.ShowDialog();
         });
     }
 
-    private void About_Click(object sender, RoutedEventArgs e)
+    private void Help_Click(object sender, RoutedEventArgs e)
+    {
+        bool isExpanded = HelpSubPanel.Visibility == Visibility.Visible;
+        HelpSubPanel.Visibility = isExpanded ? Visibility.Collapsed : Visibility.Visible;
+        HelpChevronRotate.Angle = isExpanded ? 0 : 180;
+    }
+
+    private void SubHelp_Click(object sender, RoutedEventArgs e)
+    {
+        CloseMenu();
+        OpenUrl("https://github.com/CyberGems/CyberWall/wiki");
+    }
+
+    private void SubFaq_Click(object sender, RoutedEventArgs e)
+    {
+        CloseMenu();
+        OpenUrl("https://github.com/CyberGems/CyberWall/wiki/FAQ");
+    }
+
+    private void SubChangelog_Click(object sender, RoutedEventArgs e)
+    {
+        CloseMenu();
+        OpenUrl("https://github.com/CyberGems/CyberWall/releases");
+    }
+
+    private void SubWebsite_Click(object sender, RoutedEventArgs e)
+    {
+        CloseMenu();
+        OpenUrl("https://cybergems.org");
+    }
+
+    private void SubDonate_Click(object sender, RoutedEventArgs e)
+    {
+        CloseMenu();
+        OpenUrl("https://github.com/CyberGems/CyberWall#%EF%B8%8F-donate");
+    }
+
+    private void SubAbout_Click(object sender, RoutedEventArgs e)
     {
         CloseMenu();
         _mainWindow.Dispatcher.Invoke(() =>
         {
-            _mainWindow.Show();
-            _mainWindow.WindowState = WindowState.Normal;
-            _mainWindow.Activate();
-            var dlg = new Dialogs.AboutWindow(App.Settings) { Owner = _mainWindow };
+            var isMainVisible = _mainWindow.IsVisible && _mainWindow.WindowState != WindowState.Minimized;
+            var dlg = new Dialogs.AboutWindow(App.Settings, checkUpdatesNow: false)
+            {
+                Owner = isMainVisible ? _mainWindow : null,
+                WindowStartupLocation = isMainVisible ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen
+            };
             dlg.ShowDialog();
         });
+    }
+
+    private void SubCheckUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        CloseMenu();
+        _mainWindow.Dispatcher.Invoke(() =>
+        {
+            var isMainVisible = _mainWindow.IsVisible && _mainWindow.WindowState != WindowState.Minimized;
+            var dlg = new Dialogs.AboutWindow(App.Settings, checkUpdatesNow: true)
+            {
+                Owner = isMainVisible ? _mainWindow : null,
+                WindowStartupLocation = isMainVisible ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen
+            };
+            dlg.ShowDialog();
+        });
+    }
+
+    private static void OpenUrl(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch { }
     }
 
     private void Exit_Click(object sender, RoutedEventArgs e)
