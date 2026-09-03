@@ -25,6 +25,16 @@ public static class UpdateService
     private const string RepoOwner = "CyberGems";
     private const string RepoName = "CyberWall";
 
+    public static UpdateCheckResult? LastCheckResult { get; private set; }
+    public static event Action<UpdateCheckResult>? UpdateAvailabilityChanged;
+
+    private static UpdateCheckResult RecordResult(UpdateCheckResult res)
+    {
+        LastCheckResult = res;
+        try { UpdateAvailabilityChanged?.Invoke(res); } catch { }
+        return res;
+    }
+
     public static Version GetCurrentVersion()
     {
         var version = Assembly.GetExecutingAssembly().GetName().Version;
@@ -128,7 +138,7 @@ public static class UpdateService
                 ? Strings.T("UpdateAvailable", tagName)
                 : Strings.T("UpToDate", currentLabel);
 
-            return new UpdateCheckResult(
+            return RecordResult(new UpdateCheckResult(
                 currentVersion,
                 latestVersion,
                 tagName,
@@ -138,25 +148,25 @@ public static class UpdateService
                 assetSha256,
                 publishedAt,
                 isAvailable,
-                status);
+                status));
         }
         catch (HttpRequestException)
         {
-            return new UpdateCheckResult(
+            return RecordResult(new UpdateCheckResult(
                 currentVersion, null, currentLabel, string.Empty, null, null, null, null, false,
-                Strings.Current == Lang.Es ? "No se pudo comprobar actualizaciones. Comprueba tu conexión a internet." : "Could not check for updates. Check your internet connection.");
+                Strings.Current == Lang.Es ? "No se pudo comprobar actualizaciones. Comprueba tu conexión a internet." : "Could not check for updates. Check your internet connection."));
         }
         catch (TaskCanceledException)
         {
-            return new UpdateCheckResult(
+            return RecordResult(new UpdateCheckResult(
                 currentVersion, null, currentLabel, string.Empty, null, null, null, null, false,
-                Strings.Current == Lang.Es ? "La comprobación de actualizaciones expiró." : "Update check timed out. Try again later.");
+                Strings.Current == Lang.Es ? "La comprobación de actualizaciones expiró." : "Update check timed out. Try again later."));
         }
         catch (JsonException)
         {
-            return new UpdateCheckResult(
+            return RecordResult(new UpdateCheckResult(
                 currentVersion, null, currentLabel, string.Empty, null, null, null, null, false,
-                Strings.Current == Lang.Es ? "Respuesta inesperada del servidor de actualizaciones." : "Unexpected response from update server.");
+                Strings.Current == Lang.Es ? "Respuesta inesperada del servidor de actualizaciones." : "Unexpected response from update server."));
         }
     }
 

@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using CyberWall.Common;
 using CyberWall.Common.Geo;
@@ -30,6 +31,20 @@ public partial class MainWindow : Window
     private bool _layoutRestored;
     private readonly Dictionary<string, string> _lastRemoteByApp = new(StringComparer.OrdinalIgnoreCase);
     private TrayService? _tray;
+    private UpdateCheckResult? _activeUpdateResult;
+
+    private static readonly SolidColorBrush UpdateNormalBgBrush = new(System.Windows.Media.Color.FromRgb(0x1D, 0x26, 0x36));
+    private static readonly SolidColorBrush UpdateNormalBorderBrush = new(System.Windows.Media.Color.FromRgb(0x2D, 0x3A, 0x4E));
+    private static readonly SolidColorBrush UpdateHoverBgBrush = new(System.Windows.Media.Color.FromRgb(0x25, 0x32, 0x46));
+    private static readonly SolidColorBrush UpdateHoverBorderBrush = new(System.Windows.Media.Color.FromRgb(0x3B, 0x4E, 0x6E));
+
+    static MainWindow()
+    {
+        UpdateNormalBgBrush.Freeze();
+        UpdateNormalBorderBrush.Freeze();
+        UpdateHoverBgBrush.Freeze();
+        UpdateHoverBorderBrush.Freeze();
+    }
 
     public MainWindow()
     {
@@ -59,8 +74,12 @@ public partial class MainWindow : Window
         ProcessTrafficTracker.Instance.Start();
         ConnectivityService.Instance.Start(_notifications);
         AppInfoMonitorService.Instance.Start(_notifications, _svc);
+        UpdateService.UpdateAvailabilityChanged += OnUpdateAvailabilityChanged;
+        _activeUpdateResult = UpdateService.LastCheckResult;
+        UpdateAvailableButtonState();
         Closed += (_, _) =>
         {
+            UpdateService.UpdateAvailabilityChanged -= OnUpdateAvailabilityChanged;
             AppInfoMonitorService.Instance.Stop();
             ConnectivityService.Instance.Stop();
             ProcessTrafficTracker.Instance.ActivityUpdated -= OnActivityUpdated;
@@ -166,8 +185,10 @@ public partial class MainWindow : Window
             var result = await UpdateService.CheckForUpdatesAsync();
             if (result.IsUpdateAvailable)
             {
+                _activeUpdateResult = result;
                 Dispatcher.Invoke(() =>
                 {
+                    UpdateAvailableButtonState();
                     _notifications.PurgeObsoleteUpdateNotifications(UpdateService.GetCurrentVersion());
                     _notifications.Add(AppNotificationKind.UpdateAvailable, detail: result.LatestVersionLabel);
                     var choice = ConfirmDialog.Show(
@@ -188,7 +209,12 @@ public partial class MainWindow : Window
             }
             else
             {
-                Dispatcher.Invoke(() => _notifications.PurgeObsoleteUpdateNotifications(UpdateService.GetCurrentVersion()));
+                _activeUpdateResult = null;
+                Dispatcher.Invoke(() =>
+                {
+                    UpdateAvailableButtonState();
+                    _notifications.PurgeObsoleteUpdateNotifications(UpdateService.GetCurrentVersion());
+                });
             }
         }
         catch { }
@@ -212,6 +238,7 @@ public partial class MainWindow : Window
         StatsBtnText.Text = Strings.T("StatsButton");
         TrafficIndicator.RefreshLanguage();
         _tray?.RefreshLanguage();
+        UpdateAvailableButtonState();
 
         var progHdr = Strings.T("Program") + (_sortBy == "DisplayName" ? (_sortAsc ? " ▾" : " ▴") : "");
         var pathHdr = Strings.T("Path") + (_sortBy == "AppPath" ? (_sortAsc ? " ▾" : " ▴") : "");
@@ -379,6 +406,7 @@ public partial class MainWindow : Window
 
     private void UpdateNotifBadge()
     {
+        UpdateAvailableButtonState();
         if (NotifBadge == null || NotifBadgeText == null) return;
         var count = _notifications.UnreadCount;
         if (count <= 0)
@@ -446,6 +474,114 @@ public partial class MainWindow : Window
     }
 
     private void Notifications_Click(object sender, RoutedEventArgs e) => ShowNotifications();
+
+    private void UpdateAvailableButtonState()
+    {
+        bool hasUpdate = _activeUpdateResult is { IsUpdateAvailable: true } ||
+                         _notifications.All.Any(n => n.Kind == AppNotificationKind.UpdateAvailable);
+
+        if (UpdateAvailableBtn != null)
+        {
+            UpdateAvailableBtn.Visibility = hasUpdate ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        if (hasUpdate && UpdateBtnText != null && UpdateAvailableBtn != null)
+        {
+            UpdateBtnText.Text = Strings.T("Update");
+            var versionLabel = _activeUpdateResult?.LatestVersionLabel;
+            if (string.IsNullOrEmpty(versionLabel))
+            {
+                var n = _notifications.All.FirstOrDefault(x => x.Kind == AppNotificationKind.UpdateAvailable);
+                versionLabel = n?.Detail;
+            }
+            UpdateAvailableBtn.ToolTip = !string.IsNullOrEmpty(versionLabel)
+                ? Strings.T("UpdateAvailable", versionLabel)
+                : Strings.T("UpdateActionTooltip");
+        }
+    }
+
+    private void OnUpdateAvailabilityChanged(UpdateCheckResult res)
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            _activeUpdateResult = res.IsUpdateAvailable ? res : null;
+            UpdateAvailableButtonState();
+        });
+    }
+
+    private void UpdateAvailableBtn_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (UpdateBtnBorder == null || UpdateTextWrapper == null || UpdateBtnText == null) return;
+
+        UpdateBtnBorder.Background = UpdateHoverBgBrush;
+        UpdateBtnBorder.BorderBrush = UpdateHoverBorderBrush;
+
+        UpdateBtnText.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+        double targetWidth = Math.Ceiling(UpdateBtnText.DesiredSize.Width) + 17;
+
+        var widthAnim = new DoubleAnimation(targetWidth, TimeSpan.FromMilliseconds(200))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        UpdateTextWrapper.BeginAnimation(FrameworkElement.WidthProperty, widthAnim);
+
+        var opacityAnim = new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(180))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        UpdateTextWrapper.BeginAnimation(UIElement.OpacityProperty, opacityAnim);
+    }
+
+    private void UpdateAvailableBtn_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (UpdateBtnBorder == null || UpdateTextWrapper == null) return;
+
+        UpdateBtnBorder.Background = UpdateNormalBgBrush;
+        UpdateBtnBorder.BorderBrush = UpdateNormalBorderBrush;
+
+        var widthAnim = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(180))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        UpdateTextWrapper.BeginAnimation(FrameworkElement.WidthProperty, widthAnim);
+
+        var opacityAnim = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(140))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        UpdateTextWrapper.BeginAnimation(UIElement.OpacityProperty, opacityAnim);
+    }
+
+    private async void UpdateAvailableBtn_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var result = _activeUpdateResult ?? await UpdateService.CheckForUpdatesAsync();
+            if (result == null || !result.IsUpdateAvailable)
+            {
+                _activeUpdateResult = null;
+                UpdateAvailableButtonState();
+                return;
+            }
+
+            _activeUpdateResult = result;
+            var choice = ConfirmDialog.Show(
+                this,
+                Strings.T("UpdateAvailable", result.LatestVersionLabel),
+                $"{Strings.T("Current")} {UpdateService.GetCurrentVersionLabel()}\n{Strings.T("Latest")} {result.LatestVersionLabel}\n\n{Strings.T("UpdatePrompt")}",
+                Strings.T("Download"),
+                Strings.T("Later"));
+
+            if (choice)
+            {
+                _notifications.MarkRelatedRead(AppNotificationKind.UpdateAvailable, null);
+                var about = new AboutWindow(App.Settings) { Owner = this };
+                about.Show();
+                _ = about.StartUpdateDownloadAsync(result);
+            }
+        }
+        catch { }
+    }
 
     private string _sortBy = "DisplayName";
     private bool _sortAsc = true;

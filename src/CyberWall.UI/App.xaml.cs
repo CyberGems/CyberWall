@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Settings;
@@ -27,13 +29,50 @@ public partial class App : System.Windows.Application
     private static extern bool SetProcessDpiAwarenessContext(IntPtr dpiContext);
     private static readonly IntPtr DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = new IntPtr(-4);
 
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessID);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    private static extern bool Process32First(IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    private static extern bool Process32Next(IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr hObject);
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    private struct PROCESSENTRY32
+    {
+        public uint dwSize;
+        public uint cntUsage;
+        public uint th32ProcessID;
+        public IntPtr th32DefaultHeapID;
+        public uint th32ModuleID;
+        public uint cntThreads;
+        public uint th32ParentProcessID;
+        public int pcPriClassBase;
+        public uint dwFlags;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+        public string szExeFile;
+    }
+
     protected override void OnStartup(System.Windows.StartupEventArgs e)
     {
+        Settings = AppSettings.Load();
+
         bool isStartingMinimized = e.Args.Any(a =>
             a.Equals("--minimized", StringComparison.OrdinalIgnoreCase) ||
             a.Equals("--tray", StringComparison.OrdinalIgnoreCase) ||
             a.Equals("-minimized", StringComparison.OrdinalIgnoreCase) ||
             a.Equals("/minimized", StringComparison.OrdinalIgnoreCase));
+
+        // Safety fallback: If launched by Windows Task Scheduler at boot/logon without args,
+        // respect the user's StartMinimized preference so the window does not pop up unexpectedly.
+        if (!isStartingMinimized && Settings.StartMinimized && IsLaunchedByTaskScheduler())
+        {
+            isStartingMinimized = true;
+        }
 
         _singleInstanceMutex = new Mutex(true, MutexName, out bool createdNew);
 
@@ -56,14 +95,8 @@ public partial class App : System.Windows.Application
         }
         catch { }
 
-        Settings = AppSettings.Load();
         Strings.Current = Settings.Language;
         ThemeManager.Apply(Settings.Theme);
-        try
-        {
-            CyberWall.Service.Wfp.RealFirewall.EnsureSelfAllowed();
-        }
-        catch { }
 
         base.OnStartup(e);
 
@@ -77,6 +110,66 @@ public partial class App : System.Windows.Application
         else
         {
             mainWindow.Show();
+        }
+
+        // Asynchronously self-heal / synchronize the scheduled task to ensure
+        // Normal priority (no delayed start) and the correct --minimized arguments.
+        Task.Run(() =>
+        {
+            try
+            {
+                if (Settings.RunAtStartup || StartupHelper.IsStartupEnabled())
+                {
+                    StartupHelper.EnsureTaskConfigured(Settings.StartMinimized);
+                }
+            }
+            catch { }
+        });
+    }
+
+    private static bool IsLaunchedByTaskScheduler()
+    {
+        try
+        {
+            uint parentPid = GetParentProcessId();
+            if (parentPid == 0) return false;
+
+            using var proc = Process.GetProcessById((int)parentPid);
+            var name = proc.ProcessName;
+            return name.Equals("svchost", StringComparison.OrdinalIgnoreCase) ||
+                   name.Equals("taskhostw", StringComparison.OrdinalIgnoreCase) ||
+                   name.Equals("taskhost", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static uint GetParentProcessId()
+    {
+        uint currentPid = (uint)Process.GetCurrentProcess().Id;
+        IntPtr snapshot = CreateToolhelp32Snapshot(0x00000002 /* TH32CS_SNAPPROCESS */, 0);
+        if (snapshot == IntPtr.Zero || snapshot == new IntPtr(-1))
+            return 0;
+
+        try
+        {
+            var pe = new PROCESSENTRY32 { dwSize = (uint)Marshal.SizeOf<PROCESSENTRY32>() };
+            if (Process32First(snapshot, ref pe))
+            {
+                do
+                {
+                    if (pe.th32ProcessID == currentPid)
+                        return pe.th32ParentProcessID;
+                }
+                while (Process32Next(snapshot, ref pe));
+            }
+            return 0;
+        }
+        finally
+        {
+            CloseHandle(snapshot);
         }
     }
 

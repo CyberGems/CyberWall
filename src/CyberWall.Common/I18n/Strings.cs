@@ -237,6 +237,8 @@ public static class Strings
         ["NotifUpdateTitle"] = ("Update Available", "Actualización disponible"),
         ["NotifUpdateDesc"] = ("CyberWall {0} is available to download.", "CyberWall {0} está disponible para descargar."),
         ["UpdatePrompt"] = ("Download and install now?", "¿Descargar e instalar ahora?"),
+        ["Update"] = ("Update", "Actualizar"),
+        ["UpdateActionTooltip"] = ("Update available — Click to download", "Actualización disponible — Clic para descargar"),
         ["Download"] = ("Download", "Descargar"),
         ["Later"] = ("Later", "Más tarde"),
         ["VisitWebsite"] = ("Visit CyberGems website", "Visitar sitio web de CyberGems"),

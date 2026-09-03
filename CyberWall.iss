@@ -62,7 +62,7 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags
 Root: HKLM; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"; ValueType: string; ValueName: "{app}\{#AppExeName}"; ValueData: "~ RUNASADMIN HIGHDPIAWARE"; Flags: uninsdeletevalue
 
 [Run]
-Filename: "schtasks"; Parameters: "create /tn ""CyberWall"" /tr """"{app}\{#AppExeName}"" --minimized"" /sc onlogon /rl highest /f"; Tasks: startup; Flags: runhidden
+Filename: "schtasks"; Parameters: "create /tn ""CyberWall"" /tr ""'{app}\{#AppExeName}' --minimized"" /sc onlogon /rl highest /f"; Tasks: startup; Flags: runhidden
 Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""CyberWall-Allow-CyberWall"" dir=out action=allow program=""{app}\{#AppExeName}"" enable=yes profile=any"; Flags: runhidden
 Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""CyberWall-Allow-CyberWall-in"" dir=in action=allow program=""{app}\{#AppExeName}"" enable=yes profile=any"; Flags: runhidden
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall shellexec runascurrentuser
