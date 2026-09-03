@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text;
 using CyberWall.Common.Models;
 
 namespace CyberWall.Service.Engine;
@@ -7,6 +8,9 @@ public static class BlockedLog
 {
     private static readonly string Path = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "CyberWall", "blocked.log");
     private static readonly object Lock = new();
+    private const long MaxSizeBytes = 4 * 1024 * 1024; // 4 MB cap
+    private const int TargetLinesAfterTrim = 8000;
+    private static int _appendCounter = 0;
 
     public static void Append(ConnectionEvent ev, Verdict verdict)
     {
@@ -20,8 +24,44 @@ public static class BlockedLog
             lock (Lock)
             {
                 using var fs = new FileStream(Path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
-                using var sw = new StreamWriter(fs);
+                using var sw = new StreamWriter(fs, Encoding.UTF8);
                 sw.Write(line);
+
+                if (++_appendCounter % 128 == 0)
+                {
+                    EnsureCapacityLocked();
+                }
+            }
+        }
+        catch { }
+    }
+
+    private static void EnsureCapacityLocked()
+    {
+        try
+        {
+            var fi = new FileInfo(Path);
+            if (!fi.Exists || fi.Length <= MaxSizeBytes) return;
+
+            var lines = new List<string>(12000);
+            using (var fs = new FileStream(Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var sr = new StreamReader(fs, Encoding.UTF8))
+            {
+                while (sr.ReadLine() is { } l)
+                {
+                    if (!string.IsNullOrWhiteSpace(l)) lines.Add(l);
+                }
+            }
+
+            if (lines.Count > TargetLinesAfterTrim)
+            {
+                var keep = lines.Skip(lines.Count - TargetLinesAfterTrim);
+                using var fs = new FileStream(Path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+                using var sw = new StreamWriter(fs, Encoding.UTF8);
+                foreach (var line in keep)
+                {
+                    sw.WriteLine(line);
+                }
             }
         }
         catch { }

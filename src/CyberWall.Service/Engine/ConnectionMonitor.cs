@@ -13,6 +13,7 @@ public sealed class ConnectionMonitor : IDisposable
     private readonly HashSet<string> _seen = new();
     private readonly HashSet<int> _ownPids;
     private readonly WfpBlockWatcher _blockWatcher = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTime> _lastAllowedLogged = new(StringComparer.OrdinalIgnoreCase);
     private FirewallService? _svc;
     private int _polling;
 
@@ -108,9 +109,16 @@ public sealed class ConnectionMonitor : IDisposable
 
                 if (ShouldSkipPrompt(path, pid))
                 {
-                    if (_svc.Store.TryGet(path, out var rule) && rule.Verdict == Verdict.Block)
+                    if (_svc.Store.TryGet(path, out var rule))
                     {
-                        _svc.RecordBlockedActivity(ev);
+                        if (rule.Verdict == Verdict.Block)
+                        {
+                            _svc.RecordBlockedActivity(ev);
+                        }
+                        else if (rule.Verdict == Verdict.Allow)
+                        {
+                            TryRecordAllowedActivity(ev);
+                        }
                     }
                     continue;
                 }
@@ -153,6 +161,32 @@ public sealed class ConnectionMonitor : IDisposable
             return true;
         }
         return false;
+    }
+
+    private void TryRecordAllowedActivity(ConnectionEvent ev)
+    {
+        if (_svc == null) return;
+        var key = $"{ev.AppPath}|{ev.RemoteAddress}";
+        var now = DateTime.UtcNow;
+
+        if (_lastAllowedLogged.TryGetValue(key, out var lastTime))
+        {
+            if ((now - lastTime).TotalSeconds < 60.0)
+                return;
+        }
+
+        _lastAllowedLogged[key] = now;
+
+        if (_lastAllowedLogged.Count > 1000)
+        {
+            var cutoff = now.AddMinutes(-5);
+            foreach (var pair in _lastAllowedLogged)
+            {
+                if (pair.Value < cutoff) _lastAllowedLogged.TryRemove(pair.Key, out _);
+            }
+        }
+
+        _svc.RecordAllowedActivity(ev);
     }
 
     private static string? GetPath(int pid) => ProcessIdentity.GetImagePath(pid);

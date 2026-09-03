@@ -350,6 +350,16 @@ public static class Strings
         ["StatsEventsCount"] = ("{0} events", "{0} eventos"),
         ["StatsUniqueIps"] = ("{0} unique IPs", "{0} IPs únicas"),
         ["StatsUniqueIpsWithLocal"] = ("{0} unique IPs ({1} local)", "{0} IPs únicas ({1} locales)"),
+        ["StatsFilterAll"] = ("All", "Todos"),
+        ["StatsFilterBlocked"] = ("Blocked", "Bloqueados"),
+        ["StatsFilterAllowed"] = ("Allowed", "Permitidos"),
+        ["StatsDataVolume"] = ("Data Volume", "Volumen de Datos"),
+        ["StatsSessionData"] = ("Session Transfer", "Transferencia en sesión"),
+        ["StatsResetTitle"] = ("Reset Statistics", "Restablecer Estadísticas"),
+        ["StatsResetConfirm"] = ("Are you sure you want to reset all traffic statistics and clear the event log? This action cannot be undone.", "¿Estás seguro de que deseas restablecer todas las estadísticas de tráfico y borrar el registro de eventos? Esta acción no se puede deshacer."),
+        ["StatsResetBtn"] = ("Reset", "Restablecer"),
+        ["StatsCountriesCount"] = ("{0} countries", "{0} países"),
+        ["StatsScopeDetail"] = ("{0} apps · {1} unique IPs", "{0} apps · {1} IPs únicas"),
     };
 
     public static string T(string key, params object[] args)

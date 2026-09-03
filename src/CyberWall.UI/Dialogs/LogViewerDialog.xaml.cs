@@ -71,8 +71,9 @@ public partial class LogViewerDialog : Window
         {
             try
             {
-                var lines = File.ReadAllLines(path);
-                foreach (var line in lines)
+                using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var sr = new StreamReader(fs, System.Text.Encoding.UTF8);
+                while (sr.ReadLine() is { } line)
                 {
                     if (string.IsNullOrWhiteSpace(line)) continue;
                     var parts = line.Split('|', StringSplitOptions.TrimEntries);

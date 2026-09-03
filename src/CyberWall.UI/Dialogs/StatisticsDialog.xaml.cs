@@ -5,6 +5,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using CyberWall.Common;
 using CyberWall.Common.Geo;
 using CyberWall.Common.I18n;
@@ -24,6 +25,13 @@ public enum StatPeriod
     AllTime
 }
 
+public enum StatVerdictFilter
+{
+    All,
+    BlockedOnly,
+    AllowedOnly
+}
+
 public class StatItem
 {
     public string Name { get; set; } = "";
@@ -33,9 +41,12 @@ public class StatItem
     public bool HasCountry { get; set; }
     public string CountryLabel { get; set; } = "";
     public int Count { get; set; }
+    public int BlockedCount { get; set; }
+    public int AllowedCount { get; set; }
     public double Percentage { get; set; }
     public string PercentageFormatted => $"{Percentage:F1}%";
     public string CountFormatted => Count.ToString("N0", CultureInfo.CurrentCulture);
+    public string TooltipText { get; set; } = "";
 }
 
 internal class ParsedLogEvent
@@ -56,15 +67,22 @@ public partial class StatisticsDialog : Window
 {
     private readonly List<ParsedLogEvent> _allEvents = new();
     private bool _isInitializing = true;
+    private StatVerdictFilter _verdictFilter = StatVerdictFilter.All;
+    private readonly DispatcherTimer _autoRefreshTimer = new() { Interval = TimeSpan.FromSeconds(5) };
+    private long _lastKnownLogLength = -1;
 
     public StatisticsDialog()
     {
         InitializeComponent();
         Icon = AppIconHelper.CreateShieldImageSource(64);
         CyberWallWindowChrome.Apply(this, 12);
-        
+
         GeoCountry.Updated += OnGeoUpdated;
-        Closed += (_, _) => GeoCountry.Updated -= OnGeoUpdated;
+        Closed += (_, _) =>
+        {
+            _autoRefreshTimer.Stop();
+            GeoCountry.Updated -= OnGeoUpdated;
+        };
         GeoCountry.Warm();
 
         KeyDown += StatisticsDialog_KeyDown;
@@ -74,6 +92,38 @@ public partial class StatisticsDialog : Window
         _isInitializing = false;
 
         LoadAndComputeStats();
+
+        _autoRefreshTimer.Tick += (_, _) => AutoRefreshTick();
+        _autoRefreshTimer.Start();
+    }
+
+    private void AutoRefreshTick()
+    {
+        UpdateSessionVolume();
+        try
+        {
+            var path = BlockedLog.LogPath;
+            if (File.Exists(path))
+            {
+                var len = new FileInfo(path).Length;
+                if (len != _lastKnownLogLength)
+                {
+                    LoadAndComputeStats(silent: true);
+                }
+            }
+        }
+        catch { }
+    }
+
+    private void UpdateSessionVolume()
+    {
+        try
+        {
+            var snapshot = NetworkSpeedService.Instance.CurrentSnapshot;
+            DataVolumeVal.Text = $"↓ {NetworkSpeedService.FormatBytes(snapshot.TotalBytesReceived)}";
+            DataVolumeDesc.Text = $"↑ {NetworkSpeedService.FormatBytes(snapshot.TotalBytesSent)} · {Strings.T("StatsSessionData")}";
+        }
+        catch { }
     }
 
     private void StatisticsDialog_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -110,12 +160,17 @@ public partial class StatisticsDialog : Window
         PeriodLabel.Text = Strings.T("StatsPeriodLabel");
         RefreshBtnText.Text = Strings.T("Refresh");
 
+        FilterAllRadio.Content = Strings.T("StatsFilterAll");
+        FilterBlockedRadio.Content = Strings.T("StatsFilterBlocked");
+        FilterAllowedRadio.Content = Strings.T("StatsFilterAllowed");
+
         CardTotalTitle.Text = Strings.T("StatsTotalEvents");
         CardTotalDesc.Text = Strings.T("StatsEventsProcessed");
         CardBlockedTitle.Text = Strings.T("StatsBlocked");
         CardBlockedDesc.Text = Strings.T("StatsBlockedDesc");
         CardAllowedTitle.Text = Strings.T("StatsAllowed");
         CardAllowedDesc.Text = Strings.T("StatsAllowedDesc");
+        CardVolumeTitle.Text = Strings.T("StatsDataVolume");
         CardScopeTitle.Text = Strings.T("StatsGlobalScope");
 
         TopAppsTitle.Text = Strings.T("StatsTopApps");
@@ -131,29 +186,49 @@ public partial class StatisticsDialog : Window
 
         ViewLogBtnText.Text = Strings.T("StatsViewLog");
         CopySummaryBtnText.Text = Strings.T("StatsCopySummary");
+        ClearStatsBtnText.Text = Strings.T("StatsResetBtn");
+        ClearStatsBtn.ToolTip = Strings.T("StatsResetTitle");
         CloseBtn.Content = Strings.T("Close");
+
+        UpdateSessionVolume();
     }
 
-    private void LoadAndComputeStats()
+    private static string SafeGetDisplayName(string path)
     {
-        _allEvents.Clear();
+        if (string.IsNullOrWhiteSpace(path)) return "System";
+        try
+        {
+            var fn = Path.GetFileName(path);
+            return string.IsNullOrWhiteSpace(fn) ? path : fn;
+        }
+        catch
+        {
+            return path;
+        }
+    }
+
+    private void LoadAndComputeStats(bool silent = false)
+    {
         var path = BlockedLog.LogPath;
+        var newEvents = new List<ParsedLogEvent>(4000);
 
         if (File.Exists(path))
         {
             try
             {
-                var lines = File.ReadAllLines(path);
-                foreach (var line in lines)
+                _lastKnownLogLength = new FileInfo(path).Length;
+                using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var sr = new StreamReader(fs, Encoding.UTF8);
+                while (sr.ReadLine() is { } line)
                 {
                     if (string.IsNullOrWhiteSpace(line)) continue;
                     var parts = line.Split('|', StringSplitOptions.TrimEntries);
                     if (parts.Length >= 5)
                     {
                         var tsStr = parts[0];
-                        if (!DateTime.TryParse(tsStr, out var ts))
+                        if (!DateTime.TryParseExact(tsStr, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var ts))
                         {
-                            if (!DateTime.TryParseExact(tsStr, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out ts))
+                            if (!DateTime.TryParse(tsStr, CultureInfo.CurrentCulture, DateTimeStyles.None, out ts))
                                 ts = DateTime.Now;
                         }
 
@@ -171,13 +246,13 @@ public partial class StatisticsDialog : Window
 
                         var geo = GeoCountry.Lookup(addr);
 
-                        _allEvents.Add(new ParsedLogEvent
+                        newEvents.Add(new ParsedLogEvent
                         {
                             Timestamp = ts,
                             Verdict = verd,
                             Direction = dir,
                             AppPath = app,
-                            DisplayName = Path.GetFileName(app),
+                            DisplayName = SafeGetDisplayName(app),
                             RemoteEndpoint = ep,
                             RemoteAddress = addr,
                             RemotePort = port,
@@ -190,11 +265,16 @@ public partial class StatisticsDialog : Window
             catch { }
         }
 
+        _allEvents.Clear();
+        _allEvents.AddRange(newEvents);
+
         ComputeDashboard();
     }
 
     private void ComputeDashboard()
     {
+        UpdateSessionVolume();
+
         var period = StatPeriod.Last24Hours;
         if (PeriodCombo.SelectedItem is ComboBoxItem cbi && cbi.Tag is StatPeriod p)
             period = p;
@@ -211,7 +291,18 @@ public partial class StatisticsDialog : Window
         var events = _allEvents.Where(e => e.Timestamp >= cutoff).ToList();
         int total = events.Count;
 
-        CountBadge.Text = Strings.T("StatsEventsCount", total.ToString("N0", CultureInfo.CurrentCulture));
+        // KPI Counts across entire period
+        int blocked = events.Count(e => e.Verdict == Verdict.Block);
+        int allowed = total - blocked;
+        double blockedPct = total > 0 ? (blocked * 100.0 / total) : 0;
+        double allowedPct = total > 0 ? (allowed * 100.0 / total) : 0;
+
+        CountBadge.Text = _verdictFilter switch
+        {
+            StatVerdictFilter.BlockedOnly => $"{blocked:N0} " + Strings.T("StatsBlocked").ToLower(),
+            StatVerdictFilter.AllowedOnly => $"{allowed:N0} " + Strings.T("StatsAllowed").ToLower(),
+            _ => Strings.T("StatsEventsCount", total.ToString("N0", CultureInfo.CurrentCulture))
+        };
 
         if (total == 0)
         {
@@ -222,7 +313,8 @@ public partial class StatisticsDialog : Window
             BlockedPctVal.Text = " (0%)";
             AllowedEventsVal.Text = "0";
             AllowedPctVal.Text = " (0%)";
-            ScopeVal.Text = Strings.T("StatsScopeDesc", 0, 0);
+            ScopeVal.Text = Strings.T("StatsCountriesCount", 0);
+            CardScopeDesc.Text = Strings.T("StatsScopeDetail", 0, 0);
             return;
         }
 
@@ -230,11 +322,6 @@ public partial class StatisticsDialog : Window
         EmptyStateView.Visibility = Visibility.Collapsed;
 
         // 1. KPI Cards
-        int blocked = events.Count(e => e.Verdict == Verdict.Block);
-        int allowed = total - blocked;
-        double blockedPct = total > 0 ? (blocked * 100.0 / total) : 0;
-        double allowedPct = total > 0 ? (allowed * 100.0 / total) : 0;
-
         int uniqueApps = events.Select(e => e.AppPath).Where(s => !string.IsNullOrEmpty(s)).Distinct(StringComparer.OrdinalIgnoreCase).Count();
         var uniqueCountries = events.Where(e => e.Geo.HasCountry).Select(e => e.Geo.Iso2).Distinct(StringComparer.OrdinalIgnoreCase).Count();
 
@@ -245,22 +332,46 @@ public partial class StatisticsDialog : Window
         AllowedEventsVal.Text = allowed.ToString("N0", CultureInfo.CurrentCulture);
         AllowedPctVal.Text = $" ({allowedPct:F1}%)";
 
-        ScopeVal.Text = Strings.T("StatsScopeDesc", uniqueCountries, uniqueApps);
         int uniqueIps = events.Select(e => e.RemoteAddress).Where(a => !string.IsNullOrEmpty(a)).Distinct(StringComparer.OrdinalIgnoreCase).Count();
         int localCount = events.Count(e => e.Geo.Kind == GeoKind.Local);
-        CardScopeDesc.Text = localCount > 0
-            ? Strings.T("StatsUniqueIpsWithLocal", uniqueIps, localCount)
-            : Strings.T("StatsUniqueIps", uniqueIps);
+
+        ScopeVal.Text = Strings.T("StatsCountriesCount", uniqueCountries);
+        CardScopeDesc.Text = Strings.T("StatsScopeDetail", uniqueApps, uniqueIps);
+        CardScopeBorder.ToolTip = $"{uniqueCountries} {Strings.T("StatsCountriesCount", uniqueCountries)}\n{uniqueApps} {Strings.T("StatsTopApps")}\n{uniqueIps} {Strings.T("StatsUniqueIpsWithLocal", uniqueIps, localCount)}";
+
+        // Filter events for breakdown views based on selected verdict filter
+        var breakdownEvents = _verdictFilter switch
+        {
+            StatVerdictFilter.BlockedOnly => events.Where(e => e.Verdict == Verdict.Block).ToList(),
+            StatVerdictFilter.AllowedOnly => events.Where(e => e.Verdict == Verdict.Allow).ToList(),
+            _ => events
+        };
+
+        int breakdownTotal = Math.Max(1, breakdownEvents.Count);
 
         // 2. Top 5 Applications
-        var topApps = events
+        var topApps = breakdownEvents
             .GroupBy(e => e.AppPath, StringComparer.OrdinalIgnoreCase)
-            .Select(g => new StatItem
+            .Select(g =>
             {
-                Name = Path.GetFileName(g.Key),
-                IconPath = g.Key,
-                Count = g.Count(),
-                Percentage = (g.Count() * 100.0) / total
+                var appTotal = g.Count();
+                var appBlocked = g.Count(x => x.Verdict == Verdict.Block);
+                var appAllowed = appTotal - appBlocked;
+                var dispName = SafeGetDisplayName(g.Key);
+                var pct = (appTotal * 100.0) / breakdownTotal;
+
+                var tooltip = $"{dispName}\n{Strings.T("StatsTotalEvents")}: {appTotal:N0} ({pct:F1}%)\n{Strings.T("StatsBlocked")}: {appBlocked:N0}\n{Strings.T("StatsAllowed")}: {appAllowed:N0}\n{g.Key}";
+
+                return new StatItem
+                {
+                    Name = dispName,
+                    IconPath = g.Key,
+                    Count = appTotal,
+                    BlockedCount = appBlocked,
+                    AllowedCount = appAllowed,
+                    Percentage = pct,
+                    TooltipText = tooltip
+                };
             })
             .OrderByDescending(i => i.Count)
             .Take(5)
@@ -269,10 +380,10 @@ public partial class StatisticsDialog : Window
         TopAppsList.ItemsSource = topApps;
 
         // 3. Traffic Direction (Outbound vs Inbound)
-        int outbound = events.Count(e => e.Direction == Direction.Outbound);
-        int inbound = total - outbound;
-        double outPct = total > 0 ? (outbound * 100.0 / total) : 0;
-        double inPct = total > 0 ? (inbound * 100.0 / total) : 0;
+        int outbound = breakdownEvents.Count(e => e.Direction == Direction.Outbound);
+        int inbound = breakdownEvents.Count - outbound;
+        double outPct = breakdownTotal > 0 ? (outbound * 100.0 / breakdownTotal) : 0;
+        double inPct = breakdownTotal > 0 ? (inbound * 100.0 / breakdownTotal) : 0;
 
         OutboundVal.Text = $"{outbound:N0} ({outPct:F1}%)";
         InboundVal.Text = $"{inbound:N0} ({inPct:F1}%)";
@@ -282,8 +393,8 @@ public partial class StatisticsDialog : Window
         OutboundBarCol.Width = new GridLength(starOut, GridUnitType.Star);
         InboundBarCol.Width = new GridLength(starIn, GridUnitType.Star);
 
-        // 4. Top 5 Destination Countries (Strictly real external countries)
-        var countryGroups = events
+        // 4. Top 5 Destination Countries
+        var countryGroups = breakdownEvents
             .Where(e => e.Geo.Kind == GeoKind.Country && e.Geo.HasCountry)
             .GroupBy(e => e.Geo.Iso2 ?? "")
             .Select(g =>
@@ -295,7 +406,7 @@ public partial class StatisticsDialog : Window
                     HasCountry = true,
                     CountryLabel = CountryDisplay.Label(first.Geo),
                     Count = g.Count(),
-                    Percentage = (g.Count() * 100.0) / total
+                    Percentage = (g.Count() * 100.0) / breakdownTotal
                 };
             })
             .OrderByDescending(i => i.Count)
@@ -305,7 +416,7 @@ public partial class StatisticsDialog : Window
         TopCountriesList.ItemsSource = countryGroups;
 
         // 5. Top 5 Ports & Protocols
-        var portGroups = events
+        var portGroups = breakdownEvents
             .Where(e => e.RemotePort > 0)
             .GroupBy(e => e.RemotePort)
             .Select(g =>
@@ -317,7 +428,7 @@ public partial class StatisticsDialog : Window
                     Name = $"{port}",
                     Subtitle = service,
                     Count = g.Count(),
-                    Percentage = (g.Count() * 100.0) / total
+                    Percentage = (g.Count() * 100.0) / breakdownTotal
                 };
             })
             .OrderByDescending(i => i.Count)
@@ -338,9 +449,44 @@ public partial class StatisticsDialog : Window
         ComputeDashboard();
     }
 
+    private void FilterRadio_Checked(object sender, RoutedEventArgs e)
+    {
+        if (_isInitializing) return;
+        if (FilterBlockedRadio.IsChecked == true)
+            _verdictFilter = StatVerdictFilter.BlockedOnly;
+        else if (FilterAllowedRadio.IsChecked == true)
+            _verdictFilter = StatVerdictFilter.AllowedOnly;
+        else
+            _verdictFilter = StatVerdictFilter.All;
+
+        ComputeDashboard();
+    }
+
     private void Refresh_Click(object sender, RoutedEventArgs e)
     {
         LoadAndComputeStats();
+    }
+
+    private void ClearStats_Click(object sender, RoutedEventArgs e)
+    {
+        var confirmed = ConfirmDialog.Show(
+            this,
+            Strings.T("StatsResetTitle"),
+            Strings.T("StatsResetConfirm"),
+            Strings.T("StatsResetBtn"),
+            Strings.T("Cancel"),
+            ConfirmIconType.Trash);
+
+        if (confirmed)
+        {
+            try
+            {
+                BlockedLog.Clear();
+                _allEvents.Clear();
+                LoadAndComputeStats();
+            }
+            catch { }
+        }
     }
 
     private void ViewLog_Click(object sender, RoutedEventArgs e)
@@ -355,15 +501,23 @@ public partial class StatisticsDialog : Window
         try
         {
             var periodText = (PeriodCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+            var filterText = _verdictFilter switch
+            {
+                StatVerdictFilter.BlockedOnly => Strings.T("StatsFilterBlocked"),
+                StatVerdictFilter.AllowedOnly => Strings.T("StatsFilterAllowed"),
+                _ => Strings.T("StatsFilterAll")
+            };
+
             var sb = new StringBuilder();
             sb.AppendLine($"=== {Strings.T("StatsSummaryHeader")} ===");
-            sb.AppendLine($"{Strings.T("StatsPeriodLabel")} {periodText}");
+            sb.AppendLine($"{Strings.T("StatsPeriodLabel")} {periodText} | Filtro: {filterText}");
             sb.AppendLine($"{Strings.T("DateTime")}: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             sb.AppendLine("--------------------------------------------------");
             sb.AppendLine($"{Strings.T("StatsTotalEvents")}: {TotalEventsVal.Text}");
             sb.AppendLine($"{Strings.T("StatsBlocked")}: {BlockedEventsVal.Text}{BlockedPctVal.Text}");
             sb.AppendLine($"{Strings.T("StatsAllowed")}: {AllowedEventsVal.Text}{AllowedPctVal.Text}");
-            sb.AppendLine($"{Strings.T("StatsGlobalScope")}: {ScopeVal.Text}");
+            sb.AppendLine($"{Strings.T("StatsDataVolume")}: {DataVolumeVal.Text} | {DataVolumeDesc.Text}");
+            sb.AppendLine($"{Strings.T("StatsGlobalScope")}: {ScopeVal.Text} ({CardScopeDesc.Text})");
             sb.AppendLine($"{Strings.T("StatsTrafficDirection")}: Outbound {OutboundVal.Text} | Inbound {InboundVal.Text}");
             sb.AppendLine("--------------------------------------------------");
 
@@ -371,7 +525,7 @@ public partial class StatisticsDialog : Window
             {
                 sb.AppendLine($"[{Strings.T("StatsTopApps")}]");
                 foreach (var a in apps)
-                    sb.AppendLine($" - {a.Name}: {a.CountFormatted} ({a.PercentageFormatted})");
+                    sb.AppendLine($" - {a.Name}: {a.CountFormatted} ({a.PercentageFormatted}) [B: {a.BlockedCount} | A: {a.AllowedCount}]");
                 sb.AppendLine();
             }
 
