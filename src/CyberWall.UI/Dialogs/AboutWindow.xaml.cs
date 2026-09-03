@@ -16,7 +16,6 @@ public partial class AboutWindow : Window, IModalAttentionWindow
     private const string DonateUrl = "https://github.com/CyberGems/CyberWall#%EF%B8%8F-donate";
 
     private readonly AppSettings _settings;
-    private bool _suppressAutoCheckUpdateChange;
     private DateTime _lastAttentionTime = DateTime.MinValue;
 
     public void TriggerAttention()
@@ -46,16 +45,8 @@ public partial class AboutWindow : Window, IModalAttentionWindow
 
     private void LoadContent()
     {
-        _suppressAutoCheckUpdateChange = true;
-        try
-        {
-            AutoCheckUpdateCheck.IsChecked = _settings.AutoCheckForUpdates;
-            RefreshLocalization();
-        }
-        finally
-        {
-            _suppressAutoCheckUpdateChange = false;
-        }
+        AutoCheckUpdateCheck.IsChecked = _settings.AutoCheckForUpdates;
+        RefreshLocalization();
     }
 
     public void RefreshLocalization()
@@ -81,9 +72,8 @@ public partial class AboutWindow : Window, IModalAttentionWindow
         AboutFooterDonateBtn.ToolTip = Strings.T("DonateToProject");
     }
 
-    private void AutoCheckUpdateCheck_Changed(object sender, RoutedEventArgs e)
+    private void AutoCheckUpdateCheck_Click(object sender, RoutedEventArgs e)
     {
-        if (!IsLoaded || _suppressAutoCheckUpdateChange) return;
         _settings.AutoCheckForUpdates = AutoCheckUpdateCheck.IsChecked == true;
         _settings.Save();
     }

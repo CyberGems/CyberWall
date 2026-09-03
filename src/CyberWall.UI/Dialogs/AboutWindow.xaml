@@ -195,7 +195,7 @@
                                         <TextBlock x:Name="AutoUpdateDescLbl" Text="Comprobar automáticamente si hay nuevas versiones al iniciar CyberWall." FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
                                     </StackPanel>
 
-                                    <CheckBox x:Name="AutoCheckUpdateCheck" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}" VerticalAlignment="Center" Checked="AutoCheckUpdateCheck_Changed" Unchecked="AutoCheckUpdateCheck_Changed"/>
+                                    <CheckBox x:Name="AutoCheckUpdateCheck" IsChecked="True" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}" VerticalAlignment="Center" Click="AutoCheckUpdateCheck_Click"/>
                                 </Grid>
 
                                 <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,8,0,8"/>
