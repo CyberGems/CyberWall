@@ -12,6 +12,8 @@ public partial class AboutWindow : Window, IModalAttentionWindow
 {
     private const string RepoUrl = "https://github.com/CyberGems/CyberWall";
     private const string WebsiteUrl = "https://cybergems.org";
+    private const string WikiUrl = "https://github.com/CyberGems/CyberWall/wiki";
+    private const string DonateUrl = "https://github.com/CyberGems/CyberWall#%EF%B8%8F-donate";
 
     private readonly AppSettings _settings;
     private bool _suppressAutoCheckUpdateChange;
@@ -72,9 +74,11 @@ public partial class AboutWindow : Window, IModalAttentionWindow
         UpdateBtn.Content = Strings.T("CheckNow");
         AboutFooterCopyright.ToolTip = Strings.T("VisitWebsite");
         AboutFooterWebsiteBtn.ToolTip = Strings.T("VisitWebsite");
+        AboutFooterDocsBtn.ToolTip = Strings.T("OnlineDocs");
         AboutFooterGithubBtn.ToolTip = Strings.T("ViewGitHub");
         AboutFooterIssuesBtn.ToolTip = Strings.T("ReportIssue");
         AboutFooterReleasesBtn.ToolTip = Strings.T("ViewReleases");
+        AboutFooterDonateBtn.ToolTip = Strings.T("DonateToProject");
     }
 
     private void AutoCheckUpdateCheck_Changed(object sender, RoutedEventArgs e)
@@ -213,6 +217,12 @@ public partial class AboutWindow : Window, IModalAttentionWindow
         OpenUrl(WebsiteUrl);
     }
 
+    private void AboutFooterDocs_Click(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        OpenUrl(WikiUrl);
+    }
+
     private void AboutFooterGithub_Click(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
@@ -229,6 +239,12 @@ public partial class AboutWindow : Window, IModalAttentionWindow
     {
         e.Handled = true;
         OpenUrl($"{RepoUrl}/releases");
+    }
+
+    private void AboutFooterDonate_Click(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        OpenUrl(DonateUrl);
     }
 
     private static void OpenUrl(string url)

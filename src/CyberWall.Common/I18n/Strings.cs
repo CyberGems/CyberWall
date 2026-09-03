@@ -369,6 +369,12 @@ public static class Strings
         ["SearchOnline"] = ("Search online", "Buscar en línea"),
         ["CopyPath"] = ("Copy path", "Copiar ruta"),
         ["OpenFolder"] = ("Open folder", "Abrir carpeta"),
+        ["VisitWebsite"] = ("Visit CyberGems website", "Visitar sitio web de CyberGems"),
+        ["OnlineDocs"] = ("Online Documentation", "Documentación online"),
+        ["ViewGitHub"] = ("View project on GitHub", "Ver proyecto en GitHub"),
+        ["ReportIssue"] = ("Report an issue or suggestion", "Reportar un error o sugerencia"),
+        ["ViewReleases"] = ("View versions and changelog", "Ver versiones y notas de cambios"),
+        ["DonateToProject"] = ("Donate to project", "Donar al proyecto"),
     };
 
     public static string T(string key, params object[] args)
