@@ -253,13 +253,12 @@ public partial class TrayContextMenuWindow : Window
         CloseMenu();
         _mainWindow.Dispatcher.Invoke(() =>
         {
-            var isMainVisible = _mainWindow.IsVisible && _mainWindow.WindowState != WindowState.Minimized;
-            var dlg = new Dialogs.LogViewerDialog
-            {
-                Owner = isMainVisible ? _mainWindow : null,
-                WindowStartupLocation = isMainVisible ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen
-            };
-            dlg.ShowDialog();
+            _mainWindow.Show();
+            if (_mainWindow.WindowState == WindowState.Minimized)
+                _mainWindow.WindowState = WindowState.Normal;
+            _mainWindow.Activate();
+            _mainWindow.Focus();
+            _mainWindow.SelectTab(MainTab.ConnectionsLog);
         });
     }
 
@@ -268,13 +267,12 @@ public partial class TrayContextMenuWindow : Window
         CloseMenu();
         _mainWindow.Dispatcher.Invoke(() =>
         {
-            var isMainVisible = _mainWindow.IsVisible && _mainWindow.WindowState != WindowState.Minimized;
-            var dlg = new Dialogs.StatisticsDialog
-            {
-                Owner = isMainVisible ? _mainWindow : null,
-                WindowStartupLocation = isMainVisible ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen
-            };
-            dlg.ShowDialog();
+            _mainWindow.Show();
+            if (_mainWindow.WindowState == WindowState.Minimized)
+                _mainWindow.WindowState = WindowState.Normal;
+            _mainWindow.Activate();
+            _mainWindow.Focus();
+            _mainWindow.SelectTab(MainTab.Statistics);
         });
     }
 

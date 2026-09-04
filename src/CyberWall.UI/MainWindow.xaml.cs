@@ -22,8 +22,80 @@ using MenuItem = System.Windows.Controls.MenuItem;
 
 namespace CyberWall.UI;
 
+public enum MainTab
+{
+    Firewall,
+    TrafficMonitor,
+    ConnectionsLog,
+    Statistics,
+    Dashboard
+}
+
 public partial class MainWindow : Window
 {
+    public MainTab CurrentTab { get; private set; } = MainTab.Firewall;
+
+    public void SelectTab(MainTab tab)
+    {
+        CurrentTab = tab;
+
+        TabFirewallBtn.IsChecked = tab == MainTab.Firewall;
+        TabTrafficBtn.IsChecked = tab == MainTab.TrafficMonitor;
+        TabConnectionsBtn.IsChecked = tab == MainTab.ConnectionsLog;
+        TabStatsBtn.IsChecked = tab == MainTab.Statistics;
+
+        FirewallTabContent.Visibility = tab == MainTab.Firewall ? Visibility.Visible : Visibility.Collapsed;
+        TrafficMonitorTabContent.Visibility = tab == MainTab.TrafficMonitor ? Visibility.Visible : Visibility.Collapsed;
+        ConnectionsLogTabContent.Visibility = tab == MainTab.ConnectionsLog ? Visibility.Visible : Visibility.Collapsed;
+        StatisticsTabContent.Visibility = tab == MainTab.Statistics ? Visibility.Visible : Visibility.Collapsed;
+
+        // Update Tab Icon highlights
+        var accentBrush = (System.Windows.Media.Brush)FindResource("AccentBrush");
+        var subTextBrush = (System.Windows.Media.Brush)FindResource("SubTextBrush");
+
+        TabFirewallIcon.Stroke = tab == MainTab.Firewall ? accentBrush : subTextBrush;
+        TabTrafficIcon.Stroke = tab == MainTab.TrafficMonitor ? accentBrush : subTextBrush;
+        TabConnectionsIcon.Stroke = tab == MainTab.ConnectionsLog ? accentBrush : subTextBrush;
+        TabStatsIcon.Stroke = tab == MainTab.Statistics ? accentBrush : subTextBrush;
+
+        // Lifecycle hooks
+        if (tab == MainTab.TrafficMonitor)
+            TrafficMonitorTabContent.Activate();
+        else
+            TrafficMonitorTabContent.Deactivate();
+
+        if (tab == MainTab.ConnectionsLog)
+            ConnectionsLogTabContent.Activate();
+        else
+            ConnectionsLogTabContent.Deactivate();
+
+        if (tab == MainTab.Statistics)
+            StatisticsTabContent.Activate();
+        else
+            StatisticsTabContent.Deactivate();
+    }
+
+    public void Tab_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement elem && elem.Tag is string tag)
+        {
+            switch (tag)
+            {
+                case "Firewall":
+                    SelectTab(MainTab.Firewall);
+                    break;
+                case "Traffic":
+                    SelectTab(MainTab.TrafficMonitor);
+                    break;
+                case "Connections":
+                    SelectTab(MainTab.ConnectionsLog);
+                    break;
+                case "Stats":
+                    SelectTab(MainTab.Statistics);
+                    break;
+            }
+        }
+    }
     private readonly FirewallService _svc = new();
     private readonly NotificationStore _notifications = new();
     private List<AppRule> _all = new();
@@ -109,8 +181,12 @@ public partial class MainWindow : Window
             };
             TopBandwidthFlyout.ShowHistoryRequested += () =>
             {
-                var dlg = new TrafficHistoryDialog { Owner = this };
-                dlg.ShowDialog();
+                SelectTab(MainTab.TrafficMonitor);
+            };
+            TrafficMonitorTabContent.QuickBlockRequested += appPath =>
+            {
+                _svc.SetVerdict(appPath, Verdict.Block, true, null);
+                RefreshRules();
             };
             UpdateNotifBadge();
             CheckForUpdatesOnStartup();
@@ -243,13 +319,20 @@ public partial class MainWindow : Window
         NotifBtn.ToolTip = Strings.T("Notifications");
         SettingsBtn.ToolTip = Strings.T("Settings");
         AboutBtn.ToolTip = Strings.T("About");
-        ViewLogBtn.ToolTip = Strings.T("ViewLog");
-        StatsBtn.ToolTip = Strings.T("StatsButton");
-        TrafficHistoryBtn.ToolTip = Strings.T("TrafficHistoryTooltip");
+        TabFirewallText.Text = Strings.T("NavFirewall");
+        TabFirewallBtn.ToolTip = Strings.T("NavFirewallTooltip");
+        TabTrafficText.Text = Strings.T("NavTraffic");
+        TabTrafficBtn.ToolTip = Strings.T("NavTrafficTooltip");
+        TabConnectionsText.Text = Strings.T("NavConnections");
+        TabConnectionsBtn.ToolTip = Strings.T("NavConnectionsTooltip");
+        TabStatsText.Text = Strings.T("NavStats");
+        TabStatsBtn.ToolTip = Strings.T("NavStatsTooltip");
+
+        TrafficMonitorTabContent?.RefreshLanguage();
+        ConnectionsLogTabContent?.RefreshLanguage();
+        StatisticsTabContent?.RefreshLanguage();
         ModeLbl.Text = Strings.T("Mode");
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
-        ViewLogBtnText.Text = Strings.T("ViewLog");
-        TrafficHistoryBtnText.Text = Strings.T("TrafficHistoryButton");
         TrafficIndicator.RefreshLanguage();
         TopBandwidthFlyout.RefreshLanguage();
         _tray?.RefreshLanguage();
@@ -1190,23 +1273,11 @@ public partial class MainWindow : Window
         dlg.ShowDialog();
     }
     
-    private void OpenLog_Click(object sender, RoutedEventArgs e)
-    {
-        var dlg = new LogViewerDialog { Owner = this };
-        dlg.ShowDialog();
-    }
+    private void OpenLog_Click(object sender, RoutedEventArgs e) => SelectTab(MainTab.ConnectionsLog);
 
-    private void OpenStats_Click(object sender, RoutedEventArgs e)
-    {
-        var dlg = new StatisticsDialog { Owner = this };
-        dlg.ShowDialog();
-    }
+    private void OpenStats_Click(object sender, RoutedEventArgs e) => SelectTab(MainTab.Statistics);
 
-    private void OpenTrafficHistory_Click(object sender, RoutedEventArgs e)
-    {
-        var dlg = new TrafficHistoryDialog { Owner = this };
-        dlg.ShowDialog();
-    }
+    private void OpenTrafficHistory_Click(object sender, RoutedEventArgs e) => SelectTab(MainTab.TrafficMonitor);
 
     private void RulesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
