@@ -245,9 +245,11 @@ public partial class MainWindow : Window
         AboutBtn.ToolTip = Strings.T("About");
         ViewLogBtn.ToolTip = Strings.T("ViewLog");
         StatsBtn.ToolTip = Strings.T("StatsButton");
+        TrafficHistoryBtn.ToolTip = Strings.T("TrafficHistoryTooltip");
         ModeLbl.Text = Strings.T("Mode");
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
         ViewLogBtnText.Text = Strings.T("ViewLog");
+        TrafficHistoryBtnText.Text = Strings.T("TrafficHistoryButton");
         TrafficIndicator.RefreshLanguage();
         TopBandwidthFlyout.RefreshLanguage();
         _tray?.RefreshLanguage();
@@ -1197,6 +1199,12 @@ public partial class MainWindow : Window
     private void OpenStats_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new StatisticsDialog { Owner = this };
+        dlg.ShowDialog();
+    }
+
+    private void OpenTrafficHistory_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new TrafficHistoryDialog { Owner = this };
         dlg.ShowDialog();
     }
 

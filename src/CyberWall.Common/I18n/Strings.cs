@@ -189,6 +189,7 @@ public static class Strings
         ["TrafficHistoryTitle"] = ("Network Traffic History", "Historial de Tráfico de Red"),
         ["TrafficHistorySubtitle"] = ("Real-time telemetry of the last 60 seconds", "Telemetría en tiempo real de los últimos 60 segundos"),
         ["TrafficHistoryTooltip"] = ("Click to view 60s traffic history", "Clic para ver historial de tráfico de 60s"),
+        ["TrafficHistoryButton"] = ("60s History", "Historial 60s"),
         ["PeakSpeed"] = ("Peak", "Pico"),
         ["AvgSpeed"] = ("Average", "Promedio"),
         ["CurrentSpeed"] = ("Current", "Actual"),

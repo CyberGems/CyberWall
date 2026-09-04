@@ -30,10 +30,12 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Orientation="Vertical">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="⚡" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <Border Width="22" Height="22" CornerRadius="6" Background="#261E0A" BorderBrush="#854D0E" BorderThickness="1" Margin="0,0,8,0" VerticalAlignment="Center">
+                                <Path Data="M 7 1 L 2 8 L 6 8 L 5 14 L 11 6 L 7 6 Z" Fill="#FBBF24" Width="10" Height="12" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
                             <TextBlock x:Name="FlyoutTitle" Text="Consumo de Red en Vivo" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextBrush}"/>
                         </StackPanel>
-                        <TextBlock x:Name="FlyoutSubTitle" Text="Procesos con mayor tráfico activo" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="20,2,0,0"/>
+                        <TextBlock x:Name="FlyoutSubTitle" Text="Procesos con mayor tráfico activo" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="30,2,0,0"/>
                     </StackPanel>
                     <Border Grid.Column="1" Background="{DynamicResource CardSecondaryBrush}" CornerRadius="8" Padding="8,4" VerticalAlignment="Center">
                         <TextBlock x:Name="TotalThroughputText" Text="0.0 B/s" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource AccentBrush}"/>
@@ -42,70 +44,73 @@
 
                 <Border Grid.Row="1" Height="1" Background="{DynamicResource BorderBrush}" Margin="0,0,0,10"/>
 
-                <!-- Active Items List -->
-                <ItemsControl x:Name="ConsumersList" Grid.Row="2">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Margin="0,3" Padding="8,6" Background="{DynamicResource CardSecondaryBrush}" CornerRadius="8" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="28"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
+                <!-- Content Area with MinHeight so footer never jumps -->
+                <Grid Grid.Row="2" MinHeight="220">
+                    <!-- Active Items List -->
+                    <ItemsControl x:Name="ConsumersList" VerticalAlignment="Top">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,3" Padding="8,6" Background="{DynamicResource CardSecondaryBrush}" CornerRadius="8" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="28"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
 
-                                    <!-- App Icon -->
-                                    <Image Grid.Column="0" Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="22" Height="22" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <!-- App Icon -->
+                                        <Image Grid.Column="0" Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="22" Height="22" VerticalAlignment="Center" Margin="0,0,6,0"/>
 
-                                    <!-- App Info & Speeds -->
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="2,0,8,0">
-                                        <Grid>
-                                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis" MaxWidth="190"/>
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                                <TextBlock Text="↓ " Foreground="{DynamicResource AccentBrush}" FontSize="10.5" FontWeight="Bold"/>
-                                                <TextBlock Text="{Binding FormattedDownload}" Foreground="{DynamicResource TextBrush}" FontSize="10.5" FontWeight="SemiBold" Margin="0,0,6,0"/>
-                                                <TextBlock Text="↑ " Foreground="#22C55E" FontSize="10.5" FontWeight="Bold"/>
-                                                <TextBlock Text="{Binding FormattedUpload}" Foreground="{DynamicResource TextBrush}" FontSize="10.5" FontWeight="SemiBold"/>
-                                            </StackPanel>
-                                        </Grid>
-                                        <ProgressBar Height="3" Margin="0,4,0,0" Value="{Binding UsagePercent}" Maximum="100"
-                                                     Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HeaderBgBrush}"
-                                                     BorderThickness="0"/>
-                                    </StackPanel>
+                                        <!-- App Info & Speeds -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="2,0,8,0">
+                                            <Grid>
+                                                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis" MaxWidth="190"/>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                    <TextBlock Text="↓ " Foreground="{DynamicResource AccentBrush}" FontSize="10.5" FontWeight="Bold"/>
+                                                    <TextBlock Text="{Binding FormattedDownload}" Foreground="{DynamicResource TextBrush}" FontSize="10.5" FontWeight="SemiBold" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="↑ " Foreground="#22C55E" FontSize="10.5" FontWeight="Bold"/>
+                                                    <TextBlock Text="{Binding FormattedUpload}" Foreground="{DynamicResource TextBrush}" FontSize="10.5" FontWeight="SemiBold"/>
+                                                </StackPanel>
+                                            </Grid>
+                                            <ProgressBar Height="3" Margin="0,4,0,0" Value="{Binding UsagePercent}" Maximum="100"
+                                                         Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HeaderBgBrush}"
+                                                         BorderThickness="0"/>
+                                        </StackPanel>
 
-                                    <!-- Quick Block Button -->
-                                    <Button Grid.Column="2" Content="{Binding QuickBlockText}" Tag="{Binding AppPath}"
-                                            Click="QuickBlock_Click"
-                                            Background="#2D1518" BorderBrush="#E81123" Foreground="#FF6B6B"
-                                            FontSize="10" FontWeight="SemiBold" Padding="8,3"
-                                            Cursor="Hand" VerticalAlignment="Center">
-                                        <Button.Template>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border x:Name="BtnBd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="{TemplateBinding Padding}">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="BtnBd" Property="Background" Value="#E81123"/>
-                                                        <Setter Property="Foreground" Value="#FFFFFF"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Button.Template>
-                                    </Button>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                                        <!-- Quick Block Button -->
+                                        <Button Grid.Column="2" Content="{Binding QuickBlockText}" Tag="{Binding AppPath}"
+                                                Click="QuickBlock_Click"
+                                                Background="#2D1518" BorderBrush="#E81123" Foreground="#FF6B6B"
+                                                FontSize="10" FontWeight="SemiBold" Padding="8,3"
+                                                Cursor="Hand" VerticalAlignment="Center">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="BtnBd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="BtnBd" Property="Background" Value="#E81123"/>
+                                                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
-                <!-- Empty State (No Active Bandwidth) -->
-                <Border x:Name="EmptyStateBorder" Grid.Row="2" Visibility="Collapsed" Padding="0,16" HorizontalAlignment="Center">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="💤" FontSize="20" HorizontalAlignment="Center" Margin="0,0,0,6"/>
-                        <TextBlock x:Name="EmptyStateText" Text="Sin transferencias de red activas" FontSize="12" Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
+                    <!-- Empty State (No Active Bandwidth) -->
+                    <Border x:Name="EmptyStateBorder" Visibility="Collapsed" Padding="0,16" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="💤" FontSize="20" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                            <TextBlock x:Name="EmptyStateText" Text="Sin transferencias de red activas" FontSize="12" Foreground="{DynamicResource SubTextBrush}" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
 
                 <!-- Footer -->
                 <Grid Grid.Row="3" Margin="0,10,0,0">
