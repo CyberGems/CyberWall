@@ -28,25 +28,25 @@ public sealed class RuleStore
             }
             catch { }
 
-            if (!PackagePath.TryGetFamilyName(appPath, out var pfn))
+            if (PackagePath.TryGetFamilyName(appPath, out var pfn))
             {
-                rule = null!;
-                return false;
-            }
-
-            foreach (var r in _rules.Values)
-            {
-                var rulePfn = r.PackageFamilyName;
-                if (string.IsNullOrEmpty(rulePfn))
-                    PackagePath.TryGetFamilyName(r.AppPath, out rulePfn);
-                if (!string.IsNullOrEmpty(rulePfn) && pfn.Equals(rulePfn, StringComparison.OrdinalIgnoreCase))
+                foreach (var r in _rules.Values)
                 {
-                    rule = r;
-                    return true;
+                    var rulePfn = r.PackageFamilyName;
+                    if (string.IsNullOrEmpty(rulePfn))
+                        PackagePath.TryGetFamilyName(r.AppPath, out rulePfn);
+                    if (!string.IsNullOrEmpty(rulePfn) && pfn.Equals(rulePfn, StringComparison.OrdinalIgnoreCase))
+                    {
+                        rule = r;
+                        return true;
+                    }
                 }
             }
 
             if (TryGetVersionedWebViewRule(appPath, out rule))
+                return true;
+
+            if (TryGetVersionedDefenderRule(appPath, out rule))
                 return true;
 
             rule = null!;
@@ -108,6 +108,57 @@ public sealed class RuleStore
         }
 
         return false;
+    }
+
+    private bool TryGetVersionedDefenderRule(string appPath, out AppRule rule)
+    {
+        rule = null!;
+        var stablePath = StableDefenderPath(appPath);
+        if (stablePath == null) return false;
+
+        foreach (var candidate in _rules.Values)
+        {
+            if (StableDefenderPath(candidate.AppPath) == stablePath)
+            {
+                rule = candidate;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string? StableDefenderPath(string path)
+    {
+        try
+        {
+            var fileName = Path.GetFileName(path);
+            if (string.IsNullOrEmpty(fileName)) return null;
+
+            bool isDefenderBinary =
+                fileName.Equals("MpDefenderCoreService.exe", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Equals("MsMpEng.exe", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Equals("NisSrv.exe", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Equals("MpCmdRun.exe", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Equals("smartscreen.exe", StringComparison.OrdinalIgnoreCase);
+
+            if (!isDefenderBinary) return null;
+
+            if (fileName.Equals("smartscreen.exe", StringComparison.OrdinalIgnoreCase))
+                return "security:smartscreen.exe";
+
+            if (path.IndexOf(@"\Microsoft\Windows Defender\Platform\", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                path.IndexOf(@"\Windows Defender\", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return $"defender:{fileName.ToLowerInvariant()}";
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static string? StableWebViewPath(string path)

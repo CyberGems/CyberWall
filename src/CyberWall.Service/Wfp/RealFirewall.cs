@@ -70,10 +70,65 @@ public static class RealFirewall
             AddFwPortRule("CyberWall-Allow-Core-DNS-TCP", 53, isUdp: false, outbound: true);
             AddFwPortRule("CyberWall-Allow-Core-DHCP-Out", 67, isUdp: true, outbound: true);
             AddFwPortRule("CyberWall-Allow-Core-DHCP-Client-Out", 68, isUdp: true, outbound: true);
-            AddFwIpRule("CyberWall-Allow-Core-Loopback-Out", "127.0.0.1/8,::1", outbound: true);
-            AddFwIpRule("CyberWall-Allow-Core-Loopback-In", "127.0.0.1/8,::1", outbound: false);
+            AddFwPortRule("CyberWall-Allow-Core-NTP-Out", 123, isUdp: true, outbound: true);
+
+            // Clean up legacy rule names if any exist
+            RemoveRule("CyberWall-Allow-Core-Loopback-Out");
+            RemoveRule("CyberWall-Allow-Core-Loopback-In");
+
+            // IPv4 Loopback (127.0.0.0/8 covers all local IPC communication)
+            AddFwIpRule("CyberWall-Allow-Core-Loopback4-Out", "127.0.0.0/8", outbound: true);
+            AddFwIpRule("CyberWall-Allow-Core-Loopback4-In", "127.0.0.0/8", outbound: false);
+
+            // IPv6 Loopback (::1)
+            AddFwIpRule("CyberWall-Allow-Core-Loopback6-Out", "::1", outbound: true);
+            AddFwIpRule("CyberWall-Allow-Core-Loopback6-In", "::1", outbound: false);
+
+            // Ensure Windows security, Defender antimalware and SmartScreen are allowed
+            EnsureDefenderServicesAllowed();
         }
         catch { }
+    }
+
+    private static void EnsureDefenderServicesAllowed()
+    {
+        try
+        {
+            var systemDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
+            var smartScreen = Path.Combine(systemDir, "smartscreen.exe");
+            if (File.Exists(smartScreen))
+            {
+                ApplySingleAllow(smartScreen);
+            }
+
+            var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            var defenderPlatform = Path.Combine(programData, "Microsoft", "Windows Defender", "Platform");
+            if (Directory.Exists(defenderPlatform))
+            {
+                foreach (var verDir in Directory.GetDirectories(defenderPlatform))
+                {
+                    foreach (var exeName in new[] { "MpDefenderCoreService.exe", "MsMpEng.exe", "NisSrv.exe", "MpCmdRun.exe" })
+                    {
+                        var exePath = Path.Combine(verDir, exeName);
+                        if (File.Exists(exePath))
+                        {
+                            ApplySingleAllow(exePath);
+                        }
+                    }
+                }
+            }
+
+            var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            var winDef = Path.Combine(programFiles, "Windows Defender", "MsMpEng.exe");
+            if (File.Exists(winDef))
+            {
+                ApplySingleAllow(winDef);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex);
+        }
     }
 
     public static bool Disable()
@@ -234,7 +289,6 @@ public static class RealFirewall
         if (string.IsNullOrEmpty(pfn)) return;
         HostAppResolver.TerminateHelpers(appPath);
         ProcessIdentity.TerminateTcpConnections(pid, appPath);
-        ProcessIdentity.SuspendProcess(pid);
     }
 
     public static void RemoveApp(string appPath, int pid = 0)
@@ -332,6 +386,7 @@ public static class RealFirewall
 
     private static void AddFwIpRule(string name, string ipAddresses, bool outbound)
     {
+        RemoveRule(name);
         try
         {
             var tRule = Type.GetTypeFromProgID("HNetCfg.FWRule");
@@ -350,7 +405,11 @@ public static class RealFirewall
         catch (Exception ex) { Debug.WriteLine(ex); }
 
         var dir = outbound ? "out" : "in";
-        RunNetsh($"advfirewall firewall add rule name=\"{name}\" dir={dir} action=allow remoteip=\"{ipAddresses}\" enable=yes profile=any");
+        if (RunNetsh($"advfirewall firewall add rule name=\"{name}\" dir={dir} action=allow remoteip=\"{ipAddresses}\" enable=yes profile=any"))
+            return;
+
+        var psDir = outbound ? "Outbound" : "Inbound";
+        RunPowerShell($"New-NetFirewallRule -DisplayName '{EscapePs(name)}' -Direction {psDir} -Action Allow -RemoteAddress '{EscapePs(ipAddresses)}' -Profile Any -ErrorAction SilentlyContinue | Out-Null");
     }
 
     private static void AddFwPortRule(string name, int port, bool isUdp, bool outbound)
@@ -452,6 +511,20 @@ public static class RealFirewall
             catch { }
         }
 
+        if (appPath.IndexOf(@"\Microsoft\Windows Defender\Platform\", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            try
+            {
+                var dir = Path.GetDirectoryName(appPath);
+                if (dir != null && Directory.Exists(dir))
+                {
+                    foreach (var exe in Directory.GetFiles(dir, "*.exe"))
+                        result.Add(exe);
+                }
+            }
+            catch { }
+        }
+
         return result.ToList();
     }
 
@@ -542,10 +615,22 @@ public static class RealFirewall
 
     private static bool AddPackageRule(string name, string packageId, bool outbound, bool allow)
     {
-        var dir = outbound ? "out" : "in";
-        var action = allow ? "allow" : "block";
-        if (RunNetsh($"advfirewall firewall add rule name=\"{name}\" dir={dir} action={action} package=\"{packageId}\" enable=yes profile=any"))
-            return true;
+        try
+        {
+            var tRule = Type.GetTypeFromProgID("HNetCfg.FWRule");
+            if (tRule != null && GetFwPolicy() is { } policy && Activator.CreateInstance(tRule) is { } rule)
+            {
+                ((dynamic)rule).Name = name;
+                ((dynamic)rule).LocalAppPackageId = packageId;
+                ((dynamic)rule).Action = allow ? 1 : 0; // 1 = Allow, 0 = Block
+                ((dynamic)rule).Direction = outbound ? 2 : 1; // 2 = Out, 1 = In
+                ((dynamic)rule).Profiles = 0x7FFFFFFF;
+                ((dynamic)rule).Enabled = true;
+                ((dynamic)policy).Rules.Add(rule);
+                return true;
+            }
+        }
+        catch (Exception ex) { Debug.WriteLine(ex); }
 
         var psDir = outbound ? "Outbound" : "Inbound";
         var psAction = allow ? "Allow" : "Block";

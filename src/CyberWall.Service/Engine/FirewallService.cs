@@ -36,9 +36,23 @@ public sealed class FirewallService : IDisposable
         {
             lock (_sessionLock) _reappliedAllows.Clear();
             RealFirewall.EnsureSelfAllowed();
+            ProcessIdentity.ResumeAllSuspended();
+
             if (Mode == FirewallMode.Killswitch)
             {
                 Wfp.SetKillswitch(true);
+            }
+            else
+            {
+                // Preload all saved allow rules into Windows Firewall immediately
+                // so running applications (WhatsApp, CyberLauncher, CyberNotes, etc.) do not experience first-packet drops
+                foreach (var rule in Store.All)
+                {
+                    if (rule.EffectiveOutboundVerdict == Verdict.Allow || rule.EffectiveInboundVerdict == Verdict.Allow)
+                    {
+                        Wfp.ApplyAppRule(rule.AppPath, rule.EffectiveInboundVerdict, rule.EffectiveOutboundVerdict);
+                    }
+                }
             }
             Monitor.Start(this);
         }
@@ -130,7 +144,6 @@ public sealed class FirewallService : IDisposable
             return;
         HostAppResolver.TerminateHelpers(appPath);
         ProcessIdentity.TerminateTcpConnections(pid, appPath);
-        ProcessIdentity.SuspendProcess(pid);
     }
 
     public Verdict Decide(ConnectionEvent ev)

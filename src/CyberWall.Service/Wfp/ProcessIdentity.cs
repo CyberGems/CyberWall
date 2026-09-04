@@ -135,21 +135,8 @@ public static class ProcessIdentity
 
     public static void SuspendProcess(int pid)
     {
-        if (pid <= 0) return;
-        lock (_suspendLock)
-        {
-            if (!_suspended.Add(pid)) return;
-        }
-        var h = OpenProcess(0x0800, false, pid);
-        if (h == 0) h = OpenProcess(0x0010 | 0x0800, false, pid);
-        if (h == 0)
-        {
-            lock (_suspendLock) _suspended.Remove(pid);
-            return;
-        }
-        try { NtSuspendProcess(h); }
-        catch { lock (_suspendLock) _suspended.Remove(pid); }
-        finally { CloseHandle(h); }
+        // NO-OP: A network firewall must filter traffic, never suspend or freeze application processes.
+        // Suspending processes causes app hangs, UI lockups, and broken local IPC pipes.
     }
 
     public static void ResumeProcesses(string? appPath, int pid)
@@ -177,7 +164,37 @@ public static class ProcessIdentity
             lock (_suspendLock) _suspended.Remove(id);
             var h = OpenProcess(0x0800, false, id);
             if (h == 0) continue;
-            try { NtResumeProcess(h); }
+            try
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    if (NtResumeProcess(h) != 0) break;
+                }
+            }
+            catch { }
+            finally { CloseHandle(h); }
+        }
+    }
+
+    public static void ResumeAllSuspended()
+    {
+        int[] pids;
+        lock (_suspendLock)
+        {
+            pids = _suspended.ToArray();
+            _suspended.Clear();
+        }
+        foreach (var id in pids)
+        {
+            var h = OpenProcess(0x0800, false, id);
+            if (h == 0) continue;
+            try
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    if (NtResumeProcess(h) != 0) break;
+                }
+            }
             catch { }
             finally { CloseHandle(h); }
         }
