@@ -333,6 +333,8 @@ public partial class StatisticsView : UserControl
 
     private void FilterRadio_Checked(object sender, RoutedEventArgs e)
     {
+        if (_isInitializing || FilterBlockedRadio == null || FilterAllowedRadio == null) return;
+
         if (FilterBlockedRadio.IsChecked == true)
             _verdictFilter = StatVerdictFilter.BlockedOnly;
         else if (FilterAllowedRadio.IsChecked == true)
@@ -340,8 +342,7 @@ public partial class StatisticsView : UserControl
         else
             _verdictFilter = StatVerdictFilter.All;
 
-        if (!_isInitializing)
-            ComputeDashboard();
+        ComputeDashboard();
     }
 
     private void Refresh_Click(object sender, RoutedEventArgs e)

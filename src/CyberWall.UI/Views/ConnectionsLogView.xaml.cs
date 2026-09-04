@@ -17,11 +17,14 @@ namespace CyberWall.UI.Views;
 public partial class ConnectionsLogView : UserControl
 {
     private List<LogItem> _allItems = new();
+    private bool _isInitializing = true;
     private bool _isActive;
 
     public ConnectionsLogView()
     {
+        _isInitializing = true;
         InitializeComponent();
+        _isInitializing = false;
         RefreshLanguage();
         GeoCountry.Updated += OnGeoUpdated;
     }
@@ -123,6 +126,9 @@ public partial class ConnectionsLogView : UserControl
 
     private void ApplyFilter()
     {
+        if (_isInitializing || FilterBlockedRadio == null || FilterAllowedRadio == null || LogGrid == null || CountBadge == null || EmptyState == null)
+            return;
+
         var filter = SearchBox?.Text?.Trim() ?? "";
         bool filterBlockedOnly = FilterBlockedRadio.IsChecked == true;
         bool filterAllowedOnly = FilterAllowedRadio.IsChecked == true;
@@ -153,12 +159,15 @@ public partial class ConnectionsLogView : UserControl
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        SearchPlaceholder.Visibility = string.IsNullOrEmpty(SearchBox.Text) ? Visibility.Visible : Visibility.Collapsed;
+        if (_isInitializing) return;
+        if (SearchPlaceholder != null)
+            SearchPlaceholder.Visibility = string.IsNullOrEmpty(SearchBox?.Text) ? Visibility.Visible : Visibility.Collapsed;
         ApplyFilter();
     }
 
     private void Filter_Checked(object sender, RoutedEventArgs e)
     {
+        if (_isInitializing) return;
         ApplyFilter();
     }
 
