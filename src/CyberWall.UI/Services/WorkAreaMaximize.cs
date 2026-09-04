@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Interop;
@@ -111,20 +112,61 @@ public static class WorkAreaMaximize
         window.SetValue(RestoreProperty, new Rect(window.Left, window.Top, window.Width, window.Height));
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RECT
+    {
+        public int left;
+        public int top;
+        public int right;
+        public int bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    private struct MONITORINFO
+    {
+        public int cbSize;
+        public RECT rcMonitor;
+        public RECT rcWork;
+        public int dwFlags;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
     public static Rect GetWorkAreaDip(Window window)
     {
         var hwnd = new WindowInteropHelper(window).Handle;
-        var screen = hwnd != IntPtr.Zero
-            ? Screen.FromHandle(hwnd)
-            : Screen.FromPoint(Control.MousePosition);
+        if (hwnd != IntPtr.Zero)
+        {
+            var hMon = MonitorFromWindow(hwnd, 2 /* MONITOR_DEFAULTTONEAREST */);
+            if (hMon != IntPtr.Zero)
+            {
+                var mi = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
+                if (GetMonitorInfo(hMon, ref mi))
+                {
+                    var source = PresentationSource.FromVisual(window);
+                    if (source?.CompositionTarget != null)
+                    {
+                        var transform = source.CompositionTarget.TransformFromDevice;
+                        var p1 = transform.Transform(new System.Windows.Point(mi.rcWork.left, mi.rcWork.top));
+                        var p2 = transform.Transform(new System.Windows.Point(mi.rcWork.right, mi.rcWork.bottom));
+                        return new Rect(p1.X, p1.Y, Math.Max(100, p2.X - p1.X), Math.Max(100, p2.Y - p1.Y));
+                    }
 
-        var wa = screen.WorkingArea;
-        var dpi = GetDpi(window);
-        return new Rect(
-            wa.Left / dpi.x,
-            wa.Top / dpi.y,
-            wa.Width / dpi.x,
-            wa.Height / dpi.y);
+                    var dpi = GetDpi(window);
+                    return new Rect(
+                        mi.rcWork.left / dpi.x,
+                        mi.rcWork.top / dpi.y,
+                        Math.Max(100, (mi.rcWork.right - mi.rcWork.left) / dpi.x),
+                        Math.Max(100, (mi.rcWork.bottom - mi.rcWork.top) / dpi.y));
+                }
+            }
+        }
+
+        return SystemParameters.WorkArea;
     }
 
     private static (double x, double y) GetDpi(Window window)

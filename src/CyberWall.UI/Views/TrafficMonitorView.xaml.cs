@@ -21,6 +21,9 @@ public partial class TrafficMonitorView : UserControl
 
     private readonly DispatcherTimer _refreshTimer;
     private bool _isActive;
+    private Border? _activeRowBorder;
+    private string? _activeMenuAppPath;
+    private ContextMenu? _activeContextMenu;
 
     public TrafficMonitorView()
     {
@@ -153,6 +156,29 @@ public partial class TrafficMonitorView : UserControl
 
         // Active consumers list
         var top = ProcessBandwidthService.Instance.GetTopConsumers(12);
+
+        // If context menu is open, handle target item lifecycle
+        if (_activeContextMenu != null && _activeContextMenu.IsOpen && !string.IsNullOrEmpty(_activeMenuAppPath))
+        {
+            bool itemStillPresent = top.Any(x => string.Equals(x.AppPath, _activeMenuAppPath, StringComparison.OrdinalIgnoreCase));
+            if (!itemStillPresent)
+            {
+                // Item disappeared from active traffic: close the context menu immediately
+                _activeContextMenu.IsOpen = false;
+                ClearActiveMenuHighlight();
+                _activeContextMenu = null;
+                _activeMenuAppPath = null;
+            }
+            else
+            {
+                // Process is still active: freeze list re-ordering so the row does not shift
+                // or jump from under the user's cursor while they interact with the menu.
+                TotalThroughputText.Text = $"↓ {NetworkSpeedService.FormatSpeed(snapshot.DownloadBps)}  ↑ {NetworkSpeedService.FormatSpeed(snapshot.UploadBps)}";
+                DrawChart(history, snapshot);
+                return;
+            }
+        }
+
         ConsumersList.ItemsSource = top;
         bool hasConsumers = top.Count > 0;
         ConsumersList.Visibility = hasConsumers ? Visibility.Visible : Visibility.Collapsed;
@@ -336,6 +362,44 @@ public partial class TrafficMonitorView : UserControl
                 Process.Start("explorer.exe", $"/select,\"{item.AppPath}\"");
             }
             catch { }
+        }
+    }
+
+    private void ContextMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        if (sender is ContextMenu cm)
+        {
+            _activeContextMenu = cm;
+            if (cm.PlacementTarget is Border border)
+            {
+                _activeRowBorder = border;
+                if (border.DataContext is ProcessBandwidthUsage item)
+                {
+                    _activeMenuAppPath = item.AppPath;
+                }
+
+                // Highlight source row with vibrant accent border and elevated card background
+                border.BorderBrush = (System.Windows.Media.Brush)FindResource("AccentBrush");
+                border.Background = (System.Windows.Media.Brush)FindResource("CardBrush");
+            }
+        }
+    }
+
+    private void ContextMenu_Closed(object sender, RoutedEventArgs e)
+    {
+        ClearActiveMenuHighlight();
+        _activeContextMenu = null;
+        _activeMenuAppPath = null;
+        UpdateData();
+    }
+
+    private void ClearActiveMenuHighlight()
+    {
+        if (_activeRowBorder != null)
+        {
+            _activeRowBorder.ClearValue(Border.BorderBrushProperty);
+            _activeRowBorder.ClearValue(Border.BackgroundProperty);
+            _activeRowBorder = null;
         }
     }
 }

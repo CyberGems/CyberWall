@@ -60,7 +60,8 @@
             </Setter>
         </Style>
 
-        <ContextMenu x:Key="TrafficItemContextMenu" Style="{StaticResource TrafficContextMenuStyle}">
+        <ContextMenu x:Key="TrafficItemContextMenu" Style="{StaticResource TrafficContextMenuStyle}"
+                     Opened="ContextMenu_Opened" Closed="ContextMenu_Closed">
             <MenuItem Header="Buscar en línea" Style="{StaticResource TrafficMenuItemStyle}" Click="ContextSearch_Click">
                 <MenuItem.Icon>
                     <Path Fill="{DynamicResource SubTextBrush}" Stretch="Uniform" Width="12" Height="12" Data="M6,1.2 C3.4,1.2 1.2,3.4 1.2,6 C1.2,8.6 3.4,10.8 6,10.8 C7.1,10.8 8.1,10.4 8.9,9.8 L11.1,12 L12,11.1 L9.8,8.9 C10.4,8.1 10.8,7.1 10.8,6 C10.8,3.4 8.6,1.2 6,1.2 Z"/>

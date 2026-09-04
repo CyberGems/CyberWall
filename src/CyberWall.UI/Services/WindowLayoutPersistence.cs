@@ -11,7 +11,10 @@ internal static class WindowLayoutPersistence
     public static void Restore(Window window, AppSettings settings)
     {
         if (!settings.MainWindowBoundsSaved)
+        {
+            CenterOnCurrentMonitor(window, Rect.Empty);
             return;
+        }
 
         try
         {
@@ -98,7 +101,7 @@ internal static class WindowLayoutPersistence
         }
     }
 
-    private static void CenterOnCurrentMonitor(Window window, Rect savedBounds)
+    public static void CenterOnCurrentMonitor(Window window, Rect savedBounds)
     {
         var area = WorkAreaMaximize.GetWorkAreaDip(window);
         var width = IsFinitePositive(savedBounds.Width)

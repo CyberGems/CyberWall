@@ -5,7 +5,7 @@
         xmlns:ctrl="clr-namespace:CyberWall.UI.Controls"
         xmlns:views="clr-namespace:CyberWall.UI.Views"
         Title="CyberWall — Personal Firewall" Height="720" Width="1160" MinHeight="600" MinWidth="940"
-        WindowStartupLocation="CenterScreen" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        WindowStartupLocation="Manual" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ResizeMode="CanResize" PreviewKeyDown="Window_PreviewKeyDown"
         TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType" TextOptions.TextHintingMode="Fixed"
         UseLayoutRounding="True" SnapsToDevicePixels="True"

@@ -200,6 +200,12 @@ public partial class MainWindow : Window
         base.OnSourceInitialized(e);
         var source = PresentationSource.FromVisual(this) as HwndSource;
         source?.AddHook(WndProc);
+
+        if (!_layoutRestored)
+        {
+            WindowLayoutPersistence.Restore(this, App.Settings);
+            _layoutRestored = true;
+        }
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
