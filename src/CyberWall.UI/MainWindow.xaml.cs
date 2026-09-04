@@ -80,6 +80,7 @@ public partial class MainWindow : Window
         UpdateAvailableButtonState();
         Closed += (_, _) =>
         {
+            TopBandwidthFlyout.Close();
             UpdateService.UpdateAvailabilityChanged -= OnUpdateAvailabilityChanged;
             AppInfoMonitorService.Instance.Stop();
             ConnectivityService.Instance.Stop();
@@ -100,6 +101,17 @@ public partial class MainWindow : Window
                 WindowLayoutPersistence.Restore(this, App.Settings);
                 _layoutRestored = true;
             }
+            TrafficIndicator.IndicatorClicked += () => TopBandwidthFlyout.Toggle(TrafficIndicator);
+            TopBandwidthFlyout.QuickBlockRequested += appPath =>
+            {
+                _svc.SetVerdict(appPath, Verdict.Block, true, null);
+                RefreshRules();
+            };
+            TopBandwidthFlyout.ShowHistoryRequested += () =>
+            {
+                var dlg = new TrafficHistoryDialog { Owner = this };
+                dlg.ShowDialog();
+            };
             UpdateNotifBadge();
             CheckForUpdatesOnStartup();
         };
@@ -237,6 +249,7 @@ public partial class MainWindow : Window
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
         ViewLogBtnText.Text = Strings.T("ViewLog");
         TrafficIndicator.RefreshLanguage();
+        TopBandwidthFlyout.RefreshLanguage();
         _tray?.RefreshLanguage();
         UpdateAvailableButtonState();
         if (RulesLoadingTitle != null) RulesLoadingTitle.Text = Strings.T("RulesLoadingTitle");
@@ -248,7 +261,7 @@ public partial class MainWindow : Window
         var dirHdr = Strings.T("Direction") + (_sortBy == "Direction" ? (_sortAsc ? " ▾" : " ▴") : "");
         var stateHdr = Strings.T("State");
         var countryHdr = Strings.T("Country") + (_sortBy == "Country" ? (_sortAsc ? " ▾" : " ▴") : "");
-        var activityHdr = Strings.T("ActivityHeader") + (_sortBy is "Activity" or "IsActiveTraffic" ? (_sortAsc ? " ▾" : " ▴") : "");
+        var activityHdr = Strings.T("ActivityHeader") + (_sortBy is "Activity" or "IsActiveTraffic" or "Bandwidth" ? (_sortAsc ? " ▾" : " ▴") : "");
 
         StateHeaderText.Text = stateHdr;
         ActivityHeaderText.Text = activityHdr;
@@ -652,13 +665,15 @@ public partial class MainWindow : Window
 
                 IEnumerable<AppRule> SortRules(IEnumerable<AppRule> items)
                 {
-                    if (sortBy is "Activity" or "IsActiveTraffic" or "ActivityLevel")
+                    if (sortBy is "Activity" or "IsActiveTraffic" or "ActivityLevel" or "Bandwidth")
                     {
                         return sortAsc
-                            ? items.OrderByDescending(r => (int)ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).Level)
+                            ? items.OrderByDescending(r => ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).TotalBps)
+                                   .ThenByDescending(r => (int)ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).Level)
                                    .ThenByDescending(r => ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).ActiveSockets)
                                    .ThenBy(r => r.DisplayName)
-                            : items.OrderBy(r => (int)ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).Level)
+                            : items.OrderBy(r => ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).TotalBps)
+                                   .ThenBy(r => (int)ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).Level)
                                    .ThenBy(r => r.DisplayName);
                     }
 

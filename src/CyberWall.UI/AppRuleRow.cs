@@ -13,6 +13,10 @@ public sealed class AppRuleRow : INotifyPropertyChanged
 
     private ProcessActivityLevel _activityLevel = ProcessActivityLevel.Idle;
     private string _activityTooltip = string.Empty;
+    private string _bandwidthSpeedText = string.Empty;
+    private bool _hasActiveBandwidth;
+    private double _downloadBps;
+    private double _uploadBps;
 
     public string AppPath => Rule.AppPath;
     public string DisplayName => Rule.DisplayName;
@@ -55,11 +59,71 @@ public sealed class AppRuleRow : INotifyPropertyChanged
         }
     }
 
+    public string BandwidthSpeedText
+    {
+        get => _bandwidthSpeedText;
+        set
+        {
+            if (_bandwidthSpeedText != value)
+            {
+                _bandwidthSpeedText = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool HasActiveBandwidth
+    {
+        get => _hasActiveBandwidth;
+        set
+        {
+            if (_hasActiveBandwidth != value)
+            {
+                _hasActiveBandwidth = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public double DownloadBps
+    {
+        get => _downloadBps;
+        set
+        {
+            if (Math.Abs(_downloadBps - value) > 0.01)
+            {
+                _downloadBps = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(TotalBps));
+            }
+        }
+    }
+
+    public double UploadBps
+    {
+        get => _uploadBps;
+        set
+        {
+            if (Math.Abs(_uploadBps - value) > 0.01)
+            {
+                _uploadBps = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(TotalBps));
+            }
+        }
+    }
+
+    public double TotalBps => _downloadBps + _uploadBps;
+
     public void UpdateActivity(ProcessTrafficTracker tracker)
     {
         var activity = tracker.GetActivity(AppPath, Verdict);
         ActivityLevel = activity.Level;
         ActivityTooltip = tracker.FormatTooltip(AppPath, Verdict);
+        DownloadBps = activity.DownloadBps;
+        UploadBps = activity.UploadBps;
+        BandwidthSpeedText = activity.FormattedSpeed;
+        HasActiveBandwidth = activity.HasBandwidth;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

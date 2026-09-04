@@ -24,11 +24,36 @@ public sealed record ProcessActivityInfo(
     string? LastEndpoint,
     string? LastBlockedEndpoint,
     DateTime LastActivityUtc,
-    DateTime LastBlockedUtc
+    DateTime LastBlockedUtc,
+    double DownloadBps = 0,
+    double UploadBps = 0,
+    long TotalBytesIn = 0,
+    long TotalBytesOut = 0
 )
 {
     public bool IsActive => Level == ProcessActivityLevel.ActiveAllowed;
     public bool IsBlocked => Level == ProcessActivityLevel.BlockedAttempts;
+    public double TotalBps => DownloadBps + UploadBps;
+    public bool HasBandwidth => TotalBps > 100;
+    public string FormattedSpeed
+    {
+        get
+        {
+            if (DownloadBps >= 100 && UploadBps >= 100)
+            {
+                return $"↓ {NetworkSpeedService.FormatSpeed(DownloadBps)}  ↑ {NetworkSpeedService.FormatSpeed(UploadBps)}";
+            }
+            if (DownloadBps >= 100)
+            {
+                return $"↓ {NetworkSpeedService.FormatSpeed(DownloadBps)}";
+            }
+            if (UploadBps >= 100)
+            {
+                return $"↑ {NetworkSpeedService.FormatSpeed(UploadBps)}";
+            }
+            return string.Empty;
+        }
+    }
 }
 
 public sealed class ProcessTrafficTracker : IDisposable
@@ -40,9 +65,12 @@ public sealed class ProcessTrafficTracker : IDisposable
     private readonly ConcurrentDictionary<string, ProcessActivityState> _activities = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<int, string?> _pidPathCache = new();
     private DateTime _lastCacheCleanup = DateTime.UtcNow;
+    private int[] _activePidsSnapshot = Array.Empty<int>();
     private bool _seeded;
 
     public event Action? ActivityUpdated;
+
+    public IReadOnlyCollection<int> GetActivePids() => _activePidsSnapshot;
 
     private sealed class ProcessActivityState
     {
@@ -67,6 +95,9 @@ public sealed class ProcessTrafficTracker : IDisposable
             Task.Run(SeedHistoryFromLog);
         }
 
+        ProcessBandwidthService.Instance.Start();
+        ProcessBandwidthService.Instance.BandwidthUpdated += OnBandwidthUpdated;
+
         if (!_timer.IsEnabled)
         {
             Poll();
@@ -77,6 +108,13 @@ public sealed class ProcessTrafficTracker : IDisposable
     public void Stop()
     {
         _timer.Stop();
+        ProcessBandwidthService.Instance.BandwidthUpdated -= OnBandwidthUpdated;
+        ProcessBandwidthService.Instance.Stop();
+    }
+
+    private void OnBandwidthUpdated()
+    {
+        ActivityUpdated?.Invoke();
     }
 
     public void RecordActivity(string appPath, string remoteAddress, int remotePort, bool isBlocked = false)
@@ -102,9 +140,27 @@ public sealed class ProcessTrafficTracker : IDisposable
 
     public ProcessActivityInfo GetActivity(string appPath, Verdict verdict = Verdict.Allow)
     {
+        var bw = ProcessBandwidthService.Instance.GetBandwidth(appPath);
+        double downBps = bw?.DownloadBps ?? 0;
+        double upBps = bw?.UploadBps ?? 0;
+        long totalIn = bw?.TotalBytesIn ?? 0;
+        long totalOut = bw?.TotalBytesOut ?? 0;
+        bool hasActiveBandwidth = (downBps + upBps) > 100;
+
         if (string.IsNullOrWhiteSpace(appPath) || !_activities.TryGetValue(appPath, out var state))
         {
-            return new ProcessActivityInfo(ProcessActivityLevel.Idle, 0, null, null, DateTime.MinValue, DateTime.MinValue);
+            var level = (verdict == Verdict.Allow && hasActiveBandwidth) ? ProcessActivityLevel.ActiveAllowed : ProcessActivityLevel.Idle;
+            return new ProcessActivityInfo(
+                level,
+                0,
+                null,
+                null,
+                DateTime.MinValue,
+                DateTime.MinValue,
+                downBps,
+                upBps,
+                totalIn,
+                totalOut);
         }
 
         lock (state)
@@ -118,10 +174,10 @@ public sealed class ProcessTrafficTracker : IDisposable
             }
             else
             {
-                // In Allow list: Green LED only if there are active established sockets or recent permitted data flow
+                // In Allow list: Green LED if active established sockets, recent permitted data flow, or active throughput
                 bool hasActiveSockets = state.ActiveSockets > 0;
                 bool hasRecentAllowed = (DateTime.UtcNow - state.LastActivityUtc).TotalSeconds < 3.5;
-                level = (hasActiveSockets || hasRecentAllowed) ? ProcessActivityLevel.ActiveAllowed : ProcessActivityLevel.Idle;
+                level = (hasActiveSockets || hasRecentAllowed || hasActiveBandwidth) ? ProcessActivityLevel.ActiveAllowed : ProcessActivityLevel.Idle;
             }
 
             return new ProcessActivityInfo(
@@ -130,7 +186,11 @@ public sealed class ProcessTrafficTracker : IDisposable
                 state.LastEndpoint,
                 state.LastBlockedEndpoint,
                 state.LastActivityUtc,
-                state.LastBlockedUtc);
+                state.LastBlockedUtc,
+                downBps,
+                upBps,
+                totalIn,
+                totalOut);
         }
     }
 
@@ -224,6 +284,17 @@ public sealed class ProcessTrafficTracker : IDisposable
             }
         }
 
+        if (info.HasBandwidth)
+        {
+            sb.AppendLine();
+            sb.Append($"{Strings.T("BandwidthSpeed")}: {info.FormattedSpeed}");
+        }
+        if (info.TotalBytesIn > 0 || info.TotalBytesOut > 0)
+        {
+            sb.AppendLine();
+            sb.Append($"{Strings.T("BandwidthSessionTotal")}: {NetworkSpeedService.FormatBytes(info.TotalBytesIn + info.TotalBytesOut)}");
+        }
+
         return sb.ToString().TrimEnd();
     }
 
@@ -278,6 +349,7 @@ public sealed class ProcessTrafficTracker : IDisposable
             var activeByPath = new Dictionary<string, (int Established, string? Endpoint)>(StringComparer.OrdinalIgnoreCase);
 
             var connections = GetActiveTcpConnections();
+            _activePidsSnapshot = connections.Select(c => c.Pid).Distinct().ToArray();
             foreach (var conn in connections)
             {
                 if (!_pidPathCache.TryGetValue(conn.Pid, out var path))

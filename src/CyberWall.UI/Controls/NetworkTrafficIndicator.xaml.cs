@@ -132,7 +132,7 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         TooltipTotalUpLbl.Text = Strings.T("TrafficSessionOut");
         TooltipFilterLbl.Text = Strings.T("TrafficFilterStatus");
         TooltipFilterVal.Text = Strings.T(stateKey);
-        TooltipClickHint.Text = Strings.T("TrafficHistoryTooltip");
+        TooltipClickHint.Text = Strings.T("BandwidthClickPrompt");
     }
 
     private void OnRendering(object? sender, EventArgs e)
@@ -322,8 +322,16 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         WaveGradientStop2.Color = MediaColor.FromArgb(0, fgColor.R, fgColor.G, fgColor.B);
     }
 
+    public event Action? IndicatorClicked;
+
     private void RootBorder_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
+        if (IndicatorClicked != null)
+        {
+            IndicatorClicked.Invoke();
+            return;
+        }
+
         try
         {
             var win = Window.GetWindow(this);
