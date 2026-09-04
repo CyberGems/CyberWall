@@ -14,6 +14,7 @@ using CyberWall.Common.Models;
 using CyberWall.Common.Notifications;
 using CyberWall.Common.Settings;
 using CyberWall.Service.Engine;
+using CyberWall.UI.Converters;
 using CyberWall.UI.Dialogs;
 using CyberWall.UI.Popup;
 using CyberWall.UI.Services;
@@ -235,10 +236,11 @@ public partial class MainWindow : Window
         ModeLbl.Text = Strings.T("Mode");
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
         ViewLogBtnText.Text = Strings.T("ViewLog");
-        StatsBtnText.Text = Strings.T("StatsButton");
         TrafficIndicator.RefreshLanguage();
         _tray?.RefreshLanguage();
         UpdateAvailableButtonState();
+        if (RulesLoadingTitle != null) RulesLoadingTitle.Text = Strings.T("RulesLoadingTitle");
+        if (RulesLoadingSub != null) RulesLoadingSub.Text = Strings.T("RulesLoadingSub");
 
         var progHdr = Strings.T("Program") + (_sortBy == "DisplayName" ? (_sortAsc ? " ▾" : " ▴") : "");
         var pathHdr = Strings.T("Path") + (_sortBy == "AppPath" ? (_sortAsc ? " ▾" : " ▴") : "");
@@ -588,6 +590,7 @@ public partial class MainWindow : Window
 
     private void OnGeoUpdated() => Dispatcher.BeginInvoke(() => RefreshRules(SearchBox.Text));
 
+    private int _refreshGeneration;
     private DispatcherTimer? _refreshRulesDebounceTimer;
     private string? _pendingFilter;
 
@@ -600,73 +603,123 @@ public partial class MainWindow : Window
             _refreshRulesDebounceTimer.Tick += (_, _) =>
             {
                 _refreshRulesDebounceTimer.Stop();
-                ExecuteRefreshRules(_pendingFilter);
+                _ = ExecuteRefreshRulesAsync(_pendingFilter);
             };
         }
         _refreshRulesDebounceTimer.Stop();
         _refreshRulesDebounceTimer.Start();
     }
 
-    private void ExecuteRefreshRules(string? filter = null)
+    private void ExecuteRefreshRules(string? filter = null) => _ = ExecuteRefreshRulesAsync(filter);
+
+    private async Task ExecuteRefreshRulesAsync(string? filter = null)
     {
-        _all = _svc.Store.All.ToList();
-        var last = LastRemoteByApp();
-        foreach (var entry in _lastRemoteByApp)
-            last[entry.Key] = entry.Value;
-        var q = string.IsNullOrWhiteSpace(filter) ? _all : _all.Where(r => r.DisplayName.Contains(filter!, StringComparison.OrdinalIgnoreCase) || r.AppPath.Contains(filter!, StringComparison.OrdinalIgnoreCase)).ToList();
+        int gen = Interlocked.Increment(ref _refreshGeneration);
 
-        IEnumerable<AppRule> SortRules(IEnumerable<AppRule> items)
+        bool isInitialLoad = (BlockedGrid.ItemsSource == null && AllowedGrid.ItemsSource == null);
+        if (isInitialLoad && RulesLoadingOverlay != null)
         {
-            if (_sortBy is "Activity" or "IsActiveTraffic" or "ActivityLevel")
-            {
-                return _sortAsc
-                    ? items.OrderByDescending(r => (int)ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).Level)
-                           .ThenByDescending(r => ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).ActiveSockets)
-                           .ThenBy(r => r.DisplayName)
-                    : items.OrderBy(r => (int)ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).Level)
-                           .ThenBy(r => r.DisplayName);
-            }
-
-            Func<AppRule, object> key = _sortBy switch
-            {
-                "AppPath" => r => r.AppPath,
-                "Direction" => r => (int)r.EffectiveInboundVerdict * 2 + (int)r.EffectiveOutboundVerdict,
-                "Country" => r =>
-                {
-                    string? ip = null;
-                    try
-                    {
-                        last.TryGetValue(AppRule.Normalize(r.AppPath), out ip);
-                        ip ??= last.GetValueOrDefault(r.AppPath);
-                    }
-                    catch
-                    {
-                        last.TryGetValue(r.AppPath, out ip);
-                    }
-                    var geo = GeoCountry.Lookup(ip);
-                    if (!geo.HasCountry)
-                    {
-                        var activity = ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict);
-                        var ep = activity.LastEndpoint ?? activity.LastBlockedEndpoint;
-                        if (!string.IsNullOrEmpty(ep))
-                        {
-                            var liveIp = NetworkEndpoint.ExtractAddress(ep);
-                            var liveGeo = GeoCountry.Lookup(liveIp);
-                            if (liveGeo.HasCountry) geo = liveGeo;
-                        }
-                    }
-                    return CountryDisplay.Label(geo);
-                },
-                _ => r => r.DisplayName
-            };
-            return _sortAsc ? items.OrderBy(key) : items.OrderByDescending(key);
+            RulesLoadingOverlay.Visibility = Visibility.Visible;
         }
 
-        var blocked = SortRules(q.Where(r => r.Verdict == Verdict.Block));
-        var allowed = SortRules(q.Where(r => r.Verdict == Verdict.Allow));
-        BlockedGrid.ItemsSource = blocked.Select(r => ToRow(r, last)).ToList();
-        AllowedGrid.ItemsSource = allowed.Select(r => ToRow(r, last)).ToList();
-        RefreshLanguage();
+        if (RulesLoadingBar != null)
+        {
+            RulesLoadingBar.Visibility = Visibility.Visible;
+        }
+
+        var storeRules = _svc.Store.All.ToList();
+        _all = storeRules;
+
+        var sortBy = _sortBy;
+        var sortAsc = _sortAsc;
+        var lastRemoteDict = new Dictionary<string, string>(_lastRemoteByApp, StringComparer.OrdinalIgnoreCase);
+
+        try
+        {
+            var (blockedRows, allowedRows) = await Task.Run(() =>
+            {
+                var last = LastRemoteByApp();
+                foreach (var entry in lastRemoteDict)
+                    last[entry.Key] = entry.Value;
+
+                var q = string.IsNullOrWhiteSpace(filter)
+                    ? storeRules
+                    : storeRules.Where(r => r.DisplayName.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                                            r.AppPath.Contains(filter, StringComparison.OrdinalIgnoreCase)).ToList();
+
+                // Prewarm icon cache in background thread so UI binding never blocks on disk/shell I/O
+                PathToIconConverter.Prewarm(q.Select(r => r.AppPath));
+
+                IEnumerable<AppRule> SortRules(IEnumerable<AppRule> items)
+                {
+                    if (sortBy is "Activity" or "IsActiveTraffic" or "ActivityLevel")
+                    {
+                        return sortAsc
+                            ? items.OrderByDescending(r => (int)ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).Level)
+                                   .ThenByDescending(r => ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).ActiveSockets)
+                                   .ThenBy(r => r.DisplayName)
+                            : items.OrderBy(r => (int)ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).Level)
+                                   .ThenBy(r => r.DisplayName);
+                    }
+
+                    Func<AppRule, object> key = sortBy switch
+                    {
+                        "AppPath" => r => r.AppPath,
+                        "Direction" => r => (int)r.EffectiveInboundVerdict * 2 + (int)r.EffectiveOutboundVerdict,
+                        "Country" => r =>
+                        {
+                            string? ip = null;
+                            try
+                            {
+                                last.TryGetValue(AppRule.Normalize(r.AppPath), out ip);
+                                ip ??= last.GetValueOrDefault(r.AppPath);
+                            }
+                            catch
+                            {
+                                last.TryGetValue(r.AppPath, out ip);
+                            }
+                            var geo = GeoCountry.Lookup(ip);
+                            if (!geo.HasCountry)
+                            {
+                                var activity = ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict);
+                                var ep = activity.LastEndpoint ?? activity.LastBlockedEndpoint;
+                                if (!string.IsNullOrEmpty(ep))
+                                {
+                                    var liveIp = NetworkEndpoint.ExtractAddress(ep);
+                                    var liveGeo = GeoCountry.Lookup(liveIp);
+                                    if (liveGeo.HasCountry) geo = liveGeo;
+                                }
+                            }
+                            return CountryDisplay.Label(geo);
+                        },
+                        _ => r => r.DisplayName
+                    };
+                    return sortAsc ? items.OrderBy(key) : items.OrderByDescending(key);
+                }
+
+                var blocked = SortRules(q.Where(r => r.Verdict == Verdict.Block)).Select(r => ToRow(r, last)).ToList();
+                var allowed = SortRules(q.Where(r => r.Verdict == Verdict.Allow)).Select(r => ToRow(r, last)).ToList();
+                return (blocked, allowed);
+            });
+
+            if (gen != _refreshGeneration) return;
+
+            BlockedGrid.ItemsSource = blockedRows;
+            AllowedGrid.ItemsSource = allowedRows;
+            RefreshLanguage();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"ExecuteRefreshRulesAsync error: {ex}");
+        }
+        finally
+        {
+            if (gen == _refreshGeneration)
+            {
+                if (RulesLoadingBar != null) RulesLoadingBar.Visibility = Visibility.Collapsed;
+                if (RulesLoadingOverlay != null) RulesLoadingOverlay.Visibility = Visibility.Collapsed;
+            }
+        }
     }
 
     private void RememberLastRemote(ConnectionEvent ev, bool isBlocked = false)
@@ -768,7 +821,10 @@ public partial class MainWindow : Window
         {
             var path = BlockedLog.LogPath;
             if (!File.Exists(path)) return map;
-            foreach (var line in File.ReadLines(path))
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
+            string? line;
+            while ((line = reader.ReadLine()) != null)
             {
                 try
                 {
@@ -1195,7 +1251,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ToggleRuleAndAdvanceSelection(System.Windows.Controls.DataGrid grid)
+    private async void ToggleRuleAndAdvanceSelection(System.Windows.Controls.DataGrid grid)
     {
         if (grid == null || grid.Items.Count == 0) return;
         var rowItem = grid.SelectedItem ?? grid.CurrentItem;
@@ -1209,7 +1265,7 @@ public partial class MainWindow : Window
         _svc.SetVerdict(r.AppPath, newVerdict, true, null);
 
         _refreshRulesDebounceTimer?.Stop();
-        ExecuteRefreshRules(SearchBox?.Text);
+        await ExecuteRefreshRulesAsync(SearchBox?.Text);
 
         var targetGrid = isAllowed ? AllowedGrid : BlockedGrid;
         var otherGrid = isAllowed ? BlockedGrid : AllowedGrid;
@@ -1225,7 +1281,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void SearchBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    private async void SearchBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == System.Windows.Input.Key.Down || e.Key == System.Windows.Input.Key.Enter || e.Key == System.Windows.Input.Key.Tab)
         {
@@ -1233,7 +1289,7 @@ public partial class MainWindow : Window
             if (_refreshRulesDebounceTimer != null && _refreshRulesDebounceTimer.IsEnabled)
             {
                 _refreshRulesDebounceTimer.Stop();
-                ExecuteRefreshRules(SearchBox.Text);
+                await ExecuteRefreshRulesAsync(SearchBox.Text);
             }
 
             var targetGrid = AllowedGrid.Items.Count > 0 ? AllowedGrid : (BlockedGrid.Items.Count > 0 ? BlockedGrid : null);
@@ -1247,8 +1303,9 @@ public partial class MainWindow : Window
             if (!string.IsNullOrEmpty(SearchBox.Text))
             {
                 SearchBox.Text = "";
-                e.Handled = true;
+                await ExecuteRefreshRulesAsync("");
             }
+            e.Handled = true;
         }
     }
 

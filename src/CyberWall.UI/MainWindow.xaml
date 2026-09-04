@@ -17,24 +17,38 @@
         <conv:DirectionDisplayConverter x:Key="DirectionDisplayConverter"/>
         <conv:TranslationKeyConverter x:Key="T"/>
 
-        <!-- Themed Modern ScrollBar Styles -->
+        <!-- Themed Modern ScrollBar Styles (eliminates harsh bright hover highlight on track repeat buttons) -->
+        <Style x:Key="ScrollBarPageButtonStyle" TargetType="{x:Type RepeatButton}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type RepeatButton}">
+                        <Rectangle Fill="Transparent" Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="CustomScrollThumbStyle" TargetType="{x:Type Thumb}">
             <Setter Property="OverridesDefaultStyle" Value="True"/>
             <Setter Property="Focusable" Value="False"/>
-            <Setter Property="Opacity" Value="0.4"/>
+            <Setter Property="Opacity" Value="0.35"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type Thumb}">
-                        <Border CornerRadius="3" Background="{DynamicResource SubTextBrush}" Margin="1,2,2,2"/>
+                        <Border x:Name="ThumbBorder" CornerRadius="3" Background="{DynamicResource SubTextBrush}" Margin="1,2,1,2"/>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Opacity" Value="0.8"/>
+                    <Setter Property="Opacity" Value="0.75"/>
                 </Trigger>
                 <Trigger Property="IsDragging" Value="True">
-                    <Setter Property="Opacity" Value="1"/>
+                    <Setter Property="Opacity" Value="0.95"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -48,13 +62,13 @@
                         <Grid Background="Transparent" Width="{TemplateBinding Width}">
                             <Track x:Name="PART_Track" IsDirectionReversed="True" Margin="0,4,0,4">
                                 <Track.DecreaseRepeatButton>
-                                    <RepeatButton Command="ScrollBar.PageUpCommand" Background="Transparent" BorderThickness="0" Focusable="False" IsTabStop="False"/>
+                                    <RepeatButton Style="{StaticResource ScrollBarPageButtonStyle}" Command="ScrollBar.PageUpCommand"/>
                                 </Track.DecreaseRepeatButton>
                                 <Track.Thumb>
                                     <Thumb Style="{StaticResource CustomScrollThumbStyle}"/>
                                 </Track.Thumb>
                                 <Track.IncreaseRepeatButton>
-                                    <RepeatButton Command="ScrollBar.PageDownCommand" Background="Transparent" BorderThickness="0" Focusable="False" IsTabStop="False"/>
+                                    <RepeatButton Style="{StaticResource ScrollBarPageButtonStyle}" Command="ScrollBar.PageDownCommand"/>
                                 </Track.IncreaseRepeatButton>
                             </Track>
                         </Grid>
@@ -887,10 +901,11 @@
                         </Grid>
 
                         <!-- Shared pinned column header for both rule groups -->
-                        <Border x:Name="RulesColumnHeader" Grid.Row="1" Height="32" Margin="0,0,14,4"
-                                Background="{DynamicResource HeaderBgBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                BorderThickness="0,1,0,1" SnapsToDevicePixels="True">
-                            <Grid>
+                        <Grid Grid.Row="1" Margin="0,0,14,4">
+                            <Border x:Name="RulesColumnHeader" Height="32"
+                                    Background="{DynamicResource HeaderBgBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="0,1,0,1" SnapsToDevicePixels="True">
+                                <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="56"/>
                                     <ColumnDefinition Width="78"/>
@@ -992,8 +1007,16 @@
                             </Grid>
                         </Border>
 
-                        <!-- Rules List with Smooth Wheel Scrolling & Native 100% Aligned Column Headers -->
-                        <ScrollViewer x:Name="RulesScrollViewer" Grid.Row="2" Margin="0,0,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ScrollChanged="RulesScrollViewer_ScrollChanged">
+                        <!-- Subtle Indeterminate Rules Loading Line -->
+                        <ProgressBar x:Name="RulesLoadingBar" Height="2" VerticalAlignment="Bottom"
+                                     IsIndeterminate="True" Visibility="Collapsed"
+                                     Foreground="{DynamicResource AccentBrush}" Background="Transparent"
+                                     BorderThickness="0"/>
+                    </Grid>
+
+                    <!-- Rules List with Smooth Wheel Scrolling & Native 100% Aligned Column Headers -->
+                    <Grid Grid.Row="2">
+                        <ScrollViewer x:Name="RulesScrollViewer" Margin="0,0,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ScrollChanged="RulesScrollViewer_ScrollChanged">
                             <StackPanel>
                                 <!-- Allowed Section -->
                                 <Border CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,10">
@@ -1441,6 +1464,18 @@
                             </Border>
                         </StackPanel>
                     </ScrollViewer>
+
+                    <!-- Clean Minimalist Initial Loader (visible while rules are loaded in background) -->
+                    <Border x:Name="RulesLoadingOverlay" Background="Transparent" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,60,0,60" IsHitTestVisible="False">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Border Width="40" Height="40" CornerRadius="20" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" HorizontalAlignment="Center" Margin="0,0,0,12">
+                                <TextBlock Text="🛡️" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="RulesLoadingTitle" Text="Cargando reglas..." FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="RulesLoadingSub" Text="Preparando aplicaciones y telemetría" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,4,0,0" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    </Grid>
                 </Grid>
             </Border>
 

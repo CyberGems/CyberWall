@@ -137,6 +137,8 @@ public static class Strings
         ["RuleUpdated"] = ("Rule updated", "Regla actualizada"),
         ["Remember"] = ("Remember my choice", "Recordar mi elección"),
         ["StatusFooter"] = ("Windows 10/11 • WFP Kernel Engine • Admin Privileges Active • Persistent Rules", "Windows 10/11 • Motor WFP del kernel • Privilegios de administrador activos • Reglas persistentes"),
+        ["RulesLoadingTitle"] = ("Loading rules...", "Cargando reglas..."),
+        ["RulesLoadingSub"] = ("Preparing applications and telemetry", "Preparando aplicaciones y telemetría"),
         ["Settings"] = ("Settings", "Configuración"),
         ["Rules"] = ("Rules", "Reglas"),
         ["Search"] = ("Search program or path...", "Buscar programa o ruta..."),
