@@ -4,7 +4,7 @@
         xmlns:conv="clr-namespace:CyberWall.UI.Converters"
         xmlns:ctrl="clr-namespace:CyberWall.UI.Controls"
         xmlns:views="clr-namespace:CyberWall.UI.Views"
-        Title="CyberWall — Personal Firewall" Height="710" Width="1070" MinHeight="590" MinWidth="860"
+        Title="CyberWall — Personal Firewall" Height="720" Width="1160" MinHeight="600" MinWidth="940"
         WindowStartupLocation="CenterScreen" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ResizeMode="CanResize" PreviewKeyDown="Window_PreviewKeyDown"
         TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType" TextOptions.TextHintingMode="Fixed"
@@ -1587,8 +1587,14 @@
                     <!-- Clean Minimalist Initial Loader (visible while rules are loaded in background) -->
                     <Border x:Name="RulesLoadingOverlay" Background="Transparent" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,60,0,60" IsHitTestVisible="False">
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Border Width="40" Height="40" CornerRadius="20" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" HorizontalAlignment="Center" Margin="0,0,0,12">
-                                <TextBlock Text="🛡️" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Width="56" Height="56" CornerRadius="28" Background="#0A1628" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1.5" HorizontalAlignment="Center" Margin="0,0,0,14">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#00F2FE" Opacity="0.35" BlurRadius="18" ShadowDepth="0"/>
+                                </Border.Effect>
+                                <Path Data="M 12 2 L 4 5 L 4 11 C 4 16.5 7.4 21.6 12 23 C 16.6 21.6 20 16.5 20 11 L 20 5 Z"
+                                      Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.8" Fill="Transparent"
+                                      Width="24" Height="26" Stretch="Uniform"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock x:Name="RulesLoadingTitle" Text="Cargando reglas..." FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center"/>
                             <TextBlock x:Name="RulesLoadingSub" Text="Preparando aplicaciones y telemetría" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,4,0,0" HorizontalAlignment="Center"/>

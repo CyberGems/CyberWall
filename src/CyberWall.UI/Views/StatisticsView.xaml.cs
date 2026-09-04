@@ -319,7 +319,7 @@ public partial class StatisticsView : UserControl
                 };
             })
             .OrderByDescending(x => x.Count)
-            .Take(5)
+            .Take(10)
             .ToList();
 
         TopCountriesList.ItemsSource = topCountries;

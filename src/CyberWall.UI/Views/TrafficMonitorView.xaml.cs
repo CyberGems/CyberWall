@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -7,6 +9,9 @@ using CyberWall.UI.Services;
 using WPoint = System.Windows.Point;
 using UserControl = System.Windows.Controls.UserControl;
 using Button = System.Windows.Controls.Button;
+using MenuItem = System.Windows.Controls.MenuItem;
+using ContextMenu = System.Windows.Controls.ContextMenu;
+using WpfClipboard = System.Windows.Clipboard;
 
 namespace CyberWall.UI.Views;
 
@@ -95,6 +100,17 @@ public partial class TrafficMonitorView : UserControl
         ConsumersTitle.Text = Strings.T("TopConsumersHeader");
         ConsumersSubTitle.Text = Strings.T("TopConsumersSubtitle");
         EmptyStateText.Text = Strings.T("BandwidthNoTraffic");
+
+        try
+        {
+            if (FindResource("TrafficItemContextMenu") is ContextMenu cm && cm.Items.Count >= 3)
+            {
+                if (cm.Items[0] is MenuItem item0) item0.Header = Strings.T("SearchOnline");
+                if (cm.Items[1] is MenuItem item1) item1.Header = Strings.T("CopyPathTooltip");
+                if (cm.Items[2] is MenuItem item2) item2.Header = Strings.T("OpenExeFolder");
+            }
+        }
+        catch { }
     }
 
     public void UpdateData()
@@ -269,6 +285,57 @@ public partial class TrafficMonitorView : UserControl
         {
             QuickBlockRequested?.Invoke(appPath);
             UpdateData();
+        }
+    }
+
+    private static ProcessBandwidthUsage? GetItemFromMenuSender(object sender)
+    {
+        if (sender is MenuItem menuItem)
+        {
+            if (menuItem.DataContext is ProcessBandwidthUsage item) return item;
+            if (menuItem.Parent is ContextMenu cm && cm.PlacementTarget is FrameworkElement fe && fe.DataContext is ProcessBandwidthUsage targetItem)
+                return targetItem;
+        }
+        return null;
+    }
+
+    private void ContextSearch_Click(object sender, RoutedEventArgs e)
+    {
+        var item = GetItemFromMenuSender(sender);
+        if (item != null && !string.IsNullOrWhiteSpace(item.DisplayName))
+        {
+            try
+            {
+                var query = Uri.EscapeDataString($"{item.DisplayName} process windows");
+                Process.Start(new ProcessStartInfo($"https://www.google.com/search?q={query}") { UseShellExecute = true });
+            }
+            catch { }
+        }
+    }
+
+    private void ContextCopyPath_Click(object sender, RoutedEventArgs e)
+    {
+        var item = GetItemFromMenuSender(sender);
+        if (item != null && !string.IsNullOrWhiteSpace(item.AppPath))
+        {
+            try
+            {
+                WpfClipboard.SetText(item.AppPath);
+            }
+            catch { }
+        }
+    }
+
+    private void ContextFolder_Click(object sender, RoutedEventArgs e)
+    {
+        var item = GetItemFromMenuSender(sender);
+        if (item != null && !string.IsNullOrWhiteSpace(item.AppPath) && File.Exists(item.AppPath))
+        {
+            try
+            {
+                Process.Start("explorer.exe", $"/select,\"{item.AppPath}\"");
+            }
+            catch { }
         }
     }
 }
