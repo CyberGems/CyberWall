@@ -42,7 +42,6 @@ public static class RealFirewall
         if (!IsAdmin) return;
         try
         {
-            EnsureCoreServicesAllowed();
             var selfExe = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
             if (!string.IsNullOrEmpty(selfExe) && File.Exists(selfExe))
             {
@@ -105,11 +104,15 @@ public static class RealFirewall
             var defenderPlatform = Path.Combine(programData, "Microsoft", "Windows Defender", "Platform");
             if (Directory.Exists(defenderPlatform))
             {
-                foreach (var verDir in Directory.GetDirectories(defenderPlatform))
+                var latestVerDir = Directory.GetDirectories(defenderPlatform)
+                    .OrderByDescending(d => Path.GetFileName(d), StringComparer.OrdinalIgnoreCase)
+                    .FirstOrDefault();
+
+                if (latestVerDir != null)
                 {
                     foreach (var exeName in new[] { "MpDefenderCoreService.exe", "MsMpEng.exe", "NisSrv.exe", "MpCmdRun.exe" })
                     {
-                        var exePath = Path.Combine(verDir, exeName);
+                        var exePath = Path.Combine(latestVerDir, exeName);
                         if (File.Exists(exePath))
                         {
                             ApplySingleAllow(exePath);
@@ -183,7 +186,6 @@ public static class RealFirewall
     {
         if (!IsAdmin) return;
         ProcessIdentity.TryGetPackageFamilyName(pid, appPath, out var pfn);
-        ProcessIdentity.TryGetPackageSid(pfn, out var sid);
         var paths = GetCompanionBinaries(appPath);
         foreach (var p in paths)
         {
@@ -193,12 +195,10 @@ public static class RealFirewall
 
         if (inVerdict == Verdict.Allow || outVerdict == Verdict.Allow)
         {
-            EnableMatchingAllowRules(sid, pfn);
             ProcessIdentity.ResumeProcesses(appPath, pid);
         }
         else
         {
-            DisableMatchingAllowRules(sid, pfn);
             StopLiveTraffic(appPath, pid, pfn);
         }
     }
@@ -223,20 +223,27 @@ public static class RealFirewall
             var blockOut = $"CyberWall-Block-{baseName}";
             var blockIn = $"CyberWall-Block-{baseName}-in";
 
-            RemoveRule(allowOut);
-            RemoveRule(allowIn);
-            RemoveRule(blockOut);
-            RemoveRule(blockIn);
-
             if (outVerdict == Verdict.Allow)
+            {
+                RemoveRule(blockOut);
                 AddAppRule(allowOut, appPath, outbound: true, allow: true);
+            }
             else
+            {
+                RemoveRule(allowOut);
                 AddAppRule(blockOut, appPath, outbound: true, allow: false);
+            }
 
             if (inVerdict == Verdict.Allow)
+            {
+                RemoveRule(blockIn);
                 AddAppRule(allowIn, appPath, outbound: false, allow: true);
+            }
             else
+            {
+                RemoveRule(allowIn);
                 AddAppRule(blockIn, appPath, outbound: false, allow: false);
+            }
         }
         catch (Exception ex) { Debug.WriteLine(ex); }
     }
@@ -245,21 +252,30 @@ public static class RealFirewall
     {
         var allow = PackageRuleName("Allow", pfn);
         var block = PackageRuleName("Block", pfn);
-        RunNetsh($"advfirewall firewall delete rule name=\"{allow}\"");
-        RunNetsh($"advfirewall firewall delete rule name=\"{allow}-in\"");
-        RunNetsh($"advfirewall firewall delete rule name=\"{block}\"");
-        RunNetsh($"advfirewall firewall delete rule name=\"{block}-in\"");
-        var id = PackageIdForRule(pfn);
+        ProcessIdentity.TryGetPackageSid(pfn, out var sid, out var userSid);
+        var id = !string.IsNullOrEmpty(sid) ? sid : pfn;
 
         if (outVerdict == Verdict.Allow)
-            AddPackageRule(allow, id, outbound: true, allow: true);
+        {
+            RemoveRule(block);
+            AddPackageRule(allow, id, userSid, outbound: true, allow: true);
+        }
         else
-            AddPackageRule(block, id, outbound: true, allow: false);
+        {
+            RemoveRule(allow);
+            AddPackageRule(block, id, userSid, outbound: true, allow: false);
+        }
 
         if (inVerdict == Verdict.Allow)
-            AddPackageRule(allow + "-in", id, outbound: false, allow: true);
+        {
+            RemoveRule(block + "-in");
+            AddPackageRule(allow + "-in", id, userSid, outbound: false, allow: true);
+        }
         else
-            AddPackageRule(block + "-in", id, outbound: false, allow: false);
+        {
+            RemoveRule(allow + "-in");
+            AddPackageRule(block + "-in", id, userSid, outbound: false, allow: false);
+        }
     }
 
     /// <summary>
@@ -272,23 +288,18 @@ public static class RealFirewall
     {
         if (!IsAdmin) return;
         ProcessIdentity.TryGetPackageFamilyName(pid, appPath, out var pfn);
-        ProcessIdentity.TryGetPackageSid(pfn, out var sid);
-        DisableMatchingAllowRules(sid, pfn);
         if (!string.IsNullOrEmpty(pfn))
             ApplyPackageBlock(pfn);
         ApplySingleBlock(appPath);
-        StopLiveTraffic(appPath, pid, pfn);
     }
 
     /// <summary>
-    /// Store apps ignore a pending/block rule on sockets they already have open.
-    /// Win32 apps crash if those sockets (especially localhost) are aborted.
+    /// Terminate helper processes (e.g. WebView2/Edge helpers) for blocked apps.
     /// </summary>
     private static void StopLiveTraffic(string appPath, int pid, string? pfn)
     {
         if (string.IsNullOrEmpty(pfn)) return;
         HostAppResolver.TerminateHelpers(appPath);
-        ProcessIdentity.TerminateTcpConnections(pid, appPath);
     }
 
     public static void RemoveApp(string appPath, int pid = 0)
@@ -331,11 +342,9 @@ public static class RealFirewall
             if (policy != null)
             {
                 policy.Rules.Remove(name);
-                return;
             }
         }
         catch { }
-        RunNetsh($"advfirewall firewall delete rule name=\"{name}\"");
     }
 
     private static void AddAppRule(string name, string appPath, bool outbound, bool allow)
@@ -345,6 +354,7 @@ public static class RealFirewall
             var tRule = Type.GetTypeFromProgID("HNetCfg.FWRule");
             if (tRule != null && GetFwPolicy() is { } policy && Activator.CreateInstance(tRule) is { } rule)
             {
+                try { policy.Rules.Remove(name); } catch { }
                 ((dynamic)rule).Name = name;
                 ((dynamic)rule).ApplicationName = appPath;
                 ((dynamic)rule).Action = allow ? 1 : 0; // 1 = Allow, 0 = Block
@@ -528,100 +538,44 @@ public static class RealFirewall
         return result.ToList();
     }
 
-    private static void ApplyPackageAllow(string pfn)
-    {
-        var allow = PackageRuleName("Allow", pfn);
-        var block = PackageRuleName("Block", pfn);
-        RunNetsh($"advfirewall firewall delete rule name=\"{block}\"");
-        RunNetsh($"advfirewall firewall delete rule name=\"{block}-in\"");
-        RunNetsh($"advfirewall firewall delete rule name=\"{allow}\"");
-        RunNetsh($"advfirewall firewall delete rule name=\"{allow}-in\"");
-        var id = PackageIdForRule(pfn);
-        AddPackageRule(allow, id, outbound: true, allow: true);
-        AddPackageRule(allow + "-in", id, outbound: false, allow: true);
-    }
-
     private static void ApplyPackageBlock(string pfn)
     {
         var allow = PackageRuleName("Allow", pfn);
         var block = PackageRuleName("Block", pfn);
-        RunNetsh($"advfirewall firewall delete rule name=\"{allow}\"");
-        RunNetsh($"advfirewall firewall delete rule name=\"{allow}-in\"");
-        RunNetsh($"advfirewall firewall delete rule name=\"{block}\"");
-        RunNetsh($"advfirewall firewall delete rule name=\"{block}-in\"");
-        var id = PackageIdForRule(pfn);
-        AddPackageRule(block, id, outbound: true, allow: false);
-        AddPackageRule(block + "-in", id, outbound: false, allow: false);
-    }
-
-    private static string PackageIdForRule(string pfn)
-        => ProcessIdentity.TryGetPackageSid(pfn, out var sid) ? sid : pfn;
-
-    private static void DisableMatchingAllowRules(string? sid, string? pfn)
-        => SetMatchingAllowRulesEnabled(sid, pfn, enable: false);
-
-    private static void EnableMatchingAllowRules(string? sid, string? pfn)
-        => SetMatchingAllowRulesEnabled(sid, pfn, enable: true);
-
-    private static void SetMatchingAllowRulesEnabled(string? sid, string? pfn, bool enable)
-    {
-        if (string.IsNullOrEmpty(sid) && string.IsNullOrEmpty(pfn)) return;
-        try
-        {
-            using var key = Registry.LocalMachine.OpenSubKey(
-                @"SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules");
-            if (key == null) return;
-
-            foreach (var valueName in key.GetValueNames())
-            {
-                if (key.GetValue(valueName) is not string text) continue;
-                if (text.IndexOf("Action=Allow", StringComparison.OrdinalIgnoreCase) < 0) continue;
-                bool match =
-                    (!string.IsNullOrEmpty(sid) && text.Contains(sid, StringComparison.OrdinalIgnoreCase)) ||
-                    (!string.IsNullOrEmpty(pfn) && text.Contains(pfn, StringComparison.OrdinalIgnoreCase));
-                if (!match) continue;
-
-                var displayName = ExtractPipeField(text, "Name=");
-                if (string.IsNullOrEmpty(displayName)) continue;
-                if (displayName.StartsWith("CyberWall-", StringComparison.OrdinalIgnoreCase)) continue;
-
-                var flag = enable ? "yes" : "no";
-                RunNetsh($"advfirewall firewall set rule name=\"{displayName}\" new enable={flag}");
-            }
-        }
-        catch (Exception ex) { Debug.WriteLine(ex); }
-    }
-
-    private static string? ExtractPipeField(string text, string prefix)
-    {
-        var idx = text.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
-        if (idx < 0) return null;
-        var start = idx + prefix.Length;
-        var end = text.IndexOf('|', start);
-        return end < 0 ? text[start..] : text[start..end];
+        RemoveRule(allow);
+        RemoveRule(allow + "-in");
+        ProcessIdentity.TryGetPackageSid(pfn, out var sid, out var userSid);
+        var id = !string.IsNullOrEmpty(sid) ? sid : pfn;
+        AddPackageRule(block, id, userSid, outbound: true, allow: false);
+        AddPackageRule(block + "-in", id, userSid, outbound: false, allow: false);
     }
 
     private static void RemovePackageRules(string pfn)
     {
         var allow = PackageRuleName("Allow", pfn);
         var block = PackageRuleName("Block", pfn);
-        RunNetsh($"advfirewall firewall delete rule name=\"{allow}\"");
-        RunNetsh($"advfirewall firewall delete rule name=\"{allow}-in\"");
-        RunNetsh($"advfirewall firewall delete rule name=\"{block}\"");
-        RunNetsh($"advfirewall firewall delete rule name=\"{block}-in\"");
+        RemoveRule(allow);
+        RemoveRule(allow + "-in");
+        RemoveRule(block);
+        RemoveRule(block + "-in");
     }
 
     private static string PackageRuleName(string kind, string pfn) => $"CyberWall-{kind}-Pkg-{pfn}";
 
-    private static bool AddPackageRule(string name, string packageId, bool outbound, bool allow)
+    private static bool AddPackageRule(string name, string packageId, string? userOwnerSid, bool outbound, bool allow)
     {
         try
         {
             var tRule = Type.GetTypeFromProgID("HNetCfg.FWRule");
             if (tRule != null && GetFwPolicy() is { } policy && Activator.CreateInstance(tRule) is { } rule)
             {
+                try { policy.Rules.Remove(name); } catch { }
                 ((dynamic)rule).Name = name;
                 ((dynamic)rule).LocalAppPackageId = packageId;
+                if (!string.IsNullOrEmpty(userOwnerSid))
+                {
+                    try { ((dynamic)rule).LocalUserOwner = userOwnerSid; } catch { }
+                }
                 ((dynamic)rule).Action = allow ? 1 : 0; // 1 = Allow, 0 = Block
                 ((dynamic)rule).Direction = outbound ? 2 : 1; // 2 = Out, 1 = In
                 ((dynamic)rule).Profiles = 0x7FFFFFFF;

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using CyberWall.Common;
+using Microsoft.Win32;
 
 namespace CyberWall.Service.Wfp;
 
@@ -43,8 +44,12 @@ public static class ProcessIdentity
     /// Store firewall rules key off the AppContainer SID (S-1-15-2-...), not the family name.
     /// </summary>
     public static bool TryGetPackageSid(string? packageFamilyName, out string sid)
+        => TryGetPackageSid(packageFamilyName, out sid, out _);
+
+    public static bool TryGetPackageSid(string? packageFamilyName, out string sid, out string userSid)
     {
         sid = "";
+        userSid = "";
         if (string.IsNullOrWhiteSpace(packageFamilyName)) return false;
         if (packageFamilyName.StartsWith("S-1-15-2-", StringComparison.OrdinalIgnoreCase))
         {
@@ -52,6 +57,54 @@ public static class ProcessIdentity
             return true;
         }
 
+        // 1. Try HKCU AppContainer Mappings (fastest and exact for current user's installed store apps)
+        try
+        {
+            const string mapPath = @"Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Mappings";
+            using var hkcu = Registry.CurrentUser.OpenSubKey(mapPath);
+            if (hkcu != null)
+            {
+                foreach (var sub in hkcu.GetSubKeyNames())
+                {
+                    using var sk = hkcu.OpenSubKey(sub);
+                    var moniker = sk?.GetValue("Moniker") as string;
+                    if (!string.IsNullOrEmpty(moniker) && moniker.Equals(packageFamilyName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        sid = sub;
+                        return true;
+                    }
+                }
+            }
+        }
+        catch { }
+
+        // 2. Try across all user profiles in Registry.Users (for elevated service running as SYSTEM)
+        try
+        {
+            var uKey = Registry.Users;
+            foreach (var uSub in uKey.GetSubKeyNames())
+            {
+                if (!uSub.StartsWith("S-1-5-21-", StringComparison.OrdinalIgnoreCase) || uSub.EndsWith("_Classes", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                var path = $@"{uSub}\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Mappings";
+                using var map = uKey.OpenSubKey(path);
+                if (map == null) continue;
+                foreach (var sub in map.GetSubKeyNames())
+                {
+                    using var sk = map.OpenSubKey(sub);
+                    var moniker = sk?.GetValue("Moniker") as string;
+                    if (!string.IsNullOrEmpty(moniker) && moniker.Equals(packageFamilyName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        sid = sub;
+                        userSid = uSub;
+                        return true;
+                    }
+                }
+            }
+        }
+        catch { }
+
+        // 3. Fallback: derive AppContainer SID from package moniker
         var hr = DeriveAppContainerSidFromAppContainerName(packageFamilyName, out var psid);
         if (hr != 0 || psid == 0) return false;
         try
@@ -94,7 +147,6 @@ public static class ProcessIdentity
         foreach (var id in pids)
         {
             DeleteTcpRowsForPid(id);
-            TryRemoveNetTcpConnection(id);
         }
     }
 
@@ -267,27 +319,7 @@ public static class ProcessIdentity
         finally { if (table != 0) Marshal.FreeHGlobal(table); }
     }
 
-    private static void TryRemoveNetTcpConnection(int pid)
-    {
-        try
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "powershell.exe",
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-            psi.ArgumentList.Add("-NoProfile");
-            psi.ArgumentList.Add("-NonInteractive");
-            psi.ArgumentList.Add("-Command");
-            psi.ArgumentList.Add($"Get-NetTCPConnection -OwningProcess {pid} -ErrorAction SilentlyContinue | Remove-NetTCPConnection -Confirm:$false -ErrorAction SilentlyContinue");
-            using var p = Process.Start(psi);
-            p?.WaitForExit(8000);
-        }
-        catch { }
-    }
+
 
     [DllImport("userenv.dll", CharSet = CharSet.Unicode)]
     private static extern int DeriveAppContainerSidFromAppContainerName(string pszAppContainerName, out nint ppsidAppContainerSid);

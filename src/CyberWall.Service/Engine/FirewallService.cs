@@ -50,6 +50,8 @@ public sealed class FirewallService : IDisposable
                 {
                     if (rule.EffectiveOutboundVerdict == Verdict.Allow || rule.EffectiveInboundVerdict == Verdict.Allow)
                     {
+                        var key = SafeKey(rule.AppPath);
+                        lock (_sessionLock) _reappliedAllows.Add(key);
                         Wfp.ApplyAppRule(rule.AppPath, rule.EffectiveInboundVerdict, rule.EffectiveOutboundVerdict);
                     }
                 }
@@ -115,8 +117,6 @@ public sealed class FirewallService : IDisposable
         try
         {
             if (first) Wfp.HoldApp(ev.AppPath, ev.ProcessId);
-            else if (PackagePath.TryGetFamilyName(ev.AppPath, out _))
-                ProcessIdentity.TerminateTcpConnections(ev.ProcessId, ev.AppPath);
         }
         catch
         {
