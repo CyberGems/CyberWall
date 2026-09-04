@@ -85,8 +85,54 @@ public static class RealFirewall
 
             // Ensure Windows security, Defender antimalware and SmartScreen are allowed
             EnsureDefenderServicesAllowed();
+
+            // Ensure Microsoft Edge WebView2 runtimes (WhatsApp Desktop, Teams, Office, etc.) are allowed
+            EnsureWebView2Allowed();
         }
         catch { }
+    }
+
+    public static List<string> GetInstalledWebView2Paths()
+    {
+        var results = new List<string>();
+        var programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+
+        foreach (var pf in new[] { programFilesX86, programFiles })
+        {
+            if (string.IsNullOrEmpty(pf)) continue;
+            var edgeApp = Path.Combine(pf, "Microsoft", "EdgeWebView", "Application");
+            if (!Directory.Exists(edgeApp)) continue;
+
+            try
+            {
+                foreach (var dir in Directory.GetDirectories(edgeApp))
+                {
+                    var exe = Path.Combine(dir, "msedgewebview2.exe");
+                    if (File.Exists(exe))
+                    {
+                        results.Add(exe);
+                    }
+                }
+            }
+            catch { }
+        }
+        return results;
+    }
+
+    private static void EnsureWebView2Allowed()
+    {
+        try
+        {
+            foreach (var exe in GetInstalledWebView2Paths())
+            {
+                ApplySingleAllow(exe);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex);
+        }
     }
 
     private static void EnsureDefenderServicesAllowed()
@@ -252,29 +298,33 @@ public static class RealFirewall
     {
         var allow = PackageRuleName("Allow", pfn);
         var block = PackageRuleName("Block", pfn);
-        ProcessIdentity.TryGetPackageSid(pfn, out var sid, out var userSid);
-        var id = !string.IsNullOrEmpty(sid) ? sid : pfn;
+        if (!ProcessIdentity.TryGetPackageSid(pfn, out var sid, out var userSid) || string.IsNullOrEmpty(sid))
+        {
+            // AppContainer rules only apply to apps with an AppContainer SID (S-1-15-2-...).
+            // Centennial Win32 packages (like WhatsApp Desktop) run full-trust and are governed by Win32 application path rules.
+            return;
+        }
 
         if (outVerdict == Verdict.Allow)
         {
             RemoveRule(block);
-            AddPackageRule(allow, id, userSid, outbound: true, allow: true);
+            AddPackageRule(allow, sid, userSid, outbound: true, allow: true);
         }
         else
         {
             RemoveRule(allow);
-            AddPackageRule(block, id, userSid, outbound: true, allow: false);
+            AddPackageRule(block, sid, userSid, outbound: true, allow: false);
         }
 
         if (inVerdict == Verdict.Allow)
         {
             RemoveRule(block + "-in");
-            AddPackageRule(allow + "-in", id, userSid, outbound: false, allow: true);
+            AddPackageRule(allow + "-in", sid, userSid, outbound: false, allow: true);
         }
         else
         {
             RemoveRule(allow + "-in");
-            AddPackageRule(block + "-in", id, userSid, outbound: false, allow: false);
+            AddPackageRule(block + "-in", sid, userSid, outbound: false, allow: false);
         }
     }
 
@@ -362,14 +412,9 @@ public static class RealFirewall
                 ((dynamic)rule).Profiles = 0x7FFFFFFF;
                 ((dynamic)rule).Enabled = true;
                 ((dynamic)policy).Rules.Add(rule);
-                return;
             }
         }
         catch (Exception ex) { Debug.WriteLine(ex); }
-
-        var dir = outbound ? "out" : "in";
-        var act = allow ? "allow" : "block";
-        RunNetsh($"advfirewall firewall add rule name=\"{name}\" dir={dir} action={act} program=\"{appPath}\" enable=yes profile=any");
     }
 
     private static void AddGlobalBlockRule(string name, bool outbound)
@@ -508,6 +553,18 @@ public static class RealFirewall
                     }
                 }
             }
+            // If app is WhatsApp or uses WebView2, add installed WebView2 runtime paths
+            bool isWhatsApp = fileName.Equals("WhatsApp.Root", StringComparison.OrdinalIgnoreCase) ||
+                              fileName.Equals("WhatsApp", StringComparison.OrdinalIgnoreCase) ||
+                              appPath.IndexOf("WhatsApp", StringComparison.OrdinalIgnoreCase) >= 0;
+
+            if (isWhatsApp)
+            {
+                foreach (var wv in GetInstalledWebView2Paths())
+                {
+                    result.Add(wv);
+                }
+            }
         }
         catch { }
 
@@ -515,7 +572,7 @@ public static class RealFirewall
         {
             try
             {
-                foreach (var exe in Directory.GetFiles(packageDir, "*.exe", SearchOption.AllDirectories))
+                foreach (var exe in Directory.GetFiles(packageDir, "*.exe", SearchOption.TopDirectoryOnly))
                     result.Add(exe);
             }
             catch { }
@@ -544,10 +601,11 @@ public static class RealFirewall
         var block = PackageRuleName("Block", pfn);
         RemoveRule(allow);
         RemoveRule(allow + "-in");
-        ProcessIdentity.TryGetPackageSid(pfn, out var sid, out var userSid);
-        var id = !string.IsNullOrEmpty(sid) ? sid : pfn;
-        AddPackageRule(block, id, userSid, outbound: true, allow: false);
-        AddPackageRule(block + "-in", id, userSid, outbound: false, allow: false);
+        if (ProcessIdentity.TryGetPackageSid(pfn, out var sid, out var userSid) && !string.IsNullOrEmpty(sid))
+        {
+            AddPackageRule(block, sid, userSid, outbound: true, allow: false);
+            AddPackageRule(block + "-in", sid, userSid, outbound: false, allow: false);
+        }
     }
 
     private static void RemovePackageRules(string pfn)
@@ -564,6 +622,9 @@ public static class RealFirewall
 
     private static bool AddPackageRule(string name, string packageId, string? userOwnerSid, bool outbound, bool allow)
     {
+        if (string.IsNullOrWhiteSpace(packageId) || !packageId.StartsWith("S-1-15-2-", StringComparison.OrdinalIgnoreCase))
+            return false;
+
         try
         {
             var tRule = Type.GetTypeFromProgID("HNetCfg.FWRule");
@@ -586,9 +647,7 @@ public static class RealFirewall
         }
         catch (Exception ex) { Debug.WriteLine(ex); }
 
-        var psDir = outbound ? "Outbound" : "Inbound";
-        var psAction = allow ? "Allow" : "Block";
-        return RunPowerShell($"New-NetFirewallRule -DisplayName '{EscapePs(name)}' -Direction {psDir} -Action {psAction} -Package '{EscapePs(packageId)}' -Profile Any -ErrorAction SilentlyContinue | Out-Null");
+        return false;
     }
 
     private static string EscapePs(string value) => value.Replace("'", "''");

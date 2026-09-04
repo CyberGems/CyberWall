@@ -48,6 +48,9 @@ public sealed class ConnectionMonitor : IDisposable
         if (_ownPids.Contains(ev.ProcessId)) return;
         if (ev.AppPath.Contains("CyberWall", StringComparison.OrdinalIgnoreCase)) return;
 
+        var rawPath = ev.AppPath;
+        var rawPid = ev.ProcessId;
+
         if (HostAppResolver.TryResolveHost(ev.ProcessId, ev.AppPath, out var hostPath, out var hostPid))
         {
             ev = ev with { AppPath = hostPath, ProcessId = hostPid };
@@ -56,7 +59,20 @@ public sealed class ConnectionMonitor : IDisposable
         // Always record blocked activity for blocked apps
         _svc.RecordBlockedActivity(ev);
 
-        if (ShouldSkipPrompt(ev.AppPath, ev.ProcessId)) return;
+        if (ShouldSkipPrompt(ev.AppPath, ev.ProcessId))
+        {
+            // Self-healing: If an allowed app or its helper (e.g. WebView2) triggered a block in Windows Firewall,
+            // immediately ensure the allow rule is applied for both the helper executable and host.
+            if (_svc.Store.TryGet(ev.AppPath, out var r) && (r.EffectiveOutboundVerdict == Verdict.Allow || r.EffectiveInboundVerdict == Verdict.Allow))
+            {
+                if (!string.IsNullOrEmpty(rawPath) && !rawPath.Equals(ev.AppPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    _svc.Wfp.AllowApp(rawPath, rawPid);
+                }
+                _svc.ReenforceAllow(ev.AppPath, ev.ProcessId);
+            }
+            return;
+        }
 
         _svc.HoldPending(ev);
         if (_svc.Mode == FirewallMode.BlockAll || _svc.Mode == FirewallMode.Killswitch)

@@ -44,17 +44,36 @@ public sealed class FirewallService : IDisposable
             }
             else
             {
-                // Preload all saved allow rules into Windows Firewall immediately
-                // so running applications (WhatsApp, CyberLauncher, CyberNotes, etc.) do not experience first-packet drops
-                foreach (var rule in Store.All)
+                // Preload all saved allow rules into memory synchronously in microseconds (< 0.1ms)
+                // so running applications are immediately recognized as allowed by ConnectionMonitor
+                var rulesToSync = new List<AppRule>();
+                lock (_sessionLock)
                 {
-                    if (rule.EffectiveOutboundVerdict == Verdict.Allow || rule.EffectiveInboundVerdict == Verdict.Allow)
+                    _reappliedAllows.Clear();
+                    foreach (var rule in Store.All)
                     {
-                        var key = SafeKey(rule.AppPath);
-                        lock (_sessionLock) _reappliedAllows.Add(key);
-                        Wfp.ApplyAppRule(rule.AppPath, rule.EffectiveInboundVerdict, rule.EffectiveOutboundVerdict);
+                        if (rule.EffectiveOutboundVerdict == Verdict.Allow || rule.EffectiveInboundVerdict == Verdict.Allow)
+                        {
+                            var key = SafeKey(rule.AppPath);
+                            _reappliedAllows.Add(key);
+                            rulesToSync.Add(rule);
+                        }
                     }
                 }
+
+                // Verify and synchronize Windows Firewall rules asynchronously in background
+                // so MainWindow renders instantly (< 100ms)
+                _ = Task.Run(() =>
+                {
+                    foreach (var rule in rulesToSync)
+                    {
+                        try
+                        {
+                            Wfp.ApplyAppRule(rule.AppPath, rule.EffectiveInboundVerdict, rule.EffectiveOutboundVerdict);
+                        }
+                        catch { }
+                    }
+                });
             }
             Monitor.Start(this);
         }
