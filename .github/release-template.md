@@ -24,7 +24,7 @@ Welcome to the official **CyberWall {{VERSION}}** release! CyberWall is a high-p
   - Live WFP network event log with instant text search, verdict filter pills (*All*, *Blocked*, *Allowed*), country flags, and direct log file management.
 
 - 📊 **Security & Traffic Statistics Dashboard**:
-  - 5 KPI summary cards: Total Events, Blocked, Allowed, Block Ratio, and Active Apps.
+  - 5 KPI summary cards: Total Events, Blocked, Allowed, Global Reach, and Data Volume.
   - Top 10 Destination Countries with flag badges, Top Applications proportional consumption bar chart, and Inbound vs Outbound traffic flow distribution.
   - Multi-range timeframe selector (*All Time*, *Today*, *Last 24 Hours*, *Last 7 Days*, and *Last 30 Days*).
 
