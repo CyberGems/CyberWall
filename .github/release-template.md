@@ -26,7 +26,7 @@ Welcome to the official **CyberWall {{VERSION}}** release! CyberWall is a high-p
 - 📊 **Security & Traffic Statistics Dashboard**:
   - 5 KPI summary cards: Total Events, Blocked, Allowed, Block Ratio, and Active Apps.
   - Top 10 Destination Countries with flag badges, Top Applications proportional consumption bar chart, and Inbound vs Outbound traffic flow distribution.
-  - Multi-range timeframe selector (*1 Hour*, *24 Hours*, *7 Days*, *30 Days*, and *All Time*).
+  - Multi-range timeframe selector (*All Time*, *Today*, *Last 24 Hours*, *Last 7 Days*, and *Last 30 Days*).
 
 - 🎨 **Visual & Ergonomic Polish**:
   - High-contrast rules loading indicator with illuminated empty vector shield and neon cyan glow.

@@ -68,7 +68,7 @@ Here is how CyberWall protects your computer against real-world threats in plain
 
 ## 🛠️ Tech Stack & Architecture
 
-- **Platform**: Windows 10 / 11 (x64 / ARM64)
+- **Platform**: Windows 10 / 11 (x64)
 - **Framework**: .NET 10 + WPF (Native UI)
 - **Filtering Core**: `fwpuclnt.dll` (WFP User-Mode API), Windows Advanced Firewall (`HNetCfg.FwPolicy2`), and Security Audit Event Log (`EventLogWatcher`).
 
@@ -84,7 +84,7 @@ CyberWall.slnx
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Windows 10/11 (x64 / ARM64)
+- Windows 10/11 (x64)
 - .NET 10 SDK
 
 ### Building & Running
