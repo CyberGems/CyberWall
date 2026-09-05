@@ -6,39 +6,40 @@ Welcome to the official **CyberWall {{VERSION}}** release! CyberWall is a high-p
 
 ### ✨ Key Features & Highlights
 
-- 🌊 **Adaptive Live Telemetry Stream**:
-  - Real-time network speed monitoring with auto-calibrated bandwidth scaling.
-  - Dynamic particle density and velocity that smoothly reflects live connection saturation.
-  - Configurable visual animation modes (*Fluid Stream*, *Glow Pulse*, or *Static*).
+- 🗂️ **GlassWire-Style Multi-Tab Navigation**:
+  - Unified main window interface embedding **Firewall**, **Traffic Monitor**, **Connections Log**, and **Security Statistics** directly into seamlessly switchable tabs.
+  - Zero-overhead lifecycle management (< 0.1% idle CPU) that automatically suspends background graphics rendering and periodic timers when views are inactive.
 
-- 🔍 **Application Info & Modification Monitor (GlassWire Style)**:
-  - Real-time detection and alerts when applications change version or executable binaries are modified.
-  - Intelligent semantic versioning and build metadata sanitization.
+- ⚡ **Real-Time Per-Process Bandwidth Telemetry**:
+  - High-precision kernel ETW listener (`Microsoft-Windows-Kernel-Network`) capturing IPv4/IPv6 TCP and UDP throughput per executable in real time.
+  - Live row-level bandwidth throughput badges in the Rules table with one-click sort-by-speed.
+  - Ranked Top Bandwidth Consumers list with visual transfer progress bars and a 1-click **Quick Block** action.
+  - Contextual process actions on right-click (*Search online*, *Copy path to clipboard*, and *Open executable folder*) with source-row highlighting, interaction freeze, and auto-dismiss on traffic completion.
 
-- 🚨 **On-Screen Pop-up Alerts & Granular Settings**:
-  - On-screen alerts for Internet disconnected/restored, Protection state changes, and Auto-block events.
-  - Dedicated toggle switches in Settings to customize exactly which notifications appear.
+- 🌊 **Continuous 60-Second Telemetry Canvas Graph**:
+  - DirectX-accelerated `StreamGeometry` real-time wave graph displaying live download and upload traffic history.
+  - Dynamic bandwidth summary cards displaying current speeds, 60-second peak throughput, session transfer totals, and active network adapter.
 
-- 🎨 **Modern Fluent UI & Multi-Theme Engine**:
-  - 🌌 **CyberWall**: Signature Cyber Navy with radiant Neon Cyan accents.
-  - 🌑 **Dark**: Neutral Charcoal with deep Indigo tones.
-  - ☀️ **Light**: Crisp Slate with Royal Blue accents.
-  - Themed sleek custom scrollbars across all windows and dialogs.
+- 📋 **Embedded Real-Time Connections Log**:
+  - Live WFP network event log with instant text search, verdict filter pills (*All*, *Blocked*, *Allowed*), country flags, and direct log file management.
 
-- ⚡ **WFP Kernel-Level Per-App Filtering**:
-  - Real-time packet interception with ultra-low latency.
+- 📊 **Security & Traffic Statistics Dashboard**:
+  - 5 KPI summary cards: Total Events, Blocked, Allowed, Block Ratio, and Active Apps.
+  - Top 10 Destination Countries with flag badges, Top Applications proportional consumption bar chart, and Inbound vs Outbound traffic flow distribution.
+  - Multi-range timeframe selector (*1 Hour*, *24 Hours*, *7 Days*, *30 Days*, and *All Time*).
+
+- 🎨 **Visual & Ergonomic Polish**:
+  - High-contrast rules loading indicator with illuminated empty vector shield and neon cyan glow.
+  - Mathematically exact High-DPI PerMonitorV2 window centering engine fixing multi-monitor scaling offsets.
+  - Expanded default window width for optimal title bar breathing room.
+
+- ⚡ **WFP Kernel-Level Filtering & Asynchronous Pipeline**:
+  - Real-time packet interception with ultra-low latency and persistent rules.
+  - Asynchronous background rule loading with icon cache pre-warming, eliminating UI delays.
   - Strict Block, Allow, and Interactive Prompt modes with inbound/outbound directional control.
 
-- 📋 **Dedicated Connection Log Viewer**:
-  - Real-time event log with instant search filtering by app name, IP, port, and PID.
-  - One-click copy, log clearing, and direct file access.
-
-- 🔄 **Built-in Seamless Auto-Update System**:
-  - Integrated GitHub Releases checker with real-time download progress bar.
-  - One-click silent installer launch and update workflow.
-
 - 🌐 **100% Bilingual Interface**:
-  - Full native support for **English** and **Spanish**.
+  - Complete native support for **English** and **Spanish** across all tabs, badges, dialogs, and tooltips.
 
 ---
 
