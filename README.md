@@ -102,6 +102,15 @@ dotnet build
 
 > **Note**: Real kernel-level network filtering and firewall rule enforcement require Administrator privileges.
 
+### 🛡️ Windows SmartScreen
+
+Windows may show a SmartScreen warning the first time you run the CyberWall installer — this is expected until Windows builds enough reputation for the file.
+
+To continue:
+
+1. Click **More info**.
+2. Click **Run anyway**.
+
 ---
 
 ## 🔍 How It Works
