@@ -173,3 +173,22 @@ For frequently asked questions, troubleshooting guides, and detailed configurati
   Made by <a href="https://cybergems.org">CyberGems</a>
 </p>
 
+---
+
+## 🔗 See also
+
+More free, open-source, privacy-first apps from [**CyberGems**](https://github.com/CyberGems):
+
+| App | Description |
+|:---:|---|
+| 🕐 [**CyberClock**](https://github.com/CyberGems/CyberClock#readme) | Desktop clock with analog & digital display, calendar, timer, stopwatch and relaxation module. |
+| 📢 [**CyberFeeds**](https://github.com/CyberGems/CyberFeeds#readme) | High-performance, local-first RSS and Atom reader built for speed, privacy and clean reading. |
+| 🚀 [**CyberLauncher**](https://github.com/CyberGems/CyberLauncher#readme) | Windows application launcher with hot corners, scheduler, system monitor and integrated terminal. |
+| 💻 [**CyberManager**](https://github.com/CyberGems/CyberManager#readme) | Lightweight, high-performance task manager, virtualized and NT-native — a powerful Task Manager alternative. |
+| 📝 [**CyberNotes**](https://github.com/CyberGems/CyberNotes#readme) | Privacy-focused note-taking app with rich text, folders, tabs and bcrypt-protected local storage. |
+| ⚡ [**CyberPaste**](https://github.com/CyberGems/CyberPaste#readme) | Privacy-first clipboard manager for text, code, images, HTML and files. |
+| 📸 [**CyberSnap**](https://github.com/CyberGems/CyberSnap#readme) | Screen capture and annotation suite with vector tools, high-speed OCR, screen recording and color picker. |
+| ⚡ [**CyberTray**](https://github.com/CyberGems/CyberTray#readme) | High-performance tray launcher with hotspots, system monitoring, process manager and PIN-protected file vault. |
+| 💫 [**CyberViewer**](https://github.com/CyberGems/CyberViewer#readme) | Full-featured image viewer and editor engineered for casual and power users. |
+
+➡️ **[Browse all apps at cybergems.org](https://cybergems.org)**
