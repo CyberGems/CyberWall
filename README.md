@@ -205,9 +205,9 @@ Check that you allowed the correct executable, including any helper process it u
 
 ## ❤️ Donate
 
-**CyberWall** is one of the gems in [CyberGems](https://github.com/CyberGems#-all-apps--repositories), a personal suite I've spent thousands of hours building and refining for my own use. I've decided to share the whole suite with the world — completely free and open-source.
+**CyberWall** is one of the gems in [CyberGems](https://github.com/CyberGems#-all-apps--repositories), a personal suite I've spent thousands of hours building and refining for my own use. I've decided to share the whole suite with the world, completely free and open-source.
 
-If you'd like to support this work, a donation would mean a lot. Thank you! 🙏
+If you're enjoying CyberWall, I'd be truly grateful for your support! You can show your appreciation by [giving a star](https://github.com/CyberGems/CyberWall) on GitHub or making a donation. Thank you! 🙏
 
 <p align="center">
   <a href="https://www.paypal.com/donate/?hosted_button_id=M4PY3UPJA5Y6Q"><img src="https://img.shields.io/badge/Donate-PayPal-0070BA?style=for-the-badge&logo=paypal" alt="Donate via PayPal" /></a>
