@@ -119,9 +119,9 @@ To continue:
 
 ## ❤️ Donate
 
-**CyberWall** is one of the projects in [CyberGems](https://github.com/CyberGems#-all-apps--repositories), a personal set of daily-use tools for Windows. I've spent countless hours building and refining it for my own use, and it will continue to be maintained by me. I recently decided to share the entire suite with the world, completely free and open-source.
+I’ve spent countless hours building and refining **CyberWall** for my own use. I recently decided to share it with the world as part of the [CyberGems](https://github.com/CyberGems#-all-apps--repositories) set of free and open-source tools.
 
-If you're enjoying CyberWall, I'd be truly grateful for your support! You can show your appreciation by [giving a star](https://github.com/CyberGems/CyberWall) on GitHub or making a donation. Thank you! 🙏
+If you’d like to support future updates, I’d truly appreciate it. You can also show your support by [starring the repo on GitHub](https://github.com/CyberGems/CyberWall). Thank you! 🙏
 
 <p align="center">
   <a href="https://www.paypal.com/donate/?hosted_button_id=M4PY3UPJA5Y6Q"><img src="https://img.shields.io/badge/Donate-PayPal-0070BA?style=for-the-badge&logo=paypal" alt="Donate via PayPal" /></a>
