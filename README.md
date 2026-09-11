@@ -173,6 +173,15 @@ For frequently asked questions, troubleshooting guides, and detailed configurati
   Made by <a href="https://cybergems.org">CyberGems</a>
 </p>
 
+<p align="center">
+  <a href="https://twitter.com/intent/tweet?text=CyberWall%20%E2%80%94%20free%20%26%20open-source%20desktop%20tool%20for%20Windows&url=https%3A%2F%2Fgithub.com%2FCyberGems%2FCyberWall"><img src="https://img.shields.io/badge/Share_on_X-1DA1F2?style=for-the-badge&logo=x&logoColor=white" alt="Share on X" /></a>
+  &nbsp;<a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fgithub.com%2FCyberGems%2FCyberWall"><img src="https://img.shields.io/badge/Share_on_Facebook-1877F2?style=for-the-badge&logo=facebook&logoColor=white" alt="Share on Facebook" /></a>
+  &nbsp;<a href="https://www.reddit.com/submit?url=https%3A%2F%2Fgithub.com%2FCyberGems%2FCyberWall&title=CyberWall%20%E2%80%94%20free%20%26%20open-source%20desktop%20tool%20for%20Windows"><img src="https://img.shields.io/badge/Share_on_Reddit-FF4500?style=for-the-badge&logo=reddit&logoColor=white" alt="Share on Reddit" /></a>
+  &nbsp;<a href="https://t.me/share/url?url=https%3A%2F%2Fgithub.com%2FCyberGems%2FCyberWall&text=CyberWall%20%E2%80%94%20free%20%26%20open-source%20desktop%20tool%20for%20Windows"><img src="https://img.shields.io/badge/Share_on_Telegram-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="Share on Telegram" /></a>
+  &nbsp;<a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2FCyberGems%2FCyberWall"><img src="https://img.shields.io/badge/Share_on_LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="Share on LinkedIn" /></a>
+  &nbsp;<a href="mailto:?subject=CyberWall%20%E2%80%94%20free%20%26%20open-source%20desktop%20tool%20for%20Windows&body=CyberWall%20%E2%80%94%20free%20%26%20open-source%20desktop%20tool%20for%20Windows%20https%3A%2F%2Fgithub.com%2FCyberGems%2FCyberWall"><img src="https://img.shields.io/badge/Share_by_Email-EA4335?style=for-the-badge&logo=gmail&logoColor=white" alt="Share by Email" /></a>
+</p>
+
 ---
 
 ## 🔗 See also
