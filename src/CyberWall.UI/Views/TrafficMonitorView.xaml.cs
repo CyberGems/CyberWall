@@ -19,6 +19,15 @@ public partial class TrafficMonitorView : UserControl
 {
     public event Action<string>? QuickBlockRequested;
 
+    private static readonly Geometry EthernetGeometry = Geometry.Parse("M 15 20 L 18 17 H 20 C 21.1 17 22 16.1 22 15 V 6 C 22 4.9 21.1 4 20 4 H 4 C 2.9 4 2 4.9 2 6 V 15 C 2 16.1 2.9 17 4 17 H 6 L 9 20 Z M 6 8 V 10 M 10 8 V 10 M 14 8 V 10 M 18 8 V 10");
+    private static readonly Geometry WifiGeometry = Geometry.Parse("M 12,19 L 12,19.01 M 8.5,15.5 C 10.5,13.8 13.5,13.8 15.5,15.5 M 5.5,12 C 9.2,8.5 14.8,8.5 18.5,12 M 2.5,8.5 C 8,3.5 16,3.5 21.5,8.5");
+
+    static TrafficMonitorView()
+    {
+        EthernetGeometry.Freeze();
+        WifiGeometry.Freeze();
+    }
+
     private readonly DispatcherTimer _refreshTimer;
     private bool _isActive;
     private Border? _activeRowBorder;
@@ -127,6 +136,14 @@ public partial class TrafficMonitorView : UserControl
         DownTotalVal.Text = NetworkSpeedService.FormatBytes(snapshot.TotalBytesReceived);
         UpTotalVal.Text = NetworkSpeedService.FormatBytes(snapshot.TotalBytesSent);
         AdapterValueLbl.Text = string.IsNullOrWhiteSpace(snapshot.AdapterName) ? "None" : snapshot.AdapterName;
+
+        var adapterName = snapshot.AdapterName ?? string.Empty;
+        bool isWifi = adapterName.Contains("wi-fi", StringComparison.OrdinalIgnoreCase) ||
+                     adapterName.Contains("wireless", StringComparison.OrdinalIgnoreCase) ||
+                     adapterName.Contains("802.11", StringComparison.OrdinalIgnoreCase) ||
+                     adapterName.Contains("wlan", StringComparison.OrdinalIgnoreCase);
+
+        AdapterIconPath.Data = isWifi ? WifiGeometry : EthernetGeometry;
 
         // Calculate peak & avg over history
         double peakDown = 0;
