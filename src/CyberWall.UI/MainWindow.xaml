@@ -676,11 +676,11 @@
                                           Content="{TemplateBinding Header}"
                                           ContentTemplate="{TemplateBinding HeaderTemplate}"
                                           IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                          Background="{DynamicResource HeaderBgBrush}"
+                                          Background="Transparent"
                                           Foreground="{TemplateBinding Foreground}"
-                                          BorderBrush="{DynamicResource BorderBrush}"
-                                          BorderThickness="0,0,0,1"
-                                          Padding="10,6"
+                                          BorderBrush="Transparent"
+                                          BorderThickness="0"
+                                          Padding="8,7"
                                           HorizontalContentAlignment="Left"
                                           FocusVisualStyle="{x:Null}">
                                 <ToggleButton.Template>
@@ -689,6 +689,7 @@
                                                 Background="{TemplateBinding Background}"
                                                 BorderBrush="{TemplateBinding BorderBrush}"
                                                 BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="6"
                                                 Padding="{TemplateBinding Padding}"
                                                 SnapsToDevicePixels="True">
                                             <Grid>
@@ -1090,11 +1091,11 @@
                                 <ctrl:TopBandwidthFlyout x:Name="TopBandwidthFlyout"/>
                             </Grid>
                         </Grid>
-                <!-- Shared pinned column header for both rule groups -->
-                        <Grid Grid.Row="1" Margin="0,0,14,4">
-                            <Border x:Name="RulesColumnHeader" Height="32"
+                        <!-- Shared pinned column header for both rule groups -->
+                        <Grid Grid.Row="1" Margin="0,2,14,6">
+                            <Border x:Name="RulesColumnHeader" Height="34"
                                     Background="{DynamicResource HeaderBgBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="0,1,0,1" SnapsToDevicePixels="True">
+                                    BorderThickness="1" CornerRadius="8" SnapsToDevicePixels="True">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="56"/>
@@ -1209,7 +1210,7 @@
                         <ScrollViewer x:Name="RulesScrollViewer" Margin="0,0,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ScrollChanged="RulesScrollViewer_ScrollChanged">
                             <StackPanel>
                                 <!-- Allowed Section -->
-                                <Border CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,10">
+                                <Border Background="Transparent" BorderThickness="0" Margin="0,0,0,10">
                                     <Expander x:Name="AllowedExpander" Style="{StaticResource ModernExpander}" Header="Permitidas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                         <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" PreviewKeyDown="DataGrid_PreviewKeyDown" SelectionChanged="RulesGrid_SelectionChanged">
                                             <DataGrid.Columns>
@@ -1452,7 +1453,7 @@
                             </Border>
 
                             <!-- Blocked Section -->
-                            <Border CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                            <Border Background="Transparent" BorderThickness="0">
                                 <Expander x:Name="BlockedExpander" Style="{StaticResource ModernExpander}" Header="Bloqueadas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                     <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" PreviewKeyDown="DataGrid_PreviewKeyDown" SelectionChanged="RulesGrid_SelectionChanged">
                                         <DataGrid.Columns>
