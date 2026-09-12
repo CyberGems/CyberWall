@@ -27,12 +27,13 @@ public sealed class NetworkSpeedService
     public static NetworkSpeedService Instance => _instance.Value;
 
     private readonly DispatcherTimer _timer;
+    private string? _lastAdapterId;
     private long _lastBytesReceived = -1;
     private long _lastBytesSent = -1;
+    private long _sessionTotalBytesReceived = 0;
+    private long _sessionTotalBytesSent = 0;
     private readonly Stopwatch _stopwatch = new();
     private TimeSpan _lastTime;
-    private long _sessionReceivedBase = -1;
-    private long _sessionSentBase = -1;
 
     private readonly List<TrafficHistoryPoint> _history = new();
     private readonly object _historyLock = new();
@@ -78,32 +79,31 @@ public sealed class NetworkSpeedService
     {
         try
         {
-            long currentBytesIn = 0;
-            long currentBytesOut = 0;
-            bool hasActive = false;
-
             var nics = NetworkInterface.GetAllNetworkInterfaces();
-            foreach (var nic in nics)
-            {
-                if (nic.OperationalStatus != OperationalStatus.Up)
-                    continue;
-                if (nic.NetworkInterfaceType == NetworkInterfaceType.Loopback ||
-                    nic.NetworkInterfaceType == NetworkInterfaceType.Tunnel)
-                    continue;
+            var primaryNic = DetectPrimaryAdapter(nics);
 
-                var stats = nic.GetIPStatistics();
-                currentBytesIn += stats.BytesReceived;
-                currentBytesOut += stats.BytesSent;
-                hasActive = true;
+            if (primaryNic == null)
+            {
+                _lastAdapterId = null;
+                _lastBytesReceived = -1;
+                _lastBytesSent = -1;
+
+                CurrentSnapshot = new NetworkSpeedSnapshot(
+                    0,
+                    0,
+                    _sessionTotalBytesReceived,
+                    _sessionTotalBytesSent,
+                    "Offline",
+                    false
+                );
+                SpeedUpdated?.Invoke(CurrentSnapshot);
+                return;
             }
 
-            string primaryAdapter = hasActive ? DetectPrimaryAdapterName(nics) : "None";
-
-            if (_sessionReceivedBase < 0 && hasActive)
-            {
-                _sessionReceivedBase = currentBytesIn;
-                _sessionSentBase = currentBytesOut;
-            }
+            var stats = primaryNic.GetIPStatistics();
+            long currentBytesIn = stats.BytesReceived;
+            long currentBytesOut = stats.BytesSent;
+            string adapterName = !string.IsNullOrWhiteSpace(primaryNic.Description) ? primaryNic.Description : primaryNic.Name;
 
             var now = _stopwatch.Elapsed;
             var elapsedSec = (now - _lastTime).TotalSeconds;
@@ -112,27 +112,40 @@ public sealed class NetworkSpeedService
             double downBps = 0;
             double upBps = 0;
 
-            if (!isInitial && _lastBytesReceived >= 0 && elapsedSec > 0.1)
+            bool isNewAdapter = _lastAdapterId != primaryNic.Id;
+
+            if (isNewAdapter)
+            {
+                _lastAdapterId = primaryNic.Id;
+                _lastBytesReceived = currentBytesIn;
+                _lastBytesSent = currentBytesOut;
+            }
+            else if (!isInitial && _lastBytesReceived >= 0 && elapsedSec > 0.1)
             {
                 var diffIn = Math.Max(0, currentBytesIn - _lastBytesReceived);
                 var diffOut = Math.Max(0, currentBytesOut - _lastBytesSent);
                 downBps = diffIn / elapsedSec;
                 upBps = diffOut / elapsedSec;
+
+                _sessionTotalBytesReceived += diffIn;
+                _sessionTotalBytesSent += diffOut;
+
+                _lastBytesReceived = currentBytesIn;
+                _lastBytesSent = currentBytesOut;
             }
-
-            _lastBytesReceived = currentBytesIn;
-            _lastBytesSent = currentBytesOut;
-
-            long sessionIn = _sessionReceivedBase >= 0 ? Math.Max(0, currentBytesIn - _sessionReceivedBase) : 0;
-            long sessionOut = _sessionSentBase >= 0 ? Math.Max(0, currentBytesOut - _sessionSentBase) : 0;
+            else
+            {
+                _lastBytesReceived = currentBytesIn;
+                _lastBytesSent = currentBytesOut;
+            }
 
             CurrentSnapshot = new NetworkSpeedSnapshot(
                 downBps,
                 upBps,
-                sessionIn,
-                sessionOut,
-                hasActive ? primaryAdapter : "Offline",
-                hasActive
+                _sessionTotalBytesReceived,
+                _sessionTotalBytesSent,
+                adapterName,
+                true
             );
 
             lock (_historyLock)
@@ -174,7 +187,42 @@ public sealed class NetworkSpeedService
         return $"{bytes / (1024.0 * 1024.0 * 1024.0):0.00} GB";
     }
 
-    private static string DetectPrimaryAdapterName(NetworkInterface[] nics)
+    private static bool IsFilterInterface(NetworkInterface nic)
+    {
+        var desc = nic.Description ?? string.Empty;
+        var name = nic.Name ?? string.Empty;
+
+        // Common NDIS Lightweight Filter (LWF) driver patterns
+        if (desc.Contains("LightWeight Filter", StringComparison.OrdinalIgnoreCase) ||
+            desc.Contains("Packet Scheduler", StringComparison.OrdinalIgnoreCase) ||
+            desc.Contains("NDIS Light-Weight", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("LightWeight Filter", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Packet Scheduler", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("-WFP", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("QoS Packet Scheduler", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        try
+        {
+            // All functional IP network adapters must have at least one unicast IP address.
+            // NDIS filter drivers and raw bindings lack unicast IP configuration.
+            var ipProps = nic.GetIPProperties();
+            if (ipProps == null || ipProps.UnicastAddresses.Count == 0)
+            {
+                return true;
+            }
+        }
+        catch
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static NetworkInterface? DetectPrimaryAdapter(NetworkInterface[] nics)
     {
         try
         {
@@ -187,11 +235,12 @@ public sealed class NetworkSpeedService
                     n.OperationalStatus == OperationalStatus.Up &&
                     n.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
                     n.NetworkInterfaceType != NetworkInterfaceType.Tunnel &&
+                    !IsFilterInterface(n) &&
                     n.GetIPProperties().UnicastAddresses.Any(u => u.Address.Equals(ep.Address)));
 
-                if (matchedNic != null && !string.IsNullOrWhiteSpace(matchedNic.Description))
+                if (matchedNic != null)
                 {
-                    return matchedNic.Description;
+                    return matchedNic;
                 }
             }
         }
@@ -209,6 +258,8 @@ public sealed class NetworkSpeedService
             if (nic.OperationalStatus != OperationalStatus.Up)
                 continue;
             if (nic.NetworkInterfaceType is NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel)
+                continue;
+            if (IsFilterInterface(nic))
                 continue;
 
             int score = 0;
@@ -278,11 +329,6 @@ public sealed class NetworkSpeedService
             }
         }
 
-        if (bestNic != null && !string.IsNullOrWhiteSpace(bestNic.Description))
-        {
-            return bestNic.Description;
-        }
-
-        return "Ethernet / Wi-Fi";
+        return bestNic;
     }
 }
