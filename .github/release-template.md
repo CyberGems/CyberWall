@@ -6,40 +6,35 @@ Welcome to the official **CyberWall {{VERSION}}** release! CyberWall is a high-p
 
 ### ✨ Key Features & Highlights
 
+- ⚙️ **Integrated In-Window Settings Tab**:
+  - Migrated the configuration interface into a dedicated 5th navigation tab (`SettingsView`), replacing the modal dialog with a modern, non-blocking experience.
+  - **Responsive Centered Container**: Smart `MaxWidth="960"` layout ensures optimal readability and eliminates wide gaps between settings and controls on maximized and ultrawide displays.
+  - **Refined Typography & Visual Hierarchy**: Increased font sizes and contrast for option titles, descriptions, and category headings for effortless reading on Full HD, 2K, and 4K displays.
+  - **Quick Keyboard Shortcuts**: Jump directly to Settings with `Ctrl+,` or `Ctrl+5` (along with `Ctrl+1..4` for instant tab switching).
+
+- 🎛️ **Modern Title Bar "More Options" Menu**:
+  - Added a sleek dropdown menu (`...`) next to notifications for instant access to Settings, Rule Refresh, Traffic Monitor, Connection Log, Statistics, Documentation Wiki, FAQ, Changelog, Website, and Update checks.
+
+- ⚡ **Precision Network Telemetry & Real-Time Bandwidth Engine**:
+  - Overhauled speed sampling algorithms to eliminate duplicate NDIS filter counter readings and exaggerated throughput figures.
+  - Improved timer thread affinity and high-precision calculations for per-process live bandwidth tracking.
+  - Added full column sorting by real-time network activity and transfer speed in the firewall rules table.
+
+- 🖼️ **Reactive Application Icon Cache**:
+  - Automatic background detection of executable file changes or re-compilations with reactive, in-place UI icon updates.
+
+- 🎨 **Firewall & UI Visual Refinements**:
+  - Restyled the rules column headers with a modern rounded pill container (`CornerRadius="8"`).
+  - Flattened rule expander groups ("Allowed" and "Blocked") with transparent backgrounds to eliminate visual noise and prevent header collision.
+  - Replaced emoji icons with crisp vector geometry across traffic monitor and connection cards.
+  - Refined popup notification and toast cards with improved button alignment and tooltip placement.
+
 - 🗂️ **GlassWire-Style Multi-Tab Navigation**:
-  - Unified main window interface embedding **Firewall**, **Traffic Monitor**, **Connections Log**, and **Security Statistics** directly into seamlessly switchable tabs.
-  - Zero-overhead lifecycle management (< 0.1% idle CPU) that automatically suspends background graphics rendering and periodic timers when views are inactive.
-
-- ⚡ **Real-Time Per-Process Bandwidth Telemetry**:
-  - High-precision kernel ETW listener (`Microsoft-Windows-Kernel-Network`) capturing IPv4/IPv6 TCP and UDP throughput per executable in real time.
-  - Live row-level bandwidth throughput badges in the Rules table with one-click sort-by-speed.
-  - Ranked Top Bandwidth Consumers list with visual transfer progress bars and a 1-click **Quick Block** action.
-  - Contextual process actions on right-click (*Search online*, *Copy path to clipboard*, and *Open executable folder*) with source-row highlighting, interaction freeze, and auto-dismiss on traffic completion.
-
-- 🌊 **Continuous 60-Second Telemetry Canvas Graph**:
-  - DirectX-accelerated `StreamGeometry` real-time wave graph displaying live download and upload traffic history.
-  - Dynamic bandwidth summary cards displaying current speeds, 60-second peak throughput, session transfer totals, and active network adapter.
-
-- 📋 **Embedded Real-Time Connections Log**:
-  - Live WFP network event log with instant text search, verdict filter pills (*All*, *Blocked*, *Allowed*), country flags, and direct log file management.
-
-- 📊 **Security & Traffic Statistics Dashboard**:
-  - 5 KPI summary cards: Total Events, Blocked, Allowed, Global Reach, and Data Volume.
-  - Top 10 Destination Countries with flag badges, Top Applications proportional consumption bar chart, and Inbound vs Outbound traffic flow distribution.
-  - Multi-range timeframe selector (*All Time*, *Today*, *Last 24 Hours*, *Last 7 Days*, and *Last 30 Days*).
-
-- 🎨 **Visual & Ergonomic Polish**:
-  - High-contrast rules loading indicator with illuminated empty vector shield and neon cyan glow.
-  - Mathematically exact High-DPI PerMonitorV2 window centering engine fixing multi-monitor scaling offsets.
-  - Expanded default window width for optimal title bar breathing room.
-
-- ⚡ **WFP Kernel-Level Filtering & Asynchronous Pipeline**:
-  - Real-time packet interception with ultra-low latency and persistent rules.
-  - Asynchronous background rule loading with icon cache pre-warming, eliminating UI delays.
-  - Strict Block, Allow, and Interactive Prompt modes with inbound/outbound directional control.
+  - Seamlessly switch between **Firewall**, **Traffic Monitor**, **Connections Log**, **Statistics**, and **Settings**.
+  - Zero-overhead lifecycle hooks (< 0.1% idle CPU) automatically suspending timers and rendering when tabs are inactive.
 
 - 🌐 **100% Bilingual Interface**:
-  - Complete native support for **English** and **Spanish** across all tabs, badges, dialogs, and tooltips.
+  - Complete native support for **English** and **Spanish** across all tabs, dialogs, menus, and tooltips.
 
 ---
 

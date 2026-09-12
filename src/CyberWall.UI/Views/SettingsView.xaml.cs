@@ -235,6 +235,7 @@ public partial class SettingsView : UserControl
         ClearAllDescLbl.Text = Strings.T("ClearAllRulesDesc");
         ClearAllBtn.Content = Strings.T("ClearAllRulesShort");
         PreviewBtn.Content = Strings.T("PreviewPopup");
+        FooterVerText.Text = $"CyberWall {UpdateService.GetCurrentVersionLabel()}";
 
         UpdateSoundUiState();
         UpdateStartupTogglesState();
