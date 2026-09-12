@@ -236,15 +236,7 @@ public partial class TrayContextMenuWindow : Window
         CloseMenu();
         _mainWindow.Dispatcher.Invoke(() =>
         {
-            var isMainVisible = _mainWindow.IsVisible && _mainWindow.WindowState != WindowState.Minimized;
-            var w = new SettingsWindow(App.Settings)
-            {
-                Owner = isMainVisible ? _mainWindow : null,
-                WindowStartupLocation = isMainVisible ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen
-            };
-            w.ShowDialog();
-            _mainWindow.RefreshLanguage();
-            _mainWindow.RefreshStatusFromExternal();
+            _mainWindow.OpenSettings();
         });
     }
 

@@ -409,6 +409,10 @@ public static class Strings
         ["TrafficMonitorMenu"] = ("Traffic Monitor...", "Monitor de tráfico..."),
         ["ConnectionLogMenu"] = ("Connection Log...", "Registro de conexiones..."),
         ["TrafficStatsMenu"] = ("Traffic Statistics...", "Estadísticas de tráfico..."),
+        ["NavSettings"] = ("Settings", "Ajustes"),
+        ["NavSettingsTooltip"] = ("Preferences, alerts, and system configuration", "Preferencias, alertas y configuración del sistema"),
+        ["SettingsSubtitle"] = ("Preferences • Alerts & Notifications • System Options", "Preferencias • Alertas y Notificaciones • Opciones del Sistema"),
+        ["MoreSettings"] = ("Settings...", "Configuración..."),
     };
 
     public static string T(string key, params object[] args)

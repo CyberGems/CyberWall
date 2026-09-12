@@ -30,6 +30,7 @@ public enum MainTab
     TrafficMonitor,
     ConnectionsLog,
     Statistics,
+    Settings,
     Dashboard
 }
 
@@ -45,11 +46,13 @@ public partial class MainWindow : Window
         TabTrafficBtn.IsChecked = tab == MainTab.TrafficMonitor;
         TabConnectionsBtn.IsChecked = tab == MainTab.ConnectionsLog;
         TabStatsBtn.IsChecked = tab == MainTab.Statistics;
+        TabSettingsBtn.IsChecked = tab == MainTab.Settings;
 
         FirewallTabContent.Visibility = tab == MainTab.Firewall ? Visibility.Visible : Visibility.Collapsed;
         TrafficMonitorTabContent.Visibility = tab == MainTab.TrafficMonitor ? Visibility.Visible : Visibility.Collapsed;
         ConnectionsLogTabContent.Visibility = tab == MainTab.ConnectionsLog ? Visibility.Visible : Visibility.Collapsed;
         StatisticsTabContent.Visibility = tab == MainTab.Statistics ? Visibility.Visible : Visibility.Collapsed;
+        SettingsTabContent.Visibility = tab == MainTab.Settings ? Visibility.Visible : Visibility.Collapsed;
 
         // Update Tab Icon highlights
         var accentBrush = (System.Windows.Media.Brush)FindResource("AccentBrush");
@@ -59,6 +62,7 @@ public partial class MainWindow : Window
         TabTrafficIcon.Stroke = tab == MainTab.TrafficMonitor ? accentBrush : subTextBrush;
         TabConnectionsIcon.Stroke = tab == MainTab.ConnectionsLog ? accentBrush : subTextBrush;
         TabStatsIcon.Stroke = tab == MainTab.Statistics ? accentBrush : subTextBrush;
+        TabSettingsIcon.Stroke = tab == MainTab.Settings ? accentBrush : subTextBrush;
 
         // Lifecycle hooks
         if (tab == MainTab.TrafficMonitor)
@@ -75,6 +79,11 @@ public partial class MainWindow : Window
             StatisticsTabContent.Activate();
         else
             StatisticsTabContent.Deactivate();
+
+        if (tab == MainTab.Settings)
+            SettingsTabContent.Activate();
+        else
+            SettingsTabContent.Deactivate();
     }
 
     public void Tab_Click(object sender, RoutedEventArgs e)
@@ -94,6 +103,9 @@ public partial class MainWindow : Window
                     break;
                 case "Stats":
                     SelectTab(MainTab.Statistics);
+                    break;
+                case "Settings":
+                    SelectTab(MainTab.Settings);
                     break;
             }
         }
@@ -327,7 +339,6 @@ public partial class MainWindow : Window
         SubtitleText.Text = Strings.T("AppSubtitle");
         FooterStatusText.Text = Strings.T("StatusFooter");
         NotifBtn.ToolTip = Strings.T("Notifications");
-        SettingsBtn.ToolTip = Strings.T("Settings");
         MoreBtn.ToolTip = Strings.T("MoreOptions");
         AutomationProperties.SetName(MoreBtn, Strings.T("MoreOptions"));
         if (MoreOptionsMenu != null)
@@ -337,6 +348,7 @@ public partial class MainWindow : Window
             MoreTrafficHistoryItem.Header = Strings.T("TrafficMonitorMenu");
             MoreLogItem.Header = Strings.T("ConnectionLogMenu");
             MoreStatsItem.Header = Strings.T("TrafficStatsMenu");
+            MoreSettingsItem.Header = Strings.T("MoreSettings");
             MoreDocsItem.Header = Strings.T("DocumentationWiki");
             MoreFaqItem.Header = Strings.T("Faq");
             MoreChangelogItem.Header = Strings.T("Changelog");
@@ -352,10 +364,13 @@ public partial class MainWindow : Window
         TabConnectionsBtn.ToolTip = Strings.T("NavConnectionsTooltip");
         TabStatsText.Text = Strings.T("NavStats");
         TabStatsBtn.ToolTip = Strings.T("NavStatsTooltip");
+        TabSettingsText.Text = Strings.T("NavSettings");
+        TabSettingsBtn.ToolTip = Strings.T("NavSettingsTooltip");
 
         TrafficMonitorTabContent?.RefreshLanguage();
         ConnectionsLogTabContent?.RefreshLanguage();
         StatisticsTabContent?.RefreshLanguage();
+        SettingsTabContent?.RefreshLanguage();
         ModeLbl.Text = Strings.T("Mode");
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
         TrafficIndicator.RefreshLanguage();
@@ -1326,10 +1341,11 @@ public partial class MainWindow : Window
 
     public void OpenSettings()
     {
-        var w = new SettingsWindow(App.Settings) { Owner = this };
-        w.ShowDialog();
-        RefreshLanguage();
-        UpdateStatus();
+        if (WindowState == WindowState.Minimized)
+            WindowState = WindowState.Normal;
+        Show();
+        Activate();
+        SelectTab(MainTab.Settings);
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
@@ -1616,6 +1632,36 @@ public partial class MainWindow : Window
 
         if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
         {
+            if (e.Key == System.Windows.Input.Key.OemComma || e.Key == System.Windows.Input.Key.D5 || e.Key == System.Windows.Input.Key.NumPad5)
+            {
+                SelectTab(MainTab.Settings);
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == System.Windows.Input.Key.D1 || e.Key == System.Windows.Input.Key.NumPad1)
+            {
+                SelectTab(MainTab.Firewall);
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == System.Windows.Input.Key.D2 || e.Key == System.Windows.Input.Key.NumPad2)
+            {
+                SelectTab(MainTab.TrafficMonitor);
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == System.Windows.Input.Key.D3 || e.Key == System.Windows.Input.Key.NumPad3)
+            {
+                SelectTab(MainTab.ConnectionsLog);
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == System.Windows.Input.Key.D4 || e.Key == System.Windows.Input.Key.NumPad4)
+            {
+                SelectTab(MainTab.Statistics);
+                e.Handled = true;
+                return;
+            }
             if (e.Key == System.Windows.Input.Key.H)
             {
                 SelectTab(MainTab.TrafficMonitor);

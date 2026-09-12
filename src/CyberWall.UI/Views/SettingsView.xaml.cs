@@ -1,6 +1,8 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Common.Settings;
@@ -8,32 +10,55 @@ using CyberWall.UI.Controls;
 using CyberWall.UI.Dialogs;
 using CyberWall.UI.Popup;
 using CyberWall.UI.Services;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Media.Effects;
 using WpfBrush = System.Windows.Media.Brush;
 using WpfBrushes = System.Windows.Media.Brushes;
 using WpfColor = System.Windows.Media.Color;
 using SolidColorBrush = System.Windows.Media.SolidColorBrush;
+using UserControl = System.Windows.Controls.UserControl;
+using Button = System.Windows.Controls.Button;
+using ComboBox = System.Windows.Controls.ComboBox;
+using ComboBoxItem = System.Windows.Controls.ComboBoxItem;
+using CheckBox = System.Windows.Controls.CheckBox;
 
-namespace CyberWall.UI;
+namespace CyberWall.UI.Views;
 
-public partial class SettingsWindow : Window, IModalAttentionWindow
+public partial class SettingsView : UserControl
 {
     private readonly AppSettings _s;
     private bool _loading;
-    private DateTime _lastAttentionTime = DateTime.MinValue;
 
-    public SettingsWindow(AppSettings s)
+    public SettingsView()
     {
         InitializeComponent();
-        CyberWallWindowChrome.Apply(this, 12);
-        Icon = AppIconHelper.CreateShieldImageSource(64);
-        _s = s;
+        _s = App.Settings;
         _loading = true;
-        LangBox.SelectedIndex = s.Language == Lang.Es ? 0 : 1;
 
-        switch (s.Theme)
+        Loaded += (_, _) =>
+        {
+            if (_loading)
+            {
+                LoadCurrentSettings();
+            }
+        };
+    }
+
+    public void Activate()
+    {
+        LoadCurrentSettings();
+    }
+
+    public void Deactivate()
+    {
+        PromptManager.Instance.DismissPreview();
+        _s.Save();
+    }
+
+    public void LoadCurrentSettings()
+    {
+        _loading = true;
+        LangBox.SelectedIndex = _s.Language == Lang.Es ? 0 : 1;
+
+        switch (_s.Theme)
         {
             case AppTheme.CyberWall:
                 CyberWallCard.IsChecked = true;
@@ -46,29 +71,26 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
                 break;
         }
 
-        SelectPositionUi(s.NotificationPosition);
+        SelectPositionUi(_s.NotificationPosition);
         PopulateMonitors();
-        SoundToggle.IsChecked = s.PlaySoundOnPrompt;
-        ToastAppInfoToggle.IsChecked = s.ToastAppInfoEnabled;
-        ToastInternetToggle.IsChecked = s.ToastInternetEventsEnabled;
-        ToastProtectionToggle.IsChecked = s.ToastProtectionEventsEnabled;
-        ToastAutoBlockToggle.IsChecked = s.ToastAutoBlockEnabled;
+        SoundToggle.IsChecked = _s.PlaySoundOnPrompt;
+        ToastAppInfoToggle.IsChecked = _s.ToastAppInfoEnabled;
+        ToastInternetToggle.IsChecked = _s.ToastInternetEventsEnabled;
+        ToastProtectionToggle.IsChecked = _s.ToastProtectionEventsEnabled;
+        ToastAutoBlockToggle.IsChecked = _s.ToastAutoBlockEnabled;
         StartupToggle.IsChecked = StartupHelper.IsStartupEnabled();
-        StartMinimizedToggle.IsChecked = s.StartMinimized;
-        MinimizeToTrayToggle.IsChecked = s.MinimizeToTrayOnClose;
-        AutoBlockToggle.IsChecked = s.PopupAutoBlockEnabled;
+        StartMinimizedToggle.IsChecked = _s.StartMinimized;
+        MinimizeToTrayToggle.IsChecked = _s.MinimizeToTrayOnClose;
+        AutoBlockToggle.IsChecked = _s.PopupAutoBlockEnabled;
         PopulateAutoBlockWait();
+        PopulateTrafficAnim();
         UpdateTexts();
-        Closing += (_, _) => PromptManager.Instance.DismissPreview();
         _loading = false;
     }
 
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    public void RefreshLanguage()
     {
-        if (e.ButtonState == MouseButtonState.Pressed)
-        {
-            DragMove();
-        }
+        UpdateTexts();
     }
 
     private void SelectPositionUi(PopupPosition position)
@@ -124,6 +146,7 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
 
     private void PopulateMonitors()
     {
+        var wasLoading = _loading;
         _loading = true;
         MonBox.Items.Clear();
         MonBox.Items.Add(new ComboBoxItem { Content = Strings.T("AutomaticMonitor"), Tag = -1 });
@@ -149,7 +172,7 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
             }
         }
         MonBox.SelectedIndex = targetIndex;
-        _loading = false;
+        _loading = wasLoading;
     }
 
     private void UpdateStartupTogglesState()
@@ -162,9 +185,11 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
     private void UpdateTexts()
     {
         var es = _s.Language == Lang.Es;
-        Title = es ? "Configuración" : "Settings";
-        TitleLbl.Text = es ? "Configuración" : "Settings";
+        TitleLbl.Text = Strings.T("NavSettings");
+        SubtitleLbl.Text = Strings.T("SettingsSubtitle");
+        SecGeneralLbl.Text = es ? "General y Apariencia" : "General & Appearance";
         LangLbl.Text = es ? "Idioma de la interfaz" : "Interface Language";
+        LangDescLbl.Text = es ? "Idioma utilizado en ventanas, notificaciones, menús y métricas." : "Language used in windows, alerts, menus, and metrics.";
         ThemeLbl.Text = es ? "Tema de la aplicación" : "Application Theme";
         ThemeSubLbl.Text = es ? "Elige el aspecto visual característico de CyberWall." : "Choose the signature visual appearance of CyberWall.";
 
@@ -173,7 +198,7 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
         LightCard.RefreshCaption(es ? "Claro" : "Light");
 
         InstantChangeLbl.Text = es ? "Se aplica al instante sin necesidad de reiniciar la aplicación." : "Applied instantly without needing to restart the app.";
-        LocationHdrLbl.Text = Strings.T("LocationSection");
+        SecLocationLbl.Text = es ? "Ubicación y Alertas" : "Location & Alerts";
         PosTitleLbl.Text = Strings.T("NotificationPosition");
         PosDescLbl.Text = Strings.T("PosDesc");
         MonTitleLbl.Text = Strings.T("NotificationMonitor");
@@ -196,13 +221,15 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
         ToastAutoBlockDescLbl.Text = Strings.T("ToastAutoBlockDesc");
         TrafficAnimTitleLbl.Text = Strings.T("TrafficAnimationHdr");
         TrafficAnimDescLbl.Text = Strings.T("TrafficAnimationDesc");
-        SystemHdrLbl.Text = Strings.T("SystemHeader");
+        SecSystemLbl.Text = Strings.T("SystemHeader");
         StartupTitleLbl.Text = Strings.T("RunAtStartup");
         StartupDescLbl.Text = Strings.T("RunAtStartupDesc");
         StartMinimizedTitleLbl.Text = Strings.T("StartMinimized");
         StartMinimizedDescLbl.Text = Strings.T("StartMinimizedDesc");
         MinimizeToTrayTitleLbl.Text = Strings.T("MinimizeToTrayOnClose");
         MinimizeToTrayDescLbl.Text = Strings.T("MinimizeToTrayOnCloseDesc");
+        AutoBlockTitleLbl.Text = Strings.T("PopupAutoBlock");
+        AutoBlockDescLbl.Text = Strings.T("PopupAutoBlockDesc");
         AutoBlockWaitLbl.Text = Strings.T("PopupAutoBlockWait");
         ClearAllTitleLbl.Text = Strings.T("ClearAllRules");
         ClearAllDescLbl.Text = Strings.T("ClearAllRulesDesc");
@@ -229,7 +256,7 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
         }
         else
         {
-            SoundPathDisplay.Text = System.IO.Path.GetFileName(_s.CustomSoundPath);
+            SoundPathDisplay.Text = Path.GetFileName(_s.CustomSoundPath);
             ResetSoundBtn.Visibility = Visibility.Visible;
         }
     }
@@ -260,7 +287,8 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
             Filter = Strings.T("SoundFilter"),
             CheckFileExists = true
         };
-        if (dlg.ShowDialog(this) == true)
+        var parentWindow = Window.GetWindow(this);
+        if (dlg.ShowDialog(parentWindow) == true)
         {
             _s.CustomSoundPath = dlg.FileName;
             _s.Save();
@@ -284,10 +312,11 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
 
     private void ClearAllRules_Click(object sender, RoutedEventArgs e)
     {
-        var dlg = new ConfirmDialog(Strings.T("ClearAllRules"), Strings.T("ClearAllRulesConfirm")) { Owner = this };
+        var parentWindow = Window.GetWindow(this);
+        var dlg = new ConfirmDialog(Strings.T("ClearAllRules"), Strings.T("ClearAllRulesConfirm")) { Owner = parentWindow };
         if (dlg.ShowDialog() == true)
         {
-            if (Owner is MainWindow mw)
+            if (parentWindow is MainWindow mw)
             {
                 mw.ClearAllRulesFromSettings();
             }
@@ -320,7 +349,7 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
         if (_loading) return;
         _s.MinimizeToTrayOnClose = MinimizeToTrayToggle.IsChecked == true;
         _s.Save();
-        if (Owner is MainWindow mw)
+        if (Window.GetWindow(this) is MainWindow mw)
         {
             mw.UpdateCloseButtonTooltip();
         }
@@ -398,7 +427,7 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
         Strings.Current = _s.Language;
         _s.Save();
         UpdateTexts();
-        if (Owner is MainWindow mw)
+        if (Window.GetWindow(this) is MainWindow mw)
         {
             mw.RefreshLanguage();
         }
@@ -454,11 +483,4 @@ public partial class SettingsWindow : Window, IModalAttentionWindow
             _s.Save();
         }
     }
-
-    public void TriggerAttention()
-    {
-        ModalAttentionHelper.Trigger(this, OuterBorder, WindowScale, WindowGlow, ref _lastAttentionTime);
-    }
-
-    private void Close_Click(object sender, RoutedEventArgs e) => Close();
 }
