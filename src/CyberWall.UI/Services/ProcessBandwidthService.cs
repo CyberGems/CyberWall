@@ -183,12 +183,54 @@ public sealed class ProcessBandwidthService : IDisposable
                 SampleProcessIoCounters(elapsedSeconds, deltaDownByPath, deltaUpByPath);
             }
 
+            // Reconcile with ground truth physical network card bandwidth
+            var netSnap = NetworkSpeedService.Instance.CurrentSnapshot;
+            double globalDown = Math.Max(0, netSnap.DownloadBps);
+            double globalUp = Math.Max(0, netSnap.UploadBps);
+
+            // 1. If physical network card is effectively idle, discard candidate rates
+            if (globalDown < 500)
+            {
+                deltaDownByPath.Clear();
+            }
+            if (globalUp < 500)
+            {
+                deltaUpByPath.Clear();
+            }
+
+            // 2. Reconcile with global adapter speed: total process traffic cannot exceed hardware physical traffic
+            double totalCandidateUp = deltaUpByPath.Values.Sum();
+            if (totalCandidateUp > 0 && globalUp >= 500)
+            {
+                if (totalCandidateUp > globalUp)
+                {
+                    double upScale = globalUp / totalCandidateUp;
+                    foreach (var path in deltaUpByPath.Keys.ToList())
+                    {
+                        deltaUpByPath[path] = Math.Min(globalUp, deltaUpByPath[path] * upScale);
+                    }
+                }
+            }
+
+            double totalCandidateDown = deltaDownByPath.Values.Sum();
+            if (totalCandidateDown > 0 && globalDown >= 500)
+            {
+                if (totalCandidateDown > globalDown)
+                {
+                    double downScale = globalDown / totalCandidateDown;
+                    foreach (var path in deltaDownByPath.Keys.ToList())
+                    {
+                        deltaDownByPath[path] = Math.Min(globalDown, deltaDownByPath[path] * downScale);
+                    }
+                }
+            }
+
             // Update app bandwidth states with smooth decay
             var allKnownPaths = _appBandwidths.Keys.Concat(deltaDownByPath.Keys).Concat(deltaUpByPath.Keys).Distinct().ToList();
             foreach (var path in allKnownPaths)
             {
-                bool hasCurrent = deltaDownByPath.TryGetValue(path, out double currentDown);
-                bool hasCurrentUp = deltaUpByPath.TryGetValue(path, out double currentUp);
+                bool hasCurrent = deltaDownByPath.TryGetValue(path, out double currentDown) && currentDown >= 100;
+                bool hasCurrentUp = deltaUpByPath.TryGetValue(path, out double currentUp) && currentUp >= 100;
 
                 if (hasCurrent || hasCurrentUp)
                 {
@@ -203,21 +245,29 @@ public sealed class ProcessBandwidthService : IDisposable
                     _appBandwidths[path] = new ProcessBandwidthUsage(
                         path,
                         displayName,
-                        currentDown,
-                        currentUp,
+                        hasCurrent ? currentDown : 0,
+                        hasCurrentUp ? currentUp : 0,
                         totalIn,
                         totalOut
                     );
                 }
                 else if (_appBandwidths.TryGetValue(path, out var existing))
                 {
-                    if (existing.TotalBps > 50)
+                    if (existing.TotalBps > 100)
                     {
                         // Rapid decay to 0 when process stops sending/receiving
+                        double newDown = existing.DownloadBps * 0.3;
+                        double newUp = existing.UploadBps * 0.3;
+                        if ((newDown + newUp) < 100)
+                        {
+                            newDown = 0;
+                            newUp = 0;
+                        }
+
                         _appBandwidths[path] = existing with
                         {
-                            DownloadBps = Math.Max(0, existing.DownloadBps * 0.3),
-                            UploadBps = Math.Max(0, existing.UploadBps * 0.3)
+                            DownloadBps = newDown,
+                            UploadBps = newUp
                         };
                     }
                     else if (existing.TotalBps > 0)
@@ -237,8 +287,25 @@ public sealed class ProcessBandwidthService : IDisposable
 
     private void SampleProcessIoCounters(double elapsed, Dictionary<string, double> downMap, Dictionary<string, double> upMap)
     {
-        // Query active processes with established network sockets
+        // Query active processes with established non-loopback network sockets
         var activePids = ProcessTrafficTracker.Instance.GetActivePids();
+        if (activePids.Count == 0)
+        {
+            _lastIoCounters.Clear();
+            return;
+        }
+
+        var activePidsSet = new HashSet<int>(activePids);
+
+        // Remove cached PIDs that are no longer active network sockets
+        foreach (var key in _lastIoCounters.Keys)
+        {
+            if (!activePidsSet.Contains(key))
+            {
+                _lastIoCounters.TryRemove(key, out _);
+            }
+        }
+
         foreach (var pid in activePids)
         {
             if (pid <= 4) continue;
@@ -256,7 +323,7 @@ public sealed class ProcessBandwidthService : IDisposable
                             ulong deltaRead = io.ReadTransferCount - last.ReadTransfer;
                             ulong deltaWrite = io.WriteTransferCount - last.WriteTransfer;
 
-                            if (deltaRead > 0 || deltaWrite > 0)
+                            if (deltaRead > 128 || deltaWrite > 128)
                             {
                                 var path = ResolvePidToPath(pid);
                                 if (!string.IsNullOrWhiteSpace(path))

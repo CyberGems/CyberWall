@@ -325,6 +325,7 @@ public static class Strings
         ["RemoveRuleTooltip"] = ("Remove firewall rule", "Eliminar regla del firewall"),
         ["ToggleRuleTooltip"] = ("Toggle rule (Space)", "Alternar regla (Espacio)"),
         ["ActivityHeader"] = ("Activity", "Actividad"),
+        ["ActivitySortTooltip"] = ("Sort by network activity and bandwidth", "Ordenar por actividad de red y ancho de banda"),
         ["ActivityActiveStatus"] = ("Live Network Traffic", "Tráfico de Red en Vivo"),
         ["ActivityBlockedStatus"] = ("Blocked Connection Attempts", "Intentos de Conexión Bloqueados"),
         ["ActivityBlockedDesc"] = ("Firewall is intercepting connection attempts in real time", "El cortafuegos está interceptando intentos de conexión en tiempo real"),

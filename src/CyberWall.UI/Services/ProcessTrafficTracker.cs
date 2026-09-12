@@ -121,6 +121,7 @@ public sealed class ProcessTrafficTracker : IDisposable
     {
         if (string.IsNullOrWhiteSpace(appPath)) return;
         if (string.IsNullOrWhiteSpace(remoteAddress) || remoteAddress == "0.0.0.0" || remoteAddress == "::") return;
+        if (IPAddress.TryParse(remoteAddress, out var ip) && IPAddress.IsLoopback(ip)) return;
 
         var state = _activities.GetOrAdd(appPath, _ => new ProcessActivityState());
         lock (state)
@@ -315,7 +316,7 @@ public sealed class ProcessTrafficTracker : IDisposable
                     var appPath = parts[3];
                     if (string.IsNullOrWhiteSpace(appPath)) continue;
                     var endpoint = parts[4];
-                    if (endpoint.StartsWith("0.0.0.0") || endpoint.StartsWith("::")) continue;
+                    if (endpoint.StartsWith("0.0.0.0") || endpoint.StartsWith("::") || endpoint.StartsWith("127.0.0.1") || endpoint.StartsWith("::1")) continue;
 
                     var state = _activities.GetOrAdd(appPath, _ => new ProcessActivityState());
                     lock (state)
@@ -432,10 +433,11 @@ public sealed class ProcessTrafficTracker : IDisposable
             for (int i = 0; i < count; i++)
             {
                 var r = Marshal.PtrToStructure<MIB_TCPROW_OWNER_PID>(row + i * rowSize);
-                // Only count MIB_TCP_STATE_ESTAB (5) with a valid remote IP
+                // Only count MIB_TCP_STATE_ESTAB (5) with a valid non-loopback remote IP
                 if (r.state == 5 && r.remoteAddr != 0)
                 {
                     var ip = new IPAddress(BitConverter.GetBytes(r.remoteAddr));
+                    if (IPAddress.IsLoopback(ip)) continue;
                     int port = (int)((r.remotePort >> 8) | ((r.remotePort & 0xFF) << 8));
                     list.Add(((int)r.owningPid, ip.ToString(), port));
                 }
@@ -462,10 +464,11 @@ public sealed class ProcessTrafficTracker : IDisposable
             for (int i = 0; i < count; i++)
             {
                 var r = Marshal.PtrToStructure<MIB_TCP6ROW_OWNER_PID>(row + i * rowSize);
-                // Only count MIB_TCP_STATE_ESTAB (5)
+                // Only count MIB_TCP_STATE_ESTAB (5) with a valid non-loopback remote IP
                 if (r.state == 5 && r.remoteAddr != null && !IsIPv6Zero(r.remoteAddr))
                 {
                     var ip = new IPAddress(r.remoteAddr);
+                    if (IPAddress.IsLoopback(ip)) continue;
                     int port = (int)((r.remotePort >> 8) | ((r.remotePort & 0xFF) << 8));
                     list.Add(((int)r.owningPid, ip.ToString(), port));
                 }

@@ -348,37 +348,7 @@ public partial class MainWindow : Window
         if (RulesLoadingTitle != null) RulesLoadingTitle.Text = Strings.T("RulesLoadingTitle");
         if (RulesLoadingSub != null) RulesLoadingSub.Text = Strings.T("RulesLoadingSub");
 
-        var progHdr = Strings.T("Program") + (_sortBy == "DisplayName" ? (_sortAsc ? " ▾" : " ▴") : "");
-        var pathHdr = Strings.T("Path") + (_sortBy == "AppPath" ? (_sortAsc ? " ▾" : " ▴") : "");
-        var actHdr = Strings.T("Action");
-        var dirHdr = Strings.T("Direction") + (_sortBy == "Direction" ? (_sortAsc ? " ▾" : " ▴") : "");
-        var stateHdr = Strings.T("State");
-        var countryHdr = Strings.T("Country") + (_sortBy == "Country" ? (_sortAsc ? " ▾" : " ▴") : "");
-        var activityHdr = Strings.T("ActivityHeader") + (_sortBy is "Activity" or "IsActiveTraffic" or "Bandwidth" ? (_sortAsc ? " ▾" : " ▴") : "");
-
-        StateHeaderText.Text = stateHdr;
-        ActivityHeaderText.Text = activityHdr;
-        ProgramHeaderText.Text = progHdr;
-        PathHeaderText.Text = pathHdr;
-        ActionHeaderText.Text = actHdr;
-        CountryHeaderText.Text = countryHdr;
-        DirectionHeaderText.Text = dirHdr;
-
-        AllowColState.Header = stateHdr;
-        AllowColActivity.Header = activityHdr;
-        AllowColProg.Header = progHdr;
-        AllowColPath.Header = pathHdr;
-        AllowColAction.Header = actHdr;
-        AllowColCountry.Header = countryHdr;
-        AllowColDir.Header = dirHdr;
-
-        BlockColState.Header = stateHdr;
-        BlockColActivity.Header = activityHdr;
-        BlockColProg.Header = progHdr;
-        BlockColPath.Header = pathHdr;
-        BlockColAction.Header = actHdr;
-        BlockColCountry.Header = countryHdr;
-        BlockColDir.Header = dirHdr;
+        UpdateColumnHeaders();
 
         OnActivityUpdated();
 
@@ -1075,8 +1045,49 @@ public partial class MainWindow : Window
             _sortAsc = true;
         }
 
+        UpdateColumnHeaders();
         RefreshRules(SearchBox.Text);
         e.Handled = true;
+    }
+
+    private void UpdateColumnHeaders()
+    {
+        var progHdr = Strings.T("Program") + (_sortBy == "DisplayName" ? (_sortAsc ? " ▾" : " ▴") : "");
+        var pathHdr = Strings.T("Path") + (_sortBy == "AppPath" ? (_sortAsc ? " ▾" : " ▴") : "");
+        var actHdr = Strings.T("Action");
+        var dirHdr = Strings.T("Direction") + (_sortBy == "Direction" ? (_sortAsc ? " ▾" : " ▴") : "");
+        var stateHdr = Strings.T("State");
+        var countryHdr = Strings.T("Country") + (_sortBy == "Country" ? (_sortAsc ? " ▾" : " ▴") : "");
+        var activityHdr = Strings.T("ActivityHeader") + (_sortBy is "Activity" or "IsActiveTraffic" or "Bandwidth" ? (_sortAsc ? " ▾" : " ▴") : "");
+
+        StateHeaderText.Text = stateHdr;
+        ActivityHeaderText.Text = activityHdr;
+        ProgramHeaderText.Text = progHdr;
+        PathHeaderText.Text = pathHdr;
+        ActionHeaderText.Text = actHdr;
+        CountryHeaderText.Text = countryHdr;
+        DirectionHeaderText.Text = dirHdr;
+
+        if (ActivityHeaderBorder != null)
+        {
+            ActivityHeaderBorder.ToolTip = Strings.T("ActivitySortTooltip");
+        }
+
+        AllowColState.Header = stateHdr;
+        AllowColActivity.Header = activityHdr;
+        AllowColProg.Header = progHdr;
+        AllowColPath.Header = pathHdr;
+        AllowColAction.Header = actHdr;
+        AllowColCountry.Header = countryHdr;
+        AllowColDir.Header = dirHdr;
+
+        BlockColState.Header = stateHdr;
+        BlockColActivity.Header = activityHdr;
+        BlockColProg.Header = progHdr;
+        BlockColPath.Header = pathHdr;
+        BlockColAction.Header = actHdr;
+        BlockColCountry.Header = countryHdr;
+        BlockColDir.Header = dirHdr;
     }
 
     private static void ExecuteSearchOnline(AppRule r)
