@@ -524,9 +524,11 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="22"/>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <ContentPresenter Grid.Column="0" ContentSource="Icon" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <ContentPresenter Grid.Column="1" ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center" Margin="4,0,12,0"/>
+                                <ContentPresenter Grid.Column="1" ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center" Margin="4,0,16,0"/>
+                                <TextBlock Grid.Column="2" Text="{TemplateBinding InputGestureText}" Foreground="{DynamicResource SubTextBrush}" FontSize="11" VerticalAlignment="Center" Margin="8,0,4,0"/>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -840,9 +842,110 @@
                                 <Path Data="M 12 15 C 10.3 15 9 13.7 9 12 C 9 10.3 10.3 9 12 9 C 13.7 9 15 10.3 15 12 C 15 13.7 13.7 15 12 15 Z M 19.4 13 C 19.5 12.7 19.5 12.3 19.5 12 C 19.5 11.7 19.5 11.3 19.4 11 L 21.5 9.4 C 21.7 9.2 21.8 8.9 21.6 8.7 L 19.6 5.2 C 19.5 5 19.2 4.9 19 5 L 16.5 6 C 16 5.6 15.4 5.3 14.8 5.1 L 14.4 2.4 C 14.4 2.2 14.2 2 13.9 2 L 10.1 2 C 9.8 2 9.6 2.2 9.6 2.4 L 9.2 5.1 C 8.6 5.3 8 5.6 7.5 6 L 5 5 C 4.8 4.9 4.5 5 4.4 5.2 L 2.4 8.7 C 2.2 8.9 2.3 9.2 2.5 9.4 L 4.6 11 C 4.5 11.3 4.5 11.7 4.5 12 C 4.5 12.3 4.5 12.7 4.6 13 L 2.5 14.6 C 2.3 14.8 2.2 15.1 2.4 15.3 L 4.4 18.8 C 4.5 19 4.8 19.1 5 19 L 7.5 18 C 8 18.4 8.6 18.7 9.2 18.9 L 9.6 21.6 C 9.6 21.8 9.8 22 10.1 22 L 13.9 22 C 14.2 22 14.4 21.8 14.4 21.6 L 14.8 18.9 C 15.4 18.7 16 18.4 16.5 18 L 19 19 C 19.2 19.1 19.5 19 19.6 18.8 L 21.6 15.3 C 21.8 15.1 21.7 14.8 21.5 14.6 L 19.4 13 Z" Fill="{DynamicResource SubTextBrush}" Width="14" Height="14" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
                         </Button>
-                        <Button x:Name="AboutBtn" Style="{StaticResource ModernButton}" Padding="9,6" Margin="0,0,14,0" Click="About_Click">
+                        <Button x:Name="MoreBtn" Style="{StaticResource ModernButton}" Padding="9,6" Margin="0,0,14,0"
+                                PreviewMouseLeftButtonDown="MoreBtn_PreviewMouseLeftButtonDown"
+                                Click="MoreBtn_Click" ToolTip="Más opciones" AutomationProperties.Name="Más opciones">
+                            <Button.ContextMenu>
+                                <ContextMenu x:Name="MoreOptionsMenu" Style="{StaticResource ModernContextMenu}" MinWidth="220">
+                                    <MenuItem x:Name="MoreDonateItem" Header="Donar" Style="{StaticResource ModernMenuItem}" Click="MoreDonate_Click">
+                                        <MenuItem.Icon>
+                                            <Path Data="M 12 21.35 L 10.55 20.03 C 5.4 15.36 2 12.28 2 8.5 C 2 5.42 4.42 3 7.5 3 C 9.24 3 10.91 3.81 12 5.09 C 13.09 3.81 14.76 3 16.5 3 C 19.58 3 22 5.42 22 8.5 C 22 12.28 18.6 15.36 13.45 20.04 L 12 21.35 Z"
+                                                  Fill="#F43F5E" Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+
+                                    <Separator Style="{StaticResource ModernMenuSeparator}"/>
+
+                                    <MenuItem x:Name="MoreRefreshItem" Header="Actualizar reglas" InputGestureText="F5" Style="{StaticResource ModernMenuItem}" Click="RefreshRules_Click">
+                                        <MenuItem.Icon>
+                                            <Path Data="M 4 4 V 9 H 9 M 20 20 V 15 H 15 M 20 9 A 9 9 0 0 0 5.64 5.64 L 4 9 M 4 15 A 9 9 0 0 0 18.36 18.36 L 20 15"
+                                                  Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                  Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+
+                                    <MenuItem x:Name="MoreTrafficHistoryItem" Header="Monitor de tráfico..." InputGestureText="Ctrl+H" Style="{StaticResource ModernMenuItem}" Click="OpenTrafficHistory_Click">
+                                        <MenuItem.Icon>
+                                            <Path Data="M 2 15 L 6 9 L 10 12 L 15 5 L 20 8 M 15 5 L 20 5 L 20 10"
+                                                  Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                  Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+
+                                    <MenuItem x:Name="MoreLogItem" Header="Registro de conexiones..." InputGestureText="Ctrl+L" Style="{StaticResource ModernMenuItem}" Click="OpenLog_Click">
+                                        <MenuItem.Icon>
+                                            <Path Data="M 4 2 L 14 2 L 18 6 L 18 20 L 4 20 Z M 13 2 L 13 7 L 18 7 M 7 11 L 15 11 M 7 14 L 15 14 M 7 17 L 12 17"
+                                                  Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                  Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+
+                                    <MenuItem x:Name="MoreStatsItem" Header="Estadísticas de tráfico..." InputGestureText="Ctrl+I" Style="{StaticResource ModernMenuItem}" Click="OpenStats_Click">
+                                        <MenuItem.Icon>
+                                            <Path Data="M 3 13 L 7 13 L 7 3 L 3 3 Z M 9 13 L 13 13 L 13 7 L 9 7 Z M 15 13 L 19 13 L 19 10 L 15 10 Z M 2 15 L 20 15"
+                                                  Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                  Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+
+                                    <Separator Style="{StaticResource ModernMenuSeparator}"/>
+
+                                    <MenuItem x:Name="MoreDocsItem" Header="Documentación y Wiki" Style="{StaticResource ModernMenuItem}" Click="MoreDocs_Click">
+                                        <MenuItem.Icon>
+                                            <Path Data="M 4 19.5 A 2.5 2.5 0 0 1 6.5 17 H 20 M 4 19.5 A 2.5 2.5 0 0 0 6.5 22 H 20 V 2 H 6.5 A 2.5 2.5 0 0 0 4 4.5 Z"
+                                                  Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                  Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+
+                                    <MenuItem x:Name="MoreFaqItem" Header="Preguntas Frecuentes" Style="{StaticResource ModernMenuItem}" Click="MoreFaq_Click">
+                                        <MenuItem.Icon>
+                                            <Path Data="M 21 15 A 2 2 0 0 1 19 17 H 7 L 3 21 V 5 A 2 2 0 0 1 5 3 H 19 A 2 2 0 0 1 21 5 Z"
+                                                  Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                  Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+
+                                    <MenuItem x:Name="MoreChangelogItem" Header="Historial de cambios" Style="{StaticResource ModernMenuItem}" Click="MoreChangelog_Click">
+                                        <MenuItem.Icon>
+                                            <Path Data="M 9 6 H 20 M 9 12 H 20 M 9 18 H 20 M 4 6 H 5 M 4 12 H 5 M 4 18 H 5"
+                                                  Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                  Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+
+                                    <MenuItem x:Name="MoreWebsiteItem" Header="Sitio web" Style="{StaticResource ModernMenuItem}" Click="MoreWebsite_Click">
+                                        <MenuItem.Icon>
+                                            <Path Data="M 12 2 A 10 10 0 1 0 12 22 A 10 10 0 0 0 12 2 M 2 12 H 22 M 12 2 A 15 15 0 0 0 12 22 A 15 15 0 0 0 12 2"
+                                                  Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                  Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+
+                                    <Separator Style="{StaticResource ModernMenuSeparator}"/>
+
+                                    <MenuItem x:Name="MoreCheckUpdatesItem" Header="Buscar actualizaciones..." Style="{StaticResource ModernMenuItem}" Click="MoreCheckUpdates_Click">
+                                        <MenuItem.Icon>
+                                            <Path Data="M 12 4 V 15 M 7 10 L 12 15 L 17 10 M 5 20 H 19"
+                                                  Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                  Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+
+                                    <MenuItem x:Name="MoreAboutItem" Header="Acerca de CyberWall..." Style="{StaticResource ModernMenuItem}" Click="About_Click">
+                                        <MenuItem.Icon>
+                                            <Path Data="M 12 22 A 10 10 0 1 0 12 2 A 10 10 0 0 0 12 22 M 12 16 V 12 M 12 8 H 12.01"
+                                                  Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                  Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </Button.ContextMenu>
                             <Grid MinWidth="22" Height="22">
-                                <Path Data="M 12 2 C 6.48 2 2 6.48 2 12 C 2 17.52 6.48 22 12 22 C 17.52 22 22 17.52 22 12 C 22 6.48 17.52 2 12 2 Z M 11 7 L 13 7 L 13 9 L 11 9 Z M 11 11 L 13 11 L 13 17 L 11 17 Z" Fill="{DynamicResource SubTextBrush}" Width="14" Height="14" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Path Data="M 5,10.5 a 1.5,1.5 0 1 0 0,3 a 1.5,1.5 0 1 0 0,-3 M 12,10.5 a 1.5,1.5 0 1 0 0,3 a 1.5,1.5 0 1 0 0,-3 M 19,10.5 a 1.5,1.5 0 1 0 0,3 a 1.5,1.5 0 1 0 0,-3"
+                                      Width="15" Height="15" Stretch="Uniform"
+                                      Fill="{DynamicResource SubTextBrush}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
                         </Button>
 

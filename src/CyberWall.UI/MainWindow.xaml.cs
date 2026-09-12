@@ -18,6 +18,8 @@ using CyberWall.UI.Converters;
 using CyberWall.UI.Dialogs;
 using CyberWall.UI.Popup;
 using CyberWall.UI.Services;
+using System.Windows.Automation;
+using System.Windows.Controls.Primitives;
 using MenuItem = System.Windows.Controls.MenuItem;
 
 namespace CyberWall.UI;
@@ -326,7 +328,22 @@ public partial class MainWindow : Window
         FooterStatusText.Text = Strings.T("StatusFooter");
         NotifBtn.ToolTip = Strings.T("Notifications");
         SettingsBtn.ToolTip = Strings.T("Settings");
-        AboutBtn.ToolTip = Strings.T("About");
+        MoreBtn.ToolTip = Strings.T("MoreOptions");
+        AutomationProperties.SetName(MoreBtn, Strings.T("MoreOptions"));
+        if (MoreOptionsMenu != null)
+        {
+            MoreDonateItem.Header = Strings.T("Donate");
+            MoreRefreshItem.Header = Strings.T("RefreshRules");
+            MoreTrafficHistoryItem.Header = Strings.T("TrafficMonitorMenu");
+            MoreLogItem.Header = Strings.T("ConnectionLogMenu");
+            MoreStatsItem.Header = Strings.T("TrafficStatsMenu");
+            MoreDocsItem.Header = Strings.T("DocumentationWiki");
+            MoreFaqItem.Header = Strings.T("Faq");
+            MoreChangelogItem.Header = Strings.T("Changelog");
+            MoreWebsiteItem.Header = Strings.T("Website");
+            MoreCheckUpdatesItem.Header = Strings.T("CheckForUpdates");
+            MoreAboutItem.Header = Strings.T("AboutCyberWall");
+        }
         TabFirewallText.Text = Strings.T("NavFirewall");
         TabFirewallBtn.ToolTip = Strings.T("NavFirewallTooltip");
         TabTrafficText.Text = Strings.T("NavTraffic");
@@ -1317,6 +1334,62 @@ public partial class MainWindow : Window
 
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
 
+    private bool _moreMenuWasOpen;
+
+    private void MoreBtn_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _moreMenuWasOpen = MoreBtn.ContextMenu?.IsOpen == true;
+    }
+
+    private void MoreBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (_moreMenuWasOpen)
+        {
+            _moreMenuWasOpen = false;
+            return;
+        }
+
+        if (MoreBtn.ContextMenu != null)
+        {
+            MoreBtn.ContextMenu.PlacementTarget = MoreBtn;
+            MoreBtn.ContextMenu.Placement = PlacementMode.Bottom;
+            MoreBtn.ContextMenu.IsOpen = true;
+        }
+    }
+
+    private static void OpenExternalUrl(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch { }
+    }
+
+    private void MoreDonate_Click(object sender, RoutedEventArgs e)
+        => OpenExternalUrl("https://github.com/CyberGems/CyberWall#%EF%B8%8F-donate");
+
+    private void RefreshRules_Click(object sender, RoutedEventArgs e)
+        => RefreshRules(SearchBox.Text);
+
+    private void MoreDocs_Click(object sender, RoutedEventArgs e)
+        => OpenExternalUrl("https://github.com/CyberGems/CyberWall/wiki");
+
+    private void MoreFaq_Click(object sender, RoutedEventArgs e)
+        => OpenExternalUrl("https://github.com/CyberGems/CyberWall/wiki/FAQ");
+
+    private void MoreChangelog_Click(object sender, RoutedEventArgs e)
+        => OpenExternalUrl("https://github.com/CyberGems/CyberWall/releases");
+
+    private void MoreWebsite_Click(object sender, RoutedEventArgs e)
+        => OpenExternalUrl("https://cybergems.org");
+
+    private void MoreCheckUpdates_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new AboutWindow(App.Settings, checkUpdatesNow: true) { Owner = this };
+        dlg.ShowDialog();
+    }
+
     private void About_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new AboutWindow(App.Settings) { Owner = this };
@@ -1532,6 +1605,35 @@ public partial class MainWindow : Window
             SearchBox.SelectAll();
             e.Handled = true;
             return;
+        }
+
+        if (e.Key == System.Windows.Input.Key.F5)
+        {
+            RefreshRules(SearchBox.Text);
+            e.Handled = true;
+            return;
+        }
+
+        if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            if (e.Key == System.Windows.Input.Key.H)
+            {
+                SelectTab(MainTab.TrafficMonitor);
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == System.Windows.Input.Key.L)
+            {
+                SelectTab(MainTab.ConnectionsLog);
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == System.Windows.Input.Key.I)
+            {
+                SelectTab(MainTab.Statistics);
+                e.Handled = true;
+                return;
+            }
         }
 
         if (Keyboard.FocusedElement is System.Windows.Controls.TextBox) return;

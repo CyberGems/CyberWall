@@ -402,6 +402,13 @@ public static class Strings
         ["ReportIssue"] = ("Report an issue or suggestion", "Reportar un error o sugerencia"),
         ["ViewReleases"] = ("View versions and changelog", "Ver versiones y notas de cambios"),
         ["DonateToProject"] = ("Donate to project", "Donar al proyecto"),
+        ["MoreOptions"] = ("More options", "Más opciones"),
+        ["DocumentationWiki"] = ("Documentation & Wiki", "Documentación y Wiki"),
+        ["AboutCyberWall"] = ("About CyberWall...", "Acerca de CyberWall..."),
+        ["RefreshRules"] = ("Refresh Rules", "Actualizar reglas"),
+        ["TrafficMonitorMenu"] = ("Traffic Monitor...", "Monitor de tráfico..."),
+        ["ConnectionLogMenu"] = ("Connection Log...", "Registro de conexiones..."),
+        ["TrafficStatsMenu"] = ("Traffic Statistics...", "Estadísticas de tráfico..."),
     };
 
     public static string T(string key, params object[] args)
