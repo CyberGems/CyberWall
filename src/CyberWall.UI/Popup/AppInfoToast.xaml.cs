@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -40,7 +41,18 @@ public partial class AppInfoToast : Window
         };
 
         TitleLbl.Text = string.IsNullOrWhiteSpace(title) ? Strings.T("AppInfoMonitor") : title;
-        DescLbl.Text = message;
+        if (!string.IsNullOrEmpty(message) && message.IndexOf(':') is int idx && idx > 0 && idx < 45)
+        {
+            DescLbl.Inlines.Clear();
+            var appName = message[..idx];
+            var rest = message[idx..];
+            DescLbl.Inlines.Add(new Bold(new Run(appName)) { Foreground = (System.Windows.Media.Brush)FindResource("TextBrush") });
+            DescLbl.Inlines.Add(new Run(rest) { Foreground = (System.Windows.Media.Brush)FindResource("SubTextBrush") });
+        }
+        else
+        {
+            DescLbl.Text = message;
+        }
         CloseBtn.ToolTip = Strings.T("Close");
         AutomationProperties.SetName(CloseBtn, Strings.T("Close"));
         SettingsBtn.ToolTip = Strings.T("Settings");
@@ -104,9 +116,9 @@ public partial class AppInfoToast : Window
                 break;
             case ToastBadgeType.Info:
             default:
-                BadgeBorder.SetResourceReference(Border.BackgroundProperty, "BadgeWarnBgBrush");
-                BadgeBorder.SetResourceReference(Border.BorderBrushProperty, "BadgeWarnFgBrush");
-                BadgeLbl.SetResourceReference(TextBlock.ForegroundProperty, "BadgeWarnFgBrush");
+                BadgeBorder.SetResourceReference(Border.BackgroundProperty, "SelectionBgBrush");
+                BadgeBorder.SetResourceReference(Border.BorderBrushProperty, "AccentBrush");
+                BadgeLbl.SetResourceReference(TextBlock.ForegroundProperty, "AccentBrush");
                 BadgeLbl.Text = customBadge ?? "INFO";
                 break;
         }
