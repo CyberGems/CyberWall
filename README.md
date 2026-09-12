@@ -154,6 +154,8 @@ If you’d like to support future updates, I’d truly appreciate it. You can al
 
 </div>
 
+---
+
 ## License
 
 CyberWall is distributed under the terms of the GNU General Public License v3.0. See [LICENSE](LICENSE) for the full license text.
