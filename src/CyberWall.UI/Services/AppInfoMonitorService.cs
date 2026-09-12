@@ -2,10 +2,12 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using System.Windows.Media;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Common.Notifications;
 using CyberWall.Service.Engine;
+using CyberWall.UI.Converters;
 using CyberWall.UI.Popup;
 
 namespace CyberWall.UI.Services;
@@ -131,11 +133,13 @@ public sealed class AppInfoMonitorService
                     if (App.Settings.ToastAppInfoEnabled)
                         AppInfoToast.ShowToast(Strings.T("NotifAppVersionChangedTitle"), msg, rule.AppPath);
 
+                    var (_, iconHash, _) = CheckIcon(appPath, rule.LastKnownIconHash);
                     var updatedRule = rule with
                     {
                         LastKnownVersion = cleanCurrent,
                         LastKnownFileSize = currentSize,
-                        LastKnownWriteTimeUtc = currentWriteTime
+                        LastKnownWriteTimeUtc = currentWriteTime,
+                        LastKnownIconHash = iconHash ?? rule.LastKnownIconHash
                     };
                     svc.Store.Upsert(updatedRule);
                 }
@@ -149,23 +153,37 @@ public sealed class AppInfoMonitorService
                             AppInfoToast.ShowToast(Strings.T("NotifAppExecutableChangedTitle"), msg, rule.AppPath);
                     }
 
+                    var (_, iconHash, _) = CheckIcon(appPath, rule.LastKnownIconHash);
                     var updatedRule = rule with
                     {
                         LastKnownVersion = cleanCurrent,
                         LastKnownFileSize = currentSize,
-                        LastKnownWriteTimeUtc = currentWriteTime
+                        LastKnownWriteTimeUtc = currentWriteTime,
+                        LastKnownIconHash = iconHash ?? rule.LastKnownIconHash
                     };
                     svc.Store.Upsert(updatedRule);
+                }
+                else if (string.IsNullOrEmpty(rule.LastKnownIconHash))
+                {
+                    // Baseline icon hash setup for existing rule
+                    var (_, iconHash, _) = CheckIcon(appPath, null);
+                    if (!string.IsNullOrEmpty(iconHash))
+                    {
+                        var updatedRule = rule with { LastKnownIconHash = iconHash };
+                        svc.Store.Upsert(updatedRule);
+                    }
                 }
             }
             else
             {
                 // First initialization of baseline metadata for this rule
+                var (_, iconHash, _) = CheckIcon(appPath, null);
                 var initialRule = rule with
                 {
                     LastKnownVersion = cleanCurrent,
                     LastKnownFileSize = currentSize,
-                    LastKnownWriteTimeUtc = currentWriteTime
+                    LastKnownWriteTimeUtc = currentWriteTime,
+                    LastKnownIconHash = iconHash
                 };
                 svc.Store.Upsert(initialRule);
             }
@@ -200,15 +218,32 @@ public sealed class AppInfoMonitorService
                     AppInfoToast.ShowToast(Strings.T("NotifAppExecutableChangedTitle"), msg, rule.AppPath);
             }
 
+            var (_, liveIconHash, _) = CheckIcon(appPath, rule.LastKnownIconHash);
             var updatedRule = rule with
             {
                 LastKnownVersion = cleanCurrent,
                 LastKnownFileSize = currentSize,
-                LastKnownWriteTimeUtc = currentWriteTime
+                LastKnownWriteTimeUtc = currentWriteTime,
+                LastKnownIconHash = liveIconHash ?? rule.LastKnownIconHash
             };
             svc.Store.Upsert(updatedRule);
             _sessionCache[key] = (cleanCurrent, currentSize, currentWriteTime);
         }
+    }
+
+    private static (ImageSource? Icon, string? Hash, bool Changed) CheckIcon(string appPath, string? lastKnownHash)
+    {
+        var (icon, hash) = PathToIconConverter.ExtractIconWithHash(appPath);
+        bool changed = !string.IsNullOrEmpty(lastKnownHash) &&
+                       !string.IsNullOrEmpty(hash) &&
+                       !lastKnownHash.Equals(hash, StringComparison.OrdinalIgnoreCase);
+
+        if (hash != null)
+        {
+            PathToIconConverter.UpdateCache(appPath, icon, hash, notify: changed);
+        }
+
+        return (icon, hash, changed);
     }
 
     private static string? Clean(string? val)

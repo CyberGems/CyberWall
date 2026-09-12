@@ -126,6 +126,11 @@ public sealed class AppRuleRow : INotifyPropertyChanged
         HasActiveBandwidth = activity.HasBandwidth;
     }
 
+    public void RefreshIcon()
+    {
+        OnPropertyChanged(nameof(AppPath));
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

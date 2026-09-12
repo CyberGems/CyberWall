@@ -17,6 +17,7 @@ public sealed record AppRule
     public string? LastKnownVersion { get; init; }
     public long? LastKnownFileSize { get; init; }
     public DateTime? LastKnownWriteTimeUtc { get; init; }
+    public string? LastKnownIconHash { get; init; }
 
     [JsonIgnore]
     public Verdict EffectiveInboundVerdict => InboundVerdict ?? (Direction switch

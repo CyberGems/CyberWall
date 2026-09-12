@@ -147,6 +147,7 @@ public partial class MainWindow : Window
         ProcessTrafficTracker.Instance.Start();
         ConnectivityService.Instance.Start(_notifications);
         AppInfoMonitorService.Instance.Start(_notifications, _svc);
+        PathToIconConverter.IconChanged += OnAppIconChanged;
         UpdateService.UpdateAvailabilityChanged += OnUpdateAvailabilityChanged;
         _activeUpdateResult = UpdateService.LastCheckResult;
         UpdateAvailableButtonState();
@@ -154,6 +155,7 @@ public partial class MainWindow : Window
         {
             TopBandwidthFlyout.Close();
             UpdateService.UpdateAvailabilityChanged -= OnUpdateAvailabilityChanged;
+            PathToIconConverter.IconChanged -= OnAppIconChanged;
             AppInfoMonitorService.Instance.Stop();
             ConnectivityService.Instance.Stop();
             ProcessTrafficTracker.Instance.ActivityUpdated -= OnActivityUpdated;
@@ -916,6 +918,37 @@ public partial class MainWindow : Window
             foreach (var row in blockedRows)
             {
                 row.UpdateActivity(ProcessTrafficTracker.Instance);
+            }
+        }
+    }
+
+    private void OnAppIconChanged(string appPath)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(() => OnAppIconChanged(appPath));
+            return;
+        }
+
+        if (AllowedGrid.ItemsSource is IEnumerable<AppRuleRow> allowedRows)
+        {
+            foreach (var row in allowedRows)
+            {
+                if (string.Equals(row.AppPath, appPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    row.RefreshIcon();
+                }
+            }
+        }
+
+        if (BlockedGrid.ItemsSource is IEnumerable<AppRuleRow> blockedRows)
+        {
+            foreach (var row in blockedRows)
+            {
+                if (string.Equals(row.AppPath, appPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    row.RefreshIcon();
+                }
             }
         }
     }
