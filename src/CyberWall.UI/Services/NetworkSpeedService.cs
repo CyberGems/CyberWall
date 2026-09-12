@@ -26,7 +26,9 @@ public sealed class NetworkSpeedService
     private static readonly Lazy<NetworkSpeedService> _instance = new(() => new NetworkSpeedService());
     public static NetworkSpeedService Instance => _instance.Value;
 
-    private readonly DispatcherTimer _timer;
+    private readonly System.Threading.Timer _timer;
+    private volatile bool _running;
+    private int _samplingLock;
     private string? _lastAdapterId;
     private long _lastBytesReceived = -1;
     private long _lastBytesSent = -1;
@@ -54,29 +56,33 @@ public sealed class NetworkSpeedService
 
     private NetworkSpeedService()
     {
-        _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1000) };
-        _timer.Tick += (_, _) => Sample();
+        _timer = new System.Threading.Timer(_ => Sample(), null, Timeout.Infinite, Timeout.Infinite);
     }
 
     public void Start()
     {
-        if (!_timer.IsEnabled)
+        if (!_running)
         {
+            _running = true;
             _stopwatch.Restart();
             _lastTime = _stopwatch.Elapsed;
             Sample(isInitial: true);
-            _timer.Start();
+            _timer.Change(1000, 1000);
         }
     }
 
     public void Stop()
     {
-        _timer.Stop();
+        _running = false;
+        _timer.Change(Timeout.Infinite, Timeout.Infinite);
         _stopwatch.Stop();
     }
 
     private void Sample(bool isInitial = false)
     {
+        if (!_running && !isInitial) return;
+        if (Interlocked.Exchange(ref _samplingLock, 1) == 1) return;
+
         try
         {
             var nics = NetworkInterface.GetAllNetworkInterfaces();
@@ -162,6 +168,10 @@ public sealed class NetworkSpeedService
         catch
         {
             // Ignore transient network stack queries
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _samplingLock, 0);
         }
     }
 

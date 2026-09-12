@@ -61,7 +61,9 @@ public sealed class ProcessTrafficTracker : IDisposable
     private static readonly Lazy<ProcessTrafficTracker> _instance = new(() => new ProcessTrafficTracker());
     public static ProcessTrafficTracker Instance => _instance.Value;
 
-    private readonly DispatcherTimer _timer;
+    private readonly System.Threading.Timer _timer;
+    private volatile bool _running;
+    private int _pollLock;
     private readonly ConcurrentDictionary<string, ProcessActivityState> _activities = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<int, string?> _pidPathCache = new();
     private DateTime _lastCacheCleanup = DateTime.UtcNow;
@@ -83,8 +85,7 @@ public sealed class ProcessTrafficTracker : IDisposable
 
     private ProcessTrafficTracker()
     {
-        _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
-        _timer.Tick += (_, _) => Poll();
+        _timer = new System.Threading.Timer(_ => Poll(), null, Timeout.Infinite, Timeout.Infinite);
     }
 
     public void Start()
@@ -98,16 +99,19 @@ public sealed class ProcessTrafficTracker : IDisposable
         ProcessBandwidthService.Instance.Start();
         ProcessBandwidthService.Instance.BandwidthUpdated += OnBandwidthUpdated;
 
-        if (!_timer.IsEnabled)
+        if (!_running)
         {
+            _running = true;
             Poll();
-            _timer.Start();
+            _timer.Change(1500, 1500);
         }
     }
 
     public void Stop()
     {
-        _timer.Stop();
+        if (!_running) return;
+        _running = false;
+        _timer.Change(Timeout.Infinite, Timeout.Infinite);
         ProcessBandwidthService.Instance.BandwidthUpdated -= OnBandwidthUpdated;
         ProcessBandwidthService.Instance.Stop();
     }
@@ -338,6 +342,9 @@ public sealed class ProcessTrafficTracker : IDisposable
 
     private void Poll()
     {
+        if (!_running) return;
+        if (Interlocked.Exchange(ref _pollLock, 1) == 1) return;
+
         try
         {
             // Clean PID cache every 30s
@@ -406,6 +413,10 @@ public sealed class ProcessTrafficTracker : IDisposable
             ActivityUpdated?.Invoke();
         }
         catch { }
+        finally
+        {
+            Interlocked.Exchange(ref _pollLock, 0);
+        }
     }
 
     private static List<(int Pid, string Remote, int Port)> GetActiveTcpConnections()
