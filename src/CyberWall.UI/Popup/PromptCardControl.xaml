@@ -179,6 +179,11 @@
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Focusable" Value="True"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="ToolTipService.Placement" Value="Bottom"/>
+            <Setter Property="ToolTipService.VerticalOffset" Value="5"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="350"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -263,7 +268,8 @@
                 </StackPanel>
 
                 <!-- Top Right Card Dismiss Button -->
-                <Button Grid.Column="2" x:Name="DismissBtn" Width="22" Height="22" VerticalAlignment="Top" Background="Transparent" Foreground="{DynamicResource SubTextBrush}" BorderThickness="0" Cursor="Hand" Click="Dismiss_Click">
+                <Button Grid.Column="2" x:Name="DismissBtn" Width="22" Height="22" VerticalAlignment="Top" Background="Transparent" Foreground="{DynamicResource SubTextBrush}" BorderThickness="0" Cursor="Hand" Click="Dismiss_Click"
+                        ToolTipService.Placement="Bottom" ToolTipService.VerticalOffset="5" ToolTipService.InitialShowDelay="350" ToolTipService.BetweenShowDelay="0" ToolTipService.ShowDuration="4000">
                     <Path Fill="{DynamicResource SubTextBrush}" Width="9" Height="9" Stretch="Uniform" Data="M 1 1 L 9 9 M 9 1 L 1 9" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                 </Button>
             </Grid>
