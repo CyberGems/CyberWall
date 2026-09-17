@@ -1,6 +1,6 @@
 ## 🛡️ CyberWall {{VERSION}} — Release Notes
 
-Welcome to the official **CyberWall {{VERSION}}** release! CyberWall is a high-performance, real-time application-layer firewall powered by the Windows Filtering Platform (WFP) kernel engine.
+Welcome to the official **CyberWall {{VERSION}}** release! CyberWall is a high-performance, real-time firewall for Windows: see live traffic per app, allow or block connections in one click, and stay in control.
 
 ---
 
@@ -40,18 +40,22 @@ Welcome to the official **CyberWall {{VERSION}}** release! CyberWall is a high-p
 
 ### 📦 Downloads & Packages
 
+> ⬇️ **Direct download:** click a file name to download it now. Same files as in **Assets** at the bottom of this page.
+
 | File | Description | Platform |
 | :--- | :--- | :--- |
-| **`CyberWall-Setup-{{VERSION}}.exe`** | 🚀 **Recommended Installer** (Inno Setup with Start Menu, Desktop & Auto-Startup options) | Windows 10 / 11 (x64) |
-| **`CyberWall-{{VERSION}}-Portable-win-x64.zip`** | 💼 **Portable Archive** (Extract and run with Administrator privileges) | Windows 10 / 11 (x64) |
+| **[`CyberWall-Setup-{{VERSION}}.exe`](https://github.com/CyberGems/CyberWall/releases/download/{{VERSION}}/CyberWall-Setup-{{VERSION}}.exe)** | 🚀 **Recommended Installer** (Inno Setup with Start Menu, Desktop & Auto-Startup options) | Windows 10 / 11 (x64) |
+| **[`CyberWall-{{VERSION}}-Portable-win-x64.zip`](https://github.com/CyberGems/CyberWall/releases/download/{{VERSION}}/CyberWall-{{VERSION}}-Portable-win-x64.zip)** | 💼 **Portable Archive** (Extract and run with Administrator privileges) | Windows 10 / 11 (x64) |
 
 ---
 
 ### 🔍 VirusTotal Scan Results (70+ Antivirus Engines)
 
-- 🛡️ **Setup Installer**: [View VirusTotal Inspection Report](https://www.virustotal.com/gui/file/{{INSTALLER_HASH}})  
+> ℹ️ These links open the security report on VirusTotal in a new tab, they do not download the app.
+
+- 🛡️ **Setup Installer**: [View security report on VirusTotal](https://www.virustotal.com/gui/file/{{INSTALLER_HASH}})  
   *(SHA256: `{{INSTALLER_HASH}}`)*
-- 💼 **Portable Archive**: [View VirusTotal Inspection Report](https://www.virustotal.com/gui/file/{{PORTABLE_HASH}})  
+- 💼 **Portable Archive**: [View security report on VirusTotal](https://www.virustotal.com/gui/file/{{PORTABLE_HASH}})  
   *(SHA256: `{{PORTABLE_HASH}}`)*
 
 ---
