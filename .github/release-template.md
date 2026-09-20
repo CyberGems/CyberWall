@@ -1,6 +1,13 @@
-## 🛡️ CyberWall {{VERSION}} — Release Notes
+## 🛡️ CyberWall {{VERSION}}: Release Notes
 
-Welcome to the official **CyberWall {{VERSION}}** release! CyberWall is a high-performance, real-time firewall for Windows: see live traffic per app, allow or block connections in one click, and stay in control.
+### 🚀 What's new in this release
+
+<!-- Maintainer: Rewrite the marked paragraph for every release. Use 25-45 words, lead with user-facing changes, and do not repeat the app name or version. -->
+<!-- changelog-summary:start -->
+Settings now live in a responsive in-window workspace, network telemetry is more precise, navigation is broader, and application identity updates react instantly, alongside extensive visual and bilingual polish across the firewall experience.
+<!-- changelog-summary:end -->
+
+> **New to CyberWall?** A real-time Windows firewall for viewing per-app traffic and allowing or blocking connections with one click.
 
 ---
 
