@@ -16,7 +16,11 @@
   <a href="https://github.com/CyberGems/CyberWall/wiki"><img src="https://img.shields.io/badge/Wiki-Documentation-1F2428?style=flat-square&logo=gitbook&logoColor=white&color=B91C1C" alt="Wiki" /></a>
 </p>
 
-A modern, high-performance, and lightweight **per-application firewall** for Windows, powered by the **Windows Filtering Platform (WFP)**. Built on a strict **default-deny (whitelist)** architecture, CyberWall intercepts unknown network connections and displays interactive real-time prompts per **application executable**, turning your PC into an impenetrable network fortress.
+---
+
+## What is CyberWall?
+
+CyberWall is a modern, lightweight **per-application firewall** for Windows, powered directly by the native **Windows Filtering Platform (WFP)**. Its default-deny model intercepts unknown network activity and asks whether each executable should be allowed once, always allowed, or blocked with a persistent rule. Real-time prompts, connection monitoring, rule management, traffic statistics, and clear application identity make outbound access easier to understand and control without installing a third-party kernel driver.
 
 *Free and open source (GPLv3): no ads, no tracking, and no data collection. Just enjoy it.*
 
