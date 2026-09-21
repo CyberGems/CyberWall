@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/CyberGems/CyberWall/main/src/CyberWall.UI/Assets/CyberWall.png" width="120" alt="CyberWall">
+</p>
+
 ## 🛡️ CyberWall {{VERSION}}: Release Notes
 
 ### 🚀 What's new in this release
