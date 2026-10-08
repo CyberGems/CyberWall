@@ -1,4 +1,8 @@
 <p align="center">
+  English · <a href="./README.es.md">Español</a>
+</p>
+
+<p align="center">
   <a href="https://cybergems.org/apps/cyberwall/">
     <img src="https://cybergems.org/banners/cyberwall.png" alt="CyberWall, per-application network control for Windows" />
   </a>
@@ -65,39 +69,13 @@ Here is how CyberWall protects your computer against real-world threats in plain
 
 ---
 
-## 🛠️ Tech Stack & Architecture
-
-- **Platform**: Windows 10 / 11 (x64)
-- **Framework**: .NET 10 + WPF (Native UI)
-- **Filtering Core**: `fwpuclnt.dll` (WFP User-Mode API), Windows Advanced Firewall (`HNetCfg.FwPolicy2`), and Security Audit Event Log (`EventLogWatcher`).
-
-```
-CyberWall.slnx
-├── src/CyberWall.Common/   -> Core models (AppRule, ConnectionEvent), I18n strings, settings
-├── src/CyberWall.Service/  -> WfpEngine, WfpBlockWatcher, RealFirewall, ConnectionMonitor, RuleStore
-└── src/CyberWall.UI/       -> Frameless WPF UI, ThemeCard controls, ConnectionPopup, TrayService, Dialogs
-```
-
----
-
 ## 🚀 Getting Started
 
-### Prerequisites
-- Windows 10/11 (x64)
-- .NET 10 SDK
+### Install (Recommended)
 
-### Building & Running
-
-```powershell
-# Build solution
-dotnet build
-
-# Run with Administrator privileges (Real WFP filtering)
-.\dev-admin.ps1
-
-# Run standard dev session (Simulated filtering if non-elevated)
-.\dev.ps1
-```
+1. Download the latest installer from [Releases](https://github.com/CyberGems/CyberWall/releases/latest)
+2. Run the `.exe` installer and follow the setup wizard
+3. Launch CyberWall. No .NET SDK needed to run it.
 
 > **Note**: Real kernel-level network filtering and firewall rule enforcement require Administrator privileges.
 
@@ -125,6 +103,44 @@ Windows shows this warning for any installer without a paid code-signing certifi
 You can verify the file independently: compare the SHA with the GitHub release, scan it on VirusTotal, or build from source. More details: [SmartScreen guide on the website](https://cybergems.org/download#smartscreen).
 
 </details>
+
+---
+
+## 🛠️ Tech Stack & Architecture
+
+- **Platform**: Windows 10 / 11 (x64)
+- **Framework**: .NET 10 + WPF (Native UI)
+- **Filtering Core**: `fwpuclnt.dll` (WFP User-Mode API), Windows Advanced Firewall (`HNetCfg.FwPolicy2`), and Security Audit Event Log (`EventLogWatcher`).
+
+```
+CyberWall.slnx
+├── src/CyberWall.Common/   -> Core models (AppRule, ConnectionEvent), I18n strings, settings
+├── src/CyberWall.Service/  -> WfpEngine, WfpBlockWatcher, RealFirewall, ConnectionMonitor, RuleStore
+└── src/CyberWall.UI/       -> Frameless WPF UI, ThemeCard controls, ConnectionPopup, TrayService, Dialogs
+```
+
+### Building from Source (Developers)
+
+Only needed if you want to work on CyberWall or build it yourself; regular users can skip this section.
+
+#### Prerequisites
+- Windows 10/11 (x64)
+- .NET 10 SDK
+
+#### Building & Running
+
+```powershell
+# Build solution
+dotnet build
+
+# Run with Administrator privileges (Real WFP filtering)
+.\dev-admin.ps1
+
+# Run standard dev session (Simulated filtering if non-elevated)
+.\dev.ps1
+```
+
+> **Note**: Real kernel-level network filtering and firewall rule enforcement require Administrator privileges.
 
 ---
 
