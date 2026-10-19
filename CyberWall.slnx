@@ -4,4 +4,7 @@
     <Project Path="src/CyberWall.Service/CyberWall.Service.csproj" />
     <Project Path="src/CyberWall.UI/CyberWall.UI.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CyberWall.Tests/CyberWall.Tests.csproj" />
+  </Folder>
 </Solution>
