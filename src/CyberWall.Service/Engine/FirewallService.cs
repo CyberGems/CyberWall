@@ -22,6 +22,7 @@ public sealed class FirewallService : IDisposable
     private readonly object _sessionLock = new();
     private readonly HashSet<string> _reappliedAllows = new(StringComparer.OrdinalIgnoreCase);
     private static readonly TimeSpan SessionTtl = TimeSpan.FromMinutes(10);
+    private Timer? _heartbeat;
 
     public FirewallService()
     {
@@ -37,6 +38,7 @@ public sealed class FirewallService : IDisposable
             lock (_sessionLock) _reappliedAllows.Clear();
             RealFirewall.EnsureSelfAllowed();
             ProcessIdentity.ResumeAllSuspended();
+            StartHeartbeat();
 
             if (Mode == FirewallMode.Killswitch)
             {
@@ -80,16 +82,54 @@ public sealed class FirewallService : IDisposable
         return ok;
     }
 
-    public void Disable()
+    /// <summary>
+    /// Turns the engine off. Returns false when the firewall policy could not be
+    /// restored, which leaves the host without outbound connectivity.
+    /// </summary>
+    public bool Disable()
     {
+        var restored = true;
         if (Mode == FirewallMode.Killswitch)
         {
             Wfp.SetKillswitch(false);
         }
+        StopHeartbeat();
         Monitor.Stop();
-        Wfp.Disable();
+        restored = Wfp.Disable();
+        return restored;
     }
     public bool IsMasterOn => IsEnabled;
+
+    /// <summary>
+    /// Keeps the recovery watchdog informed that an engine is alive, and keeps the
+    /// scheduled task armed so a crash cannot leave the host without connectivity.
+    /// </summary>
+    private void StartHeartbeat()
+    {
+        StopHeartbeat();
+        try
+        {
+            PolicyRecovery.Arm();
+            PolicyRecovery.WriteHeartbeat();
+            _heartbeat = new Timer(_ =>
+            {
+                try { PolicyRecovery.WriteHeartbeat(); } catch { }
+            }, null, 30_000, 30_000);
+        }
+        catch { }
+    }
+
+    private void StopHeartbeat()
+    {
+        try { _heartbeat?.Dispose(); } catch { }
+        _heartbeat = null;
+        try
+        {
+            PolicyRecovery.ClearHeartbeat();
+            PolicyRecovery.Disarm();
+        }
+        catch { }
+    }
 
     public void SetMode(FirewallMode mode)
     {

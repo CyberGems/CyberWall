@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using CyberWall.Common;
 using CyberWall.Common.Models;
 using Microsoft.Win32;
@@ -8,33 +10,170 @@ namespace CyberWall.Service.Wfp;
 
 public static class RealFirewall
 {
+    // HNetCfg.FwPolicy2 enums (NET_FW_ACTION_TYPE / NET_FW_PROFILE_TYPE2).
+    private const int ActionAllow = 1;
+    private const int ActionBlock = 2;
+    private const int ProfileDomain = 1;
+    private const int ProfilePrivate = 2;
+    private const int ProfilePublic = 4;
+
+    private static readonly int[] ManagedProfiles = { ProfileDomain, ProfilePrivate, ProfilePublic };
+
+    /// <summary>Prefix owned by CyberWall for every Windows Firewall rule it creates.</summary>
+    public const string RulePrefix = "CyberWall-";
+
+    /// <summary>Marker that separates the stable path hash from the executable name in rule names.</summary>
+    private const char RuleTagSeparator = '~';
+
+    /// <summary>
+    /// Profile actions captured before CyberWall switched the machine to default-deny,
+    /// so the original configuration can be restored instead of assuming the Windows defaults.
+    /// </summary>
+    private static readonly Dictionary<int, (int Outbound, int Inbound)> _originalActions = new();
+
     public static bool IsAdmin => new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent()).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+
+    /// <summary>
+    /// Stable per-path tag. Rule names must be unique per executable, otherwise two
+    /// different programs with the same file name (chrome.exe, setup.exe, host.exe...)
+    /// overwrite each other's Windows Firewall rule.
+    /// </summary>
+    internal static string RuleTag(string appPath)
+    {
+        try
+        {
+            var normalized = AppRule.Normalize(appPath);
+            var hash = SHA256.HashData(Encoding.UTF8.GetBytes(normalized));
+            return Convert.ToHexString(hash, 0, 4).ToLowerInvariant();
+        }
+        catch
+        {
+            return "00000000";
+        }
+    }
+
+    private static string RuleName(string kind, string appPath, bool inbound)
+    {
+        var file = Path.GetFileNameWithoutExtension(appPath);
+        var name = $"{RulePrefix}{kind}-{file}{RuleTagSeparator}{RuleTag(appPath)}";
+        return inbound ? name + "-in" : name;
+    }
 
     public static bool TryEnableBlockAll()
     {
         if (!IsAdmin) return false;
+
+        var policy = GetFwPolicy();
+        if (policy != null)
+        {
+            CaptureOriginalActions(policy);
+            ApplyProfileActions(policy, ActionBlock, ActionBlock);
+        }
+
+        var ok = RunNetsh("advfirewall set allprofiles firewallpolicy blockinbound,blockoutbound");
+        if (!ok && policy == null)
+        {
+            Debug.WriteLine("RealFirewall: unable to switch the firewall policy to default-deny.");
+            return false;
+        }
+
+        // Legacy per-application rules are dropped first so they cannot keep blocking
+        // programs after the naming scheme changed.
+        RemoveLegacyRules();
+        EnsureSelfAllowed();
+        EnsureCoreServicesAllowed();
+        return true;
+    }
+
+    private static void CaptureOriginalActions(dynamic policy)
+    {
         try
         {
-            dynamic policy = Activator.CreateInstance(Type.GetTypeFromProgID("HNetCfg.FwPolicy2")!)!;
-            policy.DefaultOutboundAction[2] = 0;
-            policy.DefaultOutboundAction[4] = 0;
-            policy.DefaultOutboundAction[1] = 0;
-            policy.DefaultInboundAction[2] = 0;
-            policy.DefaultInboundAction[4] = 0;
-            policy.DefaultInboundAction[1] = 0;
-            RunNetsh("advfirewall set allprofiles firewallpolicy blockinbound,blockoutbound");
-            EnsureSelfAllowed();
-            EnsureCoreServicesAllowed();
-            return true;
+            lock (_originalActions)
+            {
+                if (_originalActions.Count > 0) return;
+                foreach (var profile in ManagedProfiles)
+                {
+                    var outbound = Convert.ToInt32(policy.DefaultOutboundAction[profile]);
+                    var inbound = Convert.ToInt32(policy.DefaultInboundAction[profile]);
+                    _originalActions[profile] = (outbound, inbound);
+                }
+            }
         }
         catch (Exception ex)
         {
-            Debug.WriteLine(ex);
-            var ok = RunNetsh("advfirewall set allprofiles firewallpolicy blockinbound,blockoutbound");
-            EnsureSelfAllowed();
-            EnsureCoreServicesAllowed();
-            return ok;
+            Debug.WriteLine($"RealFirewall: could not capture the original firewall policy: {ex.Message}");
         }
+    }
+
+    private static void ApplyProfileActions(dynamic policy, int outbound, int inbound)
+    {
+        foreach (var profile in ManagedProfiles)
+        {
+            try { policy.DefaultOutboundAction[profile] = outbound; } catch { }
+            try { policy.DefaultInboundAction[profile] = inbound; } catch { }
+        }
+    }
+
+    /// <summary>
+    /// Restores the firewall policy captured on enable and verifies the result.
+    /// Returns false when the machine could not be restored, which leaves the host
+    /// without outbound connectivity and must be surfaced to the user.
+    /// </summary>
+    public static bool Disable()
+    {
+        if (!IsAdmin) return false;
+
+        var restored = false;
+        try
+        {
+            RemoveRule("CyberWall-Killswitch-BlockAll-Out");
+            RemoveRule("CyberWall-Killswitch-BlockAll-In");
+
+            var policy = GetFwPolicy();
+            if (policy != null)
+            {
+                lock (_originalActions)
+                {
+                    foreach (var profile in ManagedProfiles)
+                    {
+                        var action = _originalActions.TryGetValue(profile, out var captured)
+                            ? captured
+                            : (ActionAllow, ActionBlock); // Windows default: allow outbound, block inbound
+                        try { policy.DefaultOutboundAction[profile] = action.Item1; } catch { }
+                        try { policy.DefaultInboundAction[profile] = action.Item2; } catch { }
+                    }
+                    _originalActions.Clear();
+                }
+            }
+
+            restored = RunNetsh("advfirewall set allprofiles firewallpolicy blockinbound,allowoutbound");
+            if (!restored)
+            {
+                Debug.WriteLine("RealFirewall: netsh failed to restore the firewall policy.");
+            }
+            else if (!IsOutboundAllowed())
+            {
+                Debug.WriteLine("RealFirewall: the firewall policy still blocks outbound traffic after restore.");
+                restored = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"RealFirewall: error while disabling: {ex.Message}");
+            restored = false;
+        }
+
+        RemoveOwnedRules();
+        return restored;
+    }
+
+    /// <summary>Independent verification that reads back the effective profile policy.</summary>
+    private static bool IsOutboundAllowed()
+    {
+        var output = RunNetshCapture("advfirewall show allprofiles firewallpolicy");
+        if (string.IsNullOrWhiteSpace(output)) return false;
+        return output.Contains("AllowOutbound", StringComparison.OrdinalIgnoreCase);
     }
 
     public static void EnsureSelfAllowed()
@@ -180,19 +319,6 @@ public static class RealFirewall
         }
     }
 
-    public static bool Disable()
-    {
-        if (!IsAdmin) return false;
-        try
-        {
-            RunNetsh("advfirewall firewall delete rule name=\"CyberWall-Killswitch-BlockAll-Out\"");
-            RunNetsh("advfirewall firewall delete rule name=\"CyberWall-Killswitch-BlockAll-In\"");
-            RunNetsh("advfirewall set allprofiles firewallpolicy blockinbound,allowoutbound");
-            return true;
-        }
-        catch { return false; }
-    }
-
     public static void SetKillswitch(bool enable)
     {
         if (!IsAdmin) return;
@@ -263,11 +389,10 @@ public static class RealFirewall
     {
         try
         {
-            var baseName = Path.GetFileNameWithoutExtension(appPath);
-            var allowOut = $"CyberWall-Allow-{baseName}";
-            var allowIn = $"CyberWall-Allow-{baseName}-in";
-            var blockOut = $"CyberWall-Block-{baseName}";
-            var blockIn = $"CyberWall-Block-{baseName}-in";
+            var allowOut = RuleName("Allow", appPath, inbound: false);
+            var allowIn = RuleName("Allow", appPath, inbound: true);
+            var blockOut = RuleName("Block", appPath, inbound: false);
+            var blockIn = RuleName("Block", appPath, inbound: true);
 
             if (outVerdict == Verdict.Allow)
             {
@@ -360,15 +485,94 @@ public static class RealFirewall
         {
             try
             {
-                var baseName = Path.GetFileNameWithoutExtension(p);
-                RemoveRule($"CyberWall-Allow-{baseName}");
-                RemoveRule($"CyberWall-Allow-{baseName}-in");
-                RemoveRule($"CyberWall-Block-{baseName}");
-                RemoveRule($"CyberWall-Block-{baseName}-in");
+                RemoveRule(RuleName("Allow", p, inbound: false));
+                RemoveRule(RuleName("Allow", p, inbound: true));
+                RemoveRule(RuleName("Block", p, inbound: false));
+                RemoveRule(RuleName("Block", p, inbound: true));
             }
             catch { }
         }
         if (!string.IsNullOrEmpty(pfn)) RemovePackageRules(pfn);
+    }
+
+    /// <summary>
+    /// Removes every Windows Firewall rule owned by CyberWall. Used when protection is
+    /// turned off and on uninstall, so blocked programs are never left behind.
+    /// </summary>
+    public static int RemoveOwnedRules()
+    {
+        var removed = 0;
+        try
+        {
+            var policy = GetFwPolicy();
+            if (policy != null)
+            {
+                var names = new List<string>();
+                foreach (dynamic rule in policy.Rules)
+                {
+                    try
+                    {
+                        var name = (string?)rule.Name;
+                        if (!string.IsNullOrEmpty(name) && name.StartsWith(RulePrefix, StringComparison.OrdinalIgnoreCase))
+                            names.Add(name);
+                    }
+                    catch { }
+                }
+                foreach (var name in names)
+                {
+                    try { policy.Rules.Remove(name); removed++; } catch { }
+                }
+            }
+        }
+        catch (Exception ex) { Debug.WriteLine(ex); }
+
+        if (removed == 0)
+        {
+            removed = RemoveOwnedRulesViaPowerShell();
+        }
+        return removed;
+    }
+
+    private static int RemoveOwnedRulesViaPowerShell()
+    {
+        var output = RunPowerShellCapture(
+            "$r = Get-NetFirewallRule -DisplayName 'CyberWall-*' -ErrorAction SilentlyContinue; " +
+            "if ($r) { $n = @($r).Count; $r | Remove-NetFirewallRule -ErrorAction SilentlyContinue; $n } else { 0 }");
+        return int.TryParse(output?.Trim(), out var count) ? count : 0;
+    }
+
+    /// <summary>
+    /// Removes the per-application rules created by previous versions, which used the bare
+    /// executable name and therefore collided between programs sharing the same file name.
+    /// </summary>
+    private static void RemoveLegacyRules()
+    {
+        try
+        {
+            var policy = GetFwPolicy();
+            if (policy == null) return;
+            var names = new List<string>();
+            foreach (dynamic rule in policy.Rules)
+            {
+                try
+                {
+                    var name = (string?)rule.Name;
+                    if (string.IsNullOrEmpty(name)) continue;
+                    if (!name.StartsWith(RulePrefix + "Allow-", StringComparison.OrdinalIgnoreCase) &&
+                        !name.StartsWith(RulePrefix + "Block-", StringComparison.OrdinalIgnoreCase)) continue;
+                    if (name.Contains(RuleTagSeparator)) continue;            // current naming scheme
+                    if (name.Contains("-Pkg-", StringComparison.OrdinalIgnoreCase)) continue; // package rules
+                    if (name.Contains("-Core-", StringComparison.OrdinalIgnoreCase)) continue; // core service rules
+                    names.Add(name);
+                }
+                catch { }
+            }
+            foreach (var name in names)
+            {
+                try { policy.Rules.Remove(name); } catch { }
+            }
+        }
+        catch (Exception ex) { Debug.WriteLine(ex); }
     }
 
     private static dynamic? GetFwPolicy()
@@ -419,6 +623,7 @@ public static class RealFirewall
 
     private static void AddGlobalBlockRule(string name, bool outbound)
     {
+        RemoveRule(name);
         try
         {
             var tRule = Type.GetTypeFromProgID("HNetCfg.FWRule");
@@ -469,6 +674,7 @@ public static class RealFirewall
 
     private static void AddFwPortRule(string name, int port, bool isUdp, bool outbound)
     {
+        RemoveRule(name);
         try
         {
             var tRule = Type.GetTypeFromProgID("HNetCfg.FWRule");
@@ -670,8 +876,8 @@ public static class RealFirewall
             psi.ArgumentList.Add(command);
             using var p = Process.Start(psi);
             if (p == null) return false;
-            p.WaitForExit(15000);
-            return p.HasExited && p.ExitCode == 0;
+            if (!p.WaitForExit(20000)) { try { p.Kill(); } catch { } return false; }
+            return p.ExitCode == 0;
         }
         catch { return false; }
     }
@@ -682,10 +888,49 @@ public static class RealFirewall
         {
             var psi = new ProcessStartInfo("netsh", args) { CreateNoWindow = true, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
             using var p = Process.Start(psi)!;
-            p.WaitForExit(4000);
+            if (!p.WaitForExit(8000)) { try { p.Kill(); } catch { } return false; }
             return p.ExitCode == 0;
         }
         catch { return false; }
+    }
+
+    private static string? RunNetshCapture(string args)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo("netsh", args) { CreateNoWindow = true, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
+            using var p = Process.Start(psi);
+            if (p == null) return null;
+            var output = p.StandardOutput.ReadToEnd();
+            if (!p.WaitForExit(8000)) { try { p.Kill(); } catch { } return null; }
+            return output;
+        }
+        catch { return null; }
+    }
+
+    private static string? RunPowerShellCapture(string command)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+            psi.ArgumentList.Add("-NoProfile");
+            psi.ArgumentList.Add("-NonInteractive");
+            psi.ArgumentList.Add("-Command");
+            psi.ArgumentList.Add(command);
+            using var p = Process.Start(psi);
+            if (p == null) return null;
+            var output = p.StandardOutput.ReadToEnd();
+            if (!p.WaitForExit(20000)) { try { p.Kill(); } catch { } return null; }
+            return output;
+        }
+        catch { return null; }
     }
 }
 

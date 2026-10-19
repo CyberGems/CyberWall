@@ -18,6 +18,8 @@ public static class Strings
         ["MasterOff"] = ("Firewall OFF", "Firewall DESACTIVADO"),
         ["ProtectionActive"] = ("PROTECTION ACTIVE", "PROTECCIÓN ACTIVA"),
         ["ProtectionDisabled"] = ("PROTECTION DISABLED", "PROTECCIÓN DESACTIVADA"),
+        ["ProtectionRestoreFailedTitle"] = ("Firewall policy not restored", "Política del firewall no restaurada"),
+        ["ProtectionRestoreFailedDesc"] = ("Windows could not restore the firewall policy. Outbound traffic may stay blocked. Restart Windows or run \"netsh advfirewall set allprofiles firewallpolicy blockinbound,allowoutbound\" as administrator.", "Windows no pudo restaurar la política del firewall. El tráfico saliente puede seguir bloqueado. Reinicia Windows o ejecuta \"netsh advfirewall set allprofiles firewallpolicy blockinbound,allowoutbound\" como administrador."),
         ["ModeAsk"] = ("Ask to connect", "Preguntar para conectar"),
         ["ModeBlockAll"] = ("Block without asking", "Bloquear sin preguntar"),
         ["ModeKillswitch"] = ("Lockdown (Killswitch)", "Bloqueo total (Killswitch)"),

@@ -1036,7 +1036,14 @@ public partial class MainWindow : Window
         }
         else
         {
-            _svc.Disable();
+            if (!_svc.Disable())
+            {
+                AppInfoToast.ShowToast(
+                    Strings.T("ProtectionRestoreFailedTitle"),
+                    Strings.T("ProtectionRestoreFailedDesc"),
+                    appPath: null,
+                    ToastBadgeType.Danger);
+            }
             _notifications.Add(AppNotificationKind.ProtectionOff);
             if (App.Settings.ToastProtectionEventsEnabled)
             {

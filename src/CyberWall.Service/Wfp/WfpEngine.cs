@@ -38,13 +38,17 @@ public sealed class WfpEngine : IDisposable
         catch (Exception ex) { Debug.WriteLine(ex); _realBlock = RealFirewall.TryEnableBlockAll(); _enabled = true; return true; }
     }
 
-    public void Disable()
+    public bool Disable()
     {
-        if (!_enabled) return;
+        if (!_enabled) return true;
         try { if (_engine != 0) WfpInterop.FwpmEngineClose0(_engine); } catch { }
         _engine = 0;
         _enabled = false;
-        if (_realBlock) { RealFirewall.Disable(); _realBlock = false; }
+        // Always run the cleanup: it restores the firewall policy and removes the
+        // rules CyberWall owns, even if the engine never reached the blocking state.
+        var restored = RealFirewall.Disable();
+        _realBlock = false;
+        return restored;
     }
 
     public void AllowApp(string path, int pid = 0) { if (_enabled) RealFirewall.AllowApp(path, pid); }
