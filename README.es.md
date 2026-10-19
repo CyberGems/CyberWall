@@ -24,7 +24,7 @@
 
 ## ¿Qué es CyberWall?
 
-CyberWall es un cortafuegos moderno y ligero **por aplicación** para Windows, impulsado directamente por la plataforma nativa de **Windows Filtering Platform (WFP)**. Su modelo de denegación por defecto intercepta la actividad de red desconocida y pregunta si cada ejecutable debe permitirse una vez, permitirse siempre o bloquearse con una regla persistente. Los avisos en tiempo real, la monitorización de conexiones, la gestión de reglas, las estadísticas de tráfico y la identificación clara de las aplicaciones hacen que el acceso de salida sea más fácil de entender y controlar sin instalar un controlador de kernel de terceros.
+CyberWall es un cortafuegos moderno y ligero **por aplicación** para Windows, construido sobre la **Windows Filtering Platform (WFP)** y el **Cortafuegos Avanzado de Windows** que ya vienen con el sistema operativo. Su modelo de denegación por defecto intercepta la actividad de red desconocida y pregunta si cada ejecutable debe permitirse una vez, permitirse siempre o bloquearse con una regla persistente. Los avisos en tiempo real, la monitorización de conexiones, la gestión de reglas, las estadísticas de tráfico y la identificación clara de las aplicaciones hacen que el acceso de salida sea más fácil de entender y controlar sin instalar un controlador de kernel de terceros.
 
 *Gratuito y de código abierto (GPLv3): sin anuncios, sin rastreo y sin recogida de datos. Solo disfrútalo.*
 
@@ -45,13 +45,16 @@ Así es como CyberWall protege tu equipo frente a amenazas reales, en términos 
 | **Shells inversos y acceso remoto** | 🟢 **9,5 / 10** | **Corte de canal**: los atacantes que intentan abrir una puerta trasera interactiva remota encuentran su conexión saliente atascada en el limbo del kernel. |
 
 > [!TIP]
-> **Cero riesgo de estabilidad**: a diferencia de otros firewalls que instalan controladores de kernel de terceros intrusivos (a menudo causando pantallas azules / BSOD tras las actualizaciones de Windows), CyberWall depende directamente del motor nativo de Microsoft, la **Windows Filtering Platform (WFP)**. Obtienes protección real a nivel de kernel con un 100 % de estabilidad del sistema operativo.
+> **Cero riesgo de estabilidad**: a diferencia de otros firewalls que instalan controladores de kernel de terceros intrusivos (a menudo causando pantallas azules / BSOD tras las actualizaciones de Windows), CyberWall no instala ningún controlador. Detecta el tráfico bloqueado mediante los eventos de auditoría de WFP y aplica las decisiones con el motor de cortafuegos que ya viene incluido en Windows, así que no hay nada que pueda romperse tras una actualización.
 
 ---
 
 ## ✨ Funciones principales
 
-- **Intercepción de descartes WFP en tiempo real**: detección instantánea de descartes en el kernel basada en eventos mediante Windows Filtering Platform (ID de evento `5157`). Intercepta con precisión los procesos CLI de vida corta (`git`, `curl`, `dotnet`, `ssh`) en milisegundos.
+- **Detección de descartes WFP en tiempo real**: detección de descartes en el kernel basada en eventos mediante la auditoría de Windows Filtering Platform (ID de evento `5157`). Intercepta con precisión los procesos CLI de vida corta (`git`, `curl`, `dotnet`, `ssh`) en milisegundos.
+- **Aplicación nativa del cortafuegos**: las decisiones se aplican como reglas por aplicación en el Cortafuegos Avanzado de Windows (`HNetCfg.FwPolicy2`), con `netsh` y PowerShell como alternativas. Nunca se instala ningún filtro ni controlador propio.
+- **Denegación por defecto a prueba de fallos**: una tarea programada restaura la política de denegación por defecto si CyberWall se detiene de forma inesperada, de modo que un fallo nunca puede dejar el equipo sin conectividad.
+- **Actualizaciones con verificación de integridad**: el instalador descargado se valida con su suma SHA256 antes de ejecutarlo.
 - **Reglas inteligentes de toolchain y suite**: resuelve y autoriza automáticamente los ejecutables auxiliares de suites de desarrollo como Git (`git.exe`, `git-remote-https.exe`, `git-remote-http.exe`, `ssh.exe`, etc.).
 - **Arquitectura denegar por defecto / lista blanca**: aplica una política estricta de bloqueo por defecto en entrada y salida, permitiendo solo las aplicaciones autorizadas por el usuario.
 - **Avisos tipo GlassWire**: elegantes notificaciones de «Primera actividad de red» con insignias gráficas de dirección (`↑ Saliente` / `↓ Entrante`).
@@ -64,8 +67,8 @@ Así es como CyberWall protege tu equipo frente a amenazas reales, en términos 
 - **Sistema de actualización automática integrado**: comprobador de actualizaciones de GitHub Releases con un clic, seguimiento de progreso de descarga en vivo e instalador silencioso.
 - **Ventana Acerca de dedicada**: resumen interactivo del producto, gestor de actualizaciones y acceso directo a los canales de la comunidad CyberGems.
 - **Totalmente bilingüe (EN / ES)**: localización completa de la interfaz en inglés y español con cambio de idioma instantáneo.
-- **Almacenamiento persistente de reglas**: las reglas se guardan de forma persistente en `%ProgramData%\CyberWall\rules.json`.
-- **Bandeja del sistema y demonio en segundo plano**: integración con la bandeja, minimizar a la bandeja y soporte para ejecutarse como Servicio de Windows en segundo plano (SYSTEM).
+- **Almacenamiento persistente de reglas**: las reglas se guardan de forma persistente en `%ProgramData%\CyberWall\rules.json`, con escritura atómica para que un fallo nunca las trunque.
+- **Bandeja del sistema y demonio en segundo plano**: integración con la bandeja, minimizar a la bandeja y soporte opcional para ejecutarse como Servicio de Windows en segundo plano (SYSTEM). Solo un host es propietario del motor de cortafuegos a la vez: la ventana abierta tiene prioridad y el servicio retoma la protección cuando se cierra.
 ---
 
 ## 🚀 Primeros pasos
@@ -114,7 +117,8 @@ Puedes verificar el archivo de forma independiente: compara el SHA con el releas
 CyberWall.slnx
 ├── src/CyberWall.Common/   -> Modelos base (AppRule, ConnectionEvent), cadenas I18n, configuración
 ├── src/CyberWall.Service/  -> WfpEngine, WfpBlockWatcher, RealFirewall, ConnectionMonitor, RuleStore
-└── src/CyberWall.UI/       -> UI WPF sin marco, controles ThemeCard, ConnectionPopup, TrayService, Diálogos
+├── src/CyberWall.UI/       -> UI WPF sin marco, controles ThemeCard, ConnectionPopup, TrayService, Diálogos
+└── tests/CyberWall.Tests/  -> Pruebas unitarias de reglas, paquetes, configuración, traducciones y nombres de regla
 ```
 
 ### Compilar desde el código fuente (desarrolladores)
@@ -131,6 +135,9 @@ Solo necesario si quieres modificar CyberWall o compilarlo tú mismo; los usuari
 # Compilar la solución
 dotnet build
 
+# Ejecutar las pruebas
+dotnet test
+
 # Ejecutar con privilegios de Administrador (filtrado WFP real)
 .\dev-admin.ps1
 
@@ -144,9 +151,10 @@ dotnet build
 ## 🔍 Cómo funciona
 
 1. **Intercepción en el kernel**: cuando una aplicación sin regla existente intenta una conexión entrante o saliente, Windows Filtering Platform retiene la conexión de forma segura a nivel de kernel.
-2. **Captura instantánea de eventos**: `WfpBlockWatcher` recibe el evento de descarte en tiempo real, resuelve la ruta del dispositivo NT del kernel (p. ej. `\device\harddiskvolume3\...`) a una ruta de archivo Win32 estándar (`C:\...`) y elimina los desencadenantes duplicados con debounce.
+2. **Captura instantánea de eventos**: `WfpBlockWatcher` recibe el evento de descarte en tiempo real, resuelve la ruta del dispositivo NT del kernel (p. ej. `\device\harddiskvolume3\...`) a una ruta de archivo Win32 estándar (`C:\...`) y elimina los desencadenantes duplicados con debounce. La política de auditoría que habilita se restaura al detener CyberWall.
 3. **Aviso interactivo**: aparece una ventana emergente sin marco e intrusiva en la esquina de pantalla de tu elección mostrando el icono de la aplicación, el nombre, el protocolo, el extremo de destino y la insignia gráfica de dirección (`↑ Saliente` / `↓ Entrante`).
-4. **Aplicación de reglas**: CyberWall aplica la decisión seleccionada al proceso pendiente. **Permitir siempre** y **Bloquear** guardan una regla persistente en `rules.json` y actualizan el motor del Cortafuegos de Windows, mientras que **Permitir una vez** mantiene la decisión solo para la sesión actual.
+4. **Aplicación de reglas**: CyberWall aplica la decisión seleccionada al proceso pendiente como una regla del Cortafuegos de Windows. **Permitir siempre** y **Bloquear** guardan una regla persistente en `rules.json` y actualizan el motor del cortafuegos, mientras que **Permitir una vez** mantiene la decisión solo para la sesión actual.
+5. **Recuperación de la política**: mientras la protección está activa, una tarea programada vigila un archivo de latido. Si CyberWall se detiene, la tarea restaura la política original del cortafuegos y elimina las reglas que dejó atrás, de modo que el equipo nunca queda bloqueado.
 
 ---
 

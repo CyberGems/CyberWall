@@ -24,7 +24,7 @@
 
 ## What is CyberWall?
 
-CyberWall is a modern, lightweight **per-application firewall** for Windows, powered directly by the native **Windows Filtering Platform (WFP)**. Its default-deny model intercepts unknown network activity and asks whether each executable should be allowed once, always allowed, or blocked with a persistent rule. Real-time prompts, connection monitoring, rule management, traffic statistics, and clear application identity make outbound access easier to understand and control without installing a third-party kernel driver.
+CyberWall is a modern, lightweight **per-application firewall** for Windows, built on the **Windows Filtering Platform (WFP)** and the **Windows Advanced Firewall** that ship with the operating system. Its default-deny model intercepts unknown network activity and asks whether each executable should be allowed once, always allowed, or blocked with a persistent rule. Real-time prompts, connection monitoring, rule management, traffic statistics, and clear application identity make outbound access easier to understand and control without installing a third-party kernel driver.
 
 *Free and open source (GPLv3): no ads, no tracking, and no data collection. Just enjoy it.*
 
@@ -45,13 +45,15 @@ Here is how CyberWall protects your computer against real-world threats in plain
 | **Reverse Shells & Remote Access** | 🟢 **9.5 / 10** | **Channel Severance**: Hackers attempting to open a remote interactive backdoor find their outbound connection stuck in kernel limbo. |
 
 > [!TIP]
-> **Zero Stability Risk**: Unlike other firewalls that install invasive third-party kernel drivers (often causing Blue Screens / BSODs after Windows updates), CyberWall relies directly on Microsoft's native **Windows Filtering Platform (WFP)** engine. You get true kernel-level protection with 100% operating system stability.
+> **Zero Stability Risk**: Unlike other firewalls that install invasive third-party kernel drivers (often causing Blue Screens / BSODs after Windows updates), CyberWall does not install any driver at all. It detects blocked traffic through the WFP audit events and enforces the decisions with the firewall engine already built into Windows, so there is nothing to break after an update.
 
 ---
 
 ## ✨ Key Features
 
-- **Real-Time WFP Drop Interception**: Instant event-driven kernel drop detection via Windows Filtering Platform (`Event ID 5157`). Accurately intercepts short-lived CLI processes (`git`, `curl`, `dotnet`, `ssh`) within milliseconds.
+- **Real-Time WFP Drop Detection**: Event-driven kernel drop detection through the Windows Filtering Platform audit events (`Event ID 5157`). Accurately intercepts short-lived CLI processes (`git`, `curl`, `dotnet`, `ssh`) within milliseconds.
+- **Native Firewall Enforcement**: Decisions are applied as per-application rules in the Windows Advanced Firewall (`HNetCfg.FwPolicy2`), with `netsh` and PowerShell as fallbacks. No custom filter or driver is ever installed.
+- **Crash-Safe Default Deny**: The default-deny profile policy is restored by a scheduled task if CyberWall stops unexpectedly, so a crash can never leave the machine without connectivity.
 - **Smart Toolchain & Suite Rules**: Automatically resolves and authorizes companion helper executables for developer suites like Git (`git.exe`, `git-remote-https.exe`, `git-remote-http.exe`, `ssh.exe`, etc.).
 - **Default-Deny / Whitelist Architecture**: Enforces a strict inbound and outbound block-by-default policy, allowing only user-authorized applications.
 - **GlassWire-Style Toast Alerts**: Sleek "First Network Activity" notification toasts with graphic direction badges (`↑ Outbound` / `↓ Inbound`).
@@ -61,11 +63,11 @@ Here is how CyberWall protects your computer against real-world threats in plain
   - **Dark**: Refined charcoal and neutral slate with vibrant indigo accents.
   - **Light**: Crisp slate and pure white with royal blue accents.
 - **Native Windows 11 Chrome**: Pure DWM-rounded corners with subpixel anti-aliasing buffers, custom title bar, and multi-monitor positioning grid.
-- **Built-in Auto-Update System**: One-click GitHub Releases update checker with live download progress tracking and silent installer execution.
+- **Built-in Auto-Update System**: One-click GitHub Releases update checker with live download progress tracking, SHA256 verification of the downloaded installer, and silent installer execution.
 - **Dedicated About Modal**: Interactive product overview, update manager, and direct access to CyberGems community channels.
 - **Fully Bilingual (EN / ES)**: Complete UI localization in English and Spanish with instant language switching.
-- **Persistent Rule Store**: Rules are stored persistently in `%ProgramData%\CyberWall\rules.json`.
-- **System Tray & Background Daemon**: System tray integration, minimize-to-tray, and support for running as a background Windows Service (SYSTEM).
+- **Persistent Rule Store**: Rules are stored persistently in `%ProgramData%\CyberWall\rules.json`, written atomically so a crash never truncates them.
+- **System Tray & Background Daemon**: System tray integration, minimize-to-tray, and optional support for running as a background Windows Service (SYSTEM). Only one host owns the firewall engine at a time: the open window takes precedence and the service resumes protection when it closes.
 
 ---
 
@@ -116,7 +118,8 @@ You can verify the file independently: compare the SHA with the GitHub release, 
 CyberWall.slnx
 ├── src/CyberWall.Common/   -> Core models (AppRule, ConnectionEvent), I18n strings, settings
 ├── src/CyberWall.Service/  -> WfpEngine, WfpBlockWatcher, RealFirewall, ConnectionMonitor, RuleStore
-└── src/CyberWall.UI/       -> Frameless WPF UI, ThemeCard controls, ConnectionPopup, TrayService, Dialogs
+├── src/CyberWall.UI/       -> Frameless WPF UI, ThemeCard controls, ConnectionPopup, TrayService, Dialogs
+└── tests/CyberWall.Tests/  -> Unit tests for rules, packages, settings, translations and rule names
 ```
 
 ### Building from Source (Developers)
@@ -133,6 +136,9 @@ Only needed if you want to work on CyberWall or build it yourself; regular users
 # Build solution
 dotnet build
 
+# Run the tests
+dotnet test
+
 # Run with Administrator privileges (Real WFP filtering)
 .\dev-admin.ps1
 
@@ -147,9 +153,10 @@ dotnet build
 ## 🔍 How It Works
 
 1. **Kernel Interception**: When an application without an existing rule attempts to make an outbound or inbound connection, Windows Filtering Platform safely holds the connection at the kernel level.
-2. **Instant Event Capture**: `WfpBlockWatcher` receives the drop event in real-time, resolves the NT kernel device path (e.g. `\device\harddiskvolume3\...`) to a standard Win32 file path (`C:\...`), and debounces duplicate triggers.
+2. **Instant Event Capture**: `WfpBlockWatcher` receives the drop event in real-time, resolves the NT kernel device path (e.g. `\device\harddiskvolume3\...`) to a standard Win32 file path (`C:\...`), and debounces duplicate triggers. The audit policy it enables is restored when CyberWall stops.
 3. **Interactive Prompt**: A non-intrusive frameless popup appears in your chosen monitor corner showing the application icon, name, protocol, destination endpoint, and graphic direction badge (`↑ Outbound` / `↓ Inbound`).
-4. **Rule Enforcement**: CyberWall applies the selected decision to the pending process. **Allow always** and **Block** save a persistent rule to `rules.json` and update the Windows Firewall engine, while **Allow once** keeps the decision for the current session only.
+4. **Rule Enforcement**: CyberWall applies the selected decision to the pending process as a Windows Firewall rule. **Allow always** and **Block** save a persistent rule to `rules.json` and update the firewall engine, while **Allow once** keeps the decision for the current session only.
+5. **Policy Recovery**: While protection is on, a scheduled task watches a heartbeat file. If CyberWall dies, the task restores the original firewall policy and removes the rules it left behind, so the machine never stays locked down.
 
 ---
 
@@ -174,7 +181,7 @@ If you’d like to support future updates, I’d truly appreciate it. Your donat
 <div align="center">
 
 <details>
-<summary><b>Crypto donations (BTC, ETH, USDT, LTC) — click to view addresses</b></summary>
+<summary><b>Crypto donations (BTC, ETH, USDT, LTC): click to view addresses</b></summary>
 
 | Asset | Address | QR |
 |---|---|---|
