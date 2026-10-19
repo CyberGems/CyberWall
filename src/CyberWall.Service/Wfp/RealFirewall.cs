@@ -365,11 +365,7 @@ public static class RealFirewall
         }
         if (!string.IsNullOrEmpty(pfn)) ApplyPackageRuleWithDirection(pfn, inVerdict, outVerdict);
 
-        if (inVerdict == Verdict.Allow || outVerdict == Verdict.Allow)
-        {
-            ProcessIdentity.ResumeProcesses(appPath, pid);
-        }
-        else
+        if (inVerdict != Verdict.Allow && outVerdict != Verdict.Allow)
         {
             StopLiveTraffic(appPath, pid, pfn);
         }

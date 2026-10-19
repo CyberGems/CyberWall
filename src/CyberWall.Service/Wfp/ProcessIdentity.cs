@@ -120,9 +120,6 @@ public static class ProcessIdentity
         finally { FreeSid(psid); }
     }
 
-    private static readonly HashSet<int> _suspended = new();
-    private static readonly object _suspendLock = new();
-
     public static void TerminateTcpConnections(int pid, string? appPath)
     {
         var pids = new HashSet<int>();
@@ -184,79 +181,6 @@ public static class ProcessIdentity
         catch (Exception ex) { Debug.WriteLine(ex); }
         finally { if (table != 0) Marshal.FreeHGlobal(table); }
     }
-
-    public static void SuspendProcess(int pid)
-    {
-        // NO-OP: A network firewall must filter traffic, never suspend or freeze application processes.
-        // Suspending processes causes app hangs, UI lockups, and broken local IPC pipes.
-    }
-
-    public static void ResumeProcesses(string? appPath, int pid)
-    {
-        var pids = new HashSet<int>();
-        if (pid > 0) pids.Add(pid);
-        if (!string.IsNullOrEmpty(appPath))
-        {
-            try
-            {
-                var name = Path.GetFileNameWithoutExtension(appPath);
-                if (!string.IsNullOrEmpty(name))
-                {
-                    foreach (var p in Process.GetProcessesByName(name))
-                    {
-                        try { pids.Add(p.Id); } finally { p.Dispose(); }
-                    }
-                }
-            }
-            catch { }
-        }
-
-        foreach (var id in pids)
-        {
-            lock (_suspendLock) _suspended.Remove(id);
-            var h = OpenProcess(0x0800, false, id);
-            if (h == 0) continue;
-            try
-            {
-                for (int i = 0; i < 5; i++)
-                {
-                    if (NtResumeProcess(h) != 0) break;
-                }
-            }
-            catch { }
-            finally { CloseHandle(h); }
-        }
-    }
-
-    public static void ResumeAllSuspended()
-    {
-        int[] pids;
-        lock (_suspendLock)
-        {
-            pids = _suspended.ToArray();
-            _suspended.Clear();
-        }
-        foreach (var id in pids)
-        {
-            var h = OpenProcess(0x0800, false, id);
-            if (h == 0) continue;
-            try
-            {
-                for (int i = 0; i < 5; i++)
-                {
-                    if (NtResumeProcess(h) != 0) break;
-                }
-            }
-            catch { }
-            finally { CloseHandle(h); }
-        }
-    }
-
-    [DllImport("ntdll.dll")]
-    private static extern uint NtSuspendProcess(nint processHandle);
-
-    [DllImport("ntdll.dll")]
-    private static extern uint NtResumeProcess(nint processHandle);
 
     private static bool TryGetPackageFamilyNameFromPid(int pid, out string familyName)
     {

@@ -53,7 +53,6 @@ public sealed class FirewallService : IDisposable
         {
             lock (_sessionLock) _reappliedAllows.Clear();
             RealFirewall.EnsureSelfAllowed();
-            ProcessIdentity.ResumeAllSuspended();
             StartHeartbeat();
 
             if (Mode == FirewallMode.Killswitch)
@@ -244,16 +243,6 @@ public sealed class FirewallService : IDisposable
             return;
         HostAppResolver.TerminateHelpers(appPath);
         ProcessIdentity.TerminateTcpConnections(pid, appPath);
-    }
-
-    public Verdict Decide(ConnectionEvent ev)
-    {
-        if (!IsEnabled) return Verdict.Allow;
-        if (Mode == FirewallMode.Killswitch) return Verdict.Block;
-        var v = Wfp.Classify(ev.AppPath, ev.Direction, Store);
-        if (v != Verdict.Ask) return v;
-        if (TryGetSession(ev.AppPath, ev.ProcessId, out var session)) return session;
-        return Mode == FirewallMode.Ask ? Verdict.Ask : Verdict.Block;
     }
 
     public bool TryGetSession(string appPath, int pid, out Verdict verdict)
