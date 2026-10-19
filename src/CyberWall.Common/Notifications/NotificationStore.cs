@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using CyberWall.Common.IO;
 using CyberWall.Common.Models;
 
 namespace CyberWall.Common.Notifications;
@@ -188,11 +190,13 @@ public sealed class NotificationStore
     {
         try
         {
-            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_path)!);
             List<AppNotification> snap;
             lock (_lock) snap = _items.ToList();
-            System.IO.File.WriteAllText(_path, JsonSerializer.Serialize(snap, new JsonSerializerOptions { WriteIndented = true }));
+            AtomicFile.WriteAllText(_path, JsonSerializer.Serialize(snap, new JsonSerializerOptions { WriteIndented = true }));
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NotificationStore: could not save notifications: {ex.Message}");
+        }
     }
 }

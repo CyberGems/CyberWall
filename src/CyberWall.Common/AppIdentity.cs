@@ -35,6 +35,16 @@ public static class AppIdentity
         }
     }
 
+    /// <summary>
+    /// Drops the cached identity of a program. Needed after an in-place update, where
+    /// the publisher, signature and product name of the executable change.
+    /// </summary>
+    public static void Invalidate(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+        Cache.TryRemove(path, out _);
+    }
+
     private static AppIdentityInfo ResolveCore(string path)
     {
         try

@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using System.Text.Json;
 using CyberWall.Common;
+using CyberWall.Common.IO;
 using CyberWall.Common.Models;
 
 namespace CyberWall.Service.Rules;
@@ -83,13 +85,15 @@ public sealed class RuleStore
     {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
             List<AppRule> snap;
             lock (_lock) snap = _rules.Values.ToList();
             var json = JsonSerializer.Serialize(snap, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(_path, json);
+            AtomicFile.WriteAllText(_path, json);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"RuleStore: could not save rules: {ex.Message}");
+        }
     }
 
     private bool TryGetVersionedWebViewRule(string appPath, out AppRule rule)

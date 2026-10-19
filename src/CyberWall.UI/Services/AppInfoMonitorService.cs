@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Windows.Media;
+using CyberWall.Common;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Common.Notifications;
@@ -228,6 +229,10 @@ public sealed class AppInfoMonitorService
             };
             svc.Store.Upsert(updatedRule);
             _sessionCache[key] = (cleanCurrent, currentSize, currentWriteTime);
+
+            // The executable changed on disk, so the cached publisher and signature
+            // of the program are stale and have to be resolved again.
+            AppIdentity.Invalidate(appPath);
         }
     }
 

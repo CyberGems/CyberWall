@@ -10,12 +10,19 @@ public sealed class ConnectionMonitor : IDisposable
 {
     public event Action<ConnectionEvent>? OnNewConnection;
     private Timer? _timer;
-    private readonly HashSet<string> _seen = new();
+    private readonly Dictionary<string, DateTime> _seen = new();
+    private readonly object _seenLock = new();
     private readonly HashSet<int> _ownPids;
     private readonly WfpBlockWatcher _blockWatcher = new();
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTime> _lastAllowedLogged = new(StringComparer.OrdinalIgnoreCase);
     private FirewallService? _svc;
     private int _polling;
+
+    /// <summary>How long a connection stays "already reported" before it can trigger a new prompt.</summary>
+    private static readonly TimeSpan SeenTtl = TimeSpan.FromSeconds(30);
+
+    /// <summary>Upper bound for the deduplication table before expired entries are dropped.</summary>
+    private const int SeenCapacity = 5000;
 
     public ConnectionMonitor()
     {
@@ -26,7 +33,7 @@ public sealed class ConnectionMonitor : IDisposable
     public void Start(FirewallService svc)
     {
         _svc = svc;
-        _seen.Clear();
+        lock (_seenLock) _seen.Clear();
         _timer?.Dispose();
         _blockWatcher.Start();
         // Fast 400ms polling for active/established connections from running processes
@@ -100,7 +107,7 @@ public sealed class ConnectionMonitor : IDisposable
             foreach (var c in conns)
             {
                 string key = $"{c.Pid}:{c.Remote}:{c.Port}";
-                if (!_seen.Add(key)) continue;
+                if (!IsNewConnection(key)) continue;
                 string? path = GetPath(c.Pid);
                 if (path == null) continue;
                 if (_ownPids.Contains(c.Pid)) continue;
@@ -148,10 +155,36 @@ public sealed class ConnectionMonitor : IDisposable
                 }
                 OnNewConnection?.Invoke(ev);
             }
-            if (_seen.Count > 5000) _seen.Clear();
         }
         catch (Exception ex) { Debug.WriteLine(ex); }
         finally { Interlocked.Exchange(ref _polling, 0); }
+    }
+
+    /// <summary>
+    /// Reports whether a connection was not seen recently. Entries expire on their own,
+    /// so a long running session does not grow the table without bound and a cleared
+    /// table never causes a burst of duplicate prompts.
+    /// </summary>
+    private bool IsNewConnection(string key)
+    {
+        lock (_seenLock)
+        {
+            var now = DateTime.UtcNow;
+            if (_seen.TryGetValue(key, out var seenAt) && (now - seenAt) < SeenTtl)
+                return false;
+
+            _seen[key] = now;
+
+            if (_seen.Count > SeenCapacity)
+            {
+                var cutoff = now - SeenTtl;
+                foreach (var pair in _seen)
+                {
+                    if (pair.Value < cutoff) _seen.Remove(pair.Key);
+                }
+            }
+            return true;
+        }
     }
 
     private bool ShouldSkipPrompt(string path, int pid)

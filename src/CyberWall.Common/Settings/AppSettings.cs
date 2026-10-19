@@ -1,6 +1,8 @@
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using CyberWall.Common.I18n;
+using CyberWall.Common.IO;
 
 namespace CyberWall.Common.Settings;
 
@@ -62,6 +64,13 @@ public sealed class AppSettings
 
     public void Save()
     {
-        try { Directory.CreateDirectory(System.IO.Path.GetDirectoryName(Path)!); File.WriteAllText(Path, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true })); } catch { }
+        try
+        {
+            AtomicFile.WriteAllText(Path, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"AppSettings: could not save settings: {ex.Message}");
+        }
     }
 }

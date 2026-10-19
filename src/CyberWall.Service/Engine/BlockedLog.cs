@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text;
+using CyberWall.Common.IO;
 using CyberWall.Common.Models;
 
 namespace CyberWall.Service.Engine;
@@ -56,12 +57,7 @@ public static class BlockedLog
             if (lines.Count > TargetLinesAfterTrim)
             {
                 var keep = lines.Skip(lines.Count - TargetLinesAfterTrim);
-                using var fs = new FileStream(Path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-                using var sw = new StreamWriter(fs, Encoding.UTF8);
-                foreach (var line in keep)
-                {
-                    sw.WriteLine(line);
-                }
+                AtomicFile.WriteAllText(Path, string.Join(Environment.NewLine, keep) + Environment.NewLine);
             }
         }
         catch { }
