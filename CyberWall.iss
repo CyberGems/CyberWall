@@ -16,8 +16,7 @@ AppPublisherURL={#AppURL}
 AppSupportURL={#AppURL}
 AppUpdatesURL={#AppURL}
 DefaultDirName={autopf}\{#AppName}
-DefaultGroupName={#AppName}
-AllowNoIcons=yes
+DisableProgramGroupPage=yes
 OutputDir=.
 OutputBaseFilename=CyberWall-Setup-{#AppVersion}
 SetupIconFile=.\src\CyberWall.UI\Assets\CyberWall.ico
@@ -52,8 +51,7 @@ Name: "startup"; Description: "{cm:RunAtStartup}"; GroupDescription: "{cm:Option
 Source: ".\publish-win64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"; IconFilename: "{app}\Assets\CyberWall.ico"
-Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
+Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExeName}"; IconFilename: "{app}\Assets\CyberWall.ico"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon; IconFilename: "{app}\Assets\CyberWall.ico"
 ; Startup is managed via Task Scheduler in [Run] for admin elevation
 
