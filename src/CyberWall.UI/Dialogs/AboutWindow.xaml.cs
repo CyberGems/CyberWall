@@ -159,7 +159,7 @@ public partial class AboutWindow : Window, IModalAttentionWindow
             if (string.IsNullOrEmpty(result.DownloadUrl))
                 throw new Exception("Direct download link is not available for this release.");
 
-            await UpdateService.DownloadUpdateAsync(result.DownloadUrl, installerPath, progress);
+            await UpdateService.DownloadVerifiedAsync(result.DownloadUrl, installerPath, result.AssetSha256, progress);
 
             UpdateProgressText.Text = Strings.T("DownloadCompleted");
 

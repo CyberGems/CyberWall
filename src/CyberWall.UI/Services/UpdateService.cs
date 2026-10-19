@@ -3,7 +3,9 @@ using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using CyberWall.Common.I18n;
 
 namespace CyberWall.UI.Services;
@@ -105,8 +107,7 @@ public static class UpdateService
                     {
                         downloadUrl = asset.GetProperty("browser_download_url").GetString();
                         assetName = name;
-                        if (asset.TryGetProperty("sha256", out var sha))
-                            assetSha256 = sha.GetString();
+                        assetSha256 = ReadAssetDigest(asset);
                         break;
                     }
                 }
@@ -122,12 +123,18 @@ public static class UpdateService
                         {
                             downloadUrl = asset.GetProperty("browser_download_url").GetString();
                             assetName = name;
-                            if (asset.TryGetProperty("sha256", out var sha))
-                                assetSha256 = sha.GetString();
+                            assetSha256 = ReadAssetDigest(asset);
                             break;
                         }
                     }
                 }
+            }
+
+            // The release body also carries the checksum published by CI, used when the
+            // API does not expose the asset digest.
+            if (string.IsNullOrEmpty(assetSha256) && root.TryGetProperty("body", out var body))
+            {
+                assetSha256 = ExtractHashFromBody(body.GetString() ?? "", assetName);
             }
 
             if (downloadUrl is null && root.TryGetProperty("zipball_url", out var zip))
@@ -170,6 +177,56 @@ public static class UpdateService
         }
     }
 
+    /// <summary>
+    /// Reads the checksum published for a release asset. GitHub exposes it as "digest"
+    /// ("sha256:&lt;hex&gt;"); older payloads used a plain "sha256" field.
+    /// </summary>
+    private static string? ReadAssetDigest(JsonElement asset)
+    {
+        if (asset.TryGetProperty("digest", out var digest))
+        {
+            var value = digest.GetString();
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                var separator = value.IndexOf(':');
+                return separator >= 0 ? value[(separator + 1)..].Trim() : value.Trim();
+            }
+        }
+        if (asset.TryGetProperty("sha256", out var legacy) && legacy.ValueKind == JsonValueKind.String)
+        {
+            var value = legacy.GetString();
+            if (!string.IsNullOrWhiteSpace(value)) return value.Trim();
+        }
+        return null;
+    }
+
+    /// <summary>Extracts the checksum published in the release notes for the chosen asset.</summary>
+    private static string? ExtractHashFromBody(string body, string? assetName)
+    {
+        if (string.IsNullOrEmpty(body)) return null;
+        var isInstaller = assetName != null && assetName.Contains("Setup", StringComparison.OrdinalIgnoreCase);
+        var anchor = isInstaller ? "Setup Installer" : null;
+        var pattern = anchor != null
+            ? $@"{Regex.Escape(anchor)}[^\r\n]*?([0-9a-fA-F]{{64}})"
+            : @"([0-9a-fA-F]{64})";
+        var match = Regex.Match(body, pattern, RegexOptions.Singleline);
+        return match.Success ? match.Groups[1].Value.ToLowerInvariant() : null;
+    }
+
+    /// <summary>
+    /// Computes the SHA256 of a downloaded file and compares it with the checksum
+    /// published for the release. The installer is never launched when it does not match.
+    /// </summary>
+    public static async Task<bool> VerifyDownloadAsync(string path, string? expectedSha256)
+    {
+        if (string.IsNullOrWhiteSpace(expectedSha256)) return false;
+        await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 64 * 1024, useAsync: true);
+        using var sha = SHA256.Create();
+        var hash = await sha.ComputeHashAsync(stream);
+        var actual = Convert.ToHexString(hash).ToLowerInvariant();
+        return string.Equals(actual, expectedSha256.Trim().ToLowerInvariant(), StringComparison.OrdinalIgnoreCase);
+    }
+
     public static async Task DownloadUpdateAsync(string downloadUrl, string destinationPath, IProgress<double> progress, CancellationToken cancellationToken = default)
     {
         var dir = Path.GetDirectoryName(destinationPath);
@@ -200,6 +257,37 @@ public static class UpdateService
                 progress.Report(percentage);
             }
         }
+    }
+
+    /// <summary>
+    /// Downloads a release asset and verifies its checksum before it is used.
+    /// The file is discarded when the checksum does not match or cannot be verified.
+    /// </summary>
+    public static async Task DownloadVerifiedAsync(
+        string downloadUrl,
+        string destinationPath,
+        string? expectedSha256,
+        IProgress<double> progress,
+        CancellationToken cancellationToken = default)
+    {
+        await DownloadUpdateAsync(downloadUrl, destinationPath, progress, cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(expectedSha256))
+        {
+            TryDelete(destinationPath);
+            throw new InvalidOperationException(Strings.T("UpdateVerifyUnavailable"));
+        }
+
+        if (!await VerifyDownloadAsync(destinationPath, expectedSha256))
+        {
+            TryDelete(destinationPath);
+            throw new InvalidOperationException(Strings.T("UpdateVerifyFailed"));
+        }
+    }
+
+    private static void TryDelete(string path)
+    {
+        try { if (File.Exists(path)) File.Delete(path); } catch { }
     }
 
     public static void LaunchInstallerAndExit(string installerPath)

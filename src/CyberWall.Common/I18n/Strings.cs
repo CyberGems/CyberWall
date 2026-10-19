@@ -231,6 +231,8 @@ public static class Strings
         ["ReportIssue"] = ("Report a bug or open an issue", "Reportar un error o sugerencia"),
         ["ViewReleases"] = ("View releases and changelogs", "Ver versiones y notas de cambios"),
         ["DownloadFailed"] = ("Download Failed", "Error en la descarga"),
+        ["UpdateVerifyFailed"] = ("The downloaded installer does not match the published checksum, so it was discarded and will not be installed.", "El instalador descargado no coincide con la suma de comprobación publicada, por lo que se ha descartado y no se instalará."),
+        ["UpdateVerifyUnavailable"] = ("The release does not publish a checksum, so the update cannot be verified and will not be installed.", "La versión publicada no incluye una suma de comprobación, por lo que la actualización no se puede verificar y no se instalará."),
         ["DownloadComplete"] = ("Download Complete", "Descarga Completa"),
         ["DownloadCompleteDesc"] = ("The update has been successfully downloaded. CyberWall will now close to continue the installation.", "La actualización se descargó correctamente. CyberWall se cerrará ahora para continuar la instalación."),
         ["Current"] = ("Current:", "Actual:"),
