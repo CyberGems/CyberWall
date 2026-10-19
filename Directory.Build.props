@@ -5,7 +5,5 @@
     <FileVersion>2.1.0.0</FileVersion>
     <Company>CyberGems</Company>
     <Product>CyberWall</Product>
-    <NuGetAudit>false</NuGetAudit>
-    <SatelliteResourceLanguages>en;es</SatelliteResourceLanguages>
   </PropertyGroup>
 </Project>

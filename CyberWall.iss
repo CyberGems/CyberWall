@@ -24,7 +24,8 @@ Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=admin
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
 CloseApplications=yes
 RestartApplications=no
 
@@ -55,10 +56,6 @@ Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExeName}"; IconFilename
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon; IconFilename: "{app}\Assets\CyberWall.ico"
 ; Startup is managed via Task Scheduler in [Run] for admin elevation
 
-[Registry]
-Root: HKCU; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"; ValueType: string; ValueName: "{app}\{#AppExeName}"; ValueData: "~ RUNASADMIN HIGHDPIAWARE"; Flags: uninsdeletevalue
-Root: HKLM; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"; ValueType: string; ValueName: "{app}\{#AppExeName}"; ValueData: "~ RUNASADMIN HIGHDPIAWARE"; Flags: uninsdeletevalue
-
 [Run]
 Filename: "schtasks"; Parameters: "create /tn ""CyberWall"" /tr ""'{app}\{#AppExeName}' --minimized"" /sc onlogon /rl highest /f"; Tasks: startup; Flags: runhidden
 Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""CyberWall-Allow-CyberWall"" dir=out action=allow program=""{app}\{#AppExeName}"" enable=yes profile=any"; Flags: runhidden
@@ -66,6 +63,8 @@ Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""CyberWall-A
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall shellexec runascurrentuser
 
 [UninstallRun]
-Filename: "schtasks"; Parameters: "delete /tn ""CyberWall"" /f"; Flags: runhidden
-Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""CyberWall-Allow-CyberWall"""; Flags: runhidden
-Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""CyberWall-Allow-CyberWall-in"""; Flags: runhidden
+; Restore the firewall policy first: the app may have left the machine in default-deny.
+Filename: "netsh"; Parameters: "advfirewall set allprofiles firewallpolicy blockinbound,allowoutbound"; Flags: runhidden; RunOnceId: "RestoreFirewallPolicy"
+Filename: "schtasks"; Parameters: "delete /tn ""CyberWall"" /f"; Flags: runhidden; RunOnceId: "RemoveStartupTask"
+Filename: "schtasks"; Parameters: "delete /tn ""CyberWall Recovery"" /f"; Flags: runhidden; RunOnceId: "RemoveRecoveryTask"
+Filename: "powershell.exe"; Parameters: "-NoProfile -NonInteractive -WindowStyle Hidden -Command ""Get-NetFirewallRule -DisplayName 'CyberWall-*' -ErrorAction SilentlyContinue | Remove-NetFirewallRule -ErrorAction SilentlyContinue"""; Flags: runhidden; RunOnceId: "RemoveFirewallRules"
