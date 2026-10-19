@@ -113,10 +113,9 @@ public static class PolicyRecovery
         try { UnregisterTask(); } catch { }
     }
 
-    private static void WriteRecoveryScript()
+    internal static string BuildRecoveryScript()
     {
-        Directory.CreateDirectory(DataDirectory);
-        var script = string.Join(Environment.NewLine, new[]
+        return string.Join(Environment.NewLine, new[]
         {
             "$ErrorActionPreference = 'SilentlyContinue'",
             $"$heartbeat = '{HeartbeatPath}'",
@@ -134,10 +133,15 @@ public static class PolicyRecovery
             "}",
             "exit 0",
         });
-        File.WriteAllText(ScriptPath, script, Encoding.UTF8);
     }
 
-    private static string BuildTaskXml()
+    private static void WriteRecoveryScript()
+    {
+        Directory.CreateDirectory(DataDirectory);
+        File.WriteAllText(ScriptPath, BuildRecoveryScript(), Encoding.UTF8);
+    }
+
+    internal static string BuildTaskXml()
     {
         var escapedScript = SecurityElement.Escape(ScriptPath);
         return $@"<?xml version=""1.0"" encoding=""UTF-16""?>
