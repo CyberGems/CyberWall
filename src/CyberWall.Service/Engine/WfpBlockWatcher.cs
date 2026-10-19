@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using CyberWall.Common.Models;
+using CyberWall.Service.Wfp;
 
 namespace CyberWall.Service.Engine;
 
@@ -25,6 +26,9 @@ public sealed class WfpBlockWatcher : IDisposable
     private bool _isDisposed;
 
     private const string WfpConnectionSubcategoryGuid = "{0CCE9226-69AE-11D9-BED3-505054503030}";
+
+    /// <summary>Null when the audit state was never read, otherwise the previous "failure" state.</summary>
+    private static bool? _auditWasEnabled;
 
     public static bool IsAdmin =>
         new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent())
@@ -71,13 +75,67 @@ public sealed class WfpBlockWatcher : IDisposable
         {
             Debug.WriteLine($"WfpBlockWatcher: Error stopping watcher: {ex.Message}");
         }
+        RestoreAuditPolicy();
     }
 
+    /// <summary>
+    /// Enables the "Filtering Platform Connection" failure audit needed to receive
+    /// event 5157. The previous state is remembered so it can be restored on stop,
+    /// otherwise the Security log keeps filling with drop events forever.
+    /// </summary>
     private static void EnableAuditPolicy()
     {
         try
         {
-            var psi = new ProcessStartInfo("auditpol", $"/set /subcategory:\"{WfpConnectionSubcategoryGuid}\" /failure:enable")
+            if (_auditWasEnabled == null)
+            {
+                var current = RunAuditPol($"/get /subcategory:\"{WfpConnectionSubcategoryGuid}\"");
+                if (!string.IsNullOrWhiteSpace(current))
+                {
+                    _auditWasEnabled = current.Contains("Failure:  Enabled", StringComparison.OrdinalIgnoreCase)
+                                    || current.Contains("Failure: Enabled", StringComparison.OrdinalIgnoreCase);
+                }
+            }
+
+            RunAuditPol($"/set /subcategory:\"{WfpConnectionSubcategoryGuid}\" /failure:enable");
+
+            // The subcategory was turned on by CyberWall, so it has to be turned off again
+            // if the process dies before Stop() runs.
+            if (_auditWasEnabled == false)
+            {
+                PolicyRecovery.MarkSystemChange("restore-audit");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"WfpBlockWatcher: Could not set audit policy: {ex.Message}");
+        }
+    }
+
+    /// <summary>Puts the audit subcategory back the way it was found.</summary>
+    private static void RestoreAuditPolicy()
+    {
+        try
+        {
+            if (_auditWasEnabled != false) return; // never changed it, or it was already enabled
+            RunAuditPol($"/set /subcategory:\"{WfpConnectionSubcategoryGuid}\" /failure:disable");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"WfpBlockWatcher: Could not restore audit policy: {ex.Message}");
+        }
+        finally
+        {
+            _auditWasEnabled = null;
+            PolicyRecovery.ClearSystemChange("restore-audit");
+        }
+    }
+
+    private static string? RunAuditPol(string arguments)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo("auditpol", arguments)
             {
                 CreateNoWindow = true,
                 UseShellExecute = false,
@@ -85,12 +143,12 @@ public sealed class WfpBlockWatcher : IDisposable
                 RedirectStandardError = true
             };
             using var p = Process.Start(psi);
-            p?.WaitForExit(3000);
+            if (p == null) return null;
+            var output = p.StandardOutput.ReadToEnd();
+            if (!p.WaitForExit(5000)) { try { p.Kill(); } catch { } return null; }
+            return output;
         }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"WfpBlockWatcher: Could not set audit policy: {ex.Message}");
-        }
+        catch { return null; }
     }
 
     private void OnEventRecordWritten(object? sender, EventRecordWrittenEventArgs e)

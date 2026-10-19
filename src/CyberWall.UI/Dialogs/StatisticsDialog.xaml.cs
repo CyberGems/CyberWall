@@ -76,6 +76,7 @@ public partial class StatisticsDialog : Window
         InitializeComponent();
         Icon = AppIconHelper.CreateShieldImageSource(64);
         CyberWallWindowChrome.Apply(this, 12);
+        Title = Strings.T("WindowStatistics");
 
         GeoCountry.Updated += OnGeoUpdated;
         Closed += (_, _) =>

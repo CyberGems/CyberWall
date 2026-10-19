@@ -36,6 +36,7 @@ public partial class TrayContextMenuWindow : Window
 
         InitializeComponent();
         Icon = AppIconHelper.CreateShieldImageSource(32);
+        Title = Strings.T("WindowTrayMenu");
         LoadLocalizedStrings();
         UpdateProtectionState();
 

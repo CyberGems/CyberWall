@@ -21,6 +21,7 @@ public static class PolicyRecovery
     private const string TaskName = "CyberWall Recovery";
     private const string HeartbeatFileName = "engine-heartbeat.txt";
     private const string ScriptFileName = "recovery.ps1";
+    private const string AuditMarkerFileName = "restore-audit.txt";
 
     /// <summary>How long a heartbeat stays valid. The recovery task runs every 2 minutes.</summary>
     private static readonly TimeSpan HeartbeatMaxAge = TimeSpan.FromMinutes(3);
@@ -30,6 +31,33 @@ public static class PolicyRecovery
 
     public static string HeartbeatPath => Path.Combine(DataDirectory, HeartbeatFileName);
     public static string ScriptPath => Path.Combine(DataDirectory, ScriptFileName);
+
+    /// <summary>Marker written when CyberWall enables a system audit subcategory on its own.</summary>
+    public static string AuditMarkerPath => Path.Combine(DataDirectory, AuditMarkerFileName);
+
+    /// <summary>
+    /// Records that a system-wide setting was changed by CyberWall and must be put back
+    /// if the process dies. The recovery script uses it to undo the change.
+    /// </summary>
+    public static void MarkSystemChange(string marker)
+    {
+        try
+        {
+            Directory.CreateDirectory(DataDirectory);
+            File.WriteAllText(Path.Combine(DataDirectory, marker + ".txt"), DateTime.UtcNow.ToString("O"), Encoding.UTF8);
+        }
+        catch { }
+    }
+
+    public static void ClearSystemChange(string marker)
+    {
+        try
+        {
+            var path = Path.Combine(DataDirectory, marker + ".txt");
+            if (File.Exists(path)) File.Delete(path);
+        }
+        catch { }
+    }
 
     /// <summary>Writes the heartbeat that proves an engine is alive and owns the policy.</summary>
     public static void WriteHeartbeat()
@@ -99,6 +127,11 @@ public static class PolicyRecovery
             "netsh advfirewall set allprofiles firewallpolicy blockinbound,allowoutbound | Out-Null",
             "Get-NetFirewallRule -DisplayName 'CyberWall-Block-*' | Remove-NetFirewallRule",
             "Get-NetFirewallRule -DisplayName 'CyberWall-Killswitch-*' | Remove-NetFirewallRule",
+            $"$auditMarker = '{AuditMarkerPath}'",
+            "if (Test-Path $auditMarker) {",
+            "    auditpol /set /subcategory:\"{0CCE9226-69AE-11D9-BED3-505054503030}\" /failure:disable | Out-Null",
+            "    Remove-Item $auditMarker -Force",
+            "}",
             "exit 0",
         });
         File.WriteAllText(ScriptPath, script, Encoding.UTF8);

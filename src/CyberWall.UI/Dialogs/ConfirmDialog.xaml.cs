@@ -25,6 +25,7 @@ public partial class ConfirmDialog : Window
         InitializeComponent();
         CyberWallWindowChrome.Apply(this, 12);
         Icon = AppIconHelper.CreateShieldImageSource(64);
+        Title = Strings.T("WindowConfirm");
 
         AppTitleLbl.Text = string.IsNullOrWhiteSpace(appName) ? System.IO.Path.GetFileNameWithoutExtension(appPath) : appName;
         MessageLbl.Text = Strings.T("RemoveRuleConfirm");
@@ -54,6 +55,7 @@ public partial class ConfirmDialog : Window
         InitializeComponent();
         CyberWallWindowChrome.Apply(this, 12);
         Icon = AppIconHelper.CreateShieldImageSource(64);
+        Title = Strings.T("WindowConfirm");
 
         AppTitleLbl.Text = title;
         MessageLbl.Text = message;

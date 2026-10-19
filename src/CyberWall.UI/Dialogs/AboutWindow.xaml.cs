@@ -29,6 +29,7 @@ public partial class AboutWindow : Window, IModalAttentionWindow
         InitializeComponent();
         Icon = AppIconHelper.CreateShieldImageSource(64);
         CyberWallWindowChrome.Apply(this, 12);
+        Title = Strings.T("WindowAbout");
         LoadContent();
 
         if (checkUpdatesNow)

@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:conv="clr-namespace:CyberWall.UI.Converters"
         xmlns:ctrl="clr-namespace:CyberWall.UI.Controls"
-        Title="CyberWall — Statistics" Height="650" Width="920" MinHeight="520" MinWidth="750"
+        Title="CyberWall" Height="650" Width="920" MinHeight="520" MinWidth="750"
         WindowStartupLocation="CenterOwner" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ResizeMode="NoResize" ShowInTaskbar="False"
         TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType"

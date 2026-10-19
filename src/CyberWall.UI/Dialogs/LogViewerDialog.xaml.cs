@@ -37,6 +37,7 @@ public partial class LogViewerDialog : Window
     {
         InitializeComponent();
         Icon = AppIconHelper.CreateShieldImageSource(64);
+        Title = Strings.T("WindowConnectionLog");
         RefreshLanguage();
         GeoCountry.Updated += OnGeoUpdated;
         Closed += (_, _) => GeoCountry.Updated -= OnGeoUpdated;

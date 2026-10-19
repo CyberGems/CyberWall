@@ -32,6 +32,7 @@ public partial class AppInfoToast : Window
     {
         _appPath = appPath;
         InitializeComponent();
+        Title = Strings.T("WindowNotification");
 
         SourceInitialized += (_, _) => PopupWindowHelper.ApplyNoActivateChrome(this);
         Loaded += (_, _) =>

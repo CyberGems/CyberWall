@@ -39,6 +39,7 @@ public partial class EditRuleDialog : Window, IModalAttentionWindow
         InitializeComponent();
         Icon = AppIconHelper.CreateShieldImageSource(64);
         CyberWallWindowChrome.Apply(this, 12);
+        Title = Strings.T("WindowEditRule");
 
         AppNameLbl.Text = DisplayName;
         AppPathLbl.Text = AppPath;

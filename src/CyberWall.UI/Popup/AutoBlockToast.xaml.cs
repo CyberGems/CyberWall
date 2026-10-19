@@ -23,6 +23,7 @@ public partial class AutoBlockToast : Window
         Event = ev;
         _onUndo = onUndo;
         DataContext = this;
+        Title = Strings.T("WindowAutoBlocked");
 
         SourceInitialized += (_, _) => PopupWindowHelper.ApplyNoActivateChrome(this);
         Loaded += (_, _) =>

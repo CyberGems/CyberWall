@@ -32,6 +32,7 @@ public partial class PromptStackWindow : Window
         InitializeComponent();
         IsPreview = isPreview;
         DataContext = this;
+        Title = Strings.T("WindowNetworkPrompts");
 
         var timeoutSeconds = Math.Clamp(App.Settings.PopupAutoBlockSeconds, 15, 3600);
         _autoBlockEnabled = !isPreview && App.Settings.PopupAutoBlockEnabled;

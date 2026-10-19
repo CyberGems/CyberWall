@@ -22,6 +22,7 @@ public partial class FirstActivityToast : Window
         InitializeComponent();
         Event = ev;
         DataContext = this;
+        Title = Strings.T("WindowFirstActivity");
 
         SourceInitialized += (_, _) => PopupWindowHelper.ApplyNoActivateChrome(this);
         Loaded += (_, _) =>

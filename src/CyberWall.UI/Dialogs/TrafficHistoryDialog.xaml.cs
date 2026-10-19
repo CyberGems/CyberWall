@@ -14,6 +14,7 @@ public partial class TrafficHistoryDialog : Window
         InitializeComponent();
         CyberWallWindowChrome.Apply(this, 12);
         Icon = AppIconHelper.CreateShieldImageSource(64);
+        Title = Strings.T("WindowTrafficHistory");
 
         RefreshLanguage();
 

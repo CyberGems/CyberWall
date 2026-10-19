@@ -44,6 +44,7 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
         InitializeComponent();
         Icon = AppIconHelper.CreateShieldImageSource(64);
         CyberWallWindowChrome.Apply(this, 12);
+        Title = Strings.T("WindowNotifications");
         RefreshLanguage();
         BindList();
         _store.Changed += OnStoreChanged;
