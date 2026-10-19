@@ -23,6 +23,13 @@ public sealed class FirewallService : IDisposable
     private readonly HashSet<string> _reappliedAllows = new(StringComparer.OrdinalIgnoreCase);
     private static readonly TimeSpan SessionTtl = TimeSpan.FromMinutes(10);
     private Timer? _heartbeat;
+    private bool _ownsEngine;
+
+    /// <summary>
+    /// True when another host (the Windows service) owns the engine, so this instance
+    /// must not touch the firewall.
+    /// </summary>
+    public bool OwnedByAnotherHost { get; private set; }
 
     public FirewallService()
     {
@@ -31,6 +38,15 @@ public sealed class FirewallService : IDisposable
 
     public bool Enable(FirewallMode mode = FirewallMode.Ask)
     {
+        if (!EngineOwnership.TryAcquire())
+        {
+            OwnedByAnotherHost = true;
+            return false;
+        }
+
+        OwnedByAnotherHost = false;
+        _ownsEngine = true;
+
         Mode = mode == FirewallMode.Disabled ? FirewallMode.Ask : mode;
         var ok = Wfp.TryEnable();
         if (ok)
@@ -88,6 +104,11 @@ public sealed class FirewallService : IDisposable
     /// </summary>
     public bool Disable()
     {
+        // Only the owner of the engine may restore the firewall policy. Another host
+        // (the Windows service) is in charge of it in that case.
+        if (!_ownsEngine) return true;
+        _ownsEngine = false;
+
         var restored = true;
         if (Mode == FirewallMode.Killswitch)
         {
@@ -96,9 +117,29 @@ public sealed class FirewallService : IDisposable
         StopHeartbeat();
         Monitor.Stop();
         restored = Wfp.Disable();
+        EngineOwnership.Release();
         return restored;
     }
     public bool IsMasterOn => IsEnabled;
+
+    /// <summary>
+    /// Reapplies the allow rules of the store to Windows Firewall. Used by the Windows
+    /// service to pick up the decisions taken in the desktop application.
+    /// </summary>
+    public void ReapplyAllowRules()
+    {
+        if (!_ownsEngine) return;
+        foreach (var rule in Store.All)
+        {
+            if (rule.EffectiveOutboundVerdict != Verdict.Allow && rule.EffectiveInboundVerdict != Verdict.Allow)
+                continue;
+            try
+            {
+                Wfp.ApplyAppRule(rule.AppPath, rule.EffectiveInboundVerdict, rule.EffectiveOutboundVerdict);
+            }
+            catch { }
+        }
+    }
 
     /// <summary>
     /// Keeps the recovery watchdog informed that an engine is alive, and keeps the
@@ -331,5 +372,10 @@ public sealed class FirewallService : IDisposable
         catch { return appPath; }
     }
 
-    public void Dispose() { Monitor.Dispose(); Wfp.Dispose(); }
+    public void Dispose()
+    {
+        Disable();
+        Monitor.Dispose();
+        Wfp.Dispose();
+    }
 }

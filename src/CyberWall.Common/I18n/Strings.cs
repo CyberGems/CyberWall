@@ -26,6 +26,7 @@ public static class Strings
         ["StatusEnabledBlock"] = ("Silent block • Auto-blocking unknown apps • WFP Real-time", "Bloquear sin preguntar • Bloqueando desconocidas en silencio • WFP Tiempo Real"),
         ["StatusEnabledKillswitch"] = ("Lockdown active • All network traffic blocked • WFP Real-time", "Bloqueo total activo • Todo el tráfico bloqueado • WFP Tiempo Real"),
         ["StatusDisabled"] = ("Disabled: all incoming/outgoing connections allowed", "Desactivado: todas las conexiones entrantes/salientes permitidas"),
+        ["StatusServiceOwned"] = ("Protection is enforced by the CyberWall Windows Service. Stop the service to manage it from this window.", "La protección la aplica el servicio de Windows de CyberWall. Detén el servicio para gestionarla desde esta ventana."),
         ["Allow"] = ("Allow", "Permitir"),
         ["All"] = ("All", "Todos"),
         ["Block"] = ("Block", "Bloquear"),

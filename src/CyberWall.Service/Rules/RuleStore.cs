@@ -11,6 +11,7 @@ public sealed class RuleStore
     private readonly string _path;
     private readonly Dictionary<string, AppRule> _rules = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _lock = new();
+    private DateTime _lastWriteUtc = DateTime.MinValue;
 
     public RuleStore(string? path = null)
     {
@@ -77,8 +78,42 @@ public sealed class RuleStore
             var list = JsonSerializer.Deserialize<List<AppRule>>(json);
             if (list == null) return;
             lock (_lock) foreach (var r in list) _rules[AppRule.Normalize(r.AppPath)] = r;
+            _lastWriteUtc = new FileInfo(_path).LastWriteTimeUtc;
         }
         catch { }
+    }
+
+    /// <summary>
+    /// Reloads the store when the file changed on disk. The Windows service uses it to
+    /// pick up the rules the desktop application stores while both are running.
+    /// </summary>
+    public bool ReloadIfChanged()
+    {
+        try
+        {
+            var info = new FileInfo(_path);
+            if (!info.Exists) return false;
+            var stamp = info.LastWriteTimeUtc;
+            lock (_lock)
+            {
+                if (_lastWriteUtc == stamp) return false;
+            }
+
+            var json = File.ReadAllText(_path);
+            var list = JsonSerializer.Deserialize<List<AppRule>>(json);
+            lock (_lock)
+            {
+                _rules.Clear();
+                if (list != null) foreach (var r in list) _rules[AppRule.Normalize(r.AppPath)] = r;
+                _lastWriteUtc = stamp;
+            }
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"RuleStore: could not reload rules: {ex.Message}");
+            return false;
+        }
     }
 
     private void Save()

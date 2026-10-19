@@ -147,7 +147,14 @@ public partial class MainWindow : Window
         _svc.OnBlockedActivity += OnBlockedActivity;
         _notifications.Changed += () => Dispatcher.BeginInvoke(UpdateNotifBadge);
         if (App.Settings.FirewallEnabled)
-            _svc.Enable((FirewallMode)App.Settings.FirewallMode);
+        {
+            if (!_svc.Enable((FirewallMode)App.Settings.FirewallMode) && _svc.OwnedByAnotherHost)
+            {
+                // The Windows service still owns the engine. It steps aside as soon as it
+                // detects this window, so the takeover is retried for a while.
+                StartOwnershipRetry();
+            }
+        }
         RefreshRules();
         RefreshLanguage();
         UpdateStatus();
@@ -175,9 +182,14 @@ public partial class MainWindow : Window
             ProcessTrafficTracker.Instance.ActivityUpdated -= OnActivityUpdated;
             ProcessTrafficTracker.Instance.Stop();
             GeoCountry.Updated -= OnGeoUpdated;
-            App.Settings.FirewallEnabled = _svc.IsMasterOn;
-            App.Settings.FirewallMode = (int)_svc.Mode;
-            App.Settings.Save();
+            if (!_svc.OwnedByAnotherHost)
+            {
+                // Only the owner of the engine persists the protection state. The Windows
+                // service keeps enforcing the last state the user chose.
+                App.Settings.FirewallEnabled = _svc.IsMasterOn;
+                App.Settings.FirewallMode = (int)_svc.Mode;
+                App.Settings.Save();
+            }
             _svc.Dispose();
         };
         StateChanged += (_, _) => Dispatcher.InvokeAsync(UpdateMaximizeButtonIcon);
@@ -994,8 +1006,48 @@ public partial class MainWindow : Window
         return map;
     }
 
+    /// <summary>
+    /// Retries to take over the engine while the Windows service still owns it.
+    /// The service steps aside as soon as it detects this window, so the takeover
+    /// normally succeeds within a few seconds.
+    /// </summary>
+    private void StartOwnershipRetry()
+    {
+        _ = Task.Run(async () =>
+        {
+            for (var attempt = 0; attempt < 30; attempt++)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2));
+
+                if (!App.Settings.FirewallEnabled) return;
+                if (_svc.Enable((FirewallMode)App.Settings.FirewallMode))
+                {
+                    _ = Dispatcher.BeginInvoke(() =>
+                    {
+                        RefreshRules();
+                        UpdateStatus();
+                    });
+                    return;
+                }
+            }
+        });
+    }
+
     private void UpdateStatus()
     {
+        if (_svc.OwnedByAnotherHost)
+        {
+            // The Windows service owns the engine, this instance must not touch the firewall.
+            MasterToggle.IsChecked = false;
+            MasterToggle.IsEnabled = false;
+            MasterLabel.Text = Strings.T("ProtectionDisabled");
+            StatusDot.Fill = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0xDE, 0x80));
+            ModeBox.IsEnabled = false;
+            TrafficIndicator.SetActive(false, _svc.Mode);
+            StatusText.Text = Strings.T("StatusServiceOwned");
+            return;
+        }
+
         var on = _svc.IsMasterOn;
         MasterToggle.IsChecked = on;
         MasterLabel.Text = on ? Strings.T("ProtectionActive") : Strings.T("ProtectionDisabled");
@@ -1019,6 +1071,12 @@ public partial class MainWindow : Window
     private void MasterToggle_Changed(object sender, RoutedEventArgs e)
     {
         if (_loading) return;
+        if (_svc.OwnedByAnotherHost)
+        {
+            // Another host owns the engine, the toggle is not actionable here.
+            UpdateStatus();
+            return;
+        }
         if (MasterToggle.IsChecked == true)
         {
             var m = ModeBox.SelectedIndex switch
