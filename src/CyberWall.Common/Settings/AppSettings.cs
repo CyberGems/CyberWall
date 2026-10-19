@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using CyberWall.Common.I18n;
 using CyberWall.Common.IO;
 
@@ -28,7 +29,9 @@ public sealed class AppSettings
     public AppTheme Theme { get; set; } = AppTheme.CyberWall;
     public TrafficAnimationMode TrafficAnimation { get; set; } = TrafficAnimationMode.FluidStream;
     public bool FirewallEnabled { get; set; } = true;
-    public int FirewallMode { get; set; } = 2;
+
+    [JsonConverter(typeof(FirewallModeConverter))]
+    public Models.FirewallMode FirewallMode { get; set; } = Models.FirewallMode.Ask;
     public PopupPosition NotificationPosition { get; set; } = PopupPosition.BottomRight;
     public int NotificationMonitor { get; set; } = -1; // -1 = Active monitor under cursor
     public bool AutoCheckForUpdates { get; set; } = true;

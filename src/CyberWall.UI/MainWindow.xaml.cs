@@ -148,7 +148,7 @@ public partial class MainWindow : Window
         _notifications.Changed += () => Dispatcher.BeginInvoke(UpdateNotifBadge);
         if (App.Settings.FirewallEnabled)
         {
-            if (!_svc.Enable((FirewallMode)App.Settings.FirewallMode) && _svc.OwnedByAnotherHost)
+            if (!_svc.Enable(App.Settings.FirewallMode) && _svc.OwnedByAnotherHost)
             {
                 // The Windows service still owns the engine. It steps aside as soon as it
                 // detects this window, so the takeover is retried for a while.
@@ -187,7 +187,7 @@ public partial class MainWindow : Window
                 // Only the owner of the engine persists the protection state. The Windows
                 // service keeps enforcing the last state the user chose.
                 App.Settings.FirewallEnabled = _svc.IsMasterOn;
-                App.Settings.FirewallMode = (int)_svc.Mode;
+                App.Settings.FirewallMode = _svc.Mode;
                 App.Settings.Save();
             }
             _svc.Dispose();
@@ -398,12 +398,7 @@ public partial class MainWindow : Window
 
         AllowedExpander.Header = $"{Strings.T("Allowed")} ({_all.Count(r => r.Verdict == Verdict.Allow)})";
         BlockedExpander.Header = $"{Strings.T("Blocked")} ({_all.Count(r => r.Verdict == Verdict.Block)})";
-        var m = _svc.Mode switch
-        {
-            FirewallMode.BlockAll => 1,
-            FirewallMode.Killswitch => 2,
-            _ => 0
-        };
+        var m = IndexFromMode(_svc.Mode);
         _loading = true;
         ModeBox.Items.Clear();
         ModeBox.Items.Add(new ComboBoxItem { Content = Strings.T("ModeAsk") });
@@ -1020,7 +1015,7 @@ public partial class MainWindow : Window
                 await Task.Delay(TimeSpan.FromSeconds(2));
 
                 if (!App.Settings.FirewallEnabled) return;
-                if (_svc.Enable((FirewallMode)App.Settings.FirewallMode))
+                if (_svc.Enable(App.Settings.FirewallMode))
                 {
                     _ = Dispatcher.BeginInvoke(() =>
                     {
@@ -1032,6 +1027,25 @@ public partial class MainWindow : Window
             }
         });
     }
+
+    /// <summary>Index of each mode in the mode selector, kept apart from the enum values.</summary>
+    private const int ModeIndexAsk = 0;
+    private const int ModeIndexBlockAll = 1;
+    private const int ModeIndexKillswitch = 2;
+
+    private static FirewallMode ModeFromIndex(int index) => index switch
+    {
+        ModeIndexBlockAll => FirewallMode.BlockAll,
+        ModeIndexKillswitch => FirewallMode.Killswitch,
+        _ => FirewallMode.Ask
+    };
+
+    private static int IndexFromMode(FirewallMode mode) => mode switch
+    {
+        FirewallMode.BlockAll => ModeIndexBlockAll,
+        FirewallMode.Killswitch => ModeIndexKillswitch,
+        _ => ModeIndexAsk
+    };
 
     private void UpdateStatus()
     {
@@ -1079,12 +1093,7 @@ public partial class MainWindow : Window
         }
         if (MasterToggle.IsChecked == true)
         {
-            var m = ModeBox.SelectedIndex switch
-            {
-                1 => FirewallMode.BlockAll,
-                2 => FirewallMode.Killswitch,
-                _ => FirewallMode.Ask
-            };
+            var m = ModeFromIndex(ModeBox.SelectedIndex);
             _svc.Enable(m);
             _notifications.PurgeObsoleteProtectionOffNotifications();
             if (App.Settings.ToastProtectionEventsEnabled)
@@ -1109,22 +1118,22 @@ public partial class MainWindow : Window
             }
         }
         App.Settings.FirewallEnabled = _svc.IsMasterOn;
-        App.Settings.FirewallMode = (int)_svc.Mode;
+        App.Settings.FirewallMode = _svc.Mode;
         App.Settings.Save();
         UpdateStatus();
     }
 
     private void ModeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_loading || !_svc.IsMasterOn) return;
-        var m = ModeBox.SelectedIndex switch
+        if (_loading) return;
+        var m = ModeFromIndex(ModeBox.SelectedIndex);
+        if (_svc.IsMasterOn)
         {
-            1 => FirewallMode.BlockAll,
-            2 => FirewallMode.Killswitch,
-            _ => FirewallMode.Ask
-        };
-        _svc.SetMode(m);
-        App.Settings.FirewallMode = (int)m;
+            _svc.SetMode(m);
+        }
+        // The chosen mode is stored even when the protection is off, so it is still
+        // there when the protection is turned back on.
+        App.Settings.FirewallMode = m;
         App.Settings.Save();
         UpdateStatus();
     }

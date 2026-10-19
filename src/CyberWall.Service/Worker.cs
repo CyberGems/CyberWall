@@ -65,10 +65,7 @@ public sealed class Worker : BackgroundService
 
         if (!_fw.IsEnabled)
         {
-            var mode = Enum.IsDefined(typeof(FirewallMode), settings.FirewallMode)
-                ? (FirewallMode)settings.FirewallMode
-                : FirewallMode.Ask;
-            _fw.Enable(mode);
+            _fw.Enable(settings.FirewallMode);
             return;
         }
 

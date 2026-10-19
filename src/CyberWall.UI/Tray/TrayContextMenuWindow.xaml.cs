@@ -203,7 +203,7 @@ public partial class TrayContextMenuWindow : Window
         if (_updatingUi) return;
         if (MasterSwitch.IsChecked == true)
         {
-            _svc.Enable((FirewallMode)App.Settings.FirewallMode);
+            _svc.Enable(App.Settings.FirewallMode);
         }
         else
         {
