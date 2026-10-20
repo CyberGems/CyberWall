@@ -190,6 +190,14 @@ public partial class MainWindow : Window
                 App.Settings.FirewallMode = _svc.Mode;
                 App.Settings.Save();
             }
+            if (!_svc.Disable())
+            {
+                // The firewall policy could not be restored while closing. The next start
+                // tells the user how to recover, because the host may be left without
+                // outbound connectivity.
+                App.Settings.PolicyRestoreFailed = true;
+                App.Settings.Save();
+            }
             _svc.Dispose();
         };
         StateChanged += (_, _) => Dispatcher.InvokeAsync(UpdateMaximizeButtonIcon);
@@ -218,6 +226,7 @@ public partial class MainWindow : Window
             };
             UpdateNotifBadge();
             CheckForUpdatesOnStartup();
+            WarnAboutFailedPolicyRestore();
         };
         PreviewMouseDown += (_, _) => NotifyActiveModalAttention();
         _loading = false;
@@ -1046,6 +1055,27 @@ public partial class MainWindow : Window
         FirewallMode.Killswitch => ModeIndexKillswitch,
         _ => ModeIndexAsk
     };
+
+    /// <summary>
+    /// Warns the user when the firewall policy could not be restored the last time
+    /// CyberWall closed. Without this warning the host can stay without connectivity
+    /// and the cause is not obvious.
+    /// </summary>
+    private void WarnAboutFailedPolicyRestore()
+    {
+        if (!App.Settings.PolicyRestoreFailed) return;
+
+        App.Settings.PolicyRestoreFailed = false;
+        App.Settings.Save();
+
+        ConfirmDialog.Show(
+            this,
+            Strings.T("ProtectionRestoreFailedTitle"),
+            Strings.T("ProtectionRestoreFailedDesc"),
+            Strings.T("Ok"),
+            string.Empty,
+            ConfirmIconType.Warning);
+    }
 
     private void UpdateStatus()
     {

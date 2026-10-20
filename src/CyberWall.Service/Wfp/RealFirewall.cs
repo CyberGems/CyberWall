@@ -26,10 +26,12 @@ public static class RealFirewall
     private const char RuleTagSeparator = '~';
 
     /// <summary>
-    /// Profile actions captured before CyberWall switched the machine to default-deny,
-    /// so the original configuration can be restored instead of assuming the Windows defaults.
+    /// Inbound action captured before CyberWall switched the machine to default-deny,
+    /// so the original configuration can be restored. The outbound action is not
+    /// captured on purpose: "block everything" is the state CyberWall applies itself,
+    /// so it can never be treated as the user's own configuration.
     /// </summary>
-    private static readonly Dictionary<int, (int Outbound, int Inbound)> _originalActions = new();
+    private static readonly Dictionary<int, int> _originalInboundActions = new();
 
     public static bool IsAdmin => new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent()).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
 
@@ -89,14 +91,13 @@ public static class RealFirewall
     {
         try
         {
-            lock (_originalActions)
+            lock (_originalInboundActions)
             {
-                if (_originalActions.Count > 0) return;
+                if (_originalInboundActions.Count > 0) return;
                 foreach (var profile in ManagedProfiles)
                 {
-                    var outbound = Convert.ToInt32(policy.DefaultOutboundAction[profile]);
                     var inbound = Convert.ToInt32(policy.DefaultInboundAction[profile]);
-                    _originalActions[profile] = (outbound, inbound);
+                    _originalInboundActions[profile] = inbound;
                 }
             }
         }
@@ -105,6 +106,17 @@ public static class RealFirewall
             Debug.WriteLine($"RealFirewall: could not capture the original firewall policy: {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// Actions to restore for a firewall profile.
+    ///
+    /// The outbound action is always "allow". The captured value cannot be trusted:
+    /// when CyberWall did not shut down cleanly the machine was still in the
+    /// default-deny state it had applied itself, and restoring that would leave the
+    /// host without connectivity as soon as the application rules are removed.
+    /// </summary>
+    internal static (int Outbound, int Inbound) ResolveRestoredActions(int? capturedOutbound, int? capturedInbound)
+        => (ActionAllow, capturedInbound ?? ActionBlock);
 
     private static void ApplyProfileActions(dynamic policy, int outbound, int inbound)
     {
@@ -133,17 +145,16 @@ public static class RealFirewall
             var policy = GetFwPolicy();
             if (policy != null)
             {
-                lock (_originalActions)
+                lock (_originalInboundActions)
                 {
                     foreach (var profile in ManagedProfiles)
                     {
-                        var action = _originalActions.TryGetValue(profile, out var captured)
-                            ? captured
-                            : (ActionAllow, ActionBlock); // Windows default: allow outbound, block inbound
-                        try { policy.DefaultOutboundAction[profile] = action.Item1; } catch { }
-                        try { policy.DefaultInboundAction[profile] = action.Item2; } catch { }
+                        _originalInboundActions.TryGetValue(profile, out var capturedInbound);
+                        var actions = ResolveRestoredActions(null, capturedInbound);
+                        try { policy.DefaultOutboundAction[profile] = actions.Outbound; } catch { }
+                        try { policy.DefaultInboundAction[profile] = actions.Inbound; } catch { }
                     }
-                    _originalActions.Clear();
+                    _originalInboundActions.Clear();
                 }
             }
 
@@ -152,7 +163,7 @@ public static class RealFirewall
             {
                 Debug.WriteLine("RealFirewall: netsh failed to restore the firewall policy.");
             }
-            else if (!IsOutboundAllowed())
+            else if (!IsOutboundAllowed(policy))
             {
                 Debug.WriteLine("RealFirewall: the firewall policy still blocks outbound traffic after restore.");
                 restored = false;
@@ -164,16 +175,46 @@ public static class RealFirewall
             restored = false;
         }
 
-        RemoveOwnedRules();
+        if (restored)
+        {
+            RemoveOwnedRules();
+        }
+        else
+        {
+            // The policy could not be restored, so the allow rules are kept: without
+            // them the machine would be left with no outbound connectivity at all.
+            Debug.WriteLine("RealFirewall: policy not restored, keeping the application rules.");
+        }
         return restored;
     }
 
-    /// <summary>Independent verification that reads back the effective profile policy.</summary>
-    private static bool IsOutboundAllowed()
+    /// <summary>
+    /// Verifies that the outbound action is really "allow". The check reads the policy
+    /// through the firewall API instead of parsing the netsh output, which is localized
+    /// on non-English Windows installations.
+    /// </summary>
+    private static bool IsOutboundAllowed(dynamic? policy)
     {
+        if (policy != null)
+        {
+            try
+            {
+                foreach (var profile in ManagedProfiles)
+                {
+                    if (Convert.ToInt32(policy.DefaultOutboundAction[profile]) != ActionAllow)
+                        return false;
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"RealFirewall: could not read back the firewall policy: {ex.Message}");
+            }
+        }
+
         var output = RunNetshCapture("advfirewall show allprofiles firewallpolicy");
-        if (string.IsNullOrWhiteSpace(output)) return false;
-        return output.Contains("AllowOutbound", StringComparison.OrdinalIgnoreCase);
+        return !string.IsNullOrWhiteSpace(output)
+            && output.Contains("AllowOutbound", StringComparison.OrdinalIgnoreCase);
     }
 
     public static void EnsureSelfAllowed()

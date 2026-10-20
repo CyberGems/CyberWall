@@ -54,6 +54,12 @@ public sealed class AppSettings
     public double MainWindowHeight { get; set; }
     public bool MainWindowMaximized { get; set; }
 
+    /// <summary>
+    /// Set when the firewall policy could not be restored while closing. The next
+    /// start warns the user, because the host may be left without connectivity.
+    /// </summary>
+    public bool PolicyRestoreFailed { get; set; }
+
     private static string Path => System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "CyberWall", "settings.json");
 
     public static AppSettings Load()

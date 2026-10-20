@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using CyberWall.Common;
 using CyberWall.Common.Models;
 using CyberWall.Service.Rules;
@@ -108,14 +109,27 @@ public sealed class FirewallService : IDisposable
         if (!_ownsEngine) return true;
         _ownsEngine = false;
 
-        var restored = true;
         if (Mode == FirewallMode.Killswitch)
         {
             Wfp.SetKillswitch(false);
         }
-        StopHeartbeat();
         Monitor.Stop();
-        restored = Wfp.Disable();
+        var restored = Wfp.Disable();
+
+        if (restored)
+        {
+            // The machine is back to a usable state, the watchdog is not needed anymore.
+            StopHeartbeat();
+        }
+        else
+        {
+            // The policy could not be restored. The watchdog stays armed so it can
+            // restore it a few minutes later, and the heartbeat stops so the task
+            // does not consider the engine alive.
+            StopHeartbeatTimer();
+            Debug.WriteLine("FirewallService: the firewall policy was not restored, the recovery task stays armed.");
+        }
+
         EngineOwnership.Release();
         return restored;
     }
@@ -161,14 +175,20 @@ public sealed class FirewallService : IDisposable
 
     private void StopHeartbeat()
     {
-        try { _heartbeat?.Dispose(); } catch { }
-        _heartbeat = null;
+        StopHeartbeatTimer();
         try
         {
             PolicyRecovery.ClearHeartbeat();
             PolicyRecovery.Disarm();
         }
         catch { }
+    }
+
+    /// <summary>Stops the heartbeat timer without disarming the recovery task.</summary>
+    private void StopHeartbeatTimer()
+    {
+        try { _heartbeat?.Dispose(); } catch { }
+        _heartbeat = null;
     }
 
     public void SetMode(FirewallMode mode)

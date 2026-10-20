@@ -78,7 +78,10 @@ public sealed class Worker : BackgroundService
 
     public override Task StopAsync(CancellationToken ct)
     {
-        _fw.Disable();
+        if (!_fw.Disable())
+        {
+            Debug.WriteLine("Worker: the firewall policy could not be restored while stopping the service.");
+        }
         return base.StopAsync(ct);
     }
 }
