@@ -12,6 +12,7 @@ public sealed class TrayService : IDisposable
     private readonly MainWindow _win;
     private readonly FirewallService _svc;
     private bool _exit;
+    private bool _warnedAboutTray;
 
     public TrayService(MainWindow win, FirewallService svc)
     {
@@ -44,11 +45,32 @@ public sealed class TrayService : IDisposable
         };
     }
 
+    /// <summary>
+    /// Keeps the tray icon and its tooltip in sync with the protection state, so the
+    /// user can tell at a glance that the firewall is still filtering traffic.
+    /// </summary>
+    public void UpdateState()
+    {
+        try
+        {
+            var active = _svc.OwnedByAnotherHost || _svc.IsMasterOn;
+            _icon.Icon = AppIconHelper.CreateShieldIcon(32, muted: !active);
+
+            var tooltip = _svc.OwnedByAnotherHost
+                ? Strings.T("TrayTooltipService")
+                : active
+                    ? Strings.T("TrayTooltipActive")
+                    : Strings.T("TrayTooltipOff");
+            _icon.Text = SafeTrayText(tooltip);
+        }
+        catch { }
+    }
+
     public void RefreshLanguage()
     {
         try
         {
-            _icon.Text = SafeTrayText(Strings.T("TrayTooltip"));
+            UpdateState();
         }
         catch { }
     }
@@ -107,6 +129,20 @@ public sealed class TrayService : IDisposable
         {
             e.Cancel = true;
             _win.Hide();
+
+            // The engine keeps filtering traffic, so the user is told about it once.
+            if (!_warnedAboutTray)
+            {
+                _warnedAboutTray = true;
+                try
+                {
+                    _icon.BalloonTipTitle = Strings.T("AppTitle");
+                    _icon.BalloonTipText = Strings.T("TrayStillProtecting");
+                    _icon.BalloonTipIcon = WF.ToolTipIcon.Info;
+                    _icon.ShowBalloonTip(6000);
+                }
+                catch { }
+            }
         }
         else
         {

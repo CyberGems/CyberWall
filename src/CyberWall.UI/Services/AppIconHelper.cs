@@ -15,13 +15,29 @@ namespace CyberWall.UI.Services;
 public static class AppIconHelper
 {
     private static System.Drawing.Icon? _trayIcon;
+    private static System.Drawing.Icon? _trayIconMuted;
     private static WpfImageSource? _cachedImageSource;
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool DestroyIcon(IntPtr hIcon);
 
-    public static System.Drawing.Icon CreateShieldIcon(int size = 32)
+    /// <summary>
+    /// Tray icon. The muted variant is used while the protection is off, so the state
+    /// of the firewall is visible at a glance in the notification area.
+    /// </summary>
+    public static System.Drawing.Icon CreateShieldIcon(int size = 32, bool muted = false)
     {
+        if (muted)
+        {
+            if (_trayIconMuted != null) return _trayIconMuted;
+            using var mutedBmp = GenerateShieldBitmap(size, muted: true);
+            var mutedHandle = mutedBmp.GetHicon();
+            var mutedIcon = (System.Drawing.Icon)System.Drawing.Icon.FromHandle(mutedHandle).Clone();
+            DestroyIcon(mutedHandle);
+            _trayIconMuted = mutedIcon;
+            return mutedIcon;
+        }
+
         if (_trayIcon != null) return _trayIcon;
 
         try
@@ -105,7 +121,7 @@ public static class AppIconHelper
         return fallback;
     }
 
-    private static Bitmap GenerateShieldBitmap(int size)
+    private static Bitmap GenerateShieldBitmap(int size, bool muted = false)
     {
         var bmp = new Bitmap(size, size, PixelFormat.Format32bppArgb);
         using var g = Graphics.FromImage(bmp);
@@ -117,8 +133,12 @@ public static class AppIconHelper
         // Draw rounded badge container
         float r = size * 0.22f;
         using var badgePath = GetRoundedRectPath(new RectangleF(0.5f, 0.5f, size - 1f, size - 1f), r);
-        using var bgBrush = new SolidBrush(Color.FromArgb(255, 11, 19, 34)); // #0B1322
-        using var borderPen = new Pen(Color.FromArgb(255, 30, 48, 80), 1.2f); // #1E3050
+        using var bgBrush = muted
+            ? new SolidBrush(Color.FromArgb(255, 28, 32, 40)) // #1C2028
+            : new SolidBrush(Color.FromArgb(255, 11, 19, 34)); // #0B1322
+        using var borderPen = muted
+            ? new Pen(Color.FromArgb(255, 60, 66, 78), 1.2f)
+            : new Pen(Color.FromArgb(255, 30, 48, 80), 1.2f); // #1E3050
         g.FillPath(bgBrush, badgePath);
         g.DrawPath(borderPen, badgePath);
 
@@ -144,11 +164,17 @@ public static class AppIconHelper
         shieldPath.CloseFigure();
 
         // Fill shield with vibrant cyan gradient (#00F0FF -> #00B4D8)
-        using var shieldBrush = new LinearGradientBrush(
-            new PointF(cx, cy - sh / 2f),
-            new PointF(cx, cy + sh / 2f),
-            Color.FromArgb(255, 0, 240, 255),
-            Color.FromArgb(255, 0, 160, 220));
+        using var shieldBrush = muted
+            ? new LinearGradientBrush(
+                new PointF(cx, cy - sh / 2f),
+                new PointF(cx, cy + sh / 2f),
+                Color.FromArgb(255, 120, 128, 140),
+                Color.FromArgb(255, 88, 94, 104))
+            : new LinearGradientBrush(
+                new PointF(cx, cy - sh / 2f),
+                new PointF(cx, cy + sh / 2f),
+                Color.FromArgb(255, 0, 240, 255),
+                Color.FromArgb(255, 0, 160, 220));
         g.FillPath(shieldBrush, shieldPath);
 
         return bmp;

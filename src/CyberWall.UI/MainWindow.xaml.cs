@@ -1059,6 +1059,7 @@ public partial class MainWindow : Window
             ModeBox.IsEnabled = false;
             TrafficIndicator.SetActive(false, _svc.Mode);
             StatusText.Text = Strings.T("StatusServiceOwned");
+            _tray?.UpdateState();
             return;
         }
 
@@ -1080,6 +1081,7 @@ public partial class MainWindow : Window
             };
             StatusText.Text = Strings.T(statusKey) + real;
         }
+        _tray?.UpdateState();
     }
 
     private void MasterToggle_Changed(object sender, RoutedEventArgs e)
