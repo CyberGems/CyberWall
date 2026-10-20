@@ -15,9 +15,29 @@ public static class AtomicFile
         var directory = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
 
+        var enc = encoding ?? new UTF8Encoding(false);
         var temp = path + ".tmp";
-        File.WriteAllText(temp, contents, encoding ?? new UTF8Encoding(false));
-        File.Move(temp, path, overwrite: true);
+        File.WriteAllText(temp, contents, enc);
+        try
+        {
+            File.Move(temp, path, overwrite: true);
+        }
+        catch (IOException)
+        {
+            // The destination is open in another process, so it cannot be replaced.
+            // The content is written in place instead of being left in the temporary
+            // file, otherwise the update would be silently lost.
+            try
+            {
+                File.WriteAllText(path, contents, enc);
+            }
+            catch
+            {
+                // The temporary file is kept: it still holds the content.
+                return;
+            }
+            try { if (File.Exists(temp)) File.Delete(temp); } catch { }
+        }
     }
 
     public static void WriteAllBytes(string path, byte[] contents)

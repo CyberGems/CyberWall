@@ -54,6 +54,7 @@ public sealed class FirewallService : IDisposable
         {
             lock (_sessionLock) _reappliedAllows.Clear();
             RealFirewall.EnsureSelfAllowed();
+            BlockedLog.TryDeleteTempFile();
             StartHeartbeat();
 
             if (Mode == FirewallMode.Killswitch)
