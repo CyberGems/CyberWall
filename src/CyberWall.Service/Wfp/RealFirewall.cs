@@ -149,36 +149,35 @@ public static class RealFirewall
             RemoveRule("CyberWall-Killswitch-BlockAll-In");
 
             var policy = GetFwPolicy();
-            if (policy != null)
-            {
-                lock (_originalInboundActions)
-                {
-                    foreach (var profile in ManagedProfiles)
-                    {
-                        _originalInboundActions.TryGetValue(profile, out var capturedInbound);
-                        var actions = ResolveRestoredActions(null, capturedInbound);
-                        try { policy.DefaultOutboundAction[profile] = actions.Outbound; } catch { }
-                        try { policy.DefaultInboundAction[profile] = actions.Inbound; } catch { }
-                    }
-                    _originalInboundActions.Clear();
-                }
-            }
 
-            restored = RunNetsh("advfirewall set allprofiles firewallpolicy blockinbound,allowoutbound");
+            restored = RestoreProfilePolicy(
+                () =>
+                {
+                    var ok = RunNetsh("advfirewall set allprofiles firewallpolicy blockinbound,allowoutbound");
+                    if (!ok)
+                    {
+                        Debug.WriteLine("RealFirewall: netsh failed to restore the firewall policy.");
+                    }
+                    return ok;
+                },
+                () => ApplyRestoredActions(policy),
+                () => IsOutboundAllowed(policy));
+
             if (!restored)
             {
-                Debug.WriteLine("RealFirewall: netsh failed to restore the firewall policy.");
-            }
-            else if (!IsOutboundAllowed(policy))
-            {
                 Debug.WriteLine("RealFirewall: the firewall policy still blocks outbound traffic after restore.");
-                restored = false;
             }
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"RealFirewall: error while disabling: {ex.Message}");
             restored = false;
+        }
+        finally
+        {
+            // The capture is dropped only when the restore is over, so a retry
+            // inside the restore can still use the original configuration.
+            lock (_originalInboundActions) { _originalInboundActions.Clear(); }
         }
 
         if (restored)
@@ -192,6 +191,69 @@ public static class RealFirewall
             Debug.WriteLine("RealFirewall: policy not restored, keeping the application rules.");
         }
         return restored;
+    }
+
+    /// <summary>
+    /// Restores the machine-wide firewall policy.
+    ///
+    /// The order of the steps matters:
+    ///
+    /// 1. The netsh reset goes first because it is the only step that resets every
+    ///    profile at once. A profile whose firewall API write fails afterwards can
+    ///    never stay in the default-deny state it had while the protection was on.
+    /// 2. The firewall API writes go on top of it. They restore the inbound action
+    ///    the user had configured and act as the outbound fallback when netsh is
+    ///    not available.
+    /// 3. The effective policy is read back instead of trusting the commands. When
+    ///    a profile still blocks outbound traffic the reset is applied once more.
+    ///
+    /// The delegates are injected so the order can be covered by tests.
+    /// </summary>
+    internal static bool RestoreProfilePolicy(
+        Func<bool> resetAllProfiles,
+        Action applyCapturedActions,
+        Func<bool> isOutboundAllowed)
+    {
+        resetAllProfiles();
+        applyCapturedActions();
+
+        if (isOutboundAllowed()) return true;
+
+        // A profile whose firewall API write failed may still be in the
+        // default-deny state, so the reset and the captured actions are applied
+        // once more before giving up.
+        resetAllProfiles();
+        applyCapturedActions();
+
+        return isOutboundAllowed();
+    }
+
+    /// <summary>
+    /// Applies the actions the machine had before CyberWall switched it to
+    /// default-deny.
+    ///
+    /// The outbound action is always "allow". The captured value cannot be trusted:
+    /// when CyberWall did not shut down cleanly the machine was still in the
+    /// default-deny state it had applied itself, and restoring that would leave the
+    /// host without connectivity as soon as the application rules are removed.
+    ///
+    /// The inbound action is the one the user had configured, so the machine goes
+    /// back to the configuration it had before CyberWall touched it.
+    /// </summary>
+    private static void ApplyRestoredActions(dynamic? policy)
+    {
+        if (policy == null) return;
+
+        lock (_originalInboundActions)
+        {
+            foreach (var profile in ManagedProfiles)
+            {
+                _originalInboundActions.TryGetValue(profile, out var capturedInbound);
+                var actions = ResolveRestoredActions(null, capturedInbound);
+                try { policy.DefaultOutboundAction[profile] = actions.Outbound; } catch { }
+                try { policy.DefaultInboundAction[profile] = actions.Inbound; } catch { }
+            }
+        }
     }
 
     /// <summary>
