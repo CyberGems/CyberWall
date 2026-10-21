@@ -17,6 +17,7 @@ namespace CyberWall.UI.Views;
 public partial class ConnectionsLogView : UserControl
 {
     private List<LogItem> _allItems = new();
+    private IReadOnlyList<ConnectionLogEntry> _entries = Array.Empty<ConnectionLogEntry>();
     private bool _isInitializing = true;
     private bool _isActive;
 
@@ -46,13 +47,7 @@ public partial class ConnectionsLogView : UserControl
         if (!_isActive) return;
         Dispatcher.BeginInvoke(() =>
         {
-            foreach (var item in _allItems)
-            {
-                if (!item.HasCountry)
-                {
-                    item.Geo = GeoCountry.Lookup(NetworkEndpoint.ExtractAddress(item.RemoteEndpoint));
-                }
-            }
+            ConnectionLogGeo.Resolve(_entries, force: true);
             ApplyFilter();
         });
     }
@@ -81,43 +76,23 @@ public partial class ConnectionsLogView : UserControl
     public void LoadLogs()
     {
         _allItems.Clear();
-        var path = BlockedLog.LogPath;
-        if (File.Exists(path))
-        {
-            try
-            {
-                using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var sr = new StreamReader(fs, System.Text.Encoding.UTF8);
-                while (sr.ReadLine() is { } line)
-                {
-                    if (string.IsNullOrWhiteSpace(line)) continue;
-                    var parts = line.Split('|', StringSplitOptions.TrimEntries);
-                    if (parts.Length >= 5)
-                    {
-                        var ts = parts[0];
-                        var verd = parts[1].Equals("Block", StringComparison.OrdinalIgnoreCase) ? Verdict.Block : Verdict.Allow;
-                        var dir = parts[2].Equals("Inbound", StringComparison.OrdinalIgnoreCase) ? Direction.Inbound : Direction.Outbound;
-                        var app = parts[3];
-                        var ep = parts[4];
-                        var pid = parts.Length > 5 ? parts[5] : "";
-                        var geo = GeoCountry.Lookup(NetworkEndpoint.ExtractAddress(ep));
+        _entries = ConnectionLogReader.Refresh();
+        ConnectionLogGeo.Resolve(_entries);
 
-                        _allItems.Add(new LogItem
-                        {
-                            Timestamp = ts,
-                            Verdict = verd,
-                            Direction = dir,
-                            AppPath = app,
-                            DisplayName = Path.GetFileName(app),
-                            RemoteEndpoint = ep,
-                            ProcessId = pid,
-                            RawLine = line,
-                            Geo = geo
-                        });
-                    }
-                }
-            }
-            catch { }
+        foreach (var entry in _entries)
+        {
+            _allItems.Add(new LogItem
+            {
+                Timestamp = entry.TimestampText,
+                Verdict = entry.Verdict,
+                Direction = entry.Direction,
+                AppPath = entry.AppPath,
+                DisplayName = entry.DisplayName,
+                RemoteEndpoint = entry.RemoteEndpoint,
+                ProcessId = entry.ProcessId,
+                RawLine = entry.RawLine,
+                Geo = entry.Geo
+            });
         }
 
         _allItems.Reverse(); // Most recent first
@@ -200,6 +175,7 @@ public partial class ConnectionsLogView : UserControl
         if (res)
         {
             BlockedLog.Clear();
+            ConnectionLogReader.Reset();
             LoadLogs();
         }
     }

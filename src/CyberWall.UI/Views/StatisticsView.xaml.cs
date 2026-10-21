@@ -17,12 +17,11 @@ namespace CyberWall.UI.Views;
 
 public partial class StatisticsView : UserControl
 {
-    private readonly List<ParsedLogEvent> _allEvents = new();
+    private IReadOnlyList<ConnectionLogEntry> _entries = Array.Empty<ConnectionLogEntry>();
     private bool _isInitializing = true;
     private bool _isActive;
     private StatVerdictFilter _verdictFilter = StatVerdictFilter.All;
     private readonly DispatcherTimer _autoRefreshTimer = new() { Interval = TimeSpan.FromSeconds(5) };
-    private long _lastKnownLogLength = -1;
 
     public StatisticsView()
     {
@@ -55,15 +54,14 @@ public partial class StatisticsView : UserControl
         UpdateSessionVolume();
         try
         {
-            var path = BlockedLog.LogPath;
-            if (File.Exists(path))
-            {
-                var len = new FileInfo(path).Length;
-                if (len != _lastKnownLogLength)
-                {
-                    LoadAndComputeStats(silent: true);
-                }
-            }
+            // The reader returns the same snapshot when nothing was appended, so the
+            // dashboard is only recomputed when there is something new.
+            var entries = ConnectionLogReader.Refresh();
+            if (ReferenceEquals(entries, _entries)) return;
+
+            _entries = entries;
+            ConnectionLogGeo.Resolve(_entries);
+            ComputeDashboard();
         }
         catch { }
     }
@@ -128,77 +126,17 @@ public partial class StatisticsView : UserControl
         if (!_isActive) return;
         Dispatcher.BeginInvoke(() =>
         {
-            foreach (var ev in _allEvents)
-            {
-                if (!ev.Geo.HasCountry && !string.IsNullOrWhiteSpace(ev.RemoteAddress))
-                {
-                    ev.Geo = GeoCountry.Lookup(ev.RemoteAddress);
-                }
-            }
+            ConnectionLogGeo.Resolve(_entries, force: true);
             ComputeDashboard();
         });
     }
 
-    private void LoadAndComputeStats(bool silent = false)
+    public void LoadAndComputeStats(bool silent = false)
     {
         if (_isInitializing) return;
 
-        _allEvents.Clear();
-        var path = BlockedLog.LogPath;
-        if (File.Exists(path))
-        {
-            try
-            {
-                var fi = new FileInfo(path);
-                _lastKnownLogLength = fi.Length;
-
-                using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var sr = new StreamReader(fs, System.Text.Encoding.UTF8);
-
-                while (sr.ReadLine() is { } line)
-                {
-                    if (string.IsNullOrWhiteSpace(line)) continue;
-                    var parts = line.Split('|', StringSplitOptions.TrimEntries);
-                    if (parts.Length >= 5)
-                    {
-                        var tsStr = parts[0];
-                        if (!DateTime.TryParse(tsStr, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
-                        {
-                            if (!DateTime.TryParse(tsStr, out dt))
-                                dt = DateTime.Now;
-                        }
-
-                        var verd = parts[1].Equals("Block", StringComparison.OrdinalIgnoreCase) ? Verdict.Block : Verdict.Allow;
-                        var dir = parts[2].Equals("Inbound", StringComparison.OrdinalIgnoreCase) ? Direction.Inbound : Direction.Outbound;
-                        var app = parts[3];
-                        var ep = parts[4];
-                        var pid = parts.Length > 5 ? parts[5] : "";
-
-                        var addr = NetworkEndpoint.ExtractAddress(ep) ?? "";
-                        int port = 0;
-                        var colonIdx = ep.LastIndexOf(':');
-                        if (colonIdx >= 0 && int.TryParse(ep[(colonIdx + 1)..], out var p))
-                            port = p;
-                        var geo = GeoCountry.Lookup(addr);
-
-                        _allEvents.Add(new ParsedLogEvent
-                        {
-                            Timestamp = dt,
-                            Verdict = verd,
-                            Direction = dir,
-                            AppPath = app,
-                            DisplayName = Path.GetFileName(app),
-                            RemoteEndpoint = ep,
-                            RemoteAddress = addr,
-                            RemotePort = port,
-                            ProcessId = pid,
-                            Geo = geo
-                        });
-                    }
-                }
-            }
-            catch { }
-        }
+        _entries = ConnectionLogReader.Refresh();
+        ConnectionLogGeo.Resolve(_entries);
 
         UpdateSessionVolume();
         ComputeDashboard();
@@ -220,16 +158,41 @@ public partial class StatisticsView : UserControl
             _ => now.AddHours(-24)
         };
 
-        var filtered = _allEvents.Where(e => e.Timestamp >= cutoff);
+        // Everything is counted in a single pass over the entries.
+        int totalCount = 0;
+        int blockedCount = 0;
+        int outboundCount = 0;
+        var uniqueIps = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var appCounts = new Dictionary<string, (string DisplayName, string AppPath, int Count)>(StringComparer.OrdinalIgnoreCase);
+        var countryCounts = new Dictionary<string, (GeoResult Geo, int Count)>(StringComparer.OrdinalIgnoreCase);
 
-        if (_verdictFilter == StatVerdictFilter.BlockedOnly)
-            filtered = filtered.Where(e => e.Verdict == Verdict.Block);
-        else if (_verdictFilter == StatVerdictFilter.AllowedOnly)
-            filtered = filtered.Where(e => e.Verdict == Verdict.Allow);
+        foreach (var e in _entries)
+        {
+            if (e.Timestamp < cutoff) continue;
+            if (_verdictFilter == StatVerdictFilter.BlockedOnly && e.Verdict != Verdict.Block) continue;
+            if (_verdictFilter == StatVerdictFilter.AllowedOnly && e.Verdict != Verdict.Allow) continue;
 
-        var list = filtered.ToList();
+            totalCount++;
+            if (e.Verdict == Verdict.Block) blockedCount++;
+            if (e.Direction == Direction.Outbound) outboundCount++;
+            if (!string.IsNullOrEmpty(e.RemoteAddress)) uniqueIps.Add(e.RemoteAddress);
 
-        if (list.Count == 0)
+            var appKey = string.IsNullOrWhiteSpace(e.AppPath) ? e.DisplayName : e.AppPath;
+            if (appCounts.TryGetValue(appKey, out var appInfo))
+                appCounts[appKey] = (appInfo.DisplayName, appInfo.AppPath, appInfo.Count + 1);
+            else
+                appCounts[appKey] = (e.DisplayName, e.AppPath, 1);
+
+            if (e.Geo.HasCountry && e.Geo.Iso2 is { Length: 2 } iso)
+            {
+                if (countryCounts.TryGetValue(iso, out var countryInfo))
+                    countryCounts[iso] = (countryInfo.Geo, countryInfo.Count + 1);
+                else
+                    countryCounts[iso] = (e.Geo, 1);
+            }
+        }
+
+        if (totalCount == 0)
         {
             DashboardView.Visibility = Visibility.Collapsed;
             EmptyState.Visibility = Visibility.Visible;
@@ -242,12 +205,10 @@ public partial class StatisticsView : UserControl
         DashboardView.Visibility = Visibility.Visible;
         EmptyState.Visibility = Visibility.Collapsed;
 
-        int totalCount = list.Count;
-        int blockedCount = list.Count(e => e.Verdict == Verdict.Block);
         int allowedCount = totalCount - blockedCount;
 
-        double blockedPct = totalCount > 0 ? (blockedCount * 100.0 / totalCount) : 0;
-        double allowedPct = totalCount > 0 ? (allowedCount * 100.0 / totalCount) : 0;
+        double blockedPct = blockedCount * 100.0 / totalCount;
+        double allowedPct = allowedCount * 100.0 / totalCount;
 
         TotalEventsVal.Text = totalCount.ToString("N0", CultureInfo.CurrentCulture);
         BlockedEventsVal.Text = blockedCount.ToString("N0", CultureInfo.CurrentCulture);
@@ -255,20 +216,18 @@ public partial class StatisticsView : UserControl
         AllowedEventsVal.Text = allowedCount.ToString("N0", CultureInfo.CurrentCulture);
         AllowedPctVal.Text = $" ({allowedPct:F0}%)";
 
-        int uniqueApps = list.Select(e => e.AppPath).Distinct(StringComparer.OrdinalIgnoreCase).Count();
-        int uniqueIps = list.Select(e => e.RemoteAddress).Where(a => !string.IsNullOrEmpty(a)).Distinct(StringComparer.OrdinalIgnoreCase).Count();
-        int uniqueCountries = list.Where(e => e.Geo.HasCountry).Select(e => e.Geo.Iso2).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+        int uniqueApps = appCounts.Count;
+        int uniqueCountries = countryCounts.Count;
 
         ScopeVal.Text = Strings.T("StatsCountriesCount", uniqueCountries);
-        CardScopeDesc.Text = Strings.T("StatsScopeDetail", uniqueApps, uniqueIps);
+        CardScopeDesc.Text = Strings.T("StatsScopeDetail", uniqueApps, uniqueIps.Count);
 
         // Direction stats
-        int outbound = list.Count(e => e.Direction == Direction.Outbound);
-        int inbound = totalCount - outbound;
-        double outPct = totalCount > 0 ? (outbound * 100.0 / totalCount) : 50;
-        double inPct = totalCount > 0 ? (inbound * 100.0 / totalCount) : 50;
+        int inbound = totalCount - outboundCount;
+        double outPct = outboundCount * 100.0 / totalCount;
+        double inPct = inbound * 100.0 / totalCount;
 
-        OutboundCountVal.Text = outbound.ToString("N0", CultureInfo.CurrentCulture);
+        OutboundCountVal.Text = outboundCount.ToString("N0", CultureInfo.CurrentCulture);
         OutboundPctVal.Text = $" ({outPct:F0}%)";
         InboundCountVal.Text = inbound.ToString("N0", CultureInfo.CurrentCulture);
         InboundPctVal.Text = $" ({inPct:F0}%)";
@@ -277,21 +236,14 @@ public partial class StatisticsView : UserControl
         ColInboundBar.Width = new GridLength(Math.Max(1, inPct), GridUnitType.Star);
 
         // Top Apps
-        var topApps = list
-            .GroupBy(e => string.IsNullOrWhiteSpace(e.AppPath) ? e.DisplayName : e.AppPath, StringComparer.OrdinalIgnoreCase)
-            .Select(g =>
+        var topApps = appCounts
+            .Select(kv => new StatItem
             {
-                var first = g.First();
-                var count = g.Count();
-                var pct = (count * 100.0) / totalCount;
-                return new StatItem
-                {
-                    Name = string.IsNullOrWhiteSpace(first.DisplayName) ? "Unknown" : first.DisplayName,
-                    IconPath = first.AppPath,
-                    Count = count,
-                    Percentage = pct,
-                    TooltipText = first.AppPath
-                };
+                Name = string.IsNullOrWhiteSpace(kv.Value.DisplayName) ? "Unknown" : kv.Value.DisplayName,
+                IconPath = kv.Value.AppPath,
+                Count = kv.Value.Count,
+                Percentage = (kv.Value.Count * 100.0) / totalCount,
+                TooltipText = kv.Value.AppPath
             })
             .OrderByDescending(x => x.Count)
             .Take(5)
@@ -300,27 +252,21 @@ public partial class StatisticsView : UserControl
         TopAppsList.ItemsSource = topApps;
 
         // Top Countries
-        var topCountries = list
-            .Where(e => e.Geo.HasCountry)
-            .GroupBy(e => e.Geo.Iso2, StringComparer.OrdinalIgnoreCase)
-            .Select(g =>
+        var topCountries = countryCounts
+            .Select(kv => new StatItem
             {
-                var first = g.First();
-                var count = g.Count();
-                var pct = (count * 100.0) / totalCount;
-                return new StatItem
-                {
-                    Name = CountryDisplay.Label(first.Geo),
-                    CountryCode = first.Geo.Iso2 ?? "",
-                    HasCountry = true,
-                    CountryLabel = CountryDisplay.Label(first.Geo),
-                    Count = count,
-                    Percentage = pct
-                };
+                Name = CountryDisplay.Label(kv.Value.Geo),
+                CountryCode = kv.Value.Geo.Iso2 ?? "",
+                HasCountry = true,
+                CountryLabel = CountryDisplay.Label(kv.Value.Geo),
+                Count = kv.Value.Count,
+                Percentage = (kv.Value.Count * 100.0) / totalCount
             })
             .OrderByDescending(x => x.Count)
             .Take(10)
             .ToList();
+
+        TopCountriesList.ItemsSource = topCountries;
 
         TopCountriesList.ItemsSource = topCountries;
     }
@@ -363,6 +309,7 @@ public partial class StatisticsView : UserControl
         if (res)
         {
             BlockedLog.Clear();
+            ConnectionLogReader.Reset();
             LoadAndComputeStats();
         }
     }

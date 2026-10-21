@@ -307,25 +307,22 @@ public sealed class ProcessTrafficTracker : IDisposable
     {
         try
         {
-            var logPath = BlockedLog.LogPath;
-            if (!File.Exists(logPath)) return;
+            // The parsed entries are shared, so the log is not read again here.
+            var entries = ConnectionLogReader.Refresh();
 
-            foreach (var line in File.ReadLines(logPath))
+            foreach (var entry in entries)
             {
                 try
                 {
-                    var parts = line.Split('|', StringSplitOptions.TrimEntries);
-                    if (parts.Length < 5) continue;
-                    if (!DateTime.TryParse(parts[0], out var dt)) continue;
-                    var appPath = parts[3];
+                    var appPath = entry.AppPath;
                     if (string.IsNullOrWhiteSpace(appPath)) continue;
-                    var endpoint = parts[4];
+                    var endpoint = entry.RemoteEndpoint;
                     if (endpoint.StartsWith("0.0.0.0") || endpoint.StartsWith("::") || endpoint.StartsWith("127.0.0.1") || endpoint.StartsWith("::1")) continue;
 
                     var state = _activities.GetOrAdd(appPath, _ => new ProcessActivityState());
                     lock (state)
                     {
-                        var utc = dt.ToUniversalTime();
+                        var utc = entry.Timestamp.ToUniversalTime();
                         if (utc > state.LastBlockedUtc)
                         {
                             state.LastBlockedUtc = utc;

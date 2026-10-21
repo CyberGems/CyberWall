@@ -976,24 +976,20 @@ public partial class MainWindow : Window
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         try
         {
-            var path = BlockedLog.LogPath;
-            if (!File.Exists(path)) return map;
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
-            string? line;
-            while ((line = reader.ReadLine()) != null)
+            // The parsed entries are shared, so this does not read the log again.
+            var entries = ConnectionLogReader.Refresh();
+            ConnectionLogGeo.Resolve(entries);
+
+            foreach (var entry in entries)
             {
                 try
                 {
-                    var parts = line.Split('|', StringSplitOptions.TrimEntries);
-                    if (parts.Length < 5) continue;
-                    var ip = NetworkEndpoint.ExtractAddress(parts[4]);
-                    if (string.IsNullOrEmpty(ip)) continue;
+                    if (string.IsNullOrEmpty(entry.RemoteAddress)) continue;
                     string key;
-                    try { key = AppRule.Normalize(parts[3]); }
-                    catch { key = parts[3]; }
+                    try { key = AppRule.Normalize(entry.AppPath); }
+                    catch { key = entry.AppPath; }
 
-                    var newGeo = GeoCountry.Lookup(ip);
+                    var newGeo = entry.Geo;
                     if (map.TryGetValue(key, out var existingIp))
                     {
                         var existingGeo = GeoCountry.Lookup(existingIp);
@@ -1001,7 +997,7 @@ public partial class MainWindow : Window
                             continue;
                     }
 
-                    map[key] = ip;
+                    map[key] = entry.RemoteAddress;
                 }
                 catch { }
             }

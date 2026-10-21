@@ -49,27 +49,14 @@ public class StatItem
     public string TooltipText { get; set; } = "";
 }
 
-internal class ParsedLogEvent
-{
-    public DateTime Timestamp { get; set; }
-    public Verdict Verdict { get; set; }
-    public Direction Direction { get; set; }
-    public string AppPath { get; set; } = "";
-    public string DisplayName { get; set; } = "";
-    public string RemoteEndpoint { get; set; } = "";
-    public string RemoteAddress { get; set; } = "";
-    public int RemotePort { get; set; }
-    public string ProcessId { get; set; } = "";
-    public GeoResult Geo { get; set; } = GeoResult.Unknown;
-}
 
 public partial class StatisticsDialog : Window
 {
-    private readonly List<ParsedLogEvent> _allEvents = new();
+    private IReadOnlyList<ConnectionLogEntry> _entries = Array.Empty<ConnectionLogEntry>();
     private bool _isInitializing = true;
     private StatVerdictFilter _verdictFilter = StatVerdictFilter.All;
     private readonly DispatcherTimer _autoRefreshTimer = new() { Interval = TimeSpan.FromSeconds(5) };
-    private long _lastKnownLogLength = -1;
+
 
     public StatisticsDialog()
     {
@@ -103,15 +90,12 @@ public partial class StatisticsDialog : Window
         UpdateSessionVolume();
         try
         {
-            var path = BlockedLog.LogPath;
-            if (File.Exists(path))
-            {
-                var len = new FileInfo(path).Length;
-                if (len != _lastKnownLogLength)
-                {
-                    LoadAndComputeStats(silent: true);
-                }
-            }
+            var entries = ConnectionLogReader.Refresh();
+            if (ReferenceEquals(entries, _entries)) return;
+
+            _entries = entries;
+            ConnectionLogGeo.Resolve(_entries);
+            ComputeDashboard();
         }
         catch { }
     }
@@ -210,64 +194,8 @@ public partial class StatisticsDialog : Window
 
     private void LoadAndComputeStats(bool silent = false)
     {
-        var path = BlockedLog.LogPath;
-        var newEvents = new List<ParsedLogEvent>(4000);
-
-        if (File.Exists(path))
-        {
-            try
-            {
-                _lastKnownLogLength = new FileInfo(path).Length;
-                using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var sr = new StreamReader(fs, Encoding.UTF8);
-                while (sr.ReadLine() is { } line)
-                {
-                    if (string.IsNullOrWhiteSpace(line)) continue;
-                    var parts = line.Split('|', StringSplitOptions.TrimEntries);
-                    if (parts.Length >= 5)
-                    {
-                        var tsStr = parts[0];
-                        if (!DateTime.TryParseExact(tsStr, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var ts))
-                        {
-                            if (!DateTime.TryParse(tsStr, CultureInfo.CurrentCulture, DateTimeStyles.None, out ts))
-                                ts = DateTime.Now;
-                        }
-
-                        var verd = parts[1].Equals("Block", StringComparison.OrdinalIgnoreCase) ? Verdict.Block : Verdict.Allow;
-                        var dir = parts[2].Equals("Inbound", StringComparison.OrdinalIgnoreCase) ? Direction.Inbound : Direction.Outbound;
-                        var app = parts[3];
-                        var ep = parts[4];
-                        var pid = parts.Length > 5 ? parts[5] : "";
-
-                        var addr = NetworkEndpoint.ExtractAddress(ep) ?? "";
-                        int port = 0;
-                        var colonIdx = ep.LastIndexOf(':');
-                        if (colonIdx >= 0 && int.TryParse(ep[(colonIdx + 1)..], out var p))
-                            port = p;
-
-                        var geo = GeoCountry.Lookup(addr);
-
-                        newEvents.Add(new ParsedLogEvent
-                        {
-                            Timestamp = ts,
-                            Verdict = verd,
-                            Direction = dir,
-                            AppPath = app,
-                            DisplayName = SafeGetDisplayName(app),
-                            RemoteEndpoint = ep,
-                            RemoteAddress = addr,
-                            RemotePort = port,
-                            ProcessId = pid,
-                            Geo = geo
-                        });
-                    }
-                }
-            }
-            catch { }
-        }
-
-        _allEvents.Clear();
-        _allEvents.AddRange(newEvents);
+        _entries = ConnectionLogReader.Refresh();
+        ConnectionLogGeo.Resolve(_entries);
 
         ComputeDashboard();
     }
@@ -289,7 +217,7 @@ public partial class StatisticsDialog : Window
             _ => DateTime.MinValue
         };
 
-        var events = _allEvents.Where(e => e.Timestamp >= cutoff).ToList();
+        var events = _entries.Where(e => e.Timestamp >= cutoff).ToList();
         int total = events.Count;
 
         // KPI Counts across entire period
@@ -483,7 +411,7 @@ public partial class StatisticsDialog : Window
             try
             {
                 BlockedLog.Clear();
-                _allEvents.Clear();
+                ConnectionLogReader.Reset();
                 LoadAndComputeStats();
             }
             catch { }
