@@ -26,6 +26,12 @@ public static class RealFirewall
     private const char RuleTagSeparator = '~';
 
     /// <summary>
+    /// Marker of the rules that keep the core services working (DNS, DHCP, NTP,
+    /// loopback, Defender, SmartScreen and the WebView2 runtime).
+    /// </summary>
+    private const string CoreRuleMarker = "-Core-";
+
+    /// <summary>
     /// Inbound action captured before CyberWall switched the machine to default-deny,
     /// so the original configuration can be restored. The outbound action is not
     /// captured on purpose: "block everything" is the state CyberWall applies itself,
@@ -535,6 +541,11 @@ public static class RealFirewall
     /// <summary>
     /// Removes every Windows Firewall rule owned by CyberWall. Used when protection is
     /// turned off and on uninstall, so blocked programs are never left behind.
+    ///
+    /// The core service rules are left in place: they restore the local traffic
+    /// (127.0.0.1) the applications rely on, and removing them breaks applications
+    /// that talk to localhost even though the machine is back to its normal
+    /// configuration. The recovery script keeps them for the same reason.
     /// </summary>
     public static int RemoveOwnedRules()
     {
@@ -550,8 +561,8 @@ public static class RealFirewall
                     try
                     {
                         var name = (string?)rule.Name;
-                        if (!string.IsNullOrEmpty(name) && name.StartsWith(RulePrefix, StringComparison.OrdinalIgnoreCase))
-                            names.Add(name);
+                        if (IsRemovableOwnedRule(name))
+                            names.Add(name!);
                     }
                     catch { }
                 }
@@ -570,10 +581,26 @@ public static class RealFirewall
         return removed;
     }
 
+    /// <summary>
+    /// Tells whether a Windows Firewall rule created by CyberWall can be removed
+    /// when the protection is turned off.
+    ///
+    /// The core service rules are preserved. They were added to fix the network
+    /// interruption of the applications that talk to localhost, and Windows
+    /// Firewall needs an explicit allow rule for that traffic on Windows 11.
+    /// </summary>
+    internal static bool IsRemovableOwnedRule(string? name)
+    {
+        if (string.IsNullOrEmpty(name)) return false;
+        if (!name.StartsWith(RulePrefix, StringComparison.OrdinalIgnoreCase)) return false;
+        return !name.Contains(CoreRuleMarker, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static int RemoveOwnedRulesViaPowerShell()
     {
         var output = RunPowerShellCapture(
-            "$r = Get-NetFirewallRule -DisplayName 'CyberWall-*' -ErrorAction SilentlyContinue; " +
+            "$r = Get-NetFirewallRule -DisplayName 'CyberWall-*' -ErrorAction SilentlyContinue | " +
+            $"Where-Object {{ $_.DisplayName -notlike '*{CoreRuleMarker}*' }}; " +
             "if ($r) { $n = @($r).Count; $r | Remove-NetFirewallRule -ErrorAction SilentlyContinue; $n } else { 0 }");
         return int.TryParse(output?.Trim(), out var count) ? count : 0;
     }
