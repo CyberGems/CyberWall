@@ -1,4 +1,4 @@
-; Script generated for CyberWall
+﻿; Script generated for CyberWall
 ; Windows Filtering Platform Application Firewall
 ; Built by CyberGems (https://cybergems.org)
 
@@ -20,6 +20,7 @@ DisableProgramGroupPage=yes
 OutputDir=.
 OutputBaseFilename=CyberWall-Setup-{#AppVersion}
 SetupIconFile=.\src\CyberWall.UI\Assets\CyberWall.ico
+WizardSmallImageFile=.\installer\installerWizardSmall.bmp
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
