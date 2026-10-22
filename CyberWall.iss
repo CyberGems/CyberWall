@@ -21,6 +21,7 @@ OutputDir=.
 OutputBaseFilename=CyberWall-Setup-{#AppVersion}
 SetupIconFile=.\src\CyberWall.UI\Assets\CyberWall.ico
 WizardSmallImageFile=.\installer\installerWizardSmall.bmp
+WizardImageFile=.\installer\installerWizard.bmp
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
