@@ -92,7 +92,7 @@ To continue:
 
 Windows shows this warning for any installer without a paid code-signing certificate; it does not mean the file is unsafe. Do <strong>not</strong> click "Don't run":
 
-1. Run the installer. Windows may show the blue "Windows protected your PC" dialog.
+1. Run the `CyberWall-Setup.exe` installer. Windows may show the blue "Windows protected your PC" dialog.
 
 ![Windows SmartScreen warning](https://cybergems.org/branding/smartscreen-warning.svg)
 
