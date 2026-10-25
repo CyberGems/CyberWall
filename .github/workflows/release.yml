@@ -20,6 +20,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Refresh About icons from official app repositories
+        uses: CyberGems/CyberSnap/.github/actions/sync-suite-icons@80266c5b4ad7fa4c5768e2543a4c7c7a461fc8f7
+        with:
+          config: .github/about-icons.json
+
       - name: Validate release summary
         run: node .github/scripts/validate-release-summary.mjs
 

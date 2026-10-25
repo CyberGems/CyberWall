@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Settings;
 using CyberWall.UI.Services;
@@ -17,6 +19,7 @@ public partial class AboutWindow : Window, IModalAttentionWindow
 
     private readonly AppSettings _settings;
     private DateTime _lastAttentionTime = DateTime.MinValue;
+    private readonly IReadOnlyList<SuiteApp> _suiteApps = SuiteCatalog.Pick(5);
 
     public void TriggerAttention()
     {
@@ -58,6 +61,9 @@ public partial class AboutWindow : Window, IModalAttentionWindow
         var currentVerLabel = UpdateService.GetCurrentVersionLabel();
         AboutVersionText.Text = (es ? "Versión " : "Version ") + currentVerLabel;
         AboutDescriptionText.Text = Strings.T("AboutDescription");
+        SuiteSectionLbl.Text = Strings.T("MoreAppsFromCyberGems");
+        SuiteMoreBtn.Content = Strings.T("SeeMoreApps");
+        RefreshSuiteApps();
         UpdatesSectionLbl.Text = Strings.T("UpdatesMaintenance");
         AutoUpdateTitleLbl.Text = Strings.T("AutoUpdateTitle");
         AutoUpdateDescLbl.Text = Strings.T("AutoUpdateDesc");
@@ -72,6 +78,43 @@ public partial class AboutWindow : Window, IModalAttentionWindow
         AboutFooterReleasesBtn.ToolTip = Strings.T("ViewReleases");
         AboutFooterDonateBtn.ToolTip = Strings.T("DonateToProject");
     }
+
+    private void RefreshSuiteApps()
+    {
+        SuiteAppsHost.Children.Clear();
+        foreach (var app in _suiteApps)
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri($"pack://application:,,,/Assets/Suite/{app.Slug}.png", UriKind.Absolute);
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.DecodePixelWidth = 96;
+            bitmap.EndInit();
+            bitmap.Freeze();
+
+            var image = new System.Windows.Controls.Image
+            {
+                Width = 28, Height = 28, Source = bitmap,
+                Stretch = Stretch.Uniform, Opacity = 0.7, IsHitTestVisible = false
+            };
+            RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
+            var button = new System.Windows.Controls.Button
+            {
+                Style = (Style)FindResource("SuiteAppButton"), Content = image,
+                ToolTip = $"{app.Name}: {Strings.T(app.PitchKey)}"
+            };
+            System.Windows.Automation.AutomationProperties.SetName(button, app.Name);
+            void UpdateOpacity() => image.Opacity = button.IsMouseOver || button.IsKeyboardFocused ? 1 : 0.7;
+            button.MouseEnter += (_, _) => UpdateOpacity();
+            button.MouseLeave += (_, _) => UpdateOpacity();
+            button.GotKeyboardFocus += (_, _) => UpdateOpacity();
+            button.LostKeyboardFocus += (_, _) => UpdateOpacity();
+            button.Click += (_, _) => OpenUrl(app.Site);
+            SuiteAppsHost.Children.Add(button);
+        }
+    }
+
+    private void SuiteMoreBtn_Click(object sender, RoutedEventArgs e) => OpenUrl("https://cybergems.org/#apps");
 
     private void AutoCheckUpdateCheck_Click(object sender, RoutedEventArgs e)
     {

@@ -1,0 +1,36 @@
+name: Verify About icon synchronization
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/about-icons.json'
+      - '.github/workflows/verify-suite-icons.yml'
+      - 'src/CyberWall.UI/SuiteCatalog.cs'
+      - 'src/CyberWall.UI/Dialogs/AboutWindow.*'
+      - 'src/CyberWall.Common/I18n/Strings.cs'
+      - 'src/CyberWall.UI/Assets/Suite/**'
+      - 'src/CyberWall.UI/CyberWall.UI.csproj'
+      - '.github/workflows/release.yml'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Refresh About icons from official app repositories
+        uses: CyberGems/CyberSnap/.github/actions/sync-suite-icons@80266c5b4ad7fa4c5768e2543a4c7c7a461fc8f7
+        with:
+          config: .github/about-icons.json
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet build CyberWall.slnx --configuration Release
+      - run: dotnet test CyberWall.slnx --configuration Release --no-build

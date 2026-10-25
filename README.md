@@ -246,3 +246,7 @@ More free, open-source, privacy-first apps from [**CyberGems**](https://github.c
 | 💫&nbsp;[**CyberViewer**](https://github.com/CyberGems/CyberViewer#readme) | Full-featured image viewer and editor engineered for casual and power users. |
 
 ➡️ **[Browse all apps at cybergems.org](https://cybergems.org)**
+
+## About suite icons
+
+About shows five CyberGems apps per opening, with bundled icons, localized descriptions, and links to their app pages. Release preparation refreshes icons from the official repositories using `.github/about-icons.json` and the shared CyberSnap synchronizer. Missing sources or invalid PNGs stop preparation. The About icon verification workflow checks synchronization without publishing a release.

@@ -1,0 +1,11 @@
+{
+  "destinations": [
+    "src/CyberWall.UI/Assets/Suite"
+  ],
+  "catalogs": [
+    {
+      "path": "src/CyberWall.UI/SuiteCatalog.cs",
+      "pattern": "new\\(\"(cyber[a-z0-9-]+)\",\\s*\"Cyber[A-Za-z0-9]+\""
+    }
+  ]
+}

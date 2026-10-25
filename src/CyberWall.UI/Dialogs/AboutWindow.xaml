@@ -29,6 +29,41 @@
             </Style.Triggers>
         </Style>
 
+        <!-- Suite app button (More apps from CyberGems) -->
+        <Style x:Key="SuiteAppButton" TargetType="Button">
+            <Setter Property="Width" Value="44"/>
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="12">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Custom Title Close Button -->
         <Style x:Key="TitleCloseButton" TargetType="Button">
             <Setter Property="Width" Value="38"/>
@@ -228,6 +263,16 @@
                                 </StackPanel>
                             </StackPanel>
                         </Border>
+                        <!-- More apps from CyberGems -->
+                        <StackPanel x:Name="SuiteSection" Margin="0,4,0,0">
+                            <TextBlock x:Name="SuiteSectionLbl" Text="Más aplicaciones de CyberGems" Foreground="{DynamicResource AccentBrush}" FontWeight="Bold" FontSize="13.5" Margin="0,0,0,6"/>
+                            <Border CornerRadius="12" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12,10" Margin="0,0,0,10">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <StackPanel x:Name="SuiteAppsHost" Orientation="Horizontal" VerticalAlignment="Center"/>
+                                    <Button x:Name="SuiteMoreBtn" Content="Ver más..." Style="{StaticResource ModernButton}" Margin="8,0,0,0" MinWidth="96" Height="32" Padding="12,0" Click="SuiteMoreBtn_Click"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
 
