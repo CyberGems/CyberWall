@@ -158,7 +158,7 @@ dotnet test
 
 > **Nota**: El filtrado de red real a nivel de kernel y la aplicación de las reglas del cortafuegos requieren privilegios de Administrador.
 
-> **Firma de código**: las compilaciones de release no están firmadas por ahora. La configuración prevista con SignPath Foundation, incluido el orden de firma y los pasos del flujo de trabajo, está documentada en [`.github/SIGNING.md`](.github/SIGNING.md).
+> **Firma de código**: CyberWall ha solicitado el alta en [SignPath Foundation](https://signpath.org/), que ofrece firma de código gratuita para software de código abierto. Los releases publicados antes de la aprobación del proyecto no están firmados; el orden de firma previsto y los pasos del flujo de trabajo están documentados en [`.github/SIGNING.md`](.github/SIGNING.md).
 
 ---
 

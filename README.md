@@ -158,7 +158,7 @@ dotnet test
 
 > **Note**: Real kernel-level network filtering and firewall rule enforcement require Administrator privileges.
 
-> **Code signing**: release builds are unsigned today. The setup planned with SignPath Foundation, including the signing order and the workflow steps, is documented in [`.github/SIGNING.md`](.github/SIGNING.md).
+> **Code signing**: CyberWall has applied to [SignPath Foundation](https://signpath.org/), which provides free code signing for open source software. Releases published before the project is approved are unsigned; the planned signing order and workflow steps are documented in [`.github/SIGNING.md`](.github/SIGNING.md).
 
 ---
 
