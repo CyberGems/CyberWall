@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/CyberGems/CyberWall/main/src/CyberWall.UI/Assets/CyberWall.png" width="120" alt="CyberWall">
+  <img src="https://raw.githubusercontent.com/CyberGems/CyberWall/master/src/CyberWall.UI/Assets/CyberWall.png" width="120" alt="CyberWall">
 </p>
 
 ## 🛡️ CyberWall {{VERSION}}: Release Notes
