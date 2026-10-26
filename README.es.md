@@ -81,9 +81,11 @@ Así es como CyberWall protege tu equipo frente a amenazas reales, en términos 
 
 > **Nota**: El filtrado de red real a nivel de kernel y la aplicación de las reglas del cortafuegos requieren privilegios de Administrador.
 
-### 🛡️ Windows SmartScreen
+### 🛡️ Windows SmartScreen y avisos de antivirus
 
-Windows puede mostrar un aviso de SmartScreen la primera vez que ejecutas el instalador de CyberWall: esta es una app de hobby sin firmar, así que Windows aún no ha construido reputación para el archivo. Esto es esperado; el código fuente es público para que puedas inspeccionar exactamente qué hace.
+Windows puede mostrar un aviso de SmartScreen la primera vez que ejecutas el instalador de CyberWall: es una app de código abierto sin firmar, así que Windows aún no ha construido reputación para el archivo. Es lo esperado; el código fuente es público para que puedas inspeccionar exactamente qué hace.
+
+Algunos motores de antivirus también marcan el instalador de vez en cuando. Es un falso positivo conocido de las heurísticas que se aplican a instaladores sin firmar: el ejecutable de la aplicación y el archivo portable no están marcados, y el archivo que descargas debe coincidir con el SHA256 publicado en las notas del release. Puedes verificarlo tú mismo comparando el hash, revisando el informe de VirusTotal enlazado en el release o compilando desde el código fuente.
 
 Para continuar:
 
@@ -105,6 +107,15 @@ Windows muestra este aviso para cualquier instalador sin un certificado de firma
 Puedes verificar el archivo de forma independiente: compara el SHA con el release de GitHub, escanéalo en VirusTotal o compila desde el código fuente. Más detalles: [guía de SmartScreen en el sitio web](https://cybergems.org/download#smartscreen).
 
 </details>
+
+#### Si el navegador o Defender bloquean la descarga
+
+- **Microsoft Edge**: abre Descargas con `Ctrl+J`, haz clic en el menú `…` del archivo bloqueado, elige **Mantener** y luego **Mostrar más → Mantener de todos modos**.
+- **Google Chrome**: abre Descargas con `Ctrl+J`, haz clic en la flecha junto al archivo bloqueado y elige **Mantener**.
+- **Windows Defender**: si el archivo queda en cuarentena después de mantenerlo, abre **Seguridad de Windows → Protección antivirus y contra amenazas → Historial de protección**, selecciona la entrada de CyberWall y elige **Permitir en el dispositivo**.
+
+Si el instalador sigue bloqueado, el archivo portable del mismo release contiene la misma aplicación y no está marcado. Los falsos positivos también se pueden reportar a Microsoft desde el [formulario de envío](https://www.microsoft.com/en-us/wdsi/filesubmission).
+
 ---
 
 ## 🛠️ Stack tecnológico y arquitectura
@@ -146,6 +157,9 @@ dotnet test
 ```
 
 > **Nota**: El filtrado de red real a nivel de kernel y la aplicación de las reglas del cortafuegos requieren privilegios de Administrador.
+
+> **Firma de código**: las compilaciones de release no están firmadas por ahora. La configuración prevista con SignPath Foundation, incluido el orden de firma y los pasos del flujo de trabajo, está documentada en [`.github/SIGNING.md`](.github/SIGNING.md).
+
 ---
 
 ## 🔍 Cómo funciona

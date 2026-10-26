@@ -81,9 +81,11 @@ Here is how CyberWall protects your computer against real-world threats in plain
 
 > **Note**: Real kernel-level network filtering and firewall rule enforcement require Administrator privileges.
 
-### 🛡️ Windows SmartScreen
+### 🛡️ Windows SmartScreen and antivirus warnings
 
-Windows may show a SmartScreen warning the first time you run the CyberWall installer: this is an unsigned hobby app, so Windows hasn't built reputation for the file yet. This is expected; the source is public so you can inspect exactly what it does.
+Windows may show a SmartScreen warning the first time you run the CyberWall installer: this is an unsigned open-source app, so Windows has not built reputation for the file yet. This is expected; the source is public so you can inspect exactly what it does.
+
+Some antivirus engines also flag the installer from time to time. This is a known false positive of the heuristics applied to unsigned installers: the application executable and the portable archive are not flagged, and the file you download has to match the SHA256 published in the release notes. You can verify it yourself by comparing the hash, checking the VirusTotal report linked in the release, or building from source.
 
 To continue:
 
@@ -105,6 +107,14 @@ Windows shows this warning for any installer without a paid code-signing certifi
 You can verify the file independently: compare the SHA with the GitHub release, scan it on VirusTotal, or build from source. More details: [SmartScreen guide on the website](https://cybergems.org/download#smartscreen).
 
 </details>
+
+#### If the browser or Defender blocks the download
+
+- **Microsoft Edge**: open Downloads with `Ctrl+J`, click the `…` menu next to the blocked file, choose **Keep**, then **Show more → Keep anyway**.
+- **Google Chrome**: open Downloads with `Ctrl+J`, click the arrow next to the blocked file and choose **Keep**.
+- **Windows Defender**: if the file is quarantined after you keep it, open **Windows Security → Virus & threat protection → Protection history**, select the CyberWall entry and choose **Allow on device**.
+
+If the installer is still blocked, the portable archive from the same release contains the same application and is not flagged. False positives can also be reported to Microsoft through the [submission form](https://www.microsoft.com/en-us/wdsi/filesubmission).
 
 ---
 
@@ -147,6 +157,8 @@ dotnet test
 ```
 
 > **Note**: Real kernel-level network filtering and firewall rule enforcement require Administrator privileges.
+
+> **Code signing**: release builds are unsigned today. The setup planned with SignPath Foundation, including the signing order and the workflow steps, is documented in [`.github/SIGNING.md`](.github/SIGNING.md).
 
 ---
 
