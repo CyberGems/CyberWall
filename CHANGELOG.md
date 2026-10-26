@@ -4,6 +4,26 @@ All notable changes to CyberWall are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Published builds and their download links live on the [Releases](https://github.com/CyberGems/CyberWall/releases) page.
 
+## 2.3.0 - 2026-10-26
+
+### Added
+
+- The About window now shows five applications from the CyberGems suite with their icons, a link to the full catalog, and icons refreshed from each application's repository on every release. A workflow verifies that they stay in sync.
+- The release pipeline now refreshes the suite icons before building and refuses to publish a version that has no changelog entry.
+
+### Changed
+
+- Turning the protection off keeps the DNS, DHCP, NTP, and loopback rules, so applications that talk to localhost keep working. Only the per-application rules are removed, which matches what the legacy cleanup and the crash recovery script already did.
+- The firewall policy is restored in a verified order: the reset runs first, the captured inbound action is applied on top of it, the effective policy is read back, and the reset is repeated when a profile still blocks outbound traffic.
+- The installer wizard now shows the application icon and the CyberGems plate, generated from the app artwork by `scripts/generate-installer-art.py`.
+- The connection log is read once and incrementally, so the log viewer, the statistics view, and the connection tabs no longer parse the whole file on every refresh.
+
+### Fixed
+
+- Restoring the policy overwrote the inbound action configured by the user with block inbound, because the reset ran after the per-profile writes.
+- Switching the protection off deleted the core service rules, which broke localhost traffic for applications that depend on an explicit allow rule.
+- The release notes logo pointed at the `main` branch, which does not exist, so the header image of the published notes was broken.
+
 ## 2.2.0 - 2026-10-20
 
 ### Added
