@@ -6,7 +6,7 @@
 
 ### 🚀 What's new in this release
 
-<!-- Maintainer: Rewrite the marked paragraph for every release. Use 25-45 words, lead with user-facing changes, and do not repeat the app name or version. -->
+<!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section and highlights with the ACTUAL release notes for this specific new version before tagging. NEVER leave or copy previous version notes! Use 25-45 words for the summary, lead with user-facing changes, and do not repeat the app name or version. Add the same changes to CHANGELOG.md. -->
 <!-- changelog-summary:start -->
 Firewall policy handling is now crash-safe: a watchdog restores connectivity if the app stops unexpectedly, the tray icon shows the protection state, and rule names no longer collide between programs sharing a file name. Updates now verify their checksum before installing.
 <!-- changelog-summary:end -->
