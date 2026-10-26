@@ -96,7 +96,7 @@ Windows shows this warning for any installer without a paid code-signing certifi
 
 ![Windows SmartScreen warning](https://cybergems.org/branding/smartscreen-warning.svg)
 
-2. Click the small **More info** link.
+2. Click the small **More info** link. The expanded dialog shows your installer: `CyberWall-Setup.exe`.
 
 ![SmartScreen dialog after More info](https://cybergems.org/branding/smartscreen-runanyway.svg)
 

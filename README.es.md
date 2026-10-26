@@ -96,7 +96,7 @@ Windows muestra este aviso para cualquier instalador sin un certificado de firma
 
 ![Aviso de Windows SmartScreen](https://cybergems.org/branding/smartscreen-warning.svg)
 
-2. Haz clic en el pequeño enlace **Más información**.
+2. Haz clic en el pequeño enlace **Más información**. El diálogo expandido muestra tu instalador: `CyberWall-Setup.exe`.
 
 ![Diálogo de SmartScreen tras Más información](https://cybergems.org/branding/smartscreen-runanyway.svg)
 
