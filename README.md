@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/CyberGems/CyberWall/releases/latest"><img src="https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2FCyberGems%2FCyberWall%2Fmaster%2FDirectory.Build.props&query=%2FProject%2FPropertyGroup%2FVersion&prefix=%20Download%20CyberWall%20v&suffix=%20&style=for-the-badge&label=&labelColor=0891B2&color=0891B2" alt="Download Latest Release" /><img src="https://img.shields.io/badge/Windows_10%2F11_(64--bit)-2563EB?style=for-the-badge" alt="Windows 10/11 (64-bit)" /></a>
-  &nbsp;<a href="https://github.com/CyberGems/CyberWall/releases"><img src="https://img.shields.io/badge/All_releases-30363D?style=for-the-badge&logo=github&logoColor=white" alt="All Releases" /><img src="https://img.shields.io/badge/Changelog-475569?style=for-the-badge" alt="Changelog" /></a>
+  &nbsp;<a href="https://github.com/CyberGems/CyberWall/releases"><img src="https://img.shields.io/badge/All_releases-30363D?style=for-the-badge&logo=github&logoColor=white" alt="All Releases" /></a>&nbsp;<a href="https://github.com/CyberGems/CyberWall/blob/master/CHANGELOG.md"><img src="https://img.shields.io/badge/Changelog-475569?style=for-the-badge" alt="Changelog" /></a>
 </p>
 
 <p align="center">
