@@ -28,6 +28,18 @@ jobs:
       - name: Validate release summary
         run: node .github/scripts/validate-release-summary.mjs
 
+      - name: Validate changelog entry
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          $changelog = [System.IO.File]::ReadAllText("CHANGELOG.md", [System.Text.Encoding]::UTF8)
+          if ($changelog -notmatch "(?m)^##\s+$([regex]::Escape($version))\s+-") {
+            Write-Error "CHANGELOG.md has no entry for $version. Add the entry before tagging."
+            exit 1
+          }
+          Write-Host "CHANGELOG.md contains an entry for $version."
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
