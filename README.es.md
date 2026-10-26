@@ -53,7 +53,7 @@ Así es como CyberWall protege tu equipo frente a amenazas reales, en términos 
 
 - **Detección de descartes WFP en tiempo real**: detección de descartes en el kernel basada en eventos mediante la auditoría de Windows Filtering Platform (ID de evento `5157`). Intercepta con precisión los procesos CLI de vida corta (`git`, `curl`, `dotnet`, `ssh`) en milisegundos.
 - **Aplicación nativa del cortafuegos**: las decisiones se aplican como reglas por aplicación en el Cortafuegos Avanzado de Windows (`HNetCfg.FwPolicy2`), con `netsh` y PowerShell como alternativas. Nunca se instala ningún filtro ni controlador propio.
-- **Denegación por defecto a prueba de fallos**: una tarea programada restaura la política de denegación por defecto si CyberWall se detiene de forma inesperada, de modo que un fallo nunca puede dejar el equipo sin conectividad.
+- **Denegación por defecto a prueba de fallos**: una tarea programada restaura la política de denegación por defecto si CyberWall se detiene de forma inesperada y la restauración se verifica releyendo la política, de modo que un fallo nunca puede dejar el equipo sin conectividad. Al desactivar la protección se conservan las reglas core de DNS, DHCP, NTP y loopback, así las aplicaciones que usan localhost siguen funcionando.
 - **Actualizaciones con verificación de integridad**: el instalador descargado se valida con su suma SHA256 antes de ejecutarlo.
 - **Reglas inteligentes de toolchain y suite**: resuelve y autoriza automáticamente los ejecutables auxiliares de suites de desarrollo como Git (`git.exe`, `git-remote-https.exe`, `git-remote-http.exe`, `ssh.exe`, etc.).
 - **Arquitectura denegar por defecto / lista blanca**: aplica una política estricta de bloqueo por defecto en entrada y salida, permitiendo solo las aplicaciones autorizadas por el usuario.
@@ -65,7 +65,7 @@ Así es como CyberWall protege tu equipo frente a amenazas reales, en términos 
   - **Light**: pizarra nítida y blanco puro con acentos azul real.
 - **Chrome nativo de Windows 11**: esquinas redondeadas DWM puras con buffers de suavizado de subpíxeles, barra de título personalizada y cuadrícula de posicionamiento multi-monitor.
 - **Sistema de actualización automática integrado**: comprobador de actualizaciones de GitHub Releases con un clic, seguimiento de progreso de descarga en vivo e instalador silencioso.
-- **Ventana Acerca de dedicada**: resumen interactivo del producto, gestor de actualizaciones y acceso directo a los canales de la comunidad CyberGems.
+- **Ventana Acerca de dedicada**: resumen interactivo del producto con una tira rotativa de las demás aplicaciones de CyberGems, gestor de actualizaciones y acceso directo a los canales de la comunidad CyberGems.
 - **Totalmente bilingüe (EN / ES)**: localización completa de la interfaz en inglés y español con cambio de idioma instantáneo.
 - **Almacenamiento persistente de reglas**: las reglas se guardan de forma persistente en `%ProgramData%\CyberWall\rules.json`, con escritura atómica para que un fallo nunca las trunque.
 - **Bandeja del sistema y demonio en segundo plano**: integración con la bandeja, minimizar a la bandeja y soporte opcional para ejecutarse como Servicio de Windows en segundo plano (SYSTEM). Solo un host es propietario del motor de cortafuegos a la vez: la ventana abierta tiene prioridad y el servicio retoma la protección cuando se cierra.

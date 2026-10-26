@@ -53,7 +53,7 @@ Here is how CyberWall protects your computer against real-world threats in plain
 
 - **Real-Time WFP Drop Detection**: Event-driven kernel drop detection through the Windows Filtering Platform audit events (`Event ID 5157`). Accurately intercepts short-lived CLI processes (`git`, `curl`, `dotnet`, `ssh`) within milliseconds.
 - **Native Firewall Enforcement**: Decisions are applied as per-application rules in the Windows Advanced Firewall (`HNetCfg.FwPolicy2`), with `netsh` and PowerShell as fallbacks. No custom filter or driver is ever installed.
-- **Crash-Safe Default Deny**: The default-deny profile policy is restored by a scheduled task if CyberWall stops unexpectedly, so a crash can never leave the machine without connectivity.
+- **Crash-Safe Default Deny**: The default-deny profile policy is restored by a scheduled task if CyberWall stops unexpectedly, and the restore is verified by reading the policy back, so a crash can never leave the machine without connectivity. Turning the protection off keeps the core DNS, DHCP, NTP and loopback rules, so applications that use localhost keep working.
 - **Smart Toolchain & Suite Rules**: Automatically resolves and authorizes companion helper executables for developer suites like Git (`git.exe`, `git-remote-https.exe`, `git-remote-http.exe`, `ssh.exe`, etc.).
 - **Default-Deny / Whitelist Architecture**: Enforces a strict inbound and outbound block-by-default policy, allowing only user-authorized applications.
 - **GlassWire-Style Toast Alerts**: Sleek "First Network Activity" notification toasts with graphic direction badges (`↑ Outbound` / `↓ Inbound`).
@@ -64,7 +64,7 @@ Here is how CyberWall protects your computer against real-world threats in plain
   - **Light**: Crisp slate and pure white with royal blue accents.
 - **Native Windows 11 Chrome**: Pure DWM-rounded corners with subpixel anti-aliasing buffers, custom title bar, and multi-monitor positioning grid.
 - **Built-in Auto-Update System**: One-click GitHub Releases update checker with live download progress tracking, SHA256 verification of the downloaded installer, and silent installer execution.
-- **Dedicated About Modal**: Interactive product overview, update manager, and direct access to CyberGems community channels.
+- **Dedicated About Modal**: Interactive product overview with a rotating strip of the other CyberGems apps, update manager, and direct access to CyberGems community channels.
 - **Fully Bilingual (EN / ES)**: Complete UI localization in English and Spanish with instant language switching.
 - **Persistent Rule Store**: Rules are stored persistently in `%ProgramData%\CyberWall\rules.json`, written atomically so a crash never truncates them.
 - **System Tray & Background Daemon**: System tray integration, minimize-to-tray, and optional support for running as a background Windows Service (SYSTEM). Only one host owns the firewall engine at a time: the open window takes precedence and the service resumes protection when it closes.
