@@ -56,12 +56,13 @@ Source: ".\publish-win64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdi
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExeName}"; IconFilename: "{app}\Assets\CyberWall.ico"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon; IconFilename: "{app}\Assets\CyberWall.ico"
-; Startup is managed via Task Scheduler in [Run] for admin elevation
+; Startup uses a Task Scheduler entry so the app can start elevated without a UAC prompt
 
 [Run]
-Filename: "schtasks"; Parameters: "create /tn ""CyberWall"" /tr ""'{app}\{#AppExeName}' --minimized"" /sc onlogon /rl highest /f"; Tasks: startup; Flags: runhidden
-Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""CyberWall-Allow-CyberWall"" dir=out action=allow program=""{app}\{#AppExeName}"" enable=yes profile=any"; Flags: runhidden
-Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""CyberWall-Allow-CyberWall-in"" dir=in action=allow program=""{app}\{#AppExeName}"" enable=yes profile=any"; Flags: runhidden
+; The startup task and the self-allow firewall rules are created by the application:
+; spawning schtasks.exe or netsh.exe from the installer is what makes heuristic
+; engines read the setup as a dropper.
+Filename: "{app}\{#AppExeName}"; Parameters: "--register-startup"; Tasks: startup; Flags: runhidden
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall shellexec runascurrentuser
 
 [UninstallRun]

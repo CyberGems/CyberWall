@@ -61,6 +61,23 @@ public partial class App : System.Windows.Application
     {
         Settings = AppSettings.Load();
 
+        // The installer delegates the startup task to the application so that it does
+        // not have to spawn schtasks.exe, which heuristic engines read as suspicious.
+        if (e.Args.Any(a => a.Equals("--register-startup", StringComparison.OrdinalIgnoreCase)))
+        {
+            try
+            {
+                Settings.RunAtStartup = true;
+                Settings.Save();
+                StartupHelper.SetStartupEnabled(true, Settings.StartMinimized);
+            }
+            catch { }
+
+            base.OnStartup(e);
+            Shutdown();
+            return;
+        }
+
         bool isStartingMinimized = e.Args.Any(a =>
             a.Equals("--minimized", StringComparison.OrdinalIgnoreCase) ||
             a.Equals("--tray", StringComparison.OrdinalIgnoreCase) ||
@@ -116,6 +133,14 @@ public partial class App : System.Windows.Application
         // Normal priority (no delayed start) and the correct --minimized arguments.
         Task.Run(() =>
         {
+            try
+            {
+                // The installer no longer creates the allow rules: make sure the
+                // application and the service can always reach the network.
+                CyberWall.Service.Wfp.RealFirewall.EnsureSelfAllowed();
+            }
+            catch { }
+
             try
             {
                 if (Settings.RunAtStartup || StartupHelper.IsStartupEnabled())
