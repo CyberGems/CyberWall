@@ -116,6 +116,14 @@ Puedes verificar el archivo de forma independiente: compara el SHA con el releas
 
 Si el instalador sigue bloqueado, el archivo portable del mismo release contiene la misma aplicación y no está marcado. Los falsos positivos también se pueden reportar a Microsoft desde el [formulario de envío](https://www.microsoft.com/en-us/wdsi/filesubmission).
 
+### 🔏 Política de firma de código (Code signing policy)
+
+Firma de código gratuita proporcionada por [SignPath.io](https://about.signpath.io), certificado de [SignPath Foundation](https://signpath.org).
+
+CyberWall lo mantiene [CyberGems](https://github.com/CyberGems), que también es el committer, revisor y aprobador de cada release. Las compilaciones se generan con GitHub Actions a partir de commits etiquetados y cada solicitud de firma se aprueba manualmente. La política completa, con el orden de firma, los metadatos de los artefactos y la declaración de privacidad, está en la wiki: [Code signing policy](https://github.com/CyberGems/CyberWall/wiki/Code-signing-policy).
+
+Los releases publicados antes de la aprobación del proyecto no están firmados y se identifican por el SHA256 de sus notas del release.
+
 ---
 
 ## 🛠️ Stack tecnológico y arquitectura
@@ -158,7 +166,7 @@ dotnet test
 
 > **Nota**: El filtrado de red real a nivel de kernel y la aplicación de las reglas del cortafuegos requieren privilegios de Administrador.
 
-> **Firma de código**: CyberWall ha solicitado el alta en [SignPath Foundation](https://signpath.org/), que ofrece firma de código gratuita para software de código abierto. Los releases publicados antes de la aprobación del proyecto no están firmados; el orden de firma previsto y los pasos del flujo de trabajo están documentados en [`.github/SIGNING.md`](.github/SIGNING.md).
+> **Configuración de firma**: el alta en SignPath, las configuraciones de artefactos y los pasos del flujo de trabajo para mantenedores están documentados en [`.github/SIGNING.md`](.github/SIGNING.md). Consulta también la [política de firma de código](https://github.com/CyberGems/CyberWall/wiki/Code-signing-policy).
 
 ---
 

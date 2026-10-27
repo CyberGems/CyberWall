@@ -34,6 +34,18 @@ Signing the installer after compiling it, without signing its payload first, lea
 
 SignPath Foundation requires the workflow to run on GitHub-hosted runners, and the artifact has to be uploaded to GitHub before the signing request is submitted.
 
+## Code signing policy page
+
+The SignPath Foundation code of conduct requires the home and download pages to name the signing service and to publish the project's roles and privacy policy. The policy lives on the wiki at <https://github.com/CyberGems/CyberWall/wiki/Code-signing-policy>, and the READMEs and <https://cybergems.org/apps/cyberwall> link to it.
+
+Keep these elements in the policy page:
+
+- The exact sentence "Free code signing provided by SignPath.io, certificate by SignPath Foundation".
+- Committers, reviewers and approvers, with links to the accounts that hold each role.
+- The privacy policy link and an accurate description of every automatic network request the application makes.
+
+The artifact configurations must also enforce the product name and product version metadata on every signed binary; SignPath rejects files that do not match the configured restrictions.
+
 ## Artifact configurations
 
 Both artifacts are uploaded with `actions/upload-artifact`, so the root element is `<zip-file>`.

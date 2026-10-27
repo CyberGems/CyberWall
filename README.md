@@ -116,6 +116,14 @@ You can verify the file independently: compare the SHA with the GitHub release, 
 
 If the installer is still blocked, the portable archive from the same release contains the same application and is not flagged. False positives can also be reported to Microsoft through the [submission form](https://www.microsoft.com/en-us/wdsi/filesubmission).
 
+### 🔏 Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+
+CyberWall is maintained by [CyberGems](https://github.com/CyberGems), who is also the committer, reviewer and approver of every release. Builds are produced by GitHub Actions from tagged commits, and each signing request is approved manually. The full policy, with the signing order, the artifact metadata and the privacy statement, is in the wiki: [Code signing policy](https://github.com/CyberGems/CyberWall/wiki/Code-signing-policy).
+
+Releases published before the project is approved are unsigned and are identified by the SHA256 in their release notes.
+
 ---
 
 ## 🛠️ Tech Stack & Architecture
@@ -158,7 +166,7 @@ dotnet test
 
 > **Note**: Real kernel-level network filtering and firewall rule enforcement require Administrator privileges.
 
-> **Code signing**: CyberWall has applied to [SignPath Foundation](https://signpath.org/), which provides free code signing for open source software. Releases published before the project is approved are unsigned; the planned signing order and workflow steps are documented in [`.github/SIGNING.md`](.github/SIGNING.md).
+> **Signing setup**: the SignPath onboarding, artifact configurations and workflow steps for maintainers are documented in [`.github/SIGNING.md`](.github/SIGNING.md). See also the [code signing policy](https://github.com/CyberGems/CyberWall/wiki/Code-signing-policy).
 
 ---
 
