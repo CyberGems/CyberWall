@@ -8,7 +8,7 @@
 
 <!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section and highlights with the ACTUAL release notes for this specific new version before tagging. NEVER leave or copy previous version notes! Use 25-45 words for the summary, lead with user-facing changes, and do not repeat the app name or version. Add the same changes to CHANGELOG.md. -->
 <!-- changelog-summary:start -->
-Firewall protection can now be turned off without losing the core service rules, so localhost applications keep working. The firewall policy is restored in a verified order, the About window shows the rest of the CyberGems suite, and the installer carries the app artwork.
+The installer no longer launches command-line tools to register startup or to add firewall rules: the application now creates its scheduled task and its own allow rules. Setup no longer shows the process-creation pattern that antivirus heuristics scored as suspicious.
 <!-- changelog-summary:end -->
 
 > **New to CyberWall?** A real-time Windows firewall for viewing per-app traffic and allowing or blocking connections with one click.
@@ -17,62 +17,50 @@ Firewall protection can now be turned off without losing the core service rules,
 
 ### ✨ Key Features & Highlights
 
-- 🧩 **Turning the protection off keeps the core rules**:
-  - The DNS, DHCP, NTP and loopback rules now survive switching the protection off, so applications that talk to localhost keep working after the master switch is used.
-  - Only the per-application rules are removed, which is what the legacy cleanup and the crash recovery script already did.
+- 🧰 **An installer that no longer calls system tools**:
+  - The startup task is registered by the application through the Task Scheduler API, not by `schtasks.exe`.
+  - The allow rules for the application and the service are created by the application, not by `netsh.exe`, and they are refreshed on every start.
+  - The result is the same: a logon task with the highest privileges and allow rules for both executables.
 
-- 🧱 **A policy restore that verifies itself**:
-  - The reset now runs before the per-profile writes, so the inbound action configured by the user is no longer overwritten with block inbound.
-  - The effective policy is read back, and the reset is applied a second time when a profile still blocks outbound traffic.
-  - If the restore cannot be confirmed, the application rules are kept instead of leaving the host without filtering.
-
-- 🧩 **The rest of the suite, one click away**:
-  - The About window now shows five applications from the CyberGems suite with their icons and a link to the full catalog.
-  - The icons are refreshed from each application's own repository for every release, and a workflow verifies that they stay in sync.
-
-- 🎨 **An installer with its own identity**:
-  - The setup wizard shows the application icon in the corner and the CyberGems plate on the side of every page, generated from the app artwork.
-
-- ⚡ **A connection log that costs less**:
-  - The connection log is read once and incrementally, so the log viewer, the statistics view and the connection tabs no longer parse the whole file on every refresh.
+- 🛡️ **Fewer heuristic triggers**:
+  - Setup no longer spawns the command-line tools that read as attacker behaviour, which is what the antivirus engines scored in the previous release.
+  - The uninstaller keeps its own cleanup, so an interrupted installation can still restore the Windows firewall policy.
 
 - ✅ **Verification**:
-  - New tests cover the core rule cleanup, the policy restore order, and the incremental log reader.
-  - The release pipeline stops when the changelog has no entry for the version being released, and the notes are checked against the branch and the files they link.
+  - 105 unit tests run before packaging, and the pipeline builds and uploads both artifacts to VirusTotal.
+  - Every release publishes the SHA256 of the installer and the portable archive.
+
+### ⚠️ Unsigned build
+
+This build is still unsigned while the SignPath Foundation application is under review. Verify the file with the SHA256 below or with the VirusTotal report. If a browser or Defender blocks the download, the [installation guide](https://github.com/CyberGems/CyberWall/wiki/Installation-and-Setup#antivirus-false-positives) explains how to keep it.
 
 <details>
 <summary><b>🌐 Ver notas de la versión en Español</b></summary>
 
 ### 🚀 Novedades de esta versión
 
-La protección se puede apagar ahora sin perder las reglas core del servicio, así las aplicaciones que usan localhost siguen funcionando. La política del firewall se restaura en un orden verificado, la ventana Acerca de muestra el resto de la suite de CyberGems y el instalador lleva el arte de la aplicación.
+El instalador ya no lanza herramientas de línea de comandos para registrar el inicio ni para añadir reglas de firewall: la aplicación crea su tarea programada y sus propias reglas de permiso. La instalación deja de mostrar el patrón de creación de procesos que las heurísticas de antivirus marcaban como sospechoso.
 
 ---
 
 ### ✨ Novedades destacadas
 
-- 🧩 **Apagar la protección conserva las reglas core**:
-  - Las reglas de DNS, DHCP, NTP y loopback se mantienen al apagar la protección, así las aplicaciones que se comunican con localhost siguen funcionando después de usar el interruptor maestro.
-  - Solo se eliminan las reglas por aplicación, que es lo que ya hacían la limpieza heredada y el script de recuperación tras un fallo.
+- 🧰 **Un instalador que ya no llama a herramientas del sistema**:
+  - La tarea de inicio la registra la aplicación con la API del Programador de tareas, no `schtasks.exe`.
+  - Las reglas de permiso de la aplicación y del servicio las crea la propia aplicación, no `netsh.exe`, y se refrescan en cada arranque.
+  - El resultado es el mismo: una tarea al iniciar sesión con privilegios máximos y reglas de permiso para ambos ejecutables.
 
-- 🧱 **Una restauración de la política que se verifica sola**:
-  - El restablecimiento se ejecuta ahora antes de las escrituras por perfil, de modo que la acción de entrada configurada por el usuario ya no se sobrescribe con "bloquear entrada".
-  - La política efectiva se relee y el restablecimiento se aplica una segunda vez cuando un perfil sigue bloqueando el tráfico de salida.
-  - Si la restauración no se puede confirmar, se conservan las reglas de las aplicaciones en lugar de dejar el equipo sin filtrado.
-
-- 🧩 **El resto de la suite, a un clic**:
-  - La ventana Acerca de muestra ahora cinco aplicaciones de la suite de CyberGems con sus iconos y un enlace al catálogo completo.
-  - Los iconos se actualizan desde el repositorio de cada aplicación en cada versión, y un flujo de trabajo verifica que se mantengan sincronizados.
-
-- 🎨 **Un instalador con identidad propia**:
-  - El asistente de instalación muestra el icono de la aplicación en la esquina y la placa de CyberGems en el lateral de cada página, generados a partir del arte de la aplicación.
-
-- ⚡ **Un registro de conexiones más barato**:
-  - El registro de conexiones se lee una sola vez y de forma incremental, así el visor de registros, la vista de estadísticas y las pestañas de conexiones ya no analizan el archivo completo en cada actualización.
+- 🛡️ **Menos disparadores de heurísticas**:
+  - La instalación ya no crea los procesos que se leen como comandos de un atacante, que es lo que marcaron los motores de antivirus en la versión anterior.
+  - El desinstalador conserva su propia limpieza, así una instalación interrumpida todavía puede restaurar la política del firewall de Windows.
 
 - ✅ **Verificación**:
-  - Nuevas pruebas cubren la limpieza de las reglas core, el orden de restauración de la política y el lector incremental de registros.
-  - La integración continua del release se detiene si el registro de cambios no tiene una entrada para la versión publicada, y las notas se validan contra la rama y los archivos a los que enlazan.
+  - 105 pruebas unitarias se ejecutan antes de empaquetar, y la canalización compila y sube ambos artefactos a VirusTotal.
+  - Cada release publica el SHA256 del instalador y del archivo portable.
+
+### ⚠️ Compilación sin firmar
+
+Esta compilación sigue sin firmar mientras se revisa la solicitud a SignPath Foundation. Verifica el archivo con el SHA256 de abajo o con el informe de VirusTotal. Si un navegador o Defender bloquean la descarga, la [guía de instalación](https://github.com/CyberGems/CyberWall/wiki/Installation-and-Setup#antivirus-false-positives) explica cómo conservarla.
 
 </details>
 

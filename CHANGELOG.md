@@ -4,6 +4,12 @@ All notable changes to CyberWall are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Published builds and their download links live on the [Releases](https://github.com/CyberGems/CyberWall/releases) page.
 
+## 2.3.1 - 2026-10-27
+
+### Changed
+
+- The installer no longer runs `schtasks.exe` or `netsh.exe`. Startup registration is delegated to the application through `--register-startup`, which creates the scheduled task with the Task Scheduler COM API, and the application ensures its own firewall allow rules on every start. The resulting task and rules are the same, but setup no longer spawns command-line tools, which is the behaviour that heuristic engines scored as a dropper. The uninstaller keeps its cleanup commands so a broken installation can still restore the firewall policy.
+
 ## 2.3.0 - 2026-10-26
 
 ### Added
