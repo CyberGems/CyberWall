@@ -48,6 +48,15 @@ public sealed class AppSettings
     public bool ToastAutoBlockEnabled { get; set; } = true;
     public bool MainWindowBoundsSaved { get; set; } = false;
     public string MainWindowMonitor { get; set; } = "";
+
+    // Floating traffic widget (desktop companion window).
+    public bool TrafficWidgetVisible { get; set; } = false;
+    public bool TrafficWidgetAlwaysOnTop { get; set; } = true;
+    public bool TrafficWidgetShowGraph { get; set; } = true;
+    public bool TrafficWidgetShowSession { get; set; } = true;
+    public bool TrafficWidgetBoundsSaved { get; set; } = false;
+    public double TrafficWidgetLeft { get; set; }
+    public double TrafficWidgetTop { get; set; }
     public double MainWindowLeft { get; set; }
     public double MainWindowTop { get; set; }
     public double MainWindowWidth { get; set; }

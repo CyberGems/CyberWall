@@ -119,6 +119,7 @@ public partial class MainWindow : Window
     private readonly Dictionary<string, string> _lastRemoteByApp = new(StringComparer.OrdinalIgnoreCase);
     private TrayService? _tray;
     private UpdateCheckResult? _activeUpdateResult;
+    private Dialogs.FloatingTrafficWidget? _trafficWidget;
 
     private static readonly SolidColorBrush UpdateNormalBgBrush = new(System.Windows.Media.Color.FromRgb(0x1D, 0x26, 0x36));
     private static readonly SolidColorBrush UpdateNormalBorderBrush = new(System.Windows.Media.Color.FromRgb(0x2D, 0x3A, 0x4E));
@@ -227,6 +228,7 @@ public partial class MainWindow : Window
             UpdateNotifBadge();
             CheckForUpdatesOnStartup();
             WarnAboutFailedPolicyRestore();
+            if (App.Settings.TrafficWidgetVisible) SetTrafficWidgetVisible(true);
         };
         PreviewMouseDown += (_, _) => NotifyActiveModalAttention();
         _loading = false;
@@ -367,6 +369,7 @@ public partial class MainWindow : Window
             MoreDonateItem.Header = Strings.T("Donate");
             MoreRefreshItem.Header = Strings.T("RefreshRules");
             MoreTrafficHistoryItem.Header = Strings.T("TrafficMonitorMenu");
+            MoreWidgetItem.Header = Strings.T("NetworkWidgetMenu");
             MoreLogItem.Header = Strings.T("ConnectionLogMenu");
             MoreStatsItem.Header = Strings.T("TrafficStatsMenu");
             MoreSettingsItem.Header = Strings.T("MoreSettings");
@@ -396,6 +399,7 @@ public partial class MainWindow : Window
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
         TrafficIndicator.RefreshLanguage();
         TopBandwidthFlyout.RefreshLanguage();
+        _trafficWidget?.RefreshLanguage();
         _tray?.RefreshLanguage();
         UpdateAvailableButtonState();
         if (RulesLoadingTitle != null) RulesLoadingTitle.Text = Strings.T("RulesLoadingTitle");
@@ -1084,6 +1088,7 @@ public partial class MainWindow : Window
             StatusDot.Fill = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0xDE, 0x80));
             ModeBox.IsEnabled = false;
             TrafficIndicator.SetActive(false, _svc.Mode);
+            _trafficWidget?.SetFirewallState(false, _svc.Mode);
             StatusText.Text = Strings.T("StatusServiceOwned");
             _tray?.UpdateState();
             return;
@@ -1095,6 +1100,7 @@ public partial class MainWindow : Window
         StatusDot.Fill = on ? new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0xDE, 0x80)) : new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xEF, 0x44, 0x44));
         ModeBox.IsEnabled = on;
         TrafficIndicator.SetActive(on, _svc.Mode);
+        _trafficWidget?.SetFirewallState(on, _svc.Mode);
         var real = _svc.Wfp.IsRealBlock ? " • WFP Real" : " • Simulado";
         if (!on) StatusText.Text = Strings.T("StatusDisabled") + real;
         else
@@ -1519,6 +1525,60 @@ public partial class MainWindow : Window
     private void OpenStats_Click(object sender, RoutedEventArgs e) => SelectTab(MainTab.Statistics);
 
     private void OpenTrafficHistory_Click(object sender, RoutedEventArgs e) => SelectTab(MainTab.TrafficMonitor);
+
+    private void MoreWidget_Click(object sender, RoutedEventArgs e) =>
+        SetTrafficWidgetVisible(_trafficWidget?.IsVisible != true);
+
+    /// <summary>
+    /// Shows or hides the floating traffic widget and keeps the setting in sync so it comes
+    /// back on the next start when it was left open.
+    /// </summary>
+    private void SetTrafficWidgetVisible(bool visible)
+    {
+        if (visible)
+        {
+            if (_trafficWidget == null)
+            {
+                _trafficWidget = new Dialogs.FloatingTrafficWidget();
+                _trafficWidget.CloseRequested += () => SetTrafficWidgetVisible(false);
+                _trafficWidget.AlwaysOnTopChanged += onTop =>
+                {
+                    App.Settings.TrafficWidgetAlwaysOnTop = onTop;
+                    App.Settings.Save();
+                };
+                _trafficWidget.PositionChanged += (left, top) =>
+                {
+                    App.Settings.TrafficWidgetLeft = left;
+                    App.Settings.TrafficWidgetTop = top;
+                    App.Settings.TrafficWidgetBoundsSaved = true;
+                };
+                _trafficWidget.OpenTrafficMonitorRequested += () => SelectTab(MainTab.TrafficMonitor);
+                _trafficWidget.ShowMainWindowRequested += () =>
+                {
+                    Show();
+                    if (WindowState == WindowState.Minimized)
+                        WindowState = WindowState.Normal;
+                    Activate();
+                };
+            }
+
+            _trafficWidget.SetFirewallState(_svc.IsMasterOn, _svc.Mode);
+            _trafficWidget.Show();
+        }
+        else
+        {
+            if (_trafficWidget != null && _trafficWidget.PositionApplied)
+            {
+                App.Settings.TrafficWidgetLeft = _trafficWidget.Left;
+                App.Settings.TrafficWidgetTop = _trafficWidget.Top;
+                App.Settings.TrafficWidgetBoundsSaved = true;
+            }
+            _trafficWidget?.Hide();
+        }
+
+        App.Settings.TrafficWidgetVisible = visible;
+        App.Settings.Save();
+    }
 
     private void RulesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {

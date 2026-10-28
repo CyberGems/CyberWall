@@ -875,6 +875,14 @@
                                         </MenuItem.Icon>
                                     </MenuItem>
 
+                                    <MenuItem x:Name="MoreWidgetItem" Header="Widget de red..." Style="{StaticResource ModernMenuItem}" Click="MoreWidget_Click">
+                                        <MenuItem.Icon>
+                                            <Path Data="M 3 3 H 21 V 17 H 3 Z M 3 7 H 21 M 6 14 L 9 10 L 12 13 L 15 9 L 18 12"
+                                                  Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                  Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+
                                     <MenuItem x:Name="MoreLogItem" Header="Registro de conexiones..." InputGestureText="Ctrl+L" Style="{StaticResource ModernMenuItem}" Click="OpenLog_Click">
                                         <MenuItem.Icon>
                                             <Path Data="M 4 2 L 14 2 L 18 6 L 18 20 L 4 20 Z M 13 2 L 13 7 L 18 7 M 7 11 L 15 11 M 7 14 L 15 14 M 7 17 L 12 17"
