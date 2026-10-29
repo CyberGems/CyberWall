@@ -45,7 +45,7 @@ public static class StartupHelper
 
             if (enable)
             {
-                var exePath = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
+                var exePath = ResolveStartupExecutable();
                 if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
                 {
                     // Elevated apps require a Scheduled Task with HIGHEST runlevel to start at logon without UAC prompts
@@ -70,13 +70,90 @@ public static class StartupHelper
         {
             if (!IsStartupEnabled()) return;
 
-            var exePath = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
+            var exePath = ResolveStartupExecutable();
             if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath)) return;
 
             CreateScheduledTask(exePath, startMinimized);
             CleanupLegacyRunKeys();
         }
         catch { }
+    }
+
+    /// <summary>
+    /// Executable the logon task must launch. A development build (bin\Debug or bin\Release)
+    /// never claims the task: it is left pointing at the installed app, so starting the app from
+    /// the IDE does not make Windows launch the build output at every logon.
+    /// </summary>
+    internal static string? ResolveStartupExecutable()
+    {
+        var current = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
+        if (string.IsNullOrEmpty(current))
+            return FindInstalledExecutable();
+
+        if (!IsDevelopmentBuild(current))
+            return current;
+
+        return FindInstalledExecutable();
+    }
+
+    internal static bool IsDevelopmentBuild(string exePath) =>
+        exePath.Contains(@"\bin\Debug\", StringComparison.OrdinalIgnoreCase) ||
+        exePath.Contains(@"\bin\Release\", StringComparison.OrdinalIgnoreCase);
+
+    private static string? FindInstalledExecutable()
+    {
+        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+        if (!string.IsNullOrEmpty(programFiles))
+        {
+            var defaultPath = Path.Combine(programFiles, AppName, "CyberWall.exe");
+            if (File.Exists(defaultPath))
+                return defaultPath;
+        }
+
+        // Custom install folders are resolved through the registered uninstall entry.
+        var installLocation = FindRegisteredInstallLocation();
+        if (!string.IsNullOrEmpty(installLocation))
+        {
+            var registeredPath = Path.Combine(installLocation, "CyberWall.exe");
+            if (File.Exists(registeredPath))
+                return registeredPath;
+        }
+
+        return null;
+    }
+
+    private static string? FindRegisteredInstallLocation()
+    {
+        foreach (var hive in new[] { RegistryHive.LocalMachine, RegistryHive.CurrentUser })
+        {
+            foreach (var view in new[] { RegistryView.Registry64, RegistryView.Registry32 })
+            {
+                try
+                {
+                    using var baseKey = RegistryKey.OpenBaseKey(hive, view);
+                    using var uninstall = baseKey.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall");
+                    if (uninstall == null) continue;
+
+                    foreach (var name in uninstall.GetSubKeyNames())
+                    {
+                        using var entry = uninstall.OpenSubKey(name);
+                        if (entry == null) continue;
+
+                        var displayName = entry.GetValue("DisplayName") as string;
+                        if (string.IsNullOrEmpty(displayName) ||
+                            !displayName.Contains(AppName, StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        var location = entry.GetValue("InstallLocation") as string;
+                        if (!string.IsNullOrWhiteSpace(location))
+                            return location.Trim().Trim('"');
+                    }
+                }
+                catch { }
+            }
+        }
+
+        return null;
     }
 
     private static bool IsScheduledTaskPresent()
