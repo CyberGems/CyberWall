@@ -35,6 +35,7 @@ public partial class FloatingTrafficWidget : Window
     private const int ChartPoints = HistorySlots + 1;
 
     private static readonly MediaColor OnlineColor = MediaColor.FromRgb(0x4A, 0xDE, 0x80);
+    private static readonly MediaColor WarningColor = MediaColor.FromRgb(0xFB, 0x92, 0x3C);
     private static readonly MediaColor OfflineColor = MediaColor.FromRgb(0xEF, 0x44, 0x44);
 
     private readonly DispatcherTimer _timer;
@@ -139,7 +140,7 @@ public partial class FloatingTrafficWidget : Window
 
     /// <summary>
     /// Pushes the current firewall state so the widget can mute readings during a killswitch
-    /// lockdown, mirroring the main window indicator.
+    /// lockdown and report whether traffic is being filtered, mirroring the main window indicator.
     /// </summary>
     public void SetFirewallState(bool active, FirewallMode mode)
     {
@@ -191,7 +192,6 @@ public partial class FloatingTrafficWidget : Window
 
     /// <summary>True while readings must display zero: offline adapter, no connectivity or killswitch lockdown.</summary>
     private bool IsMuted =>
-        !_firewallActive ||
         !_snapshot.IsConnected ||
         !_online ||
         _firewallMode == FirewallMode.Killswitch;
@@ -206,8 +206,10 @@ public partial class FloatingTrafficWidget : Window
         SessionDownVal.Text = NetworkSpeedService.FormatBytes(_snapshot.TotalBytesReceived);
         SessionUpVal.Text = NetworkSpeedService.FormatBytes(_snapshot.TotalBytesSent);
         AdapterVal.Text = string.IsNullOrWhiteSpace(_snapshot.AdapterName) ? "-" : _snapshot.AdapterName;
-        var offline = !_online || !_snapshot.IsConnected || (_firewallMode == FirewallMode.Killswitch && _firewallActive);
-        StatusDot.Fill = new SolidColorBrush(offline ? OfflineColor : OnlineColor);
+        // Red while readings are muted, amber while protection is off (traffic is real but
+        // unfiltered) and green while protection is active, mirroring the main indicator.
+        var dotColor = IsMuted ? OfflineColor : !_firewallActive ? WarningColor : OnlineColor;
+        StatusDot.Fill = new SolidColorBrush(dotColor);
     }
 
     private void DrawCharts(IReadOnlyList<TrafficHistoryPoint> history)

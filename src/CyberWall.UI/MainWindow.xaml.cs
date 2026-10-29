@@ -1087,8 +1087,10 @@ public partial class MainWindow : Window
             MasterLabel.Text = Strings.T("ProtectionDisabled");
             StatusDot.Fill = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0xDE, 0x80));
             ModeBox.IsEnabled = false;
-            TrafficIndicator.SetActive(false, _svc.Mode);
-            _trafficWidget?.SetFirewallState(false, _svc.Mode);
+            // The service does enforce the policy, so the traffic surfaces must report
+            // protection as active: traffic keeps flowing and speeds are real.
+            TrafficIndicator.SetActive(true, _svc.Mode);
+            _trafficWidget?.SetFirewallState(true, _svc.Mode);
             StatusText.Text = Strings.T("StatusServiceOwned");
             _tray?.UpdateState();
             return;
@@ -1456,6 +1458,25 @@ public partial class MainWindow : Window
         SelectTab(MainTab.Settings);
     }
 
+    /// <summary>
+    /// Brings the window to the front. Requests can come from the tray or the floating
+    /// widget while the window is hidden, so showing it is part of every such request.
+    /// </summary>
+    private void ShowMainWindow()
+    {
+        if (WindowState == WindowState.Minimized)
+            WindowState = WindowState.Normal;
+        Show();
+        Activate();
+    }
+
+    /// <summary>Shows the window on the Traffic Monitor tab, taking it out of the tray.</summary>
+    public void OpenTrafficMonitor()
+    {
+        ShowMainWindow();
+        SelectTab(MainTab.TrafficMonitor);
+    }
+
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
 
     private bool _moreMenuWasOpen;
@@ -1552,17 +1573,11 @@ public partial class MainWindow : Window
                     App.Settings.TrafficWidgetTop = top;
                     App.Settings.TrafficWidgetBoundsSaved = true;
                 };
-                _trafficWidget.OpenTrafficMonitorRequested += () => SelectTab(MainTab.TrafficMonitor);
-                _trafficWidget.ShowMainWindowRequested += () =>
-                {
-                    Show();
-                    if (WindowState == WindowState.Minimized)
-                        WindowState = WindowState.Normal;
-                    Activate();
-                };
+                _trafficWidget.OpenTrafficMonitorRequested += OpenTrafficMonitor;
+                _trafficWidget.ShowMainWindowRequested += ShowMainWindow;
             }
 
-            _trafficWidget.SetFirewallState(_svc.IsMasterOn, _svc.Mode);
+            _trafficWidget.SetFirewallState(_svc.OwnedByAnotherHost || _svc.IsMasterOn, _svc.Mode);
             _trafficWidget.Show();
         }
         else
