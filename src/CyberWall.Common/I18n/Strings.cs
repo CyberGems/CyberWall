@@ -50,6 +50,8 @@ public static class Strings
         ["TrayTooltipOff"] = ("CyberWall · Protection off", "CyberWall · Protección desactivada"),
         ["TrayTooltipService"] = ("CyberWall · Protection active (Windows service)", "CyberWall · Protección activa (servicio de Windows)"),
         ["TrayStillProtecting"] = ("CyberWall keeps filtering traffic in the background. Use the tray menu to turn the protection off.", "CyberWall sigue filtrando el tráfico en segundo plano. Usa el menú de la bandeja para desactivar la protección."),
+        ["TrayUnavailableTitle"] = ("Tray icon unavailable", "Icono de la bandeja no disponible"),
+        ["TrayUnavailableDesc"] = ("Windows did not show the CyberWall icon in the notification area, so the window stays open. Try closing it again in a few seconds.", "Windows no mostró el icono de CyberWall en el área de notificación, así que la ventana permanece abierta. Vuelve a cerrarla en unos segundos."),
         ["PromptStackTitle"] = ("Network Prompts", "Avisos de Red"),
         ["AllowAllAlways"] = ("Allow all", "Permitir todos"),
         ["BlockAllPrompts"] = ("Block all", "Bloquear todos"),
