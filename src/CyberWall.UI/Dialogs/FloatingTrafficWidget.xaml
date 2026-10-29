@@ -252,6 +252,9 @@
                 </StackPanel>
                 <Border Grid.Column="1" Background="{DynamicResource HeaderBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" ClipToBounds="True" Height="38">
                     <Canvas x:Name="RowDownCanvas">
+                        <Canvas.RenderTransform>
+                            <TranslateTransform x:Name="RowDownShift"/>
+                        </Canvas.RenderTransform>
                         <Path x:Name="RowDownAreaPath">
                             <Path.Fill>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -288,6 +291,9 @@
                 </StackPanel>
                 <Border Grid.Column="1" Background="{DynamicResource HeaderBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" ClipToBounds="True" Height="38">
                     <Canvas x:Name="RowUpCanvas">
+                        <Canvas.RenderTransform>
+                            <TranslateTransform x:Name="RowUpShift"/>
+                        </Canvas.RenderTransform>
                         <Path x:Name="RowUpAreaPath">
                             <Path.Fill>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -335,6 +341,9 @@
                             <Border Grid.Row="1" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Opacity="0.3"/>
                         </Grid>
                         <Canvas>
+                            <Canvas.RenderTransform>
+                                <TranslateTransform x:Name="CombinedShift"/>
+                            </Canvas.RenderTransform>
                             <Path x:Name="CombinedDownAreaPath">
                                 <Path.Fill>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">

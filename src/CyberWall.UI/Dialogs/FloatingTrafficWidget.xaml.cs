@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
@@ -30,12 +31,20 @@ public partial class FloatingTrafficWidget : Window
 
     private const int HistorySlots = 60;
 
-    private static readonly MediaColor DownColor = MediaColor.FromRgb(0x38, 0xBD, 0xF8);
-    private static readonly MediaColor UpColor = MediaColor.FromRgb(0x22, 0xC5, 0x5E);
+    /// <summary>One extra sample is drawn left of the window so the slide never shows a gap.</summary>
+    private const int ChartPoints = HistorySlots + 1;
+
     private static readonly MediaColor OnlineColor = MediaColor.FromRgb(0x4A, 0xDE, 0x80);
     private static readonly MediaColor OfflineColor = MediaColor.FromRgb(0xEF, 0x44, 0x44);
 
     private readonly DispatcherTimer _timer;
+    private readonly DispatcherTimer _slideTimer;
+    private readonly List<(TranslateTransform Shift, double Step)> _shiftTargets = new();
+    private long _slideStartedAt;
+    private double _slideDurationSeconds;
+    private long _lastDataTickAt;
+    private double[] _previousDown = Array.Empty<double>();
+    private double[] _previousUp = Array.Empty<double>();
     private bool _positionApplied;
     private bool _firewallActive = true;
     private FirewallMode _firewallMode = FirewallMode.Ask;
@@ -76,6 +85,11 @@ public partial class FloatingTrafficWidget : Window
 
         _timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(1) };
         _timer.Tick += (_, _) => RefreshData();
+
+        // Cheap slide animation: only moves a retained drawing between 1 s samples, never
+        // rebuilds geometry per frame.
+        _slideTimer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromSeconds(1.0 / 30) };
+        _slideTimer.Tick += (_, _) => AdvanceSlide();
 
         ConnectivityService.Instance.ConnectivityChanged += OnConnectivityChanged;
 
@@ -161,8 +175,8 @@ public partial class FloatingTrafficWidget : Window
         service.Start();
         _snapshot = service.CurrentSnapshot;
 
-        var history = service.GetHistory(HistorySlots);
-        _historySampleCount = history.Count;
+        var history = service.GetHistory(ChartPoints);
+        _historySampleCount = Math.Min(history.Count, HistorySlots);
         _peakDown = 0;
         _peakUp = 0;
         foreach (var pt in history)
@@ -198,62 +212,118 @@ public partial class FloatingTrafficWidget : Window
 
     private void DrawCharts(IReadOnlyList<TrafficHistoryPoint> history)
     {
-        // Pad history into a fixed 60-slot array (index 0 = oldest, index 59 = now).
-        var downSeries = new double[HistorySlots];
-        var upSeries = new double[HistorySlots];
+        // Pad history into a fixed chart array. The oldest slot is drawn just outside the left
+        // edge so the slide animation never exposes an empty strip (one extra point).
+        var downSeries = new double[ChartPoints];
+        var upSeries = new double[ChartPoints];
 
-        int offset = HistorySlots - history.Count;
+        int offset = ChartPoints - history.Count;
         for (int i = 0; i < history.Count; i++)
         {
             int slot = offset + i;
-            if (slot >= 0 && slot < HistorySlots)
+            if (slot >= 0 && slot < ChartPoints)
             {
                 downSeries[slot] = history[i].DownloadBps;
                 upSeries[slot] = history[i].UploadBps;
             }
         }
 
+        int last = ChartPoints - 1;
         if (IsMuted)
         {
-            downSeries[HistorySlots - 1] = 0;
-            upSeries[HistorySlots - 1] = 0;
+            downSeries[last] = 0;
+            upSeries[last] = 0;
         }
         else
         {
-            downSeries[HistorySlots - 1] = _snapshot.DownloadBps;
-            upSeries[HistorySlots - 1] = _snapshot.UploadBps;
+            downSeries[last] = _snapshot.DownloadBps;
+            upSeries[last] = _snapshot.UploadBps;
         }
 
         // Shared scale with a 32 KB/s floor so idle traffic stays visible, 15% headroom.
         double maxRate = 32.0 * 1024.0;
-        for (int i = 0; i < HistorySlots; i++)
+        for (int i = 0; i < ChartPoints; i++)
         {
             if (downSeries[i] > maxRate) maxRate = downSeries[i];
             if (upSeries[i] > maxRate) maxRate = upSeries[i];
         }
         double maxScale = maxRate * 1.15;
 
+        _shiftTargets.Clear();
         if (RowDownCanvas.ActualWidth > 10)
+        {
             DrawSeries(RowDownLinePath, RowDownAreaPath, downSeries, maxScale, RowDownCanvas.ActualWidth, RowDownCanvas.ActualHeight);
+            _shiftTargets.Add((RowDownShift, RowDownCanvas.ActualWidth / (ChartPoints - 2)));
+        }
         if (RowUpCanvas.ActualWidth > 10)
+        {
             DrawSeries(RowUpLinePath, RowUpAreaPath, upSeries, maxScale, RowUpCanvas.ActualWidth, RowUpCanvas.ActualHeight);
+            _shiftTargets.Add((RowUpShift, RowUpCanvas.ActualWidth / (ChartPoints - 2)));
+        }
         if (GraphSection.Visibility == Visibility.Visible && GraphCanvasHost.ActualWidth > 10)
         {
             DrawSeries(CombinedDownLinePath, CombinedDownAreaPath, downSeries, maxScale, GraphCanvasHost.ActualWidth, GraphCanvasHost.ActualHeight);
             DrawSeries(CombinedUpLinePath, CombinedUpAreaPath, upSeries, maxScale, GraphCanvasHost.ActualWidth, GraphCanvasHost.ActualHeight);
+            _shiftTargets.Add((CombinedShift, GraphCanvasHost.ActualWidth / (ChartPoints - 2)));
         }
+
+        bool dataChanged = !downSeries.SequenceEqual(_previousDown) || !upSeries.SequenceEqual(_previousUp);
+        _previousDown = downSeries;
+        _previousUp = upSeries;
+        BeginSlide(dataChanged);
+    }
+
+    /// <summary>
+    /// Starts a one-sample slide towards the freshly built geometry. Only the translate
+    /// transforms move while the animation runs; geometry is never rebuilt per frame.
+    /// </summary>
+    private void BeginSlide(bool dataChanged)
+    {
+        long now = Stopwatch.GetTimestamp();
+        bool animate = dataChanged && SystemParameters.ClientAreaAnimation && IsVisible;
+        if (animate)
+        {
+            _slideDurationSeconds = _lastDataTickAt != 0
+                ? Math.Clamp(Stopwatch.GetElapsedTime(_lastDataTickAt, now).TotalSeconds, 0.25, 2.0)
+                : 1.0;
+            _lastDataTickAt = now;
+            _slideStartedAt = now;
+            foreach (var target in _shiftTargets) target.Shift.X = target.Step;
+            _slideTimer.Start();
+        }
+        else
+        {
+            _lastDataTickAt = now;
+            _slideTimer.Stop();
+            foreach (var target in _shiftTargets) target.Shift.X = 0;
+        }
+    }
+
+    private void AdvanceSlide()
+    {
+        double elapsed = Stopwatch.GetElapsedTime(_slideStartedAt, Stopwatch.GetTimestamp()).TotalSeconds;
+        double progress = Math.Clamp(elapsed / _slideDurationSeconds, 0.0, 1.0);
+        foreach (var target in _shiftTargets) target.Shift.X = target.Step * (1.0 - progress);
+        if (progress >= 1.0) _slideTimer.Stop();
+    }
+
+    private void StopSlide()
+    {
+        _slideTimer.Stop();
+        foreach (var target in _shiftTargets) target.Shift.X = 0;
     }
 
     private static void DrawSeries(Path linePath, Path areaPath, double[] series, double maxScale, double width, double height)
     {
         if (height <= 4 || width <= 10) return;
 
+        // series[0] sits one step left of the window; series[^1] sits on the right edge.
         var pts = new WPoint[series.Length];
-        double stepX = width / (series.Length - 1);
+        double stepX = width / (series.Length - 2);
         for (int i = 0; i < series.Length; i++)
         {
             double ratio = Math.Clamp(series[i] / maxScale, 0.0, 1.0);
-            pts[i] = new WPoint(i * stepX, height - (ratio * (height - 4)) - 2);
+            pts[i] = new WPoint((i - 1) * stepX, height - (ratio * (height - 4)) - 2);
         }
 
         var lineGeom = new StreamGeometry();
@@ -271,13 +341,13 @@ public partial class FloatingTrafficWidget : Window
         var areaGeom = new StreamGeometry();
         using (var ctx = areaGeom.Open())
         {
-            ctx.BeginFigure(new WPoint(0, height), true, true);
+            ctx.BeginFigure(new WPoint(pts[0].X, height), true, true);
             ctx.LineTo(pts[0], true, false);
             for (int i = 1; i < series.Length; i++)
             {
                 ctx.LineTo(pts[i], true, true);
             }
-            ctx.LineTo(new WPoint(width, height), true, false);
+            ctx.LineTo(new WPoint(pts[^1].X, height), true, false);
         }
         areaGeom.Freeze();
         areaPath.Data = areaGeom;
@@ -367,6 +437,7 @@ public partial class FloatingTrafficWidget : Window
         else
         {
             _timer.Stop();
+            StopSlide();
         }
     }
 
@@ -406,6 +477,7 @@ public partial class FloatingTrafficWidget : Window
     private void Widget_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         _timer.Stop();
+        _slideTimer.Stop();
         ConnectivityService.Instance.ConnectivityChanged -= OnConnectivityChanged;
         if (!_positionApplied) return;
 
@@ -426,6 +498,10 @@ public partial class FloatingTrafficWidget : Window
     {
         if (e.ButtonState != MouseButtonState.Pressed) return;
 
+        // Pressing a button (pin, close) must toggle it instead of starting a window drag,
+        // otherwise the drag loop swallows the click.
+        if (IsInsideButton(e.OriginalSource as DependencyObject)) return;
+
         try
         {
             DragMove();
@@ -436,10 +512,25 @@ public partial class FloatingTrafficWidget : Window
         }
     }
 
+    private static bool IsInsideButton(DependencyObject? source)
+    {
+        while (source != null)
+        {
+            if (source is System.Windows.Controls.Primitives.ButtonBase) return true;
+            source = VisualTreeHelper.GetParent(source);
+        }
+
+        return false;
+    }
+
     private void CloseButton_Click(object sender, RoutedEventArgs e) => CloseRequested?.Invoke();
 
-    private void PinButton_Click(object sender, RoutedEventArgs e) =>
-        AlwaysOnTopChanged?.Invoke(PinButton.IsChecked == true);
+    private void PinButton_Click(object sender, RoutedEventArgs e)
+    {
+        var onTop = PinButton.IsChecked == true;
+        ApplyAlwaysOnTop(onTop);
+        AlwaysOnTopChanged?.Invoke(onTop);
+    }
 
     private void WidgetPinItem_Click(object sender, RoutedEventArgs e)
     {
