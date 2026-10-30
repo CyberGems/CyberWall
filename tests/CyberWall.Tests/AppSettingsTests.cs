@@ -56,4 +56,34 @@ public class AppSettingsTests
     {
         Assert.Equal(FirewallMode.Ask, new AppSettings().FirewallMode);
     }
+
+    [Fact]
+    public void UnansweredPromptsAreNotBlockedByDefault()
+    {
+        Assert.False(new AppSettings().PopupAutoBlockEnabled);
+    }
+
+    [Fact]
+    public void LegacySettingsDisableAutoBlockOnce()
+    {
+        var settings = JsonSerializer.Deserialize<AppSettings>("""{"PopupAutoBlockEnabled":true}""");
+        Assert.NotNull(settings);
+        Assert.True(settings!.PopupAutoBlockEnabled);
+
+        Assert.True(AppSettings.ApplyManualBlockDefault(settings));
+        Assert.False(settings.PopupAutoBlockEnabled);
+        Assert.True(settings.ManualBlockDefaultApplied);
+
+        Assert.False(AppSettings.ApplyManualBlockDefault(settings));
+        Assert.False(settings.PopupAutoBlockEnabled);
+    }
+
+    [Fact]
+    public void ASavedAutoBlockChoiceIsRespected()
+    {
+        var settings = JsonSerializer.Deserialize<AppSettings>("""{"PopupAutoBlockEnabled":true,"ManualBlockDefaultApplied":true}""");
+        Assert.NotNull(settings);
+        Assert.False(AppSettings.ApplyManualBlockDefault(settings!));
+        Assert.True(settings!.PopupAutoBlockEnabled);
+    }
 }

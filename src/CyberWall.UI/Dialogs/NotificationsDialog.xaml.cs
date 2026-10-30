@@ -12,6 +12,7 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
     private readonly NotificationStore _store;
     private readonly HashSet<Guid> _openedUnread;
     private readonly Func<string, Task> _onAllow;
+    private readonly Func<string, Task> _onBlock;
     private readonly Action _onEnableProtection;
     private readonly Action _onDownloadUpdate;
     private readonly Func<bool>? _isProtectionOn;
@@ -25,10 +26,11 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
         ModalAttentionHelper.Trigger(this, OuterBorder, WindowScale, WindowGlow, ref _lastAttentionTime);
     }
 
-    public NotificationsDialog(NotificationStore store, Func<string, Task> onAllow, Action onEnableProtection, Action onDownloadUpdate, Func<bool>? isProtectionOn = null, Func<bool>? isOnline = null)
+    public NotificationsDialog(NotificationStore store, Func<string, Task> onAllow, Func<string, Task> onBlock, Action onEnableProtection, Action onDownloadUpdate, Func<bool>? isProtectionOn = null, Func<bool>? isOnline = null)
     {
         _store = store;
         _onAllow = onAllow;
+        _onBlock = onBlock;
         _onEnableProtection = onEnableProtection;
         _onDownloadUpdate = onDownloadUpdate;
         _isProtectionOn = isProtectionOn;
@@ -89,6 +91,7 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
         {
             case AppNotificationKind.AutoBlocked:
             case AppNotificationKind.SilentBlock:
+            case AppNotificationKind.PendingDecision:
                 await AllowAsync(vm);
                 break;
             case AppNotificationKind.ProtectionOff:
@@ -108,6 +111,7 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
     {
         if (string.IsNullOrWhiteSpace(vm.AppPath)) return;
         _busy = true;
+        var originalLabel = vm.ActionLabel;
         vm.MarkBusy(Strings.T("NotifAllowing"));
         await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Render);
         try
@@ -119,11 +123,48 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
             catch
             {
                 vm.IsBusy = false;
-                vm.ActionLabel = Strings.T("AutoBlockedUndo");
+                vm.ActionLabel = originalLabel;
                 return;
             }
             var name = string.IsNullOrWhiteSpace(vm.AppName) ? "?" : vm.AppName;
             vm.MarkResolved(Strings.T("NotifAllowed"), Strings.T("NotifAllowedDesc", name));
+            await Task.Delay(900);
+            _store.Remove(vm.Id);
+            _openedUnread.Remove(vm.Id);
+        }
+        finally
+        {
+            _busy = false;
+            BindList();
+        }
+    }
+
+    private async void Block_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: NotificationItemVm vm }) return;
+        if (!vm.CanBlock) return;
+        await BlockAsync(vm);
+    }
+
+    private async Task BlockAsync(NotificationItemVm vm)
+    {
+        if (string.IsNullOrWhiteSpace(vm.AppPath)) return;
+        _busy = true;
+        vm.IsBusy = true;
+        await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Render);
+        try
+        {
+            try
+            {
+                await _onBlock(vm.AppPath);
+            }
+            catch
+            {
+                vm.IsBusy = false;
+                return;
+            }
+            var name = string.IsNullOrWhiteSpace(vm.AppName) ? "?" : vm.AppName;
+            vm.MarkResolved(Strings.T("NotifBlocked"), Strings.T("NotifBlockedDesc", name), blocked: true);
             await Task.Delay(900);
             _store.Remove(vm.Id);
             _openedUnread.Remove(vm.Id);

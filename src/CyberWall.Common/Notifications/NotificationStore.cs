@@ -39,11 +39,13 @@ public sealed class NotificationStore
         lock (_lock)
         {
             var existing = _items.FirstOrDefault(n =>
-                !n.Read && n.Kind == kind &&
-                string.Equals(n.AppPath ?? "", appPath ?? "", StringComparison.OrdinalIgnoreCase));
+                n.Kind == kind &&
+                string.Equals(n.AppPath ?? "", appPath ?? "", StringComparison.OrdinalIgnoreCase) &&
+                (kind == AppNotificationKind.PendingDecision || !n.Read));
             if (existing != null)
             {
                 existing.Timestamp = DateTime.UtcNow;
+                existing.Read = false;
                 if (!string.IsNullOrEmpty(appName)) existing.AppName = appName;
                 if (!string.IsNullOrEmpty(detail)) existing.Detail = detail;
                 item = existing;
@@ -121,6 +123,20 @@ public sealed class NotificationStore
             var n = _items.FirstOrDefault(i => i.Id == id);
             if (n == null) return;
             _items.Remove(n);
+            Save();
+        }
+        Changed?.Invoke();
+    }
+
+    /// <summary>Removes every notification of a kind for one app (e.g. a resolved pending decision).</summary>
+    public void RemoveRelated(AppNotificationKind kind, string? appPath)
+    {
+        lock (_lock)
+        {
+            var removed = _items.RemoveAll(n =>
+                n.Kind == kind &&
+                string.Equals(n.AppPath ?? "", appPath ?? "", StringComparison.OrdinalIgnoreCase));
+            if (removed == 0) return;
             Save();
         }
         Changed?.Invoke();

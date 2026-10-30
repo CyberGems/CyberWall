@@ -9,7 +9,8 @@ public enum AppNotificationKind
     InternetLost = 4,
     InternetRestored = 5,
     AppVersionChanged = 6,
-    AppExecutableChanged = 7
+    AppExecutableChanged = 7,
+    PendingDecision = 8
 }
 
 public sealed class AppNotification

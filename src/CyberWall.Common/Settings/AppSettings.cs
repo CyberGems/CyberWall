@@ -40,8 +40,14 @@ public sealed class AppSettings
     public bool MinimizeToTrayOnClose { get; set; } = true;
     public bool PlaySoundOnPrompt { get; set; } = true;
     public string? CustomSoundPath { get; set; } = null;
-    public bool PopupAutoBlockEnabled { get; set; } = true;
+    public bool PopupAutoBlockEnabled { get; set; } = false;
     public int PopupAutoBlockSeconds { get; set; } = 300;
+
+    /// <summary>
+    /// Existing installations used to auto-block unanswered prompts. This flag lets the
+    /// upgrade turn that off exactly once, without undoing a later user choice.
+    /// </summary>
+    public bool ManualBlockDefaultApplied { get; set; } = false;
     public bool ToastAppInfoEnabled { get; set; } = true;
     public bool ToastInternetEventsEnabled { get; set; } = true;
     public bool ToastProtectionEventsEnabled { get; set; } = true;
@@ -73,11 +79,35 @@ public sealed class AppSettings
 
     public static AppSettings Load()
     {
-        try { if (File.Exists(Path)) return JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(Path)) ?? new(); } catch { }
+        try
+        {
+            if (File.Exists(Path))
+            {
+                var loaded = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(Path)) ?? new AppSettings();
+                if (ApplyManualBlockDefault(loaded))
+                    loaded.Save();
+                return loaded;
+            }
+        }
+        catch { }
+
         var s = new AppSettings();
+        s.ManualBlockDefaultApplied = true;
         var sys = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "es" ? Lang.Es : Lang.En;
         s.Language = sys;
         return s;
+    }
+
+    /// <summary>
+    /// One-time upgrade for settings written before unanswered prompts stopped blocking
+    /// by default. A file without the marker is treated as an old install.
+    /// </summary>
+    internal static bool ApplyManualBlockDefault(AppSettings settings)
+    {
+        if (settings.ManualBlockDefaultApplied) return false;
+        settings.PopupAutoBlockEnabled = false;
+        settings.ManualBlockDefaultApplied = true;
+        return true;
     }
 
     public void Save()

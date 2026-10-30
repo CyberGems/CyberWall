@@ -186,6 +186,10 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style x:Key="ItemBlockButton" TargetType="Button" BasedOn="{StaticResource ItemActionButton}">
+            <Setter Property="Background" Value="{DynamicResource BadgeBlockBgBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource BadgeBlockFgBrush}"/>
+        </Style>
     </Window.Resources>
 
     <!-- Custom Window Frame Container with Smooth Anti-Aliasing Buffer Margin -->
@@ -261,6 +265,10 @@
                                                     <Setter Property="Background" Value="{DynamicResource BadgeAllowBgBrush}"/>
                                                     <Setter Property="BorderBrush" Value="{DynamicResource BadgeAllowFgBrush}"/>
                                                 </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsBlockedResolved}" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource BadgeBlockBgBrush}"/>
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource BadgeBlockFgBrush}"/>
+                                                </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
@@ -323,6 +331,7 @@
                                         </StackPanel>
                                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
                                             <Button Style="{StaticResource ItemActionButton}" Tag="{Binding}" Click="Action_Click" IsEnabled="{Binding CanAct}" Visibility="{Binding ShowAction, Converter={StaticResource BoolToVis}}" Content="{Binding ActionLabel}"/>
+                                            <Button Style="{StaticResource ItemBlockButton}" Tag="{Binding}" Click="Block_Click" IsEnabled="{Binding CanBlock}" Visibility="{Binding ShowBlockAction, Converter={StaticResource BoolToVis}}" Content="{Binding BlockLabel}"/>
                                         </StackPanel>
                                     </Grid>
                                 </Border>

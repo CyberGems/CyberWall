@@ -440,7 +440,7 @@
                         </Grid>
 
                         <!-- Toast 4: AutoBlock -->
-                        <Grid Margin="0,4,0,12">
+                        <Grid x:Name="ToastAutoBlockRow" Margin="0,4,0,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
@@ -552,7 +552,7 @@
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
                                 <TextBlock x:Name="AutoBlockTitleLbl" Text="Bloquear avisos sin respuesta" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextBrush}"/>
-                                <TextBlock x:Name="AutoBlockDescLbl" Text="Si no respondes, el programa se bloquea automáticamente." FontSize="12.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                                <TextBlock x:Name="AutoBlockDescLbl" Text="Opcional. Activado: el aviso bloquea la aplicación al agotarse el tiempo. Desactivado: se cierra sin bloquear y vuelve a preguntar en la próxima conexión." FontSize="12.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,3,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
 
                             <CheckBox x:Name="AutoBlockToggle" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}" VerticalAlignment="Center" Click="AutoBlockToggle_Click"/>
@@ -563,7 +563,7 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="220"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="AutoBlockWaitLbl" Text="Esperar antes de bloquear" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                            <TextBlock x:Name="AutoBlockWaitLbl" Text="Tiempo de espera del aviso" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" Margin="0,0,16,0"/>
                             <ComboBox x:Name="AutoBlockWaitBox" Grid.Column="1" Height="35" Style="{StaticResource ModernComboBox}" SelectionChanged="AutoBlockWaitBox_SelectionChanged"/>
                         </Grid>
 

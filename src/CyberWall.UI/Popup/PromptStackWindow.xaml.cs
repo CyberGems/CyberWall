@@ -59,12 +59,10 @@ public partial class PromptStackWindow : Window
             SettingsBtn.Visibility = Visibility.Collapsed;
             CountdownBadge.Visibility = Visibility.Collapsed;
         }
-        else if (!_autoBlockEnabled)
-        {
-            CountdownBadge.Visibility = Visibility.Collapsed;
-        }
         else
         {
+            CountdownBadge.ToolTip = Strings.T(_autoBlockEnabled ? "CountdownAutoBlockTooltip" : "CountdownManualTooltip");
+            AutomationProperties.SetName(CountdownBadge, Strings.T(_autoBlockEnabled ? "CountdownAutoBlockTooltip" : "CountdownManualTooltip"));
             UpdateCountdownLabel();
         }
     }
@@ -86,7 +84,7 @@ public partial class PromptStackWindow : Window
     {
         RecalculateLayoutAndPosition();
         if (IsPreview) return;
-        if (_autoBlockEnabled && !_countdownTimer.IsEnabled)
+        if (!_countdownTimer.IsEnabled)
             _countdownTimer.Start();
     }
 
@@ -105,7 +103,7 @@ public partial class PromptStackWindow : Window
         CardsContainer.Children.Add(card);
 
         // Reset countdown to give full time for newly added items
-        if (_autoBlockEnabled && !IsPreview)
+        if (!IsPreview)
         {
             _remaining = Math.Clamp(App.Settings.PopupAutoBlockSeconds, 15, 3600);
             UpdateCountdownLabel();
@@ -190,16 +188,18 @@ public partial class PromptStackWindow : Window
         if (_remaining <= 0)
         {
             _countdownTimer.Stop();
-            // Timed out: auto-block all active cards in batch
+            // Timed out: auto-block when the user opted in, otherwise close without a
+            // verdict so the prompt is shown again on the next connection attempt.
             var list = _cards.ToList();
             _cards.Clear();
             CardsContainer.Children.Clear();
             Close();
 
+            var decision = _autoBlockEnabled ? PopupDecision.BlockAlways : PopupDecision.Dismiss;
             foreach (var card in list)
             {
                 card.DecisionMade -= OnCardDecisionMade;
-                CardResolved?.Invoke(card, PopupDecision.BlockAlways, true);
+                CardResolved?.Invoke(card, decision, _autoBlockEnabled);
             }
             return;
         }

@@ -10,9 +10,12 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
     private string _title = "";
     private string _description = "";
     private string _actionLabel = "";
+    private string _blockLabel = "";
     private bool _showAction;
+    private bool _showBlockAction;
     private bool _isBusy;
     private bool _isResolved;
+    private bool _isBlockedResolved;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -22,7 +25,7 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
     public string? AppName { get; init; }
     public bool Highlight { get; init; }
     public string TimeLabel { get; init; } = "";
-    public bool HasAppIcon => (Kind is AppNotificationKind.AutoBlocked or AppNotificationKind.SilentBlock or AppNotificationKind.AppVersionChanged or AppNotificationKind.AppExecutableChanged) && !string.IsNullOrWhiteSpace(AppPath);
+    public bool HasAppIcon => (Kind is AppNotificationKind.AutoBlocked or AppNotificationKind.SilentBlock or AppNotificationKind.AppVersionChanged or AppNotificationKind.AppExecutableChanged or AppNotificationKind.PendingDecision) && !string.IsNullOrWhiteSpace(AppPath);
     public bool IsInternetLost => Kind == AppNotificationKind.InternetLost;
     public bool IsInternetRestored => Kind == AppNotificationKind.InternetRestored;
     public bool IsProtectionOff => Kind == AppNotificationKind.ProtectionOff;
@@ -47,6 +50,12 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
         set => Set(ref _actionLabel, value);
     }
 
+    public string BlockLabel
+    {
+        get => _blockLabel;
+        set => Set(ref _blockLabel, value);
+    }
+
     public bool ShowAction
     {
         get => _showAction;
@@ -57,23 +66,47 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
         }
     }
 
+    public bool ShowBlockAction
+    {
+        get => _showBlockAction;
+        set
+        {
+            if (Set(ref _showBlockAction, value))
+                OnPropertyChanged(nameof(CanBlock));
+        }
+    }
+
     public bool IsBusy
     {
         get => _isBusy;
         set
         {
             if (Set(ref _isBusy, value))
+            {
                 OnPropertyChanged(nameof(CanAct));
+                OnPropertyChanged(nameof(CanBlock));
+            }
         }
     }
 
     public bool IsResolved
     {
         get => _isResolved;
-        set => Set(ref _isResolved, value);
+        set
+        {
+            if (Set(ref _isResolved, value))
+                OnPropertyChanged(nameof(CanBlock));
+        }
+    }
+
+    public bool IsBlockedResolved
+    {
+        get => _isBlockedResolved;
+        set => Set(ref _isBlockedResolved, value);
     }
 
     public bool CanAct => ShowAction && !IsBusy && !IsResolved;
+    public bool CanBlock => ShowBlockAction && !IsBusy && !IsResolved;
 
     public void MarkBusy(string label)
     {
@@ -81,11 +114,13 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
         ActionLabel = label;
     }
 
-    public void MarkResolved(string title, string description)
+    public void MarkResolved(string title, string description, bool blocked = false)
     {
         IsBusy = false;
         IsResolved = true;
+        IsBlockedResolved = blocked;
         ShowAction = false;
+        ShowBlockAction = false;
         Title = title;
         Description = description;
         ActionLabel = title;
@@ -114,6 +149,11 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
             AppNotificationKind.SilentBlock => (
                 Strings.T("SilentBlockTitle"),
                 Strings.T("SilentBlockDesc", string.IsNullOrEmpty(name) ? "?" : name)),
+            AppNotificationKind.PendingDecision => (
+                Strings.T("PendingDecisionTitle"),
+                string.IsNullOrWhiteSpace(n.Detail)
+                    ? Strings.T("PendingDecisionDescNoRemote", string.IsNullOrEmpty(name) ? "?" : name)
+                    : Strings.T("PendingDecisionDesc", string.IsNullOrEmpty(name) ? "?" : name, n.Detail)),
             AppNotificationKind.ProtectionOff => (
                 Strings.T("NotifProtectionOffTitle"),
                 isProtectionOn ? Strings.T("NotifProtectionOnDesc") : Strings.T("NotifProtectionOffDesc")),
@@ -137,8 +177,9 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
                 Strings.T("AutoBlockedDesc", string.IsNullOrEmpty(name) ? "?" : name))
         };
 
-        var showAllow = (n.Kind is AppNotificationKind.AutoBlocked or AppNotificationKind.SilentBlock)
+        var showAllow = (n.Kind is AppNotificationKind.AutoBlocked or AppNotificationKind.SilentBlock or AppNotificationKind.PendingDecision)
                         && !string.IsNullOrWhiteSpace(n.AppPath);
+        var showBlock = n.Kind == AppNotificationKind.PendingDecision && !string.IsNullOrWhiteSpace(n.AppPath);
         var showInternetRecheck = n.Kind == AppNotificationKind.InternetLost && !isOnline;
 
         return new NotificationItemVm
@@ -152,13 +193,16 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
             Title = title,
             Description = desc,
             ShowAction = showAllow || isProtectionOffActionActive || (n.Kind is AppNotificationKind.UpdateAvailable && isUpdateActive) || showInternetRecheck,
+            ShowBlockAction = showBlock,
             ActionLabel = n.Kind switch
             {
                 AppNotificationKind.ProtectionOff => Strings.T("TurnProtectionOn"),
                 AppNotificationKind.UpdateAvailable => Strings.T("Download"),
                 AppNotificationKind.InternetLost => Strings.T("NotifInternetRecheck"),
+                AppNotificationKind.PendingDecision => Strings.T("Allow"),
                 _ => Strings.T("AutoBlockedUndo")
-            }
+            },
+            BlockLabel = Strings.T("Block")
         };
     }
 

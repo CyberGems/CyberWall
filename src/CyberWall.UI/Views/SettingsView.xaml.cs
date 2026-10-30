@@ -83,6 +83,7 @@ public partial class SettingsView : UserControl
         MinimizeToTrayToggle.IsChecked = _s.MinimizeToTrayOnClose;
         AutoBlockToggle.IsChecked = _s.PopupAutoBlockEnabled;
         PopulateAutoBlockWait();
+        UpdateAutoBlockUiState();
         PopulateTrafficAnim();
         UpdateTexts();
         _loading = false;
@@ -387,9 +388,18 @@ public partial class SettingsView : UserControl
             best = i;
         }
         AutoBlockWaitBox.SelectedIndex = best;
-        AutoBlockWaitRow.IsEnabled = _s.PopupAutoBlockEnabled;
-        AutoBlockWaitRow.Opacity = _s.PopupAutoBlockEnabled ? 1 : 0.45;
         _loading = wasLoading;
+    }
+
+    private void UpdateAutoBlockUiState()
+    {
+        // The timeout always applies: it either blocks (auto-block on) or hides the
+        // prompt so it can be asked again (auto-block off).
+        AutoBlockWaitRow.IsEnabled = true;
+        AutoBlockWaitRow.Opacity = 1;
+
+        ToastAutoBlockRow.IsEnabled = _s.PopupAutoBlockEnabled;
+        ToastAutoBlockRow.Opacity = _s.PopupAutoBlockEnabled ? 1 : 0.45;
     }
 
     private void AutoBlockToggle_Click(object sender, RoutedEventArgs e)
@@ -397,8 +407,7 @@ public partial class SettingsView : UserControl
         if (_loading) return;
         _s.PopupAutoBlockEnabled = AutoBlockToggle.IsChecked == true;
         _s.Save();
-        AutoBlockWaitRow.IsEnabled = _s.PopupAutoBlockEnabled;
-        AutoBlockWaitRow.Opacity = _s.PopupAutoBlockEnabled ? 1 : 0.45;
+        UpdateAutoBlockUiState();
     }
 
     private void AutoBlockWaitBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

@@ -16,6 +16,14 @@ public class PromptManager
     private MainWindow? _mainWindow;
     private PromptStackWindow? _activeStack;
     private readonly HashSet<string> _pendingKeys = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, DateTime> _snoozeUntil = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Minimum time between two prompts for the same app after the user closed one
+    /// without deciding. Blocked retries fire every few seconds, so without this the
+    /// prompt would reopen immediately and trap the user in a loop.
+    /// </summary>
+    private static readonly TimeSpan RepromptCooldown = TimeSpan.FromSeconds(60);
 
     public void Initialize(FirewallService svc, MainWindow mainWindow)
     {
@@ -38,6 +46,11 @@ public class PromptManager
             try
             {
                 var key = AppRule.Normalize(ev.AppPath);
+                if (_snoozeUntil.TryGetValue(key, out var until))
+                {
+                    if (DateTime.UtcNow < until) return;
+                    _snoozeUntil.Remove(key);
+                }
                 if (!_pendingKeys.Add(key)) return;
 
                 AutoBlockToast.CloseAll();
@@ -73,6 +86,17 @@ public class PromptManager
         var key = AppRule.Normalize(card.Event.AppPath);
         _pendingKeys.Remove(key);
 
+        if (decision == PopupDecision.Dismiss)
+        {
+            // "Not now": keep the app pending (the engine already holds its traffic)
+            // but save no verdict, so the next connection attempt asks again later.
+            _snoozeUntil[key] = DateTime.UtcNow + RepromptCooldown;
+        }
+        else
+        {
+            _snoozeUntil.Remove(key);
+        }
+
         if (_svc == null) return;
 
         var ev = card.Event;
@@ -98,8 +122,14 @@ public class PromptManager
                         }
                         break;
                     default:
-                        _svc.SetVerdict(ev.AppPath, Verdict.Block, false, ev);
+                        // No verdict: the app stays pending and will prompt again.
+                        _mainWindow?.Dispatcher.BeginInvoke(() => _mainWindow.RecordPendingDecision(ev));
                         break;
+                }
+
+                if (decision != PopupDecision.Dismiss)
+                {
+                    _mainWindow?.Dispatcher.BeginInvoke(() => _mainWindow.ClearPendingDecision(ev.AppPath));
                 }
             }
             catch { }

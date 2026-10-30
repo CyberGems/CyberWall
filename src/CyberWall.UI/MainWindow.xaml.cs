@@ -534,6 +534,21 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Records an app that was left undecided. It gets no rule and stays pending;
+    /// the notification lets the user allow or block it later from the panel.
+    /// </summary>
+    internal void RecordPendingDecision(ConnectionEvent ev)
+    {
+        _notifications.Add(AppNotificationKind.PendingDecision, ev.AppPath, ev.DisplayName,
+            string.IsNullOrEmpty(ev.RemoteAddress) ? null : $"{ev.RemoteAddress}:{ev.RemotePort}");
+    }
+
+    internal void ClearPendingDecision(string appPath)
+    {
+        _notifications.RemoveRelated(AppNotificationKind.PendingDecision, appPath);
+    }
+
     private void UpdateNotifBadge()
     {
         UpdateAvailableButtonState();
@@ -560,11 +575,24 @@ public partial class MainWindow : Window
             if (_svc.IsMasterOn)
                 _notifications.PurgeObsoleteProtectionOffNotifications();
 
+            // Pending items are only meaningful while the app still has no verdict.
+            foreach (var pending in _notifications.All.Where(n => n.Kind == AppNotificationKind.PendingDecision).ToList())
+            {
+                if (string.IsNullOrWhiteSpace(pending.AppPath)) continue;
+                if (_svc.Store.TryGet(pending.AppPath, out _) || _svc.TryGetSession(pending.AppPath, 0, out _))
+                    _notifications.Remove(pending.Id);
+            }
+
             var dlg = new NotificationsDialog(
                 _notifications,
                 async path =>
                 {
                     await Task.Run(() => _svc.SetVerdict(path, Verdict.Allow, true));
+                    RefreshRules(SearchBox.Text);
+                },
+                async path =>
+                {
+                    await Task.Run(() => _svc.SetVerdict(path, Verdict.Block, true));
                     RefreshRules(SearchBox.Text);
                 },
                 () =>
