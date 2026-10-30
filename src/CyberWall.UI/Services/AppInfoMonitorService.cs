@@ -28,9 +28,9 @@ public sealed class AppInfoMonitorService
         _notifications = notifications;
         _svc = svc;
 
-        // Run immediately, then every 2.5 seconds
+        // Run initial scan after 3 seconds, then every 30 seconds
         _timer?.Dispose();
-        _timer = new System.Threading.Timer(_ => ScanAllRules(), null, 500, 2500);
+        _timer = new System.Threading.Timer(_ => ScanAllRules(), null, 3000, 30000);
     }
 
     public void Stop()
@@ -93,6 +93,13 @@ public sealed class AppInfoMonitorService
         var currentSize = fi.Length;
         var currentWriteTime = fi.LastWriteTimeUtc;
 
+        // Fast-path: if file metadata hasn't changed since last inspection, skip expensive PE parsing
+        bool inCache = _sessionCache.TryGetValue(key, out var cached);
+        if (inCache && cached.FileSize == currentSize && cached.WriteTime == currentWriteTime)
+        {
+            return;
+        }
+
         string? currentVersion = null;
         try
         {
@@ -109,7 +116,7 @@ public sealed class AppInfoMonitorService
             return;
         }
 
-        if (!_sessionCache.TryGetValue(key, out var cached))
+        if (!inCache)
         {
             // First time seen in this runtime session
             var cleanOld = Clean(rule.LastKnownVersion);
