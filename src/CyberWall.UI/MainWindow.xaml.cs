@@ -407,6 +407,7 @@ public partial class MainWindow : Window
 
         UpdateColumnHeaders();
 
+        InvalidateAllTooltips();
         OnActivityUpdated();
 
         UpdateExpanderHeaders();
@@ -952,6 +953,14 @@ public partial class MainWindow : Window
         var row = new AppRuleRow { Rule = rule, Geo = geo };
         row.UpdateActivity(ProcessTrafficTracker.Instance);
         return row;
+    }
+
+    private void InvalidateAllTooltips()
+    {
+        if (AllowedGrid?.ItemsSource is IEnumerable<AppRuleRow> allowed)
+            foreach (var r in allowed) r.InvalidateTooltip();
+        if (BlockedGrid?.ItemsSource is IEnumerable<AppRuleRow> blocked)
+            foreach (var r in blocked) r.InvalidateTooltip();
     }
 
     private void OnActivityUpdated()

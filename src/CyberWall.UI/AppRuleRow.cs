@@ -115,15 +115,41 @@ public sealed class AppRuleRow : INotifyPropertyChanged
 
     public double TotalBps => _downloadBps + _uploadBps;
 
+    private ProcessActivityLevel _lastTooltipLevel = (ProcessActivityLevel)(-1);
+    private int _lastActiveSockets = -1;
+    private DateTime _lastTooltipActivityUtc = DateTime.MinValue;
+    private DateTime _lastTooltipBlockedUtc = DateTime.MinValue;
+    private bool _lastHasBandwidth;
+
     public void UpdateActivity(ProcessTrafficTracker tracker)
     {
         var activity = tracker.GetActivity(AppPath, Verdict);
         ActivityLevel = activity.Level;
-        ActivityTooltip = tracker.FormatTooltip(AppPath, Verdict);
         DownloadBps = activity.DownloadBps;
         UploadBps = activity.UploadBps;
         BandwidthSpeedText = activity.FormattedSpeed;
         HasActiveBandwidth = activity.HasBandwidth;
+
+        bool needsTooltipUpdate = string.IsNullOrEmpty(_activityTooltip)
+            || _lastTooltipLevel != activity.Level
+            || _lastHasBandwidth != activity.HasBandwidth
+            || _lastActiveSockets != activity.ActiveSockets
+            || (activity.Level != ProcessActivityLevel.Idle && (_lastTooltipActivityUtc != activity.LastActivityUtc || _lastTooltipBlockedUtc != activity.LastBlockedUtc));
+
+        if (needsTooltipUpdate)
+        {
+            _lastTooltipLevel = activity.Level;
+            _lastHasBandwidth = activity.HasBandwidth;
+            _lastActiveSockets = activity.ActiveSockets;
+            _lastTooltipActivityUtc = activity.LastActivityUtc;
+            _lastTooltipBlockedUtc = activity.LastBlockedUtc;
+            ActivityTooltip = tracker.FormatTooltip(AppPath, Verdict);
+        }
+    }
+
+    public void InvalidateTooltip()
+    {
+        _activityTooltip = string.Empty;
     }
 
     public void RefreshIcon()
