@@ -1634,11 +1634,36 @@ public partial class MainWindow : Window
         }
     }
 
-    private void RulesScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
+    private void Expander_StateChanged(object sender, RoutedEventArgs e)
     {
-        if (e.VerticalChange != 0 || e.HorizontalChange != 0)
+        UpdateExpanderRowHeights();
+    }
+
+    private void UpdateExpanderRowHeights()
+    {
+        if (AllowedRowDef == null || BlockedRowDef == null || AllowedExpander == null || BlockedExpander == null) return;
+        bool allowOpen = AllowedExpander.IsExpanded;
+        bool blockOpen = BlockedExpander.IsExpanded;
+
+        if (allowOpen && blockOpen)
         {
-            DismissOpenToolTips();
+            AllowedRowDef.Height = new GridLength(1, GridUnitType.Star);
+            BlockedRowDef.Height = new GridLength(1, GridUnitType.Star);
+        }
+        else if (allowOpen && !blockOpen)
+        {
+            AllowedRowDef.Height = new GridLength(1, GridUnitType.Star);
+            BlockedRowDef.Height = GridLength.Auto;
+        }
+        else if (!allowOpen && blockOpen)
+        {
+            AllowedRowDef.Height = GridLength.Auto;
+            BlockedRowDef.Height = new GridLength(1, GridUnitType.Star);
+        }
+        else
+        {
+            AllowedRowDef.Height = GridLength.Auto;
+            BlockedRowDef.Height = GridLength.Auto;
         }
     }
 
@@ -1892,34 +1917,26 @@ public partial class MainWindow : Window
         if (e.Key == System.Windows.Input.Key.Home)
         {
             DismissOpenToolTips();
-            RulesScrollViewer.ScrollToHome();
+            var target = (AllowedGrid.IsKeyboardFocusWithin || AllowedGrid.SelectedItem != null) ? AllowedGrid : BlockedGrid;
+            if (target.Items.Count > 0) SelectAndFocusRow(target, 0);
             e.Handled = true;
         }
         else if (e.Key == System.Windows.Input.Key.End)
         {
             DismissOpenToolTips();
-            RulesScrollViewer.ScrollToEnd();
+            var target = (BlockedGrid.IsKeyboardFocusWithin || BlockedGrid.SelectedItem != null) ? BlockedGrid : AllowedGrid;
+            if (target.Items.Count > 0) SelectAndFocusRow(target, target.Items.Count - 1);
             e.Handled = true;
         }
-        else if (e.Key == System.Windows.Input.Key.PageUp)
+        else if (e.Key == System.Windows.Input.Key.PageUp || e.Key == System.Windows.Input.Key.PageDown)
         {
             DismissOpenToolTips();
-            RulesScrollViewer.PageUp();
-            e.Handled = true;
-        }
-        else if (e.Key == System.Windows.Input.Key.PageDown)
-        {
-            DismissOpenToolTips();
-            RulesScrollViewer.PageDown();
-            e.Handled = true;
         }
     }
 
     private void DataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
         DismissOpenToolTips();
-        RulesScrollViewer.ScrollToVerticalOffset(RulesScrollViewer.VerticalOffset - (e.Delta / 2.0));
-        e.Handled = true;
     }
 
     private static readonly DependencyPropertyKey? ToolTipIsOpenKey =

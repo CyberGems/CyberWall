@@ -1315,14 +1315,22 @@
                                      BorderThickness="0"/>
                     </Grid>
 
-                    <!-- Rules List with Smooth Wheel Scrolling & Native 100% Aligned Column Headers -->
+                    <!-- Rules List with Full Virtualization & Native 100% Aligned Column Headers -->
                     <Grid Grid.Row="2">
-                        <ScrollViewer x:Name="RulesScrollViewer" Margin="0,0,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ScrollChanged="RulesScrollViewer_ScrollChanged">
-                            <StackPanel>
-                                <!-- Allowed Section -->
-                                <Border Background="Transparent" BorderThickness="0" Margin="0,0,0,10">
-                                    <Expander x:Name="AllowedExpander" Style="{StaticResource ModernExpander}" Header="Permitidas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                        <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" PreviewKeyDown="DataGrid_PreviewKeyDown" SelectionChanged="RulesGrid_SelectionChanged">
+                        <Grid.RowDefinitions>
+                            <RowDefinition x:Name="AllowedRowDef" Height="*"/>
+                            <RowDefinition x:Name="BlockedRowDef" Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Allowed Section -->
+                        <Border Grid.Row="0" Background="Transparent" BorderThickness="0" Margin="0,0,0,4">
+                            <Expander x:Name="AllowedExpander" Style="{StaticResource ModernExpander}" Header="Permitidas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Expanded="Expander_StateChanged" Collapsed="Expander_StateChanged">
+                                <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True"
+                                          EnableRowVirtualization="True" EnableColumnVirtualization="False"
+                                          VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                                          VirtualizingPanel.ScrollUnit="Pixel" ScrollViewer.CanContentScroll="True"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                          PreviewMouseWheel="DataGrid_PreviewMouseWheel" PreviewKeyDown="DataGrid_PreviewKeyDown" SelectionChanged="RulesGrid_SelectionChanged">
                                             <DataGrid.Columns>
                                                 <!-- Switch Column -->
                                                 <DataGridTemplateColumn x:Name="AllowColState" Header="Estado" Width="56" CanUserSort="False" HeaderStyle="{StaticResource StateColumnHeader}">
@@ -1396,35 +1404,13 @@
                                                                     <Setter TargetName="IdleDot" Property="Visibility" Value="Collapsed"/>
                                                                     <Setter TargetName="ActiveLed" Property="Visibility" Value="Visible"/>
                                                                     <Setter TargetName="BlockedLed" Property="Visibility" Value="Collapsed"/>
-                                                                    <DataTrigger.EnterActions>
-                                                                        <BeginStoryboard x:Name="GreenPulseAllow">
-                                                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                                                <DoubleAnimation Storyboard.TargetName="ActiveHalo" Storyboard.TargetProperty="Opacity" From="0.14" To="0.30" Duration="0:0:1.6"/>
-                                                                                <DoubleAnimation Storyboard.TargetName="ActiveHalo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="0.94" To="1.06" Duration="0:0:1.6"/>
-                                                                                <DoubleAnimation Storyboard.TargetName="ActiveHalo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.94" To="1.06" Duration="0:0:1.6"/>
-                                                                            </Storyboard>
-                                                                        </BeginStoryboard>
-                                                                    </DataTrigger.EnterActions>
-                                                                    <DataTrigger.ExitActions>
-                                                                        <StopStoryboard BeginStoryboardName="GreenPulseAllow"/>
-                                                                    </DataTrigger.ExitActions>
+                                                                    <Setter TargetName="ActiveHalo" Property="Opacity" Value="0.25"/>
                                                                 </DataTrigger>
                                                                 <DataTrigger Binding="{Binding IsBlockedAttempts}" Value="True">
                                                                     <Setter TargetName="IdleDot" Property="Visibility" Value="Collapsed"/>
                                                                     <Setter TargetName="ActiveLed" Property="Visibility" Value="Collapsed"/>
                                                                     <Setter TargetName="BlockedLed" Property="Visibility" Value="Visible"/>
-                                                                    <DataTrigger.EnterActions>
-                                                                        <BeginStoryboard x:Name="OrangePulseAllow">
-                                                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                                                <DoubleAnimation Storyboard.TargetName="BlockedHalo" Storyboard.TargetProperty="Opacity" From="0.15" To="0.32" Duration="0:0:1.3"/>
-                                                                                <DoubleAnimation Storyboard.TargetName="BlockedHalo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="0.94" To="1.06" Duration="0:0:1.3"/>
-                                                                                <DoubleAnimation Storyboard.TargetName="BlockedHalo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.94" To="1.06" Duration="0:0:1.3"/>
-                                                                            </Storyboard>
-                                                                        </BeginStoryboard>
-                                                                    </DataTrigger.EnterActions>
-                                                                    <DataTrigger.ExitActions>
-                                                                        <StopStoryboard BeginStoryboardName="OrangePulseAllow"/>
-                                                                    </DataTrigger.ExitActions>
+                                                                    <Setter TargetName="BlockedHalo" Property="Opacity" Value="0.25"/>
                                                                 </DataTrigger>
                                                             </DataTemplate.Triggers>
                                                         </DataTemplate>
@@ -1562,10 +1548,15 @@
                                 </Expander>
                             </Border>
 
-                            <!-- Blocked Section -->
-                            <Border Background="Transparent" BorderThickness="0">
-                                <Expander x:Name="BlockedExpander" Style="{StaticResource ModernExpander}" Header="Bloqueadas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                    <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="DataGrid_PreviewMouseWheel" PreviewKeyDown="DataGrid_PreviewKeyDown" SelectionChanged="RulesGrid_SelectionChanged">
+                        <!-- Blocked Section -->
+                        <Border Grid.Row="1" Background="Transparent" BorderThickness="0" Margin="0,4,0,0">
+                            <Expander x:Name="BlockedExpander" Style="{StaticResource ModernExpander}" Header="Bloqueadas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Expanded="Expander_StateChanged" Collapsed="Expander_StateChanged">
+                                <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True"
+                                          EnableRowVirtualization="True" EnableColumnVirtualization="False"
+                                          VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                                          VirtualizingPanel.ScrollUnit="Pixel" ScrollViewer.CanContentScroll="True"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                          PreviewMouseWheel="DataGrid_PreviewMouseWheel" PreviewKeyDown="DataGrid_PreviewKeyDown" SelectionChanged="RulesGrid_SelectionChanged">
                                         <DataGrid.Columns>
                                             <!-- Switch Column -->
                                             <DataGridTemplateColumn x:Name="BlockColState" Header="Estado" Width="56" CanUserSort="False" HeaderStyle="{StaticResource StateColumnHeader}">
@@ -1639,35 +1630,13 @@
                                                                     <Setter TargetName="IdleDot" Property="Visibility" Value="Collapsed"/>
                                                                     <Setter TargetName="ActiveLed" Property="Visibility" Value="Visible"/>
                                                                     <Setter TargetName="BlockedLed" Property="Visibility" Value="Collapsed"/>
-                                                                    <DataTrigger.EnterActions>
-                                                                        <BeginStoryboard x:Name="GreenPulseBlock">
-                                                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                                                <DoubleAnimation Storyboard.TargetName="ActiveHalo" Storyboard.TargetProperty="Opacity" From="0.14" To="0.30" Duration="0:0:1.6"/>
-                                                                                <DoubleAnimation Storyboard.TargetName="ActiveHalo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="0.94" To="1.06" Duration="0:0:1.6"/>
-                                                                                <DoubleAnimation Storyboard.TargetName="ActiveHalo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.94" To="1.06" Duration="0:0:1.6"/>
-                                                                            </Storyboard>
-                                                                        </BeginStoryboard>
-                                                                    </DataTrigger.EnterActions>
-                                                                    <DataTrigger.ExitActions>
-                                                                        <StopStoryboard BeginStoryboardName="GreenPulseBlock"/>
-                                                                    </DataTrigger.ExitActions>
+                                                                    <Setter TargetName="ActiveHalo" Property="Opacity" Value="0.25"/>
                                                                 </DataTrigger>
                                                                 <DataTrigger Binding="{Binding IsBlockedAttempts}" Value="True">
                                                                     <Setter TargetName="IdleDot" Property="Visibility" Value="Collapsed"/>
                                                                     <Setter TargetName="ActiveLed" Property="Visibility" Value="Collapsed"/>
                                                                     <Setter TargetName="BlockedLed" Property="Visibility" Value="Visible"/>
-                                                                    <DataTrigger.EnterActions>
-                                                                        <BeginStoryboard x:Name="OrangePulseBlock">
-                                                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                                                <DoubleAnimation Storyboard.TargetName="BlockedHalo" Storyboard.TargetProperty="Opacity" From="0.15" To="0.32" Duration="0:0:1.3"/>
-                                                                                <DoubleAnimation Storyboard.TargetName="BlockedHalo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="0.94" To="1.06" Duration="0:0:1.3"/>
-                                                                                <DoubleAnimation Storyboard.TargetName="BlockedHalo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.94" To="1.06" Duration="0:0:1.3"/>
-                                                                            </Storyboard>
-                                                                        </BeginStoryboard>
-                                                                    </DataTrigger.EnterActions>
-                                                                    <DataTrigger.ExitActions>
-                                                                        <StopStoryboard BeginStoryboardName="OrangePulseBlock"/>
-                                                                    </DataTrigger.ExitActions>
+                                                                    <Setter TargetName="BlockedHalo" Property="Opacity" Value="0.25"/>
                                                                 </DataTrigger>
                                                             </DataTemplate.Triggers>
                                                         </DataTemplate>
@@ -1805,8 +1774,6 @@
                                     </DataGrid>
                                 </Expander>
                             </Border>
-                        </StackPanel>
-                    </ScrollViewer>
 
                     <!-- Clean Minimalist Initial Loader (visible while rules are loaded in background) -->
                     <Border x:Name="RulesLoadingOverlay" Background="Transparent" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,60,0,60" IsHitTestVisible="False">
