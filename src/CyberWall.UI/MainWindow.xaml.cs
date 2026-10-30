@@ -147,15 +147,6 @@ public partial class MainWindow : Window
         _svc.OnUnknownBlocked += OnUnknownBlocked;
         _svc.OnBlockedActivity += OnBlockedActivity;
         _notifications.Changed += () => Dispatcher.BeginInvoke(UpdateNotifBadge);
-        if (App.Settings.FirewallEnabled)
-        {
-            if (!_svc.Enable(App.Settings.FirewallMode) && _svc.OwnedByAnotherHost)
-            {
-                // The Windows service still owns the engine. It steps aside as soon as it
-                // detects this window, so the takeover is retried for a while.
-                StartOwnershipRetry();
-            }
-        }
         RefreshRules();
         RefreshLanguage();
         UpdateStatus();
@@ -164,7 +155,25 @@ public partial class MainWindow : Window
         Closing += (_, _) => WindowLayoutPersistence.Save(this, App.Settings);
         _tray = new TrayService(this, _svc);
         GeoCountry.Updated += OnGeoUpdated;
-        GeoCountry.Warm();
+
+        Loaded += (_, _) =>
+        {
+            Task.Run(() =>
+            {
+                if (App.Settings.FirewallEnabled)
+                {
+                    if (!_svc.Enable(App.Settings.FirewallMode) && _svc.OwnedByAnotherHost)
+                    {
+                        Dispatcher.BeginInvoke(StartOwnershipRetry);
+                    }
+                    else
+                    {
+                        Dispatcher.BeginInvoke(UpdateStatus);
+                    }
+                }
+                GeoCountry.Warm();
+            });
+        };
         ProcessTrafficTracker.Instance.ActivityUpdated += OnActivityUpdated;
         ProcessTrafficTracker.Instance.Start();
         ConnectivityService.Instance.Start(_notifications);
