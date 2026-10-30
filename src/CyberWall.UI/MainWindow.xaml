@@ -5,7 +5,7 @@
         xmlns:ctrl="clr-namespace:CyberWall.UI.Controls"
         xmlns:views="clr-namespace:CyberWall.UI.Views"
         Title="CyberWall" Height="720" Width="1160" MinHeight="600" MinWidth="940"
-        WindowStartupLocation="Manual" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        WindowStartupLocation="Manual" WindowStyle="None" AllowsTransparency="False" Background="{DynamicResource BgBrush}"
         ResizeMode="CanResize" PreviewKeyDown="Window_PreviewKeyDown"
         TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType" TextOptions.TextHintingMode="Fixed"
         UseLayoutRounding="True" SnapsToDevicePixels="True"
@@ -852,9 +852,8 @@
         </Style>
     </Window.Resources>
 
-    <!-- Custom Window Frame Container with Smooth Anti-Aliasing Buffer Margin -->
-    <Border Margin="5" CornerRadius="12">
-        <Border x:Name="OuterBorder" CornerRadius="12" ClipToBounds="True" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" Background="{DynamicResource BgBrush}" SnapsToDevicePixels="True">
+    <!-- Custom Window Frame Container -->
+    <Border x:Name="OuterBorder" CornerRadius="12" ClipToBounds="True" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" Background="{DynamicResource BgBrush}" SnapsToDevicePixels="True">
             <Grid Margin="20,14,20,16">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -1851,6 +1850,5 @@
             </DockPanel>
         </Border>
     </Grid>
-</Border>
 </Border>
 </Window>
