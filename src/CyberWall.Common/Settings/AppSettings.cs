@@ -52,6 +52,8 @@ public sealed class AppSettings
     public bool ToastInternetEventsEnabled { get; set; } = true;
     public bool ToastProtectionEventsEnabled { get; set; } = true;
     public bool ToastAutoBlockEnabled { get; set; } = true;
+    public bool AllowedRulesExpanded { get; set; } = true;
+    public bool BlockedRulesExpanded { get; set; } = true;
     public bool MainWindowBoundsSaved { get; set; } = false;
     public string MainWindowMonitor { get; set; } = "";
 

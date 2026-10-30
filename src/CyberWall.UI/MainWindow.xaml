@@ -1324,7 +1324,7 @@
                         </Grid.RowDefinitions>
 
                         <!-- Allowed Section -->
-                        <Border Grid.Row="0" Background="Transparent" BorderThickness="0" Margin="0,0,0,4">
+                        <Border x:Name="AllowedSectionBorder" Grid.Row="0" Background="Transparent" BorderThickness="0" Margin="0,0,0,4" Visibility="Collapsed">
                             <Expander x:Name="AllowedExpander" Style="{StaticResource ModernExpander}" Header="Permitidas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Expanded="Expander_StateChanged" Collapsed="Expander_StateChanged">
                                 <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True"
                                           EnableRowVirtualization="True" EnableColumnVirtualization="False"
@@ -1550,7 +1550,7 @@
                             </Border>
 
                         <!-- Blocked Section -->
-                        <Border Grid.Row="1" Background="Transparent" BorderThickness="0" Margin="0,4,0,0">
+                        <Border x:Name="BlockedSectionBorder" Grid.Row="1" Background="Transparent" BorderThickness="0" Margin="0,4,0,0" Visibility="Collapsed">
                             <Expander x:Name="BlockedExpander" Style="{StaticResource ModernExpander}" Header="Bloqueadas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Expanded="Expander_StateChanged" Collapsed="Expander_StateChanged">
                                 <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True"
                                           EnableRowVirtualization="True" EnableColumnVirtualization="False"
@@ -1777,19 +1777,16 @@
                             </Border>
 
                     <!-- Clean Minimalist Initial Loader (visible while rules are loaded in background) -->
-                    <Border x:Name="RulesLoadingOverlay" Background="Transparent" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,60,0,60" IsHitTestVisible="False">
+                    <Border x:Name="RulesLoadingOverlay" Grid.Row="0" Grid.RowSpan="2" Background="Transparent" Visibility="Visible" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Border Width="56" Height="56" CornerRadius="28" Background="#0A1628" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1.5" HorizontalAlignment="Center" Margin="0,0,0,14">
+                            <Border Width="88" Height="88" CornerRadius="44" Background="#0A1628" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1.5" HorizontalAlignment="Center" Margin="0,0,0,16">
                                 <Border.Effect>
-                                    <DropShadowEffect Color="#00F2FE" Opacity="0.35" BlurRadius="18" ShadowDepth="0"/>
+                                    <DropShadowEffect Color="#00F2FE" Opacity="0.45" BlurRadius="26" ShadowDepth="0"/>
                                 </Border.Effect>
-                                <Path Data="M 12 2 L 4 5 L 4 11 C 4 16.5 7.4 21.6 12 23 C 16.6 21.6 20 16.5 20 11 L 20 5 Z"
-                                      Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.8" Fill="Transparent"
-                                      Width="24" Height="26" Stretch="Uniform"
-                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Image Source="pack://application:,,,/Assets/CyberWall.png" Width="52" Height="52" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock x:Name="RulesLoadingTitle" Text="Cargando reglas..." FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center"/>
-                            <TextBlock x:Name="RulesLoadingSub" Text="Preparando aplicaciones y telemetría" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,4,0,0" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="RulesLoadingTitle" Text="Cargando reglas..." FontWeight="SemiBold" FontSize="15" Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="RulesLoadingSub" Text="Preparando aplicaciones y telemetría" FontSize="12" Foreground="{DynamicResource SubTextBrush}" Margin="0,5,0,0" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Border>
                     </Grid>

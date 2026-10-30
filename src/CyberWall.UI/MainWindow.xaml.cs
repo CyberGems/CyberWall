@@ -147,6 +147,9 @@ public partial class MainWindow : Window
         _svc.OnUnknownBlocked += OnUnknownBlocked;
         _svc.OnBlockedActivity += OnBlockedActivity;
         _notifications.Changed += () => Dispatcher.BeginInvoke(UpdateNotifBadge);
+        AllowedExpander.IsExpanded = App.Settings.AllowedRulesExpanded;
+        BlockedExpander.IsExpanded = App.Settings.BlockedRulesExpanded;
+        UpdateExpanderRowHeights();
         RefreshRules();
         RefreshLanguage();
         UpdateStatus();
@@ -782,9 +785,11 @@ public partial class MainWindow : Window
         int gen = Interlocked.Increment(ref _refreshGeneration);
 
         bool isInitialLoad = (BlockedGrid.ItemsSource == null && AllowedGrid.ItemsSource == null);
-        if (isInitialLoad && RulesLoadingOverlay != null)
+        if (isInitialLoad)
         {
-            RulesLoadingOverlay.Visibility = Visibility.Visible;
+            if (RulesLoadingOverlay != null) RulesLoadingOverlay.Visibility = Visibility.Visible;
+            if (AllowedSectionBorder != null) AllowedSectionBorder.Visibility = Visibility.Collapsed;
+            if (BlockedSectionBorder != null) BlockedSectionBorder.Visibility = Visibility.Collapsed;
         }
 
         if (RulesLoadingBar != null)
@@ -885,6 +890,9 @@ public partial class MainWindow : Window
             {
                 if (RulesLoadingBar != null) RulesLoadingBar.Visibility = Visibility.Collapsed;
                 if (RulesLoadingOverlay != null) RulesLoadingOverlay.Visibility = Visibility.Collapsed;
+                if (AllowedSectionBorder != null) AllowedSectionBorder.Visibility = Visibility.Visible;
+                if (BlockedSectionBorder != null) BlockedSectionBorder.Visibility = Visibility.Visible;
+                UpdateExpanderRowHeights();
             }
         }
     }
@@ -1662,6 +1670,13 @@ public partial class MainWindow : Window
     private void Expander_StateChanged(object sender, RoutedEventArgs e)
     {
         UpdateExpanderRowHeights();
+        if (_loading) return;
+        if (AllowedExpander != null && BlockedExpander != null)
+        {
+            App.Settings.AllowedRulesExpanded = AllowedExpander.IsExpanded;
+            App.Settings.BlockedRulesExpanded = BlockedExpander.IsExpanded;
+            App.Settings.Save();
+        }
     }
 
     private void UpdateExpanderRowHeights()
