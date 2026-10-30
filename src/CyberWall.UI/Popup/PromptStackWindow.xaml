@@ -141,7 +141,13 @@
             <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="ToolTipService.Placement" Value="Bottom"/>
+            <Setter Property="ToolTipService.VerticalOffset" Value="5"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -222,7 +228,8 @@
                         <Rectangle Width="1" Height="14" Fill="{DynamicResource BorderBrush}" Opacity="0.6" Margin="2,0,6,0" VerticalAlignment="Center"/>
 
                         <!-- Auto-block Countdown indicator -->
-                        <Border x:Name="CountdownBadge" CornerRadius="6" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Height="24" Padding="7,0" Margin="0,0,4,0" VerticalAlignment="Center">
+                        <Border x:Name="CountdownBadge" CornerRadius="6" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Height="24" Padding="7,0" Margin="0,0,4,0" VerticalAlignment="Center"
+                                ToolTipService.Placement="Bottom" ToolTipService.VerticalOffset="5" ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="150" ToolTipService.ShowDuration="4000">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <Path Data="M 12 2 A 10 10 0 1 0 12 22 A 10 10 0 1 0 12 2 Z M 12 6 V 12 L 16 14"
                                       Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.8"

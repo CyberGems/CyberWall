@@ -58,6 +58,7 @@
             <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, -apple-system, BlinkMacSystemFont, Roboto, sans-serif"/>
             <Setter Property="Padding" Value="8,5"/>
             <Setter Property="HasDropShadow" Value="False"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
             <Setter Property="OverridesDefaultStyle" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>

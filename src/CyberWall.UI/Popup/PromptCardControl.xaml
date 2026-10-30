@@ -189,8 +189,8 @@
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="ToolTipService.Placement" Value="Bottom"/>
             <Setter Property="ToolTipService.VerticalOffset" Value="5"/>
-            <Setter Property="ToolTipService.InitialShowDelay" Value="350"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
             <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -232,8 +232,8 @@
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="ToolTipService.Placement" Value="Bottom"/>
             <Setter Property="ToolTipService.VerticalOffset" Value="5"/>
-            <Setter Property="ToolTipService.InitialShowDelay" Value="350"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
             <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
             <Setter Property="Template">
                 <Setter.Value>

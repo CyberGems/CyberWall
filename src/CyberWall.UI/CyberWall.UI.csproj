@@ -20,6 +20,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <RuntimeHostConfigurationOption Include="Switch.System.Windows.Controls.ToolTip.OptOutOfWCAG21ToolTipBehavior" Value="true" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="CyberWall.ico" />
     <Resource Include="Assets\CyberWall.ico" />
     <Resource Include="Assets\CyberWall.png" />

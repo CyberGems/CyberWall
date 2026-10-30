@@ -11,6 +11,11 @@ namespace CyberWall.UI;
 
 public partial class App : System.Windows.Application
 {
+    static App()
+    {
+        AppContext.SetSwitch("Switch.System.Windows.Controls.ToolTip.OptOutOfWCAG21ToolTipBehavior", true);
+    }
+
     public static AppSettings Settings { get; private set; } = null!;
 
     private static Mutex? _singleInstanceMutex;

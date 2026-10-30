@@ -225,7 +225,7 @@
             <Setter Property="Padding" Value="14,0"/>
             <Setter Property="Margin" Value="2,0"/>
             <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
             <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
             <Setter Property="ToolTipService.Placement" Value="Bottom"/>
             <Setter Property="ToolTipService.VerticalOffset" Value="4"/>
@@ -269,7 +269,7 @@
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="IsTabStop" Value="False"/>
             <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
             <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
             <Setter Property="ToolTipService.Placement" Value="Bottom"/>
             <Setter Property="ToolTipService.VerticalOffset" Value="4"/>
@@ -302,7 +302,7 @@
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="IsTabStop" Value="False"/>
             <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
             <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
             <Setter Property="ToolTipService.Placement" Value="Bottom"/>
             <Setter Property="ToolTipService.VerticalOffset" Value="4"/>
@@ -336,7 +336,7 @@
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="IsTabStop" Value="False"/>
             <Setter Property="ToolTipService.InitialShowDelay" Value="250"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
             <Setter Property="ToolTipService.ShowDuration" Value="3000"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -368,7 +368,7 @@
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="IsTabStop" Value="False"/>
             <Setter Property="ToolTipService.InitialShowDelay" Value="250"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
             <Setter Property="ToolTipService.ShowDuration" Value="3000"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -477,7 +477,7 @@
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
             <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
             <Setter Property="ToolTipService.Placement" Value="Bottom"/>
             <Setter Property="ToolTipService.VerticalOffset" Value="4"/>
@@ -509,7 +509,7 @@
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
             <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
             <Setter Property="ToolTipService.Placement" Value="Bottom"/>
             <Setter Property="ToolTipService.VerticalOffset" Value="4"/>
@@ -1340,7 +1340,7 @@
                                                         <DataTemplate>
                                                             <Grid Margin="8,0,4,0" VerticalAlignment="Center" Background="Transparent"
                                                                   ToolTip="{Binding ActivityTooltip}"
-                                                                  ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="0" ToolTipService.ShowDuration="6000">
+                                                                  ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="150" ToolTipService.ShowDuration="6000">
                                                                 <Grid.ColumnDefinitions>
                                                                     <ColumnDefinition Width="18"/>
                                                                     <ColumnDefinition Width="*"/>
@@ -1449,7 +1449,7 @@
                                                                 <Image Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="20" Height="20" Margin="0,0,8,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
                                                                 <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
                                                                            ToolTip="{Binding DisplayName}"
-                                                                           ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="0" ToolTipService.ShowDuration="6000"/>
+                                                                           ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="150" ToolTipService.ShowDuration="6000"/>
                                                                 <Button x:Name="QuickEditBtn" Grid.Column="2" Style="{StaticResource RowQuickButton}" ToolTip="{Binding Converter={StaticResource T}, ConverterParameter=EditRule}" Tag="{Binding}" Click="QuickEdit_Click" Margin="3,0,0,0">
                                                                     <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.2" Fill="Transparent" Stretch="Uniform" Width="10" Height="10" Data="M 12 4 L 14 6 L 6 14 L 4 14 L 4 12 L 12 4 Z M 13 3 L 15 5 L 14.5 5.5 L 12.5 3.5 Z"/>
                                                                 </Button>
@@ -1510,7 +1510,7 @@
                                                              <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
                                                              <Setter Property="ToolTip" Value="{Binding AppPath}"/>
                                                              <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
-                                                             <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+                                                             <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
                                                              <Setter Property="ToolTipService.ShowDuration" Value="6000"/>
                                                          </Style>
                                                      </DataGridTextColumn.ElementStyle>
@@ -1583,7 +1583,7 @@
                                                         <DataTemplate>
                                                             <Grid Margin="8,0,4,0" VerticalAlignment="Center" Background="Transparent"
                                                                   ToolTip="{Binding ActivityTooltip}"
-                                                                  ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="0" ToolTipService.ShowDuration="6000">
+                                                                  ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="150" ToolTipService.ShowDuration="6000">
                                                                 <Grid.ColumnDefinitions>
                                                                     <ColumnDefinition Width="18"/>
                                                                     <ColumnDefinition Width="*"/>
@@ -1693,7 +1693,7 @@
                                                             <Image Source="{Binding AppPath, Converter={StaticResource PathToIconConverter}}" Width="20" Height="20" Margin="0,0,8,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
                                                             <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
                                                                        ToolTip="{Binding DisplayName}"
-                                                                       ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="0" ToolTipService.ShowDuration="6000"/>
+                                                                       ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="150" ToolTipService.ShowDuration="6000"/>
                                                             <Button x:Name="QuickEditBtn" Grid.Column="2" Style="{StaticResource RowQuickButton}" ToolTip="{Binding Converter={StaticResource T}, ConverterParameter=EditRule}" Tag="{Binding}" Click="QuickEdit_Click" Margin="3,0,0,0">
                                                                 <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.2" Fill="Transparent" Stretch="Uniform" Width="10" Height="10" Data="M 12 4 L 14 6 L 6 14 L 4 14 L 4 12 L 12 4 Z M 13 3 L 15 5 L 14.5 5.5 L 12.5 3.5 Z"/>
                                                             </Button>
@@ -1754,7 +1754,7 @@
                                                         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
                                                         <Setter Property="ToolTip" Value="{Binding AppPath}"/>
                                                         <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
-                                                        <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+                                                        <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
                                                         <Setter Property="ToolTipService.ShowDuration" Value="6000"/>
                                                     </Style>
                                                 </DataGridTextColumn.ElementStyle>
