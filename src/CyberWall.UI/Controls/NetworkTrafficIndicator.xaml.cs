@@ -26,6 +26,9 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
     private double _smoothedRatio = 0.0;
     private double _wavePhase = 0.0;
     private const int WaveSegments = 48;
+    private readonly WPoint[] _wavePoints = new WPoint[WaveSegments + 1];
+    private bool _isRenderingHooked;
+    private bool _wasFlat;
 
     private enum ConnectivityState
     {
@@ -40,9 +43,7 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         RefreshLanguage();
         Loaded += (_, _) =>
         {
-            _stopwatch.Restart();
-            _lastRenderingTime = _stopwatch.Elapsed;
-            CompositionTarget.Rendering += OnRendering;
+            UpdateRenderingState();
 
             ConnectivityService.Instance.ConnectivityChanged += OnConnectivityChanged;
             SetConnectivity(ConnectivityService.Instance.IsOnline ? ConnectivityState.Online : ConnectivityState.Offline);
@@ -53,14 +54,47 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         };
         Unloaded += (_, _) =>
         {
-            CompositionTarget.Rendering -= OnRendering;
-            _stopwatch.Stop();
+            UnhookRendering();
 
             ConnectivityService.Instance.ConnectivityChanged -= OnConnectivityChanged;
 
             NetworkSpeedService.Instance.SpeedUpdated -= OnSpeedUpdated;
             NetworkSpeedService.Instance.Stop();
         };
+        IsVisibleChanged += (_, _) => UpdateRenderingState();
+    }
+
+    private void UpdateRenderingState()
+    {
+        bool shouldRender = IsLoaded && IsVisible;
+        if (shouldRender)
+        {
+            var win = Window.GetWindow(this);
+            if (win != null && win.WindowState == WindowState.Minimized)
+                shouldRender = false;
+        }
+
+        if (shouldRender && !_isRenderingHooked)
+        {
+            _stopwatch.Restart();
+            _lastRenderingTime = _stopwatch.Elapsed;
+            CompositionTarget.Rendering += OnRendering;
+            _isRenderingHooked = true;
+        }
+        else if (!shouldRender && _isRenderingHooked)
+        {
+            UnhookRendering();
+        }
+    }
+
+    private void UnhookRendering()
+    {
+        if (_isRenderingHooked)
+        {
+            CompositionTarget.Rendering -= OnRendering;
+            _stopwatch.Stop();
+            _isRenderingHooked = false;
+        }
     }
 
     private void OnConnectivityChanged(bool online)
@@ -137,10 +171,21 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
 
     private void OnRendering(object? sender, EventArgs e)
     {
+        if (!IsVisible)
+        {
+            UnhookRendering();
+            return;
+        }
+
+        var window = Window.GetWindow(this);
+        if (window != null && window.WindowState == WindowState.Minimized)
+            return;
+
         var current = _stopwatch.Elapsed;
         var elapsed = (current - _lastRenderingTime).TotalSeconds;
-        _lastRenderingTime = current;
         if (elapsed <= 0.0) return;
+        if (elapsed < 0.016) return; // Cap at ~60 fps on high refresh-rate monitors
+        _lastRenderingTime = current;
         if (elapsed > 0.1) elapsed = 0.033;
 
         var animMode = App.Settings?.TrafficAnimation ?? Common.Settings.TrafficAnimationMode.FluidStream;
@@ -198,20 +243,21 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         double phaseSpeed = (2.5 + _smoothedRatio * 6.0) * flowFactor;
         _wavePhase += elapsed * phaseSpeed;
 
-        // Generate wave points
-        var points = new WPoint[WaveSegments + 1];
         double stepX = width / WaveSegments;
 
         if (flowFactor <= 0.0)
         {
+            if (_wasFlat) return;
+            _wasFlat = true;
             // Flat baseline when offline or killswitch
             for (int i = 0; i <= WaveSegments; i++)
             {
-                points[i] = new WPoint(i * stepX, height - 2);
+                _wavePoints[i] = new WPoint(i * stepX, height - 2);
             }
         }
         else
         {
+            _wasFlat = false;
             // Alive wave: subtle idle breathing (1.5 - 2.5px) + dynamic throughput activity
             double idleBreathing = (1.5 + Math.Sin(nowSeconds * 2.2) * 0.6);
             double activeAmp = _smoothedRatio * (height - 5);
@@ -226,7 +272,7 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
                 double wave = Math.Sin(spatial - _wavePhase) * 0.68 + Math.Sin(spatial * 2.2 - _wavePhase * 1.5) * 0.32;
                 // Invert Y coordinate so peaks rise from bottom baseline
                 double y = (height - 2) - Math.Clamp(totalAmp * (0.5 + wave * 0.5), 1.0, height - 2);
-                points[i] = new WPoint(x, y);
+                _wavePoints[i] = new WPoint(x, y);
             }
         }
 
@@ -234,10 +280,10 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         var lineGeom = new StreamGeometry();
         using (var ctx = lineGeom.Open())
         {
-            ctx.BeginFigure(points[0], false, false);
+            ctx.BeginFigure(_wavePoints[0], false, false);
             for (int i = 1; i <= WaveSegments; i++)
             {
-                ctx.LineTo(points[i], true, true);
+                ctx.LineTo(_wavePoints[i], true, true);
             }
         }
         lineGeom.Freeze();
@@ -248,10 +294,10 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         using (var ctx = areaGeom.Open())
         {
             ctx.BeginFigure(new WPoint(0, height), true, true);
-            ctx.LineTo(points[0], true, false);
+            ctx.LineTo(_wavePoints[0], true, false);
             for (int i = 1; i <= WaveSegments; i++)
             {
-                ctx.LineTo(points[i], true, true);
+                ctx.LineTo(_wavePoints[i], true, true);
             }
             ctx.LineTo(new WPoint(width, height), true, false);
         }
