@@ -140,6 +140,11 @@ public partial class PromptStackWindow : Window
     private void UpdateStackHeader()
     {
         var count = _cards.Count;
+        for (int i = 0; i < count; i++)
+        {
+            _cards[i].Margin = i < count - 1 ? new Thickness(0, 0, 0, 8) : new Thickness(0);
+        }
+
         if (count > 1)
         {
             CountBadge.Visibility = Visibility.Visible;
@@ -155,26 +160,29 @@ public partial class PromptStackWindow : Window
 
     public void RecalculateLayoutAndPosition()
     {
-        UpdateLayout();
-
-        // Calculate card stack height dynamically
-        double headerH = 48;
-        double margins = 24;
-        double cardH = 265; // realistic full card height
-
-        if (_cards.Count <= 1)
+        if (_cards.Count <= MaxVisibleCards)
         {
-            // For a single card, provide generous space so action buttons never get clipped
-            Height = 342;
-            CardsScrollViewer.MaxHeight = 268;
+            CardsScrollViewer.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Disabled;
+            CardsScrollViewer.MaxHeight = double.PositiveInfinity;
+            CardsScrollViewer.Padding = new Thickness(0);
         }
         else
         {
-            int visibleCount = Math.Min(_cards.Count, MaxVisibleCards);
-            double targetHeight = headerH + margins + (visibleCount * cardH);
-            Height = Math.Min(targetHeight, 595);
-            CardsScrollViewer.MaxHeight = Height - headerH - margins + 8;
+            CardsScrollViewer.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto;
+            CardsScrollViewer.Padding = new Thickness(0, 0, 4, 0);
+
+            double availW = CardsScrollViewer.ActualWidth > 10 ? CardsScrollViewer.ActualWidth - 18 : 480;
+            double visibleHeight = 0;
+            for (int i = 0; i < MaxVisibleCards && i < _cards.Count; i++)
+            {
+                _cards[i].Measure(new System.Windows.Size(availW, double.PositiveInfinity));
+                visibleHeight += _cards[i].DesiredSize.Height;
+            }
+            CardsScrollViewer.MaxHeight = visibleHeight > 100 ? visibleHeight : 450;
         }
+
+        SizeToContent = SizeToContent.Height;
+        UpdateLayout();
 
         var pos = App.Settings.NotificationPosition;
         var mon = App.Settings.NotificationMonitor;

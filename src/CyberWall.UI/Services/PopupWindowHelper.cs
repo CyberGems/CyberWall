@@ -97,29 +97,30 @@ public static class PopupWindowHelper
             wa = SystemParameters.WorkArea;
         }
 
-        int stackIndex;
-        if (explicitStackIndex.HasValue)
-        {
-            stackIndex = explicitStackIndex.Value;
-        }
-        else
-        {
-            var existing = System.Windows.Application.Current.Windows
-                .OfType<Window>()
-                .Where(w => w != window && w.IsVisible && (
-                    w is PromptStackWindow psw && !psw.IsPreview ||
-                    w is FirstActivityToast ||
-                    (window is AutoBlockToast && w is AutoBlockToast)))
-                .ToList();
-            stackIndex = existing.Count;
-        }
-
         const double marginX = 20;
         const double marginY = 20;
         const double gap = 10;
 
         double width = window.ActualWidth > 1 ? window.ActualWidth : window.Width > 0 ? window.Width : 516;
         double height = window.ActualHeight > 1 ? window.ActualHeight : window.Height > 0 ? window.Height : 280;
+
+        double stackOffset;
+        if (explicitStackIndex.HasValue)
+        {
+            stackOffset = explicitStackIndex.Value * (height + gap);
+        }
+        else
+        {
+            var existing = System.Windows.Application.Current.Windows
+                .OfType<Window>()
+                .Where(w => w != window && w.IsVisible && (
+                    (w is PromptStackWindow psw && !psw.IsPreview) ||
+                    w is AppInfoToast ||
+                    w is FirstActivityToast ||
+                    w is AutoBlockToast))
+                .ToList();
+            stackOffset = existing.Sum(w => (w.ActualHeight > 1 ? w.ActualHeight : w.Height > 0 ? w.Height : 160) + gap);
+        }
 
         double left;
         double top;
@@ -128,43 +129,43 @@ public static class PopupWindowHelper
         {
             case PopupPosition.TopLeft:
                 left = wa.Left + marginX;
-                top = wa.Top + marginY + stackIndex * (height + gap);
+                top = wa.Top + marginY + stackOffset;
                 break;
 
             case PopupPosition.TopCenter:
                 left = wa.Left + (wa.Width - width) / 2;
-                top = wa.Top + marginY + stackIndex * (height + gap);
+                top = wa.Top + marginY + stackOffset;
                 break;
 
             case PopupPosition.TopRight:
                 left = wa.Right - width - marginX;
-                top = wa.Top + marginY + stackIndex * (height + gap);
+                top = wa.Top + marginY + stackOffset;
                 break;
 
             case PopupPosition.Left:
                 left = wa.Left + marginX;
-                top = wa.Top + (wa.Height - height) / 2 + stackIndex * (height + gap);
+                top = wa.Top + (wa.Height - height) / 2 + stackOffset;
                 break;
 
             case PopupPosition.Right:
                 left = wa.Right - width - marginX;
-                top = wa.Top + (wa.Height - height) / 2 + stackIndex * (height + gap);
+                top = wa.Top + (wa.Height - height) / 2 + stackOffset;
                 break;
 
             case PopupPosition.BottomLeft:
                 left = wa.Left + marginX;
-                top = wa.Bottom - height - marginY - stackIndex * (height + gap);
+                top = wa.Bottom - height - marginY - stackOffset;
                 break;
 
             case PopupPosition.BottomCenter:
                 left = wa.Left + (wa.Width - width) / 2;
-                top = wa.Bottom - height - marginY - stackIndex * (height + gap);
+                top = wa.Bottom - height - marginY - stackOffset;
                 break;
 
             case PopupPosition.BottomRight:
             default:
                 left = wa.Right - width - marginX;
-                top = wa.Bottom - height - marginY - stackIndex * (height + gap);
+                top = wa.Bottom - height - marginY - stackOffset;
                 break;
         }
 

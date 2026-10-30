@@ -6,43 +6,45 @@
              TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType" TextOptions.TextHintingMode="Fixed"
              UseLayoutRounding="True" SnapsToDevicePixels="True"
              FontFamily="Segoe UI Variable Text, Segoe UI, -apple-system, BlinkMacSystemFont, Roboto, sans-serif"
-             Margin="0,0,0,6">
+             Margin="0,0,0,8">
     <UserControl.Resources>
         <conv:PathToIconConverter x:Key="PathToIconConverter"/>
 
         <Style x:Key="PopupPrimaryButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource AccentFgBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="12,0"/>
-            <Setter Property="MinWidth" Value="96"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="MinWidth" Value="100"/>
             <Setter Property="Height" Value="32"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True" RenderTransformOrigin="0.5,0.5">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5" SnapsToDevicePixels="True">
+                            <Border x:Name="BgBd" Background="{TemplateBinding Background}" CornerRadius="8"/>
+                            <Border x:Name="StrokeBd" Background="Transparent" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" SnapsToDevicePixels="False" IsHitTestVisible="False"/>
+                            <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.92"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#FFFFFF"/>
+                                <Setter TargetName="BgBd" Property="Background" Value="#33EEFF"/>
+                                <Setter TargetName="StrokeBd" Property="BorderBrush" Value="#E6FFFFFF"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.8"/>
-                                <Setter TargetName="Bd" Property="RenderTransform">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.85"/>
+                                <Setter TargetName="Root" Property="RenderTransform">
                                     <Setter.Value>
-                                        <ScaleTransform ScaleX="0.96" ScaleY="0.96"/>
+                                        <ScaleTransform ScaleX="0.97" ScaleY="0.97"/>
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                <Setter TargetName="Root" Property="Opacity" Value="0.45"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -58,31 +60,33 @@
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Padding" Value="13,0"/>
             <Setter Property="MinWidth" Value="88"/>
             <Setter Property="Height" Value="32"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True" RenderTransformOrigin="0.5,0.5">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5" SnapsToDevicePixels="True">
+                            <Border x:Name="BgBd" Background="{TemplateBinding Background}" CornerRadius="8"/>
+                            <Border x:Name="StrokeBd" Background="Transparent" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" SnapsToDevicePixels="False" IsHitTestVisible="False"/>
+                            <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
+                                <Setter TargetName="BgBd" Property="Background" Value="#24EF4444"/>
+                                <Setter TargetName="StrokeBd" Property="BorderBrush" Value="{DynamicResource BadgeBlockFgBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardBrush}"/>
-                                <Setter TargetName="Bd" Property="RenderTransform">
+                                <Setter TargetName="BgBd" Property="Background" Value="#38EF4444"/>
+                                <Setter TargetName="Root" Property="RenderTransform">
                                     <Setter.Value>
-                                        <ScaleTransform ScaleX="0.96" ScaleY="0.96"/>
+                                        <ScaleTransform ScaleX="0.97" ScaleY="0.97"/>
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                <Setter TargetName="Root" Property="Opacity" Value="0.45"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -93,36 +97,38 @@
         <Style x:Key="PopupDangerButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource BadgeBlockFgBrush}"/>
             <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BadgeBlockFgBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Padding" Value="13,0"/>
             <Setter Property="MinWidth" Value="88"/>
             <Setter Property="Height" Value="32"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True" RenderTransformOrigin="0.5,0.5">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5" SnapsToDevicePixels="True">
+                            <Border x:Name="BgBd" Background="{TemplateBinding Background}" CornerRadius="8"/>
+                            <Border x:Name="StrokeBd" Background="Transparent" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" SnapsToDevicePixels="False" IsHitTestVisible="False"/>
+                            <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.92"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#FFFFFF"/>
+                                <Setter TargetName="BgBd" Property="Background" Value="#FF6680"/>
+                                <Setter TargetName="StrokeBd" Property="BorderBrush" Value="#E6FFFFFF"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.8"/>
-                                <Setter TargetName="Bd" Property="RenderTransform">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.85"/>
+                                <Setter TargetName="Root" Property="RenderTransform">
                                     <Setter.Value>
-                                        <ScaleTransform ScaleX="0.96" ScaleY="0.96"/>
+                                        <ScaleTransform ScaleX="0.97" ScaleY="0.97"/>
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                <Setter TargetName="Root" Property="Opacity" Value="0.45"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -138,31 +144,33 @@
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Padding" Value="13,0"/>
             <Setter Property="MinWidth" Value="110"/>
             <Setter Property="Height" Value="32"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True" RenderTransformOrigin="0.5,0.5">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5" SnapsToDevicePixels="True">
+                            <Border x:Name="BgBd" Background="{TemplateBinding Background}" CornerRadius="8"/>
+                            <Border x:Name="StrokeBd" Background="Transparent" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" SnapsToDevicePixels="False" IsHitTestVisible="False"/>
+                            <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
+                                <Setter TargetName="BgBd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                                <Setter TargetName="StrokeBd" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardBrush}"/>
-                                <Setter TargetName="Bd" Property="RenderTransform">
+                                <Setter TargetName="BgBd" Property="Background" Value="{DynamicResource CardBrush}"/>
+                                <Setter TargetName="Root" Property="RenderTransform">
                                     <Setter.Value>
-                                        <ScaleTransform ScaleX="0.96" ScaleY="0.96"/>
+                                        <ScaleTransform ScaleX="0.97" ScaleY="0.97"/>
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                <Setter TargetName="Root" Property="Opacity" Value="0.45"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -171,9 +179,9 @@
         </Style>
 
         <Style x:Key="PopupIconButton" TargetType="Button">
-            <Setter Property="Width" Value="24"/>
-            <Setter Property="Height" Value="24"/>
-            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -187,24 +195,59 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" SnapsToDevicePixels="True" RenderTransformOrigin="0.5,0.5">
+                        <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5" SnapsToDevicePixels="True">
+                            <Border x:Name="BgBd" Background="{TemplateBinding Background}" CornerRadius="6"/>
+                            <Border x:Name="StrokeBd" Background="Transparent" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" SnapsToDevicePixels="False" IsHitTestVisible="False"/>
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
+                                <Setter TargetName="BgBd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                                <Setter TargetName="StrokeBd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
-                                <Setter TargetName="Bd" Property="RenderTransform">
+                                <Setter TargetName="BgBd" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
+                                <Setter TargetName="Root" Property="RenderTransform">
                                     <Setter.Value>
                                         <ScaleTransform ScaleX="0.92" ScaleY="0.92"/>
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                <Setter TargetName="Root" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CardDismissButton" TargetType="Button">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="ToolTipService.Placement" Value="Bottom"/>
+            <Setter Property="ToolTipService.VerticalOffset" Value="5"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="350"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="6" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -230,24 +273,29 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Grid Width="46" Height="44" Margin="0,2,2,0">
-                    <Image Source="{Binding Event.AppPath, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource PathToIconConverter}}" Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="1,0,0,1" RenderOptions.BitmapScalingMode="HighQuality" RenderOptions.EdgeMode="Unspecified"/>
-                    <Path x:Name="ShieldPath" Data="M 12 2 L 2 6 L 2 13 C 2 19 6.5 24.5 12 26 C 17.5 24.5 22 19 22 13 L 22 6 Z" Width="14" Height="16" Stretch="Uniform" Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,2,0">
-                        <Path.Effect>
-                            <DropShadowEffect Color="Black" Opacity="0.6" BlurRadius="4" ShadowDepth="1"/>
-                        </Path.Effect>
-                    </Path>
-                </Grid>
+                <!-- App Icon Squircle (No duplicate generic shield) -->
+                <Border Width="44" Height="44" CornerRadius="10"
+                        Background="{DynamicResource CardSecondaryBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        VerticalAlignment="Center"
+                        Margin="0,0,12,0"
+                        SnapsToDevicePixels="True">
+                    <Image Source="{Binding Event.AppPath, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource PathToIconConverter}}"
+                           Width="28" Height="28" Stretch="Uniform"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           RenderOptions.BitmapScalingMode="HighQuality" RenderOptions.EdgeMode="Unspecified"/>
+                </Border>
 
-                <StackPanel Grid.Column="1" Margin="10,0,6,0" VerticalAlignment="Center">
+                <StackPanel Grid.Column="1" Margin="0,0,6,0" VerticalAlignment="Center">
                     <TextBlock x:Name="TitleLbl" FontSize="13.5" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis"/>
-                    <TextBlock x:Name="AppLbl" Foreground="{DynamicResource AccentBrush}" FontWeight="SemiBold" FontSize="11.5" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                        <Border x:Name="PublisherPill" CornerRadius="5" Padding="5,1.5" VerticalAlignment="Center" Margin="0,0,6,0">
-                            <TextBlock x:Name="PublisherLbl" FontSize="9.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="AppLbl" Foreground="{DynamicResource AccentBrush}" FontWeight="SemiBold" FontSize="11.5" TextTrimming="CharacterEllipsis" Margin="0,1,0,0"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0" VerticalAlignment="Center">
+                        <Border x:Name="PublisherPill" CornerRadius="6" Padding="7,2" Height="22" VerticalAlignment="Center" Margin="0,0,6,0">
+                            <TextBlock x:Name="PublisherLbl" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </Border>
                         <Button x:Name="SearchBtn" Style="{StaticResource PopupIconButton}" Click="Search_Click" Margin="0,0,4,0">
-                            <Path Fill="{DynamicResource SubTextBrush}" Stretch="Uniform" Width="11" Height="11">
+                            <Path Fill="{DynamicResource SubTextBrush}" Stretch="Uniform" Width="10" Height="10">
                                 <Path.Data>
                                     <GeometryGroup FillRule="EvenOdd">
                                         <PathGeometry Figures="M6,1.2 C3.4,1.2 1.2,3.4 1.2,6 C1.2,8.6 3.4,10.8 6,10.8 C7.1,10.8 8.1,10.4 8.9,9.8 L11.1,12 L12,11.1 L9.8,8.9 C10.4,8.1 10.8,7.1 10.8,6 C10.8,3.4 8.6,1.2 6,1.2 Z"/>
@@ -268,31 +316,30 @@
                 </StackPanel>
 
                 <!-- Top Right Card Dismiss Button -->
-                <Button Grid.Column="2" x:Name="DismissBtn" Width="22" Height="22" VerticalAlignment="Top" Background="Transparent" Foreground="{DynamicResource SubTextBrush}" BorderThickness="0" Cursor="Hand" Click="Dismiss_Click"
-                        ToolTipService.Placement="Bottom" ToolTipService.VerticalOffset="5" ToolTipService.InitialShowDelay="350" ToolTipService.BetweenShowDelay="0" ToolTipService.ShowDuration="4000">
-                    <Path Fill="{DynamicResource SubTextBrush}" Width="9" Height="9" Stretch="Uniform" Data="M 1 1 L 9 9 M 9 1 L 1 9" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                <Button Grid.Column="2" x:Name="DismissBtn" Style="{StaticResource CardDismissButton}" VerticalAlignment="Top" Click="Dismiss_Click">
+                    <Path Width="9" Height="9" Stretch="Uniform" Data="M 1 1 L 9 9 M 9 1 L 1 9" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.7" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                 </Button>
             </Grid>
 
             <!-- Inbound Warning -->
-            <Border x:Name="InboundWarn" Grid.Row="1" Visibility="Collapsed" Background="{DynamicResource BadgeBlockBgBrush}" CornerRadius="8" BorderBrush="{DynamicResource BadgeBlockFgBrush}" BorderThickness="1" Padding="8,6" Margin="0,8,0,0">
+            <Border x:Name="InboundWarn" Grid.Row="1" Visibility="Collapsed" Background="{DynamicResource BadgeBlockBgBrush}" CornerRadius="8" BorderBrush="{DynamicResource BadgeBlockFgBrush}" BorderThickness="1" Padding="9,6" Margin="0,8,0,0">
                 <TextBlock x:Name="InboundWarnLbl" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource BadgeBlockFgBrush}" TextWrapping="Wrap"/>
             </Border>
 
             <!-- Details Box -->
-            <Border Grid.Row="2" Background="{DynamicResource CardSecondaryBrush}" CornerRadius="8" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="9,7" Margin="0,8,0,0">
+            <Border Grid.Row="2" Background="{DynamicResource CardSecondaryBrush}" CornerRadius="8" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="10,8" Margin="0,9,0,0">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border x:Name="DirectionPill" CornerRadius="5" Padding="5,1.5" Margin="0,0,6,0" VerticalAlignment="Center">
+                        <Border x:Name="DirectionPill" CornerRadius="5" Padding="6,1.5" Margin="0,0,7,0" VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal">
-                                <Path x:Name="DirectionArrow" Width="10" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" Fill="Transparent" Stroke="{DynamicResource AccentBrush}" StrokeThickness="2.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Data="M 5 11 L 5 1.5 M 5 1.5 L 1.6 5.8 M 5 1.5 L 8.4 5.8"/>
+                                <Path x:Name="DirectionArrow" Width="9" Height="10" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" Fill="Transparent" Stroke="{DynamicResource AccentBrush}" StrokeThickness="2.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Data="M 5 11 L 5 1.5 M 5 1.5 L 1.6 5.8 M 5 1.5 L 8.4 5.8"/>
                                 <TextBlock x:Name="DirectionPillText" FontSize="10.5" FontWeight="Bold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
-                        <TextBlock x:Name="DetailLbl" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="Medium" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock x:Name="DetailLbl" Foreground="{DynamicResource TextBrush}" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
-                    <TextBlock x:Name="PathLbl" Foreground="{DynamicResource SubTextBrush}" FontSize="10.5" TextWrapping="Wrap" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                    <TextBlock x:Name="PathLbl" Foreground="{DynamicResource SubTextBrush}" FontSize="10.5" TextWrapping="NoWrap" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0" VerticalAlignment="Center">
                         <ctrl:CountryFlagMark x:Name="CountryMark" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <TextBlock x:Name="CountryLbl" Foreground="{DynamicResource SubTextBrush}" FontSize="10.5" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <TextBlock x:Name="MetaLbl" Foreground="{DynamicResource SubTextBrush}" FontSize="10.5" VerticalAlignment="Center"/>

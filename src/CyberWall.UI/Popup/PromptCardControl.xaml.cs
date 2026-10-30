@@ -133,7 +133,6 @@ public partial class PromptCardControl : UserControl
             PublisherPill.BorderBrush = new SolidColorBrush(Color.FromArgb(isLight ? (byte)90 : (byte)80, fgColor.R, fgColor.G, fgColor.B));
             PublisherPill.BorderThickness = new Thickness(1);
             PublisherLbl.Foreground = fgBrush;
-            ShieldPath.Fill = fgBrush;
         }
         else
         {
@@ -141,7 +140,6 @@ public partial class PromptCardControl : UserControl
             PublisherPill.BorderBrush = (Brush)FindResource("BadgeWarnFgBrush");
             PublisherPill.BorderThickness = new Thickness(1);
             PublisherLbl.Foreground = (Brush)FindResource("BadgeWarnFgBrush");
-            ShieldPath.Fill = (Brush)FindResource("BadgeWarnFgBrush");
         }
 
         if (inbound)
