@@ -36,8 +36,8 @@ public sealed class ConnectionMonitor : IDisposable
         lock (_seenLock) _seen.Clear();
         _timer?.Dispose();
         _blockWatcher.Start();
-        // Fast 400ms polling for active/established connections from running processes
-        _timer = new Timer(_ => Poll(), null, 200, 400);
+        // 1000ms polling for active/established connections from running processes
+        _timer = new Timer(_ => Poll(), null, 500, 1000);
     }
 
     public void Stop()

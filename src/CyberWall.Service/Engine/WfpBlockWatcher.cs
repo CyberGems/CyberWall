@@ -224,27 +224,26 @@ public sealed class WfpBlockWatcher : IDisposable
     {
         try
         {
-            var data = new RawEventData();
+            var appPath = ExtractDataValue(xml, "Application");
+            if (string.IsNullOrEmpty(appPath)) return null;
 
-            var appMatch = Regex.Match(xml, @"<Data Name=['""]Application['""]>(.*?)</Data>", RegexOptions.IgnoreCase);
-            if (appMatch.Success) data.AppPath = appMatch.Groups[1].Value.Trim();
-            if (string.IsNullOrEmpty(data.AppPath)) return null;
+            var data = new RawEventData
+            {
+                AppPath = appPath,
+                RemoteAddress = ExtractDataValue(xml, "DestAddress") ?? string.Empty
+            };
 
-            var destAddrMatch = Regex.Match(xml, @"<Data Name=['""]DestAddress['""]>(.*?)</Data>", RegexOptions.IgnoreCase);
-            if (destAddrMatch.Success) data.RemoteAddress = destAddrMatch.Groups[1].Value.Trim();
-
-            var destPortMatch = Regex.Match(xml, @"<Data Name=['""]DestPort['""]>(.*?)</Data>", RegexOptions.IgnoreCase);
-            if (destPortMatch.Success && int.TryParse(destPortMatch.Groups[1].Value.Trim(), out var port))
+            var portStr = ExtractDataValue(xml, "DestPort");
+            if (portStr != null && int.TryParse(portStr, out var port))
                 data.RemotePort = port;
 
-            var pidMatch = Regex.Match(xml, @"<Data Name=['""]ProcessId['""]>(.*?)</Data>", RegexOptions.IgnoreCase);
-            if (pidMatch.Success && int.TryParse(pidMatch.Groups[1].Value.Trim(), out var pid))
+            var pidStr = ExtractDataValue(xml, "ProcessId");
+            if (pidStr != null && int.TryParse(pidStr, out var pid))
                 data.ProcessId = pid;
 
-            var protoMatch = Regex.Match(xml, @"<Data Name=['""]Protocol['""]>(.*?)</Data>", RegexOptions.IgnoreCase);
-            if (protoMatch.Success)
+            var protoCode = ExtractDataValue(xml, "Protocol");
+            if (protoCode != null)
             {
-                var protoCode = protoMatch.Groups[1].Value.Trim();
                 data.Protocol = protoCode switch
                 {
                     "6" => "TCP",
@@ -254,10 +253,9 @@ public sealed class WfpBlockWatcher : IDisposable
                 };
             }
 
-            var dirMatch = Regex.Match(xml, @"<Data Name=['""]Direction['""]>(.*?)</Data>", RegexOptions.IgnoreCase);
-            if (dirMatch.Success)
+            var dirVal = ExtractDataValue(xml, "Direction");
+            if (dirVal != null)
             {
-                var dirVal = dirMatch.Groups[1].Value.Trim();
                 data.Direction = dirVal.Contains("14592") || dirVal.Equals("Inbound", StringComparison.OrdinalIgnoreCase)
                     ? Direction.Inbound
                     : Direction.Outbound;
@@ -269,6 +267,23 @@ public sealed class WfpBlockWatcher : IDisposable
         {
             return null;
         }
+    }
+
+    private static string? ExtractDataValue(string xml, string name)
+    {
+        string prefix = $"Name=\"{name}\">";
+        int idx = xml.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
+        if (idx < 0)
+        {
+            prefix = $"Name='{name}'>";
+            idx = xml.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
+            if (idx < 0) return null;
+        }
+
+        int start = idx + prefix.Length;
+        int end = xml.IndexOf("</Data>", start, StringComparison.Ordinal);
+        if (end < 0) return null;
+        return xml.Substring(start, end - start).Trim();
     }
 
     private void RefreshDeviceMap()

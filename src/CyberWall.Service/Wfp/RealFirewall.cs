@@ -701,12 +701,25 @@ public static class RealFirewall
         catch (Exception ex) { Debug.WriteLine(ex); }
     }
 
+    private static readonly Type? FwPolicyType = Type.GetTypeFromProgID("HNetCfg.FwPolicy2");
+    private static readonly Type? FwRuleType = Type.GetTypeFromProgID("HNetCfg.FWRule");
+    private static dynamic? _cachedPolicy;
+    private static readonly object _policyLock = new();
+
     private static dynamic? GetFwPolicy()
     {
         try
         {
-            var type = Type.GetTypeFromProgID("HNetCfg.FwPolicy2");
-            return type != null ? Activator.CreateInstance(type) : null;
+            if (_cachedPolicy != null) return _cachedPolicy;
+            lock (_policyLock)
+            {
+                if (_cachedPolicy != null) return _cachedPolicy;
+                if (FwPolicyType != null)
+                {
+                    _cachedPolicy = Activator.CreateInstance(FwPolicyType);
+                }
+                return _cachedPolicy;
+            }
         }
         catch
         {
@@ -731,7 +744,7 @@ public static class RealFirewall
     {
         try
         {
-            var tRule = Type.GetTypeFromProgID("HNetCfg.FWRule");
+            var tRule = FwRuleType;
             if (tRule != null && GetFwPolicy() is { } policy && Activator.CreateInstance(tRule) is { } rule)
             {
                 try { policy.Rules.Remove(name); } catch { }
@@ -752,7 +765,7 @@ public static class RealFirewall
         RemoveRule(name);
         try
         {
-            var tRule = Type.GetTypeFromProgID("HNetCfg.FWRule");
+            var tRule = FwRuleType;
             if (tRule != null && GetFwPolicy() is { } policy && Activator.CreateInstance(tRule) is { } rule)
             {
                 ((dynamic)rule).Name = name;
@@ -775,7 +788,7 @@ public static class RealFirewall
         RemoveRule(name);
         try
         {
-            var tRule = Type.GetTypeFromProgID("HNetCfg.FWRule");
+            var tRule = FwRuleType;
             if (tRule != null && GetFwPolicy() is { } policy && Activator.CreateInstance(tRule) is { } rule)
             {
                 ((dynamic)rule).Name = name;
@@ -803,7 +816,7 @@ public static class RealFirewall
         RemoveRule(name);
         try
         {
-            var tRule = Type.GetTypeFromProgID("HNetCfg.FWRule");
+            var tRule = FwRuleType;
             if (tRule != null && GetFwPolicy() is { } policy && Activator.CreateInstance(tRule) is { } rule)
             {
                 ((dynamic)rule).Name = name;
@@ -959,7 +972,7 @@ public static class RealFirewall
 
         try
         {
-            var tRule = Type.GetTypeFromProgID("HNetCfg.FWRule");
+            var tRule = FwRuleType;
             if (tRule != null && GetFwPolicy() is { } policy && Activator.CreateInstance(tRule) is { } rule)
             {
                 try { policy.Rules.Remove(name); } catch { }
