@@ -409,8 +409,7 @@ public partial class MainWindow : Window
 
         OnActivityUpdated();
 
-        AllowedExpander.Header = $"{Strings.T("Allowed")} ({_all.Count(r => r.Verdict == Verdict.Allow)})";
-        BlockedExpander.Header = $"{Strings.T("Blocked")} ({_all.Count(r => r.Verdict == Verdict.Block)})";
+        UpdateExpanderHeaders();
         var m = IndexFromMode(_svc.Mode);
         _loading = true;
         ModeBox.Items.Clear();
@@ -864,7 +863,7 @@ public partial class MainWindow : Window
 
             BlockedGrid.ItemsSource = blockedRows;
             AllowedGrid.ItemsSource = allowedRows;
-            RefreshLanguage();
+            UpdateExpanderHeaders();
         }
         catch (Exception ex)
         {
@@ -878,6 +877,14 @@ public partial class MainWindow : Window
                 if (RulesLoadingOverlay != null) RulesLoadingOverlay.Visibility = Visibility.Collapsed;
             }
         }
+    }
+
+    private void UpdateExpanderHeaders()
+    {
+        if (AllowedExpander != null)
+            AllowedExpander.Header = $"{Strings.T("Allowed")} ({_all.Count(r => r.Verdict == Verdict.Allow)})";
+        if (BlockedExpander != null)
+            BlockedExpander.Header = $"{Strings.T("Blocked")} ({_all.Count(r => r.Verdict == Verdict.Block)})";
     }
 
     private void RememberLastRemote(ConnectionEvent ev, bool isBlocked = false)
