@@ -15,6 +15,7 @@ public static class ConnectionLogGeo
     /// </summary>
     public static void Resolve(IReadOnlyList<ConnectionLogEntry> entries, bool force = false)
     {
+        bool isGeoReady = GeoCountry.IsReady;
         foreach (var entry in entries)
         {
             if (entry.GeoResolved && !force) continue;
@@ -24,8 +25,12 @@ public static class ConnectionLogGeo
                 entry.GeoResolved = true;
                 continue;
             }
-            entry.Geo = GeoCountry.Lookup(entry.RemoteAddress);
-            entry.GeoResolved = true;
+            var res = GeoCountry.Lookup(entry.RemoteAddress);
+            entry.Geo = res;
+            if (isGeoReady || res.Kind != GeoKind.Unknown)
+            {
+                entry.GeoResolved = true;
+            }
         }
     }
 }

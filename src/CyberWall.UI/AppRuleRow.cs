@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using CyberWall.Common;
 using CyberWall.Common.Geo;
 using CyberWall.Common.Models;
 using CyberWall.UI.Services;
@@ -9,7 +10,24 @@ namespace CyberWall.UI;
 public sealed class AppRuleRow : INotifyPropertyChanged
 {
     public required AppRule Rule { get; init; }
-    public GeoResult Geo { get; init; }
+    private GeoResult _geo;
+    public GeoResult Geo
+    {
+        get => _geo;
+        init => _geo = value;
+    }
+
+    public void UpdateGeo(GeoResult geo)
+    {
+        if (_geo != geo)
+        {
+            _geo = geo;
+            OnPropertyChanged(nameof(Geo));
+            OnPropertyChanged(nameof(HasCountry));
+            OnPropertyChanged(nameof(CountryCode));
+            OnPropertyChanged(nameof(CountryLabel));
+        }
+    }
 
     private ProcessActivityLevel _activityLevel = ProcessActivityLevel.Idle;
     private string _activityTooltip = string.Empty;
@@ -129,6 +147,20 @@ public sealed class AppRuleRow : INotifyPropertyChanged
         UploadBps = activity.UploadBps;
         BandwidthSpeedText = activity.FormattedSpeed;
         HasActiveBandwidth = activity.HasBandwidth;
+
+        if (!HasCountry)
+        {
+            var liveEp = activity.LastEndpoint ?? activity.LastBlockedEndpoint;
+            if (!string.IsNullOrEmpty(liveEp))
+            {
+                var liveIp = NetworkEndpoint.ExtractAddress(liveEp);
+                var liveGeo = GeoCountry.Lookup(liveIp);
+                if (liveGeo.HasCountry)
+                {
+                    UpdateGeo(liveGeo);
+                }
+            }
+        }
 
         bool needsTooltipUpdate = string.IsNullOrEmpty(_activityTooltip)
             || _lastTooltipLevel != activity.Level

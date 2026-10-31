@@ -28,6 +28,22 @@ public static class GeoCountry
     private const string V6UrlAlt = "https://unpkg.com/@ip-location-db/geo-whois-asn-country/geo-whois-asn-country-ipv6-num.csv";
     private static readonly TimeSpan MaxAge = TimeSpan.FromDays(60);
 
+    private static readonly Dictionary<string, string> WellKnownAnycast = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["8.8.8.8"] = "US",
+        ["8.8.4.4"] = "US",
+        ["1.1.1.1"] = "US",
+        ["1.0.0.1"] = "US",
+        ["9.9.9.9"] = "US",
+        ["149.112.112.112"] = "US",
+        ["208.67.222.222"] = "US",
+        ["208.67.220.220"] = "US",
+        ["94.140.14.14"] = "CY",
+        ["94.140.15.15"] = "CY",
+        ["76.76.2.0"] = "US",
+        ["76.76.10.0"] = "US"
+    };
+
     private static readonly object Gate = new();
     private static readonly Dictionary<string, GeoResult> Cache = new(StringComparer.OrdinalIgnoreCase);
     private static V4Range[] _v4 = [];
@@ -53,7 +69,11 @@ public static class GeoCountry
 
     public static GeoResult Lookup(string? address)
     {
-        if (string.IsNullOrWhiteSpace(address) || !IPAddress.TryParse(address.Trim(), out var ip))
+        if (string.IsNullOrWhiteSpace(address))
+            return GeoResult.Unknown;
+
+        var clean = NetworkEndpoint.ExtractAddress(address) ?? address.Trim();
+        if (!IPAddress.TryParse(clean, out var ip))
             return GeoResult.Unknown;
 
         if (ip.IsIPv4MappedToIPv6)
@@ -73,7 +93,16 @@ public static class GeoCountry
             ? FindV4(ip)
             : FindV6(ip);
 
-        lock (Gate) Cache[key] = found;
+        if (found.Kind == GeoKind.Unknown && WellKnownAnycast.TryGetValue(key, out var anycastIso))
+        {
+            found = new GeoResult(GeoKind.Country, anycastIso);
+        }
+
+        // Only store in cache if the database is actually ready in memory to avoid poisoning with transient Unknowns
+        if (_ready && Volatile.Read(ref _v4).Length > 0)
+        {
+            lock (Gate) Cache[key] = found;
+        }
         return found;
     }
 
@@ -83,7 +112,8 @@ public static class GeoCountry
             return true;
         if (ip.AddressFamily != AddressFamily.InterNetwork) return false;
         var b = ip.GetAddressBytes();
-        return b[0] == 10
+        return b[0] == 0
+            || b[0] == 10
             || b[0] == 127
             || (b[0] == 169 && b[1] == 254)
             || (b[0] == 172 && b[1] is >= 16 and <= 31)
@@ -143,6 +173,7 @@ public static class GeoCountry
                 Volatile.Write(ref _v4, v4);
                 if (v6Ok) Volatile.Write(ref _v6, v6);
                 _ready = true;
+                lock (Gate) Cache.Clear();
                 Updated?.Invoke();
             }
 

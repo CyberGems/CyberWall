@@ -146,6 +146,7 @@ public partial class MainWindow : Window
         _svc.OnAskConnection += OnAskConnection;
         _svc.OnUnknownBlocked += OnUnknownBlocked;
         _svc.OnBlockedActivity += OnBlockedActivity;
+        _svc.OnAllowedActivity += OnAllowedActivity;
         _notifications.Changed += () => Dispatcher.BeginInvoke(UpdateNotifBadge);
         AllowedExpander.IsExpanded = App.Settings.AllowedRulesExpanded;
         BlockedExpander.IsExpanded = App.Settings.BlockedRulesExpanded;
@@ -158,6 +159,7 @@ public partial class MainWindow : Window
         Closing += (_, _) => WindowLayoutPersistence.Save(this, App.Settings);
         _tray = new TrayService(this, _svc);
         GeoCountry.Updated += OnGeoUpdated;
+        GeoCountry.Warm();
 
         Loaded += (_, _) =>
         {
@@ -174,7 +176,6 @@ public partial class MainWindow : Window
                         Dispatcher.BeginInvoke(UpdateStatus);
                     }
                 }
-                GeoCountry.Warm();
             });
         };
         ProcessTrafficTracker.Instance.ActivityUpdated += OnActivityUpdated;
@@ -195,6 +196,7 @@ public partial class MainWindow : Window
             ProcessTrafficTracker.Instance.ActivityUpdated -= OnActivityUpdated;
             ProcessTrafficTracker.Instance.Stop();
             GeoCountry.Updated -= OnGeoUpdated;
+            _svc.OnAllowedActivity -= OnAllowedActivity;
             if (!_svc.OwnedByAnotherHost)
             {
                 // Only the owner of the engine persists the protection state. The Windows
@@ -529,6 +531,14 @@ public partial class MainWindow : Window
         });
     }
 
+    private void OnAllowedActivity(ConnectionEvent ev)
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            RememberLastRemote(ev, isBlocked: false);
+        });
+    }
+
     internal void RecordAutoBlock(ConnectionEvent ev)
     {
         RememberLastRemote(ev, isBlocked: true);
@@ -756,7 +766,11 @@ public partial class MainWindow : Window
     private string _sortBy = "DisplayName";
     private bool _sortAsc = true;
 
-    private void OnGeoUpdated() => Dispatcher.BeginInvoke(() => RefreshRules(SearchBox.Text));
+    private void OnGeoUpdated() => Dispatcher.BeginInvoke(() =>
+    {
+        ConnectionLogGeo.Resolve(ConnectionLogReader.Refresh(), force: true);
+        RefreshRules(SearchBox.Text);
+    });
 
     private int _refreshGeneration;
     private DispatcherTimer? _refreshRulesDebounceTimer;
@@ -810,7 +824,16 @@ public partial class MainWindow : Window
             {
                 var last = LastRemoteByApp();
                 foreach (var entry in lastRemoteDict)
+                {
+                    if (last.TryGetValue(entry.Key, out var existingIp))
+                    {
+                        var existingGeo = GeoCountry.Lookup(existingIp);
+                        var newGeo = GeoCountry.Lookup(entry.Value);
+                        if (existingGeo.HasCountry && !newGeo.HasCountry)
+                            continue;
+                    }
                     last[entry.Key] = entry.Value;
+                }
 
                 var q = string.IsNullOrWhiteSpace(filter)
                     ? storeRules
@@ -935,6 +958,29 @@ public partial class MainWindow : Window
         }
 
         ProcessTrafficTracker.Instance.RecordActivity(ev.AppPath, ev.RemoteAddress, ev.RemotePort, isBlocked);
+        var resolvedGeo = GeoCountry.Lookup(ev.RemoteAddress);
+        if (resolvedGeo.HasCountry)
+        {
+            UpdateRowGeoIfMatching(AllowedGrid, ev.AppPath, resolvedGeo);
+            UpdateRowGeoIfMatching(BlockedGrid, ev.AppPath, resolvedGeo);
+        }
+    }
+
+    private static void UpdateRowGeoIfMatching(System.Windows.Controls.DataGrid? grid, string appPath, GeoResult geo)
+    {
+        if (grid?.ItemsSource is IEnumerable<AppRuleRow> rows)
+        {
+            var norm = AppRule.Normalize(appPath);
+            foreach (var r in rows)
+            {
+                if (string.Equals(r.AppPath, appPath, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(AppRule.Normalize(r.AppPath), norm, StringComparison.OrdinalIgnoreCase))
+                {
+                    r.UpdateGeo(geo);
+                    break;
+                }
+            }
+        }
     }
 
     private static AppRuleRow ToRow(AppRule rule, Dictionary<string, string> last)
@@ -1054,7 +1100,7 @@ public partial class MainWindow : Window
                     try { key = AppRule.Normalize(entry.AppPath); }
                     catch { key = entry.AppPath; }
 
-                    var newGeo = entry.Geo;
+                    var newGeo = entry.Geo.HasCountry ? entry.Geo : GeoCountry.Lookup(entry.RemoteAddress);
                     if (map.TryGetValue(key, out var existingIp))
                     {
                         var existingGeo = GeoCountry.Lookup(existingIp);
