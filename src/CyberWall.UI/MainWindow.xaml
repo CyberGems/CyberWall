@@ -534,14 +534,15 @@
                                 <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-                            </Trigger>
-                            <Trigger Property="Tag" Value="Active">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
                                 <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             </Trigger>
+                            <DataTrigger Binding="{Binding ContextMenu.IsOpen, RelativeSource={RelativeSource Self}}" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                            </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -1116,7 +1117,7 @@
                             <Grid MinWidth="22" Height="22">
                                 <Path Data="M 5,10.5 a 1.5,1.5 0 1 0 0,3 a 1.5,1.5 0 1 0 0,-3 M 12,10.5 a 1.5,1.5 0 1 0 0,3 a 1.5,1.5 0 1 0 0,-3 M 19,10.5 a 1.5,1.5 0 1 0 0,3 a 1.5,1.5 0 1 0 0,-3"
                                       Width="15" Height="15" Stretch="Uniform"
-                                      Fill="{DynamicResource SubTextBrush}"
+                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
                         </Button>
@@ -1218,9 +1219,9 @@
                                         <!-- Clickable Real-time Throughput Pill (opens Top Consumers flyout) -->
                                         <Border x:Name="FirewallThroughputPill" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="9,4" Margin="0,0,8,0" VerticalAlignment="Center" Cursor="Hand" MouseLeftButtonUp="FirewallThroughputPill_Click" ToolTipService.InitialShowDelay="200">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <TextBlock Text="↓ " Foreground="{DynamicResource AccentBrush}" FontSize="11" FontWeight="Bold"/>
+                                                <Path Data="M 3.5 0 H 6.5 V 5.5 H 9.5 L 5 10 L 0.5 5.5 H 3.5 Z" Fill="{DynamicResource AccentBrush}" Width="8" Height="9" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                                 <TextBlock x:Name="FirewallDownSpeedText" Text="0.0 B/s" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,8,0"/>
-                                                <TextBlock Text="↑ " Foreground="#22C55E" FontSize="11" FontWeight="Bold"/>
+                                                <Path Data="M 5 0 L 9.5 4.5 H 6.5 V 10 H 3.5 V 4.5 H 0.5 Z" Fill="#22C55E" Width="8" Height="9" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                                 <TextBlock x:Name="FirewallUpSpeedText" Text="0.0 B/s" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="SemiBold"/>
                                             </StackPanel>
                                         </Border>
@@ -1664,9 +1665,8 @@
                                                             </Border.Style>
                                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                                 <Path Data="{Binding Converter={StaticResource DirectionPathConverter}}"
-                                                                      Stroke="{Binding Path=(TextElement.Foreground), RelativeSource={RelativeSource AncestorType=Border}}"
-                                                                      StrokeThickness="1.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                                                                      Width="9" Height="9" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,5,0" Fill="Transparent"/>
+                                                                      Fill="{Binding Path=(TextElement.Foreground), RelativeSource={RelativeSource AncestorType=Border}}"
+                                                                      Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                                                 <TextBlock Text="{Binding Converter={StaticResource DirectionTextConverter}}"
                                                                            FontSize="11" FontWeight="Medium" VerticalAlignment="Center"/>
                                                             </StackPanel>
@@ -1900,9 +1900,8 @@
                                                             </Border.Style>
                                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                                 <Path Data="{Binding Converter={StaticResource DirectionPathConverter}}"
-                                                                      Stroke="{Binding Path=(TextElement.Foreground), RelativeSource={RelativeSource AncestorType=Border}}"
-                                                                      StrokeThickness="1.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                                                                      Width="9" Height="9" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,5,0" Fill="Transparent"/>
+                                                                      Fill="{Binding Path=(TextElement.Foreground), RelativeSource={RelativeSource AncestorType=Border}}"
+                                                                      Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                                                 <TextBlock Text="{Binding Converter={StaticResource DirectionTextConverter}}"
                                                                            FontSize="11" FontWeight="Medium" VerticalAlignment="Center"/>
                                                             </StackPanel>

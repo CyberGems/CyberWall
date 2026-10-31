@@ -1717,33 +1717,36 @@ public partial class MainWindow : Window
 
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
 
-    private long _moreMenuClosedTimestamp;
+    private DateTime _moreMenuDismissedAtUtc = DateTime.MinValue;
+    private static readonly TimeSpan MoreMenuReopenGuard = TimeSpan.FromMilliseconds(500);
 
     private void MoreOptionsMenu_Opened(object sender, RoutedEventArgs e)
     {
-        MoreBtn.Tag = "Active";
+        _moreMenuDismissedAtUtc = DateTime.MinValue;
     }
 
     private void MoreOptionsMenu_Closed(object sender, RoutedEventArgs e)
     {
-        _moreMenuClosedTimestamp = Stopwatch.GetTimestamp();
-        MoreBtn.Tag = null;
+        if (Mouse.LeftButton == MouseButtonState.Pressed || MoreBtn.IsMouseOver)
+        {
+            _moreMenuDismissedAtUtc = DateTime.UtcNow;
+        }
     }
 
     private void MoreBtn_Click(object sender, RoutedEventArgs e)
     {
-        if (_moreMenuClosedTimestamp != 0 &&
-            Stopwatch.GetElapsedTime(_moreMenuClosedTimestamp).TotalMilliseconds < 300)
+        if (MoreBtn.ContextMenu is not { } menu) return;
+
+        if (menu.IsOpen || DateTime.UtcNow - _moreMenuDismissedAtUtc < MoreMenuReopenGuard)
         {
+            _moreMenuDismissedAtUtc = DateTime.MinValue;
+            menu.IsOpen = false;
             return;
         }
 
-        if (MoreBtn.ContextMenu != null)
-        {
-            MoreBtn.ContextMenu.PlacementTarget = MoreBtn;
-            MoreBtn.ContextMenu.Placement = PlacementMode.Bottom;
-            MoreBtn.ContextMenu.IsOpen = true;
-        }
+        menu.PlacementTarget = MoreBtn;
+        menu.Placement = PlacementMode.Bottom;
+        menu.IsOpen = true;
     }
 
     private static void OpenExternalUrl(string url)

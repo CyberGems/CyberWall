@@ -30,9 +30,7 @@ public partial class App : System.Windows.Application
     private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
     private static readonly IntPtr HWND_BROADCAST = new IntPtr(0xffff);
 
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool SetProcessDpiAwarenessContext(IntPtr dpiContext);
-    private static readonly IntPtr DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = new IntPtr(-4);
+
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessID);
@@ -108,14 +106,7 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        try
-        {
-            if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 15063))
-            {
-                SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-            }
-        }
-        catch { }
+
 
         Strings.Current = Settings.Language;
         ThemeManager.Apply(Settings.Theme);

@@ -42,7 +42,8 @@ public partial class FloatingTrafficWidget : Window
     private bool _online = true;
     private bool _compactMode;
     private long _lastCompactToggleTime;
-    private long _widgetMenuClosedTimestamp;
+    private DateTime _widgetMenuDismissedAtUtc = DateTime.MinValue;
+    private static readonly TimeSpan WidgetMenuReopenGuard = TimeSpan.FromMilliseconds(500);
     private double _currentDown;
     private double _currentUp;
     private double _peakDown;
@@ -77,6 +78,7 @@ public partial class FloatingTrafficWidget : Window
         ApplyAlwaysOnTop(App.Settings.TrafficWidgetAlwaysOnTop);
         ApplySectionVisibility();
         RefreshLanguage();
+        MoreButton.ContextMenu = WidgetMenu;
 
         _timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(1) };
         _timer.Tick += (_, _) => RefreshData();
@@ -120,6 +122,7 @@ public partial class FloatingTrafficWidget : Window
         WidgetGraphItem.Header = Strings.T("WidgetShowGraph");
         WidgetSessionItem.Header = Strings.T("WidgetShowSession");
         WidgetTrafficGraph.RefreshLanguage();
+        MoreButton.ContextMenu = WidgetMenu;
     }
 
     public void ApplyAlwaysOnTop(bool onTop)
@@ -445,20 +448,23 @@ public partial class FloatingTrafficWidget : Window
 
     private void WidgetMenu_Opened(object sender, RoutedEventArgs e)
     {
-        MoreButton.Tag = "Active";
+        _widgetMenuDismissedAtUtc = DateTime.MinValue;
     }
 
     private void WidgetMenu_Closed(object sender, RoutedEventArgs e)
     {
-        _widgetMenuClosedTimestamp = Stopwatch.GetTimestamp();
-        MoreButton.Tag = null;
+        if (Mouse.LeftButton == MouseButtonState.Pressed || MoreButton.IsMouseOver)
+        {
+            _widgetMenuDismissedAtUtc = DateTime.UtcNow;
+        }
     }
 
     private void MoreButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_widgetMenuClosedTimestamp != 0 &&
-            Stopwatch.GetElapsedTime(_widgetMenuClosedTimestamp).TotalMilliseconds < 300)
+        if (WidgetMenu.IsOpen || DateTime.UtcNow - _widgetMenuDismissedAtUtc < WidgetMenuReopenGuard)
         {
+            _widgetMenuDismissedAtUtc = DateTime.MinValue;
+            WidgetMenu.IsOpen = false;
             return;
         }
 

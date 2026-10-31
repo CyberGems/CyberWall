@@ -66,10 +66,10 @@
                                             <Grid>
                                                 <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis" MaxWidth="190"/>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                                    <TextBlock Text="↓ " Foreground="{DynamicResource AccentBrush}" FontSize="10.5" FontWeight="Bold"/>
-                                                    <TextBlock Text="{Binding FormattedDownload}" Foreground="{DynamicResource TextBrush}" FontSize="10.5" FontWeight="SemiBold" Margin="0,0,6,0"/>
-                                                    <TextBlock Text="↑ " Foreground="#22C55E" FontSize="10.5" FontWeight="Bold"/>
-                                                    <TextBlock Text="{Binding FormattedUpload}" Foreground="{DynamicResource TextBrush}" FontSize="10.5" FontWeight="SemiBold"/>
+                                                    <Path Data="M 3.5 0 H 6.5 V 5.5 H 9.5 L 5 10 L 0.5 5.5 H 3.5 Z" Fill="{DynamicResource AccentBrush}" Width="8" Height="9" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                    <TextBlock Text="{Binding FormattedDownload}" Foreground="{DynamicResource TextBrush}" FontSize="10.5" FontWeight="SemiBold" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                    <Path Data="M 5 0 L 9.5 4.5 H 6.5 V 10 H 3.5 V 4.5 H 0.5 Z" Fill="#22C55E" Width="8" Height="9" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                    <TextBlock Text="{Binding FormattedUpload}" Foreground="{DynamicResource TextBrush}" FontSize="10.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                                 </StackPanel>
                                             </Grid>
                                             <ProgressBar Height="3" Margin="0,4,0,0" Value="{Binding UsagePercent}" Maximum="100"
