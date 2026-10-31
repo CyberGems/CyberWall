@@ -22,6 +22,31 @@
 
 ---
 
+## 📑 Table of Contents
+
+- [¿Qué es CyberWall?](#qué-es-cyberwall)
+- [🛡️ ¿Por qué CyberWall? Protección frente a amenazas reales](#️-por-qué-cyberwall-protección-frente-a-amenazas-reales)
+- [✨ Funciones principales](#-funciones-principales)
+- [🚀 Primeros pasos](#-primeros-pasos)
+- [🛠️ Stack tecnológico y arquitectura](#️-stack-tecnológico-y-arquitectura)
+- [🔍 Cómo funciona](#-cómo-funciona)
+- [❤️ Donar](#️-donar)
+- [Licencia](#licencia)
+- [❓ Preguntas frecuentes](#-preguntas-frecuentes)
+- [🔗 Ver también](#-ver-también)
+
+<details>
+<summary><strong>🔗 Related links (outside this README)</strong></summary>
+
+- 🌐 [CyberWall en la web](https://cybergems.org/apps/cyberwall/) — resumen, descarga y guía de SmartScreen
+- 📚 [Documentación y FAQ — Wiki](https://github.com/CyberGems/CyberWall/wiki) — solución de problemas y guías detalladas
+- 💾 [Releases](https://github.com/CyberGems/CyberWall/releases) — instaladores, versiones portátiles y changelog
+- 🟣 [Suite CyberGems](https://github.com/CyberGems) — todas las apps de código abierto
+
+</details>
+
+---
+
 ## ¿Qué es CyberWall?
 
 CyberWall es un cortafuegos moderno y ligero **por aplicación** para Windows, construido sobre la **Windows Filtering Platform (WFP)** y el **Cortafuegos Avanzado de Windows** que ya vienen con el sistema operativo. Su modelo de denegación por defecto intercepta la actividad de red desconocida y pregunta si cada ejecutable debe permitirse una vez, permitirse siempre o bloquearse con una regla persistente. Los avisos en tiempo real, la monitorización de conexiones, la gestión de reglas, las estadísticas de tráfico y la identificación clara de las aplicaciones hacen que el acceso de salida sea más fácil de entender y controlar sin instalar un controlador de kernel de terceros.
@@ -182,9 +207,7 @@ dotnet test
 
 ## ❤️ Donar
 
-Tras incontables horas construyendo y perfeccionando **CyberWall** para mi propio uso, decidí recientemente compartirlo con el mundo junto a mis otras herramientas de código abierto en [CyberGems](https://github.com/CyberGems#-all-apps--repositories).
-
-Si te gustaría apoyar las futuras actualizaciones, te lo agradecería de verdad. Tu donación ayuda a mantener el desarrollo, lanzar nuevas funciones, acelerar la resolución de actualizaciones y errores, y mejorar la calidad de la documentación. También puedes mostrar tu apoyo [poniendo una estrella al repo en GitHub](https://github.com/CyberGems/CyberWall). ¡Gracias! 🙏
+**CyberWall** es 100% gratis y de código abierto. Si te resulta útil, por favor considera [donar](https://cybergems.org/donate) o [dar una estrella al repo en GitHub](https://github.com/CyberGems/CyberWall) para apoyar el desarrollo continuo. [Lee la historia completa](https://cybergems.org/about/) del proyecto. ¡Gracias! 🙏
 
 <p align="center">
   <a href="https://www.paypal.com/donate/?hosted_button_id=M4PY3UPJA5Y6Q"><img src="https://img.shields.io/badge/Donar-PayPal-0070BA?style=for-the-badge&logo=paypal" alt="Donar con PayPal" /></a>

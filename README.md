@@ -22,6 +22,31 @@
 
 ---
 
+## 📑 Table of Contents
+
+- [What is CyberWall?](#what-is-cyberwall)
+- [🛡️ Why CyberWall? Real-World Threat Protection](#️-why-cyberwall-real-world-threat-protection)
+- [✨ Key Features](#-key-features)
+- [🚀 Getting Started](#-getting-started)
+- [🛠️ Tech Stack & Architecture](#️-tech-stack--architecture)
+- [🔍 How It Works](#-how-it-works)
+- [❤️ Donate](#️-donate)
+- [License](#license)
+- [❓ FAQ](#-faq)
+- [🔗 See also](#-see-also)
+
+<details>
+<summary><strong>🔗 Related links (outside this README)</strong></summary>
+
+- 🌐 [CyberWall on the web](https://cybergems.org/apps/cyberwall/) — overview, download and SmartScreen guide
+- 📚 [Documentation & FAQ — Wiki](https://github.com/CyberGems/CyberWall/wiki) — troubleshooting and deep-dives
+- 💾 [Releases](https://github.com/CyberGems/CyberWall/releases) — installers, portable builds and changelog
+- 🟣 [CyberGems suite](https://github.com/CyberGems) — all open-source apps
+
+</details>
+
+---
+
 ## What is CyberWall?
 
 CyberWall is a modern, lightweight **per-application firewall** for Windows, built on the **Windows Filtering Platform (WFP)** and the **Windows Advanced Firewall** that ship with the operating system. Its default-deny model intercepts unknown network activity and asks whether each executable should be allowed once, always allowed, or blocked with a persistent rule. Real-time prompts, connection monitoring, rule management, traffic statistics, and clear application identity make outbound access easier to understand and control without installing a third-party kernel driver.
@@ -182,9 +207,7 @@ dotnet test
 
 ## ❤️ Donate
 
-After countless hours building and refining **CyberWall** for my own use, I recently decided to share it with the world along with my other open-source tools in [CyberGems](https://github.com/CyberGems#-all-apps--repositories).
-
-If you’d like to support future updates, I’d truly appreciate it. Your donation helps keep development going, roll out new features, speed up updates and bug resolution, and enhance documentation quality. You can also show your support by [starring the repo on GitHub](https://github.com/CyberGems/CyberWall). Thank you! 🙏
+**CyberWall** is 100% free and open source. If it helps you, please consider [donating](https://cybergems.org/donate) or [starring the repo on GitHub](https://github.com/CyberGems/CyberWall) to support continued development. [Read the full story](https://cybergems.org/about/) behind the project. Thank you! 🙏
 
 <p align="center">
   <a href="https://www.paypal.com/donate/?hosted_button_id=M4PY3UPJA5Y6Q"><img src="https://img.shields.io/badge/Donate-PayPal-0070BA?style=for-the-badge&logo=paypal" alt="Donate via PayPal" /></a>
