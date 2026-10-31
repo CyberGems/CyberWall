@@ -115,6 +115,7 @@ public partial class MainWindow : Window
     private List<AppRule> _all = new();
     private bool _loading;
     private bool _isEnablingOnStartup;
+    private bool _updatingStatus;
     private bool _notifOpen;
     private bool _layoutRestored;
     private readonly Dictionary<string, string> _lastRemoteByApp = new(StringComparer.OrdinalIgnoreCase);
@@ -775,10 +776,10 @@ public partial class MainWindow : Window
     private string _sortBy = "DisplayName";
     private bool _sortAsc = true;
 
-    private void OnGeoUpdated() => Dispatcher.BeginInvoke(() =>
+    private void OnGeoUpdated() => Task.Run(() =>
     {
         ConnectionLogGeo.Resolve(ConnectionLogReader.Refresh(), force: true);
-        RefreshRules(SearchBox.Text);
+        Dispatcher.BeginInvoke(() => RefreshRules(SearchBox?.Text));
     });
 
     private int _refreshGeneration;
@@ -997,14 +998,13 @@ public partial class MainWindow : Window
     private static AppRuleRow ToRow(AppRule rule, Dictionary<string, string> last)
     {
         string? ip = null;
-        try
+        if (!last.TryGetValue(rule.AppPath, out ip))
         {
-            last.TryGetValue(AppRule.Normalize(rule.AppPath), out ip);
-            ip ??= last.GetValueOrDefault(rule.AppPath);
-        }
-        catch
-        {
-            last.TryGetValue(rule.AppPath, out ip);
+            var fileName = Path.GetFileName(rule.AppPath);
+            if (!string.IsNullOrEmpty(fileName))
+            {
+                last.TryGetValue(fileName, out ip);
+            }
         }
 
         var geo = GeoCountry.Lookup(ip);
@@ -1098,7 +1098,6 @@ public partial class MainWindow : Window
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         try
         {
-            // The parsed entries are shared, so this does not read the log again.
             var entries = ConnectionLogReader.Refresh();
             ConnectionLogGeo.Resolve(entries);
 
@@ -1107,9 +1106,8 @@ public partial class MainWindow : Window
                 try
                 {
                     if (string.IsNullOrEmpty(entry.RemoteAddress)) continue;
-                    string key;
-                    try { key = AppRule.Normalize(entry.AppPath); }
-                    catch { key = entry.AppPath; }
+                    var key = entry.AppPath;
+                    if (string.IsNullOrEmpty(key)) continue;
 
                     var newGeo = entry.Geo.HasCountry ? entry.Geo : GeoCountry.Lookup(entry.RemoteAddress);
                     if (map.TryGetValue(key, out var existingIp))
@@ -1120,6 +1118,15 @@ public partial class MainWindow : Window
                     }
 
                     map[key] = entry.RemoteAddress;
+
+                    var fileName = Path.GetFileName(key);
+                    if (!string.IsNullOrEmpty(fileName))
+                    {
+                        if (!map.TryGetValue(fileName, out var existingFnIp) || !GeoCountry.Lookup(existingFnIp).HasCountry)
+                        {
+                            map[fileName] = entry.RemoteAddress;
+                        }
+                    }
                 }
                 catch { }
             }
@@ -1197,64 +1204,72 @@ public partial class MainWindow : Window
 
     private void UpdateStatus()
     {
-        if (_isEnablingOnStartup)
+        _updatingStatus = true;
+        try
         {
-            MasterToggle.IsChecked = true;
-            MasterToggle.IsEnabled = false;
-            MasterLabel.Text = Strings.T("ProtectionEnabling");
-            StatusDot.Fill = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x38, 0xBD, 0xF8));
-            ModeBox.IsEnabled = false;
-            TrafficIndicator.SetActive(true, App.Settings.FirewallMode);
-            _trafficWidget?.SetFirewallState(true, App.Settings.FirewallMode);
-            StatusText.Text = Strings.T("StatusEnabling");
-            _tray?.UpdateState();
-            return;
-        }
-
-        MasterToggle.IsEnabled = true;
-
-        if (_svc.OwnedByAnotherHost)
-        {
-            // The Windows service owns the engine, this instance must not touch the firewall.
-            MasterToggle.IsChecked = false;
-            MasterToggle.IsEnabled = false;
-            MasterLabel.Text = Strings.T("ProtectionDisabled");
-            StatusDot.Fill = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0xDE, 0x80));
-            ModeBox.IsEnabled = false;
-            // The service does enforce the policy, so the traffic surfaces must report
-            // protection as active: traffic keeps flowing and speeds are real.
-            TrafficIndicator.SetActive(true, _svc.Mode);
-            _trafficWidget?.SetFirewallState(true, _svc.Mode);
-            StatusText.Text = Strings.T("StatusServiceOwned");
-            _tray?.UpdateState();
-            return;
-        }
-
-        var on = _svc.IsMasterOn;
-        MasterToggle.IsChecked = on;
-        MasterLabel.Text = on ? Strings.T("ProtectionActive") : Strings.T("ProtectionDisabled");
-        StatusDot.Fill = on ? new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0xDE, 0x80)) : new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xEF, 0x44, 0x44));
-        ModeBox.IsEnabled = on;
-        TrafficIndicator.SetActive(on, _svc.Mode);
-        _trafficWidget?.SetFirewallState(on, _svc.Mode);
-        var real = _svc.Wfp.IsRealBlock ? " • WFP Real" : " • Simulado";
-        if (!on) StatusText.Text = Strings.T("StatusDisabled") + real;
-        else
-        {
-            var statusKey = _svc.Mode switch
+            if (_isEnablingOnStartup)
             {
-                FirewallMode.BlockAll => "StatusEnabledBlock",
-                FirewallMode.Killswitch => "StatusEnabledKillswitch",
-                _ => "StatusEnabledAsk"
-            };
-            StatusText.Text = Strings.T(statusKey) + real;
+                MasterToggle.IsChecked = true;
+                MasterToggle.IsEnabled = false;
+                MasterLabel.Text = Strings.T("ProtectionEnabling");
+                StatusDot.Fill = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x38, 0xBD, 0xF8));
+                ModeBox.IsEnabled = false;
+                TrafficIndicator.SetActive(true, App.Settings.FirewallMode);
+                _trafficWidget?.SetFirewallState(true, App.Settings.FirewallMode);
+                StatusText.Text = Strings.T("StatusEnabling");
+                _tray?.UpdateState();
+                return;
+            }
+
+            MasterToggle.IsEnabled = true;
+
+            if (_svc.OwnedByAnotherHost)
+            {
+                // The Windows service owns the engine, this instance must not touch the firewall.
+                MasterToggle.IsChecked = false;
+                MasterToggle.IsEnabled = false;
+                MasterLabel.Text = Strings.T("ProtectionDisabled");
+                StatusDot.Fill = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0xDE, 0x80));
+                ModeBox.IsEnabled = false;
+                // The service does enforce the policy, so the traffic surfaces must report
+                // protection as active: traffic keeps flowing and speeds are real.
+                TrafficIndicator.SetActive(true, _svc.Mode);
+                _trafficWidget?.SetFirewallState(true, _svc.Mode);
+                StatusText.Text = Strings.T("StatusServiceOwned");
+                _tray?.UpdateState();
+                return;
+            }
+
+            var on = _svc.IsMasterOn;
+            MasterToggle.IsChecked = on;
+            MasterLabel.Text = on ? Strings.T("ProtectionActive") : Strings.T("ProtectionDisabled");
+            StatusDot.Fill = on ? new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0xDE, 0x80)) : new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xEF, 0x44, 0x44));
+            ModeBox.IsEnabled = on;
+            TrafficIndicator.SetActive(on, _svc.Mode);
+            _trafficWidget?.SetFirewallState(on, _svc.Mode);
+            var real = _svc.Wfp.IsRealBlock ? " • WFP Real" : " • Simulado";
+            if (!on) StatusText.Text = Strings.T("StatusDisabled") + real;
+            else
+            {
+                var statusKey = _svc.Mode switch
+                {
+                    FirewallMode.BlockAll => "StatusEnabledBlock",
+                    FirewallMode.Killswitch => "StatusEnabledKillswitch",
+                    _ => "StatusEnabledAsk"
+                };
+                StatusText.Text = Strings.T(statusKey) + real;
+            }
+            _tray?.UpdateState();
         }
-        _tray?.UpdateState();
+        finally
+        {
+            _updatingStatus = false;
+        }
     }
 
     private void MasterToggle_Changed(object sender, RoutedEventArgs e)
     {
-        if (_loading) return;
+        if (_loading || _updatingStatus || _isEnablingOnStartup) return;
         if (_svc.OwnedByAnotherHost)
         {
             // Another host owns the engine, the toggle is not actionable here.

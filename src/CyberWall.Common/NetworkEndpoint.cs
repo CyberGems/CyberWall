@@ -55,20 +55,34 @@ public static class NetworkEndpoint
     {
         if (string.IsNullOrWhiteSpace(endpoint)) return null;
         var value = endpoint.Trim();
+
+        // 1. Bracketed IPv6: [2001:db8::1]:8080 or [2001:db8::1]
         if (value[0] == '[')
         {
             var close = value.IndexOf(']');
-            if (close > 1) return value[1..close];
+            if (close > 1)
+            {
+                var inner = value[1..close];
+                if (IPAddress.TryParse(inner, out _)) return inner;
+            }
         }
 
+        // 2. IPv4 with port: 1.2.3.4:80
         var colon = value.LastIndexOf(':');
         if (colon > 0)
         {
             var head = value[..colon];
-            if (IPAddress.TryParse(head, out _)) return head;
+            if (IPAddress.TryParse(head, out var parsed) && parsed.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                return head;
         }
 
-        return IPAddress.TryParse(value, out _) ? value : null;
+        // 3. Plain IP address (IPv4 or unbracketed IPv6 without port)
+        if (IPAddress.TryParse(value, out var ip))
+        {
+            return ip.ToString();
+        }
+
+        return null;
     }
 
     public static async Task<string?> TryResolveHostAsync(string address, CancellationToken cancellationToken)

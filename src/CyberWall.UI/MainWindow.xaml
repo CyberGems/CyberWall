@@ -1311,7 +1311,7 @@
 
                         <!-- Subtle Indeterminate Rules Loading Line -->
                         <ProgressBar x:Name="RulesLoadingBar" Height="2" VerticalAlignment="Bottom"
-                                     IsIndeterminate="True" Visibility="Collapsed"
+                                     IsIndeterminate="True" Visibility="Visible"
                                      Foreground="{DynamicResource AccentBrush}" Background="Transparent"
                                      BorderThickness="0"/>
                     </Grid>
