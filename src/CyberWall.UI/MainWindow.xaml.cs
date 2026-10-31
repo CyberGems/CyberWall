@@ -21,6 +21,9 @@ using CyberWall.UI.Services;
 using System.Windows.Automation;
 using System.Windows.Controls.Primitives;
 using MenuItem = System.Windows.Controls.MenuItem;
+using RadioButton = System.Windows.Controls.RadioButton;
+using Brush = System.Windows.Media.Brush;
+using Color = System.Windows.Media.Color;
 
 namespace CyberWall.UI;
 
@@ -65,6 +68,9 @@ public partial class MainWindow : Window
         TabSettingsIcon.Stroke = tab == MainTab.Settings ? accentBrush : subTextBrush;
 
         // Lifecycle hooks
+        if (tab == MainTab.Firewall)
+            UpdateFirewallTelemetry();
+
         if (tab == MainTab.TrafficMonitor)
             TrafficMonitorTabContent.Activate();
         else
@@ -127,6 +133,11 @@ public partial class MainWindow : Window
     private static readonly SolidColorBrush UpdateNormalBorderBrush = new(System.Windows.Media.Color.FromRgb(0x2D, 0x3A, 0x4E));
     private static readonly SolidColorBrush UpdateHoverBgBrush = new(System.Windows.Media.Color.FromRgb(0x25, 0x32, 0x46));
     private static readonly SolidColorBrush UpdateHoverBorderBrush = new(System.Windows.Media.Color.FromRgb(0x3B, 0x4E, 0x6E));
+    private static readonly Geometry PauseGeometry = Geometry.Parse("M 6 4 H 8 V 16 H 6 Z M 12 4 H 14 V 16 H 12 Z");
+    private static readonly Geometry PlayGeometry = Geometry.Parse("M 7 4 L 17 10 L 7 16 Z");
+
+    private int _firewallTimeWindowSeconds = 60;
+    private bool _isFirewallChartPaused;
 
     static MainWindow()
     {
@@ -134,6 +145,8 @@ public partial class MainWindow : Window
         UpdateNormalBorderBrush.Freeze();
         UpdateHoverBgBrush.Freeze();
         UpdateHoverBorderBrush.Freeze();
+        PauseGeometry.Freeze();
+        PlayGeometry.Freeze();
     }
 
     public MainWindow()
@@ -190,6 +203,8 @@ public partial class MainWindow : Window
         GeoCountry.Warm();
         ProcessTrafficTracker.Instance.ActivityUpdated += OnActivityUpdated;
         ProcessTrafficTracker.Instance.Start();
+        NetworkSpeedService.Instance.SpeedUpdated += OnNetworkSpeedUpdated;
+        NetworkSpeedService.Instance.Start();
         ConnectivityService.Instance.Start(_notifications);
         AppInfoMonitorService.Instance.Start(_notifications, _svc);
         PathToIconConverter.IconChanged += OnAppIconChanged;
@@ -205,6 +220,7 @@ public partial class MainWindow : Window
             ConnectivityService.Instance.Stop();
             ProcessTrafficTracker.Instance.ActivityUpdated -= OnActivityUpdated;
             ProcessTrafficTracker.Instance.Stop();
+            NetworkSpeedService.Instance.SpeedUpdated -= OnNetworkSpeedUpdated;
             GeoCountry.Updated -= OnGeoUpdated;
             _svc.OnAllowedActivity -= OnAllowedActivity;
             if (!_svc.OwnedByAnotherHost)
@@ -234,7 +250,7 @@ public partial class MainWindow : Window
                 WindowLayoutPersistence.Restore(this, App.Settings);
                 _layoutRestored = true;
             }
-            TrafficIndicator.IndicatorClicked += () => TopBandwidthFlyout.Toggle(TrafficIndicator);
+            UpdateFirewallTelemetry();
             TopBandwidthFlyout.QuickBlockRequested += appPath =>
             {
                 _svc.SetVerdict(appPath, Verdict.Block, true, null);
@@ -421,7 +437,16 @@ public partial class MainWindow : Window
         SettingsTabContent?.RefreshLanguage();
         ModeLbl.Text = Strings.T("Mode");
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
-        TrafficIndicator.RefreshLanguage();
+        FirewallChartTitleText.Text = $"{Strings.T("TrafficTelemetryTitle")} ({(_firewallTimeWindowSeconds <= 60 ? "60s" : "5 min")})";
+        FirewallTime1mBtn.Content = Strings.T("ChartTime1m");
+        FirewallTime1mBtn.ToolTip = Strings.T("ChartTime1mTooltip");
+        FirewallTime5mBtn.Content = Strings.T("ChartTime5m");
+        FirewallTime5mBtn.ToolTip = Strings.T("ChartTime5mTooltip");
+        FirewallPeakPill.ToolTip = Strings.T("ChartScaleTooltip");
+        FirewallPauseChartBtn.ToolTip = _isFirewallChartPaused ? Strings.T("ChartResumeTooltip") : Strings.T("ChartPauseTooltip");
+        FirewallThroughputPill.ToolTip = Strings.T("TopConsumersHeader");
+        FirewallTrafficGraph?.RefreshLanguage();
+        UpdateFirewallScaleText();
         TopBandwidthFlyout.RefreshLanguage();
         _trafficWidget?.RefreshLanguage();
         _tray?.RefreshLanguage();
@@ -1214,7 +1239,6 @@ public partial class MainWindow : Window
                 MasterLabel.Text = Strings.T("ProtectionEnabling");
                 StatusDot.Fill = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x38, 0xBD, 0xF8));
                 ModeBox.IsEnabled = false;
-                TrafficIndicator.SetActive(true, App.Settings.FirewallMode);
                 _trafficWidget?.SetFirewallState(true, App.Settings.FirewallMode);
                 StatusText.Text = Strings.T("StatusEnabling");
                 _tray?.UpdateState();
@@ -1233,7 +1257,6 @@ public partial class MainWindow : Window
                 ModeBox.IsEnabled = false;
                 // The service does enforce the policy, so the traffic surfaces must report
                 // protection as active: traffic keeps flowing and speeds are real.
-                TrafficIndicator.SetActive(true, _svc.Mode);
                 _trafficWidget?.SetFirewallState(true, _svc.Mode);
                 StatusText.Text = Strings.T("StatusServiceOwned");
                 _tray?.UpdateState();
@@ -1245,7 +1268,6 @@ public partial class MainWindow : Window
             MasterLabel.Text = on ? Strings.T("ProtectionActive") : Strings.T("ProtectionDisabled");
             StatusDot.Fill = on ? new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0xDE, 0x80)) : new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xEF, 0x44, 0x44));
             ModeBox.IsEnabled = on;
-            TrafficIndicator.SetActive(on, _svc.Mode);
             _trafficWidget?.SetFirewallState(on, _svc.Mode);
             var real = _svc.Wfp.IsRealBlock ? " • WFP Real" : " • Simulado";
             if (!on) StatusText.Text = Strings.T("StatusDisabled") + real;
@@ -1265,6 +1287,73 @@ public partial class MainWindow : Window
         {
             _updatingStatus = false;
         }
+    }
+
+    private void OnNetworkSpeedUpdated(NetworkSpeedSnapshot snapshot)
+    {
+        if (CurrentTab != MainTab.Firewall) return;
+
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(() => OnNetworkSpeedUpdated(snapshot));
+            return;
+        }
+
+        UpdateFirewallTelemetry(snapshot);
+    }
+
+    private void UpdateFirewallTelemetry(NetworkSpeedSnapshot? snapshot = null)
+    {
+        snapshot ??= NetworkSpeedService.Instance.CurrentSnapshot;
+        var history = NetworkSpeedService.Instance.GetHistory(_firewallTimeWindowSeconds);
+
+        FirewallDownSpeedText.Text = NetworkSpeedService.FormatSpeed(snapshot.DownloadBps);
+        FirewallUpSpeedText.Text = NetworkSpeedService.FormatSpeed(snapshot.UploadBps);
+
+        if (!_isFirewallChartPaused)
+        {
+            FirewallTrafficGraph?.UpdateData(history, snapshot);
+        }
+
+        UpdateFirewallScaleText();
+    }
+
+    private void UpdateFirewallScaleText()
+    {
+        double scale = FirewallTrafficGraph?.CurrentMaxScale ?? 0;
+        string formatted = NetworkSpeedService.FormatSpeed(scale);
+        FirewallPeakRateText.Text = $"▲ {Strings.T("ChartScaleLabel", formatted)}";
+    }
+
+    private void FirewallTimeWindow_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is RadioButton btn && int.TryParse(btn.Tag?.ToString(), out int seconds))
+        {
+            _firewallTimeWindowSeconds = seconds;
+            FirewallChartTitleText.Text = $"{Strings.T("TrafficTelemetryTitle")} ({(_firewallTimeWindowSeconds <= 60 ? "60s" : "5 min")})";
+            var snapshot = NetworkSpeedService.Instance.CurrentSnapshot;
+            var history = NetworkSpeedService.Instance.GetHistory(_firewallTimeWindowSeconds);
+            FirewallTrafficGraph?.SwitchTimeframe(seconds, history, snapshot);
+            UpdateFirewallScaleText();
+        }
+    }
+
+    private void FirewallPauseChartBtn_Click(object sender, RoutedEventArgs e)
+    {
+        _isFirewallChartPaused = !_isFirewallChartPaused;
+        if (FirewallTrafficGraph != null)
+        {
+            FirewallTrafficGraph.IsPaused = _isFirewallChartPaused;
+        }
+
+        FirewallPauseBtnIcon.Data = _isFirewallChartPaused ? PlayGeometry : PauseGeometry;
+        FirewallPauseBtnIcon.Fill = _isFirewallChartPaused ? (Brush)FindResource("AccentBrush") : (Brush)FindResource("SubTextBrush");
+        FirewallPauseChartBtn.ToolTip = _isFirewallChartPaused ? Strings.T("ChartResumeTooltip") : Strings.T("ChartPauseTooltip");
+    }
+
+    private void FirewallThroughputPill_Click(object sender, MouseButtonEventArgs e)
+    {
+        TopBandwidthFlyout.Toggle(FirewallThroughputPill);
     }
 
     private void MasterToggle_Changed(object sender, RoutedEventArgs e)
