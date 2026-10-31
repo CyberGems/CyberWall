@@ -1325,7 +1325,7 @@
 
                         <!-- Allowed Section -->
                         <Border x:Name="AllowedSectionBorder" Grid.Row="0" Background="Transparent" BorderThickness="0" Margin="0,0,0,4" Visibility="Collapsed">
-                            <Expander x:Name="AllowedExpander" Style="{StaticResource ModernExpander}" Header="Permitidas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Expanded="Expander_StateChanged" Collapsed="Expander_StateChanged">
+                            <Expander x:Name="AllowedExpander" Style="{StaticResource ModernExpander}" Header="Permitidas (0)" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Expanded="Expander_StateChanged" Collapsed="Expander_StateChanged">
                                 <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True"
                                           EnableRowVirtualization="True" EnableColumnVirtualization="False"
                                           VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
@@ -1551,7 +1551,7 @@
 
                         <!-- Blocked Section -->
                         <Border x:Name="BlockedSectionBorder" Grid.Row="1" Background="Transparent" BorderThickness="0" Margin="0,4,0,0" Visibility="Collapsed">
-                            <Expander x:Name="BlockedExpander" Style="{StaticResource ModernExpander}" Header="Bloqueadas (0)" IsExpanded="True" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Expanded="Expander_StateChanged" Collapsed="Expander_StateChanged">
+                            <Expander x:Name="BlockedExpander" Style="{StaticResource ModernExpander}" Header="Bloqueadas (0)" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Expanded="Expander_StateChanged" Collapsed="Expander_StateChanged">
                                 <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True"
                                           EnableRowVirtualization="True" EnableColumnVirtualization="False"
                                           VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"

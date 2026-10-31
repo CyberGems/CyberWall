@@ -114,6 +114,7 @@ public partial class MainWindow : Window
     private readonly NotificationStore _notifications = new();
     private List<AppRule> _all = new();
     private bool _loading;
+    private bool _isEnablingOnStartup;
     private bool _notifOpen;
     private bool _layoutRestored;
     private readonly Dictionary<string, string> _lastRemoteByApp = new(StringComparer.OrdinalIgnoreCase);
@@ -153,31 +154,39 @@ public partial class MainWindow : Window
         UpdateExpanderRowHeights();
         RefreshRules();
         RefreshLanguage();
+        if (App.Settings.FirewallEnabled)
+        {
+            _isEnablingOnStartup = true;
+            Task.Run(() =>
+            {
+                var ok = _svc.Enable(App.Settings.FirewallMode);
+                _isEnablingOnStartup = false;
+                if (!ok && _svc.OwnedByAnotherHost)
+                {
+                    Dispatcher.BeginInvoke(StartOwnershipRetry);
+                }
+                else
+                {
+                    Dispatcher.BeginInvoke(UpdateStatus);
+                }
+            });
+        }
         UpdateStatus();
         var isAdmin = new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent()).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
         if (!isAdmin) StatusText.Text += "  ⚠️ " + (Strings.Current == Lang.Es ? "Ejecuta como Admin para filtrado real" : "Run as Admin for kernel filtering");
-        Closing += (_, _) => WindowLayoutPersistence.Save(this, App.Settings);
+        Closing += (_, _) =>
+        {
+            if (AllowedExpander != null && BlockedExpander != null)
+            {
+                App.Settings.AllowedRulesExpanded = AllowedExpander.IsExpanded;
+                App.Settings.BlockedRulesExpanded = BlockedExpander.IsExpanded;
+                App.Settings.Save();
+            }
+            WindowLayoutPersistence.Save(this, App.Settings);
+        };
         _tray = new TrayService(this, _svc);
         GeoCountry.Updated += OnGeoUpdated;
         GeoCountry.Warm();
-
-        Loaded += (_, _) =>
-        {
-            Task.Run(() =>
-            {
-                if (App.Settings.FirewallEnabled)
-                {
-                    if (!_svc.Enable(App.Settings.FirewallMode) && _svc.OwnedByAnotherHost)
-                    {
-                        Dispatcher.BeginInvoke(StartOwnershipRetry);
-                    }
-                    else
-                    {
-                        Dispatcher.BeginInvoke(UpdateStatus);
-                    }
-                }
-            });
-        };
         ProcessTrafficTracker.Instance.ActivityUpdated += OnActivityUpdated;
         ProcessTrafficTracker.Instance.Start();
         ConnectivityService.Instance.Start(_notifications);
@@ -915,6 +924,8 @@ public partial class MainWindow : Window
                 if (RulesLoadingOverlay != null) RulesLoadingOverlay.Visibility = Visibility.Collapsed;
                 if (AllowedSectionBorder != null) AllowedSectionBorder.Visibility = Visibility.Visible;
                 if (BlockedSectionBorder != null) BlockedSectionBorder.Visibility = Visibility.Visible;
+                if (AllowedExpander != null) AllowedExpander.IsExpanded = App.Settings.AllowedRulesExpanded;
+                if (BlockedExpander != null) BlockedExpander.IsExpanded = App.Settings.BlockedRulesExpanded;
                 UpdateExpanderRowHeights();
             }
         }
@@ -1186,6 +1197,22 @@ public partial class MainWindow : Window
 
     private void UpdateStatus()
     {
+        if (_isEnablingOnStartup)
+        {
+            MasterToggle.IsChecked = true;
+            MasterToggle.IsEnabled = false;
+            MasterLabel.Text = Strings.T("ProtectionEnabling");
+            StatusDot.Fill = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x38, 0xBD, 0xF8));
+            ModeBox.IsEnabled = false;
+            TrafficIndicator.SetActive(true, App.Settings.FirewallMode);
+            _trafficWidget?.SetFirewallState(true, App.Settings.FirewallMode);
+            StatusText.Text = Strings.T("StatusEnabling");
+            _tray?.UpdateState();
+            return;
+        }
+
+        MasterToggle.IsEnabled = true;
+
         if (_svc.OwnedByAnotherHost)
         {
             // The Windows service owns the engine, this instance must not touch the firewall.
