@@ -11,6 +11,8 @@ using UserControl = System.Windows.Controls.UserControl;
 using Button = System.Windows.Controls.Button;
 using MenuItem = System.Windows.Controls.MenuItem;
 using ContextMenu = System.Windows.Controls.ContextMenu;
+using RadioButton = System.Windows.Controls.RadioButton;
+using Brush = System.Windows.Media.Brush;
 using WpfClipboard = System.Windows.Clipboard;
 
 namespace CyberWall.UI.Views;
@@ -21,15 +23,21 @@ public partial class TrafficMonitorView : UserControl
 
     private static readonly Geometry EthernetGeometry = Geometry.Parse("M 15 20 L 18 17 H 20 C 21.1 17 22 16.1 22 15 V 6 C 22 4.9 21.1 4 20 4 H 4 C 2.9 4 2 4.9 2 6 V 15 C 2 16.1 2.9 17 4 17 H 6 L 9 20 Z M 6 8 V 10 M 10 8 V 10 M 14 8 V 10 M 18 8 V 10");
     private static readonly Geometry WifiGeometry = Geometry.Parse("M 12,19 L 12,19.01 M 8.5,15.5 C 10.5,13.8 13.5,13.8 15.5,15.5 M 5.5,12 C 9.2,8.5 14.8,8.5 18.5,12 M 2.5,8.5 C 8,3.5 16,3.5 21.5,8.5");
+    private static readonly Geometry PauseGeometry = Geometry.Parse("M 6 4 H 8 V 16 H 6 Z M 12 4 H 14 V 16 H 12 Z");
+    private static readonly Geometry PlayGeometry = Geometry.Parse("M 7 4 L 17 10 L 7 16 Z");
 
     static TrafficMonitorView()
     {
         EthernetGeometry.Freeze();
         WifiGeometry.Freeze();
+        PauseGeometry.Freeze();
+        PlayGeometry.Freeze();
     }
 
     private readonly DispatcherTimer _refreshTimer;
     private bool _isActive;
+    private int _timeWindowSeconds = 60;
+    private bool _isChartPaused;
     private Border? _activeRowBorder;
     private string? _activeMenuAppPath;
     private ContextMenu? _activeContextMenu;
@@ -84,18 +92,20 @@ public partial class TrafficMonitorView : UserControl
         UpdateData();
     }
 
-    private void ChartContainer_SizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        if (_isActive) UpdateData();
-    }
-
     public void RefreshLanguage()
     {
         DownTitleLbl.Text = Strings.T("LegendDownload");
         UpTitleLbl.Text = Strings.T("LegendUpload");
-        ChartTitleText.Text = Strings.T("TrafficTelemetryTitle");
+        ChartTitleText.Text = $"{Strings.T("TrafficTelemetryTitle")} ({(_timeWindowSeconds <= 60 ? "60s" : "5 min")})";
         LegendDownText.Text = Strings.T("LegendDownload");
         LegendUpText.Text = Strings.T("LegendUpload");
+
+        Time1mBtn.Content = Strings.T("ChartTime1m");
+        Time1mBtn.ToolTip = Strings.T("ChartTime1mTooltip");
+        Time5mBtn.Content = Strings.T("ChartTime5m");
+        Time5mBtn.ToolTip = Strings.T("ChartTime5mTooltip");
+        ChartPeakPill.ToolTip = Strings.T("ChartScaleTooltip");
+        PauseChartBtn.ToolTip = _isChartPaused ? Strings.T("ChartResumeTooltip") : Strings.T("ChartPauseTooltip");
 
         var peakText = Strings.T("PeakSpeed") + " (60s)";
         var avgText = Strings.T("AvgSpeed");
@@ -106,12 +116,14 @@ public partial class TrafficMonitorView : UserControl
         DownAvgLbl.Text = $"{avgText}: ";
         SessionTitleLbl.Text = sessionText;
 
-        TimeNowLbl.Text = Strings.T("TimeNow");
         AdapterHeaderLbl.Text = Strings.T("TrafficActiveAdapter").Replace(":", "");
         AppsActiveLbl.Text = Strings.T("ActiveTransmittingApps") + ": ";
         ConsumersTitle.Text = Strings.T("TopConsumersHeader");
         ConsumersSubTitle.Text = Strings.T("TopConsumersSubtitle");
         EmptyStateText.Text = Strings.T("BandwidthNoTraffic");
+
+        LiveTrafficGraph?.RefreshLanguage();
+        UpdateScaleText();
 
         try
         {
@@ -128,7 +140,7 @@ public partial class TrafficMonitorView : UserControl
     public void UpdateData()
     {
         var snapshot = NetworkSpeedService.Instance.CurrentSnapshot;
-        var history = NetworkSpeedService.Instance.GetHistory(60);
+        var history = NetworkSpeedService.Instance.GetHistory(_timeWindowSeconds);
 
         // Speeds and totals
         DownCurrentSpeedVal.Text = NetworkSpeedService.FormatSpeed(snapshot.DownloadBps);
@@ -191,7 +203,11 @@ public partial class TrafficMonitorView : UserControl
                 // Process is still active: freeze list re-ordering so the row does not shift
                 // or jump from under the user's cursor while they interact with the menu.
                 TotalThroughputText.Text = $"↓ {NetworkSpeedService.FormatSpeed(snapshot.DownloadBps)}  ↑ {NetworkSpeedService.FormatSpeed(snapshot.UploadBps)}";
-                DrawChart(history, snapshot);
+                if (!_isChartPaused)
+                {
+                    LiveTrafficGraph?.UpdateData(history, snapshot);
+                }
+                UpdateScaleText();
                 return;
             }
         }
@@ -203,123 +219,45 @@ public partial class TrafficMonitorView : UserControl
         AppsActiveCountVal.Text = $"{top.Count} apps";
         TotalThroughputText.Text = $"↓ {NetworkSpeedService.FormatSpeed(snapshot.DownloadBps)}  ↑ {NetworkSpeedService.FormatSpeed(snapshot.UploadBps)}";
 
-        // Draw Chart
-        DrawChart(history, snapshot);
+        // Update live graph
+        if (!_isChartPaused)
+        {
+            LiveTrafficGraph?.UpdateData(history, snapshot);
+        }
+        UpdateScaleText();
     }
 
-    private void DrawChart(IReadOnlyList<TrafficHistoryPoint> history, NetworkSpeedSnapshot snapshot)
+    private void UpdateScaleText()
     {
-        var width = ChartContainer.ActualWidth;
-        var height = ChartContainer.ActualHeight;
+        double scale = LiveTrafficGraph?.CurrentMaxScale ?? 0;
+        string formatted = NetworkSpeedService.FormatSpeed(scale);
+        ChartPeakRateText.Text = $"▲ {Strings.T("ChartScaleLabel", formatted)}";
+    }
 
-        if (width <= 10 || height <= 10) return;
-
-        // Pad history into fixed 60-second array (index 0 = 59s ago, index 59 = now)
-        const int totalSlots = 60;
-        var downSeries = new double[totalSlots];
-        var upSeries = new double[totalSlots];
-
-        int historyCount = history.Count;
-        int offset = totalSlots - historyCount;
-
-        for (int i = 0; i < historyCount; i++)
+    private void PauseChartBtn_Click(object sender, RoutedEventArgs e)
+    {
+        _isChartPaused = !_isChartPaused;
+        if (LiveTrafficGraph != null)
         {
-            int slot = offset + i;
-            if (slot >= 0 && slot < totalSlots)
-            {
-                downSeries[slot] = history[i].DownloadBps;
-                upSeries[slot] = history[i].UploadBps;
-            }
+            LiveTrafficGraph.IsPaused = _isChartPaused;
         }
 
-        // Make sure the very latest slot matches current snapshot
-        downSeries[totalSlots - 1] = snapshot.DownloadBps;
-        upSeries[totalSlots - 1] = snapshot.UploadBps;
+        PauseBtnIcon.Data = _isChartPaused ? PlayGeometry : PauseGeometry;
+        PauseBtnIcon.Fill = _isChartPaused ? (Brush)FindResource("AccentBrush") : (Brush)FindResource("SubTextBrush");
+        PauseChartBtn.ToolTip = _isChartPaused ? Strings.T("ChartResumeTooltip") : Strings.T("ChartPauseTooltip");
+    }
 
-        // Dynamic scale with min headroom of 32 KB/s
-        double maxRate = 32.0 * 1024.0;
-        for (int i = 0; i < totalSlots; i++)
+    private void TimeWindow_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is RadioButton btn && int.TryParse(btn.Tag?.ToString(), out int seconds))
         {
-            if (downSeries[i] > maxRate) maxRate = downSeries[i];
-            if (upSeries[i] > maxRate) maxRate = upSeries[i];
+            _timeWindowSeconds = seconds;
+            ChartTitleText.Text = $"{Strings.T("TrafficTelemetryTitle")} ({(_timeWindowSeconds <= 60 ? "60s" : "5 min")})";
+            var snapshot = NetworkSpeedService.Instance.CurrentSnapshot;
+            var history = NetworkSpeedService.Instance.GetHistory(_timeWindowSeconds);
+            LiveTrafficGraph?.SwitchTimeframe(seconds, history, snapshot);
+            UpdateScaleText();
         }
-
-        double maxScale = maxRate * 1.15; // 15% visual headroom
-        ChartPeakRateText.Text = $"▲ {NetworkSpeedService.FormatSpeed(maxScale)}";
-
-        // Build Geometry
-        var downPoints = new WPoint[totalSlots];
-        var upPoints = new WPoint[totalSlots];
-
-        double stepX = width / (totalSlots - 1);
-
-        for (int i = 0; i < totalSlots; i++)
-        {
-            double x = i * stepX;
-            double downRatio = Math.Clamp(downSeries[i] / maxScale, 0.0, 1.0);
-            double upRatio = Math.Clamp(upSeries[i] / maxScale, 0.0, 1.0);
-
-            // Invert Y coordinate so 0 is at bottom
-            double yDown = height - (downRatio * (height - 4)) - 2;
-            double yUp = height - (upRatio * (height - 4)) - 2;
-
-            downPoints[i] = new WPoint(x, yDown);
-            upPoints[i] = new WPoint(x, yUp);
-        }
-
-        // Download Line & Area
-        var downLineGeom = new StreamGeometry();
-        using (var ctx = downLineGeom.Open())
-        {
-            ctx.BeginFigure(downPoints[0], false, false);
-            for (int i = 1; i < totalSlots; i++)
-            {
-                ctx.LineTo(downPoints[i], true, true);
-            }
-        }
-        downLineGeom.Freeze();
-        DownloadLinePath.Data = downLineGeom;
-
-        var downAreaGeom = new StreamGeometry();
-        using (var ctx = downAreaGeom.Open())
-        {
-            ctx.BeginFigure(new WPoint(0, height), true, true);
-            ctx.LineTo(downPoints[0], true, false);
-            for (int i = 1; i < totalSlots; i++)
-            {
-                ctx.LineTo(downPoints[i], true, true);
-            }
-            ctx.LineTo(new WPoint(width, height), true, false);
-        }
-        downAreaGeom.Freeze();
-        DownloadAreaPath.Data = downAreaGeom;
-
-        // Upload Line & Area
-        var upLineGeom = new StreamGeometry();
-        using (var ctx = upLineGeom.Open())
-        {
-            ctx.BeginFigure(upPoints[0], false, false);
-            for (int i = 1; i < totalSlots; i++)
-            {
-                ctx.LineTo(upPoints[i], true, true);
-            }
-        }
-        upLineGeom.Freeze();
-        UploadLinePath.Data = upLineGeom;
-
-        var upAreaGeom = new StreamGeometry();
-        using (var ctx = upAreaGeom.Open())
-        {
-            ctx.BeginFigure(new WPoint(0, height), true, true);
-            ctx.LineTo(upPoints[0], true, false);
-            for (int i = 1; i < totalSlots; i++)
-            {
-                ctx.LineTo(upPoints[i], true, true);
-            }
-            ctx.LineTo(new WPoint(width, height), true, false);
-        }
-        upAreaGeom.Freeze();
-        UploadAreaPath.Data = upAreaGeom;
     }
 
     private void QuickBlock_Click(object sender, RoutedEventArgs e)

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using CyberWall.Common.Geo;
 using CyberWall.Common.Models;
 using CyberWall.Service.Wfp;
 
@@ -22,6 +23,11 @@ public sealed record ProcessBandwidthUsage(
     public string FormattedTotalTransfer => NetworkSpeedService.FormatBytes(TotalBytesIn + TotalBytesOut);
     public string QuickBlockText => CyberWall.Common.I18n.Strings.T("BandwidthQuickBlock");
     public double UsagePercent { get; set; }
+
+    public GeoResult Geo { get; set; } = GeoResult.Unknown;
+    public bool HasCountry => Geo.HasCountry;
+    public string CountryCode => Geo.HasCountry ? Geo.Iso2 ?? "" : "";
+    public string CountryLabel => CountryDisplay.Label(Geo);
 }
 
 public sealed class ProcessBandwidthService : IDisposable
@@ -91,12 +97,13 @@ public sealed class ProcessBandwidthService : IDisposable
             .ToList();
 
         double maxBps = items.Count > 0 ? items.Max(i => i.TotalBps) : 0;
-        if (maxBps > 0)
+        foreach (var item in items)
         {
-            foreach (var item in items)
+            if (maxBps > 0)
             {
                 item.UsagePercent = Math.Clamp((item.TotalBps / maxBps) * 100.0, 5.0, 100.0);
             }
+            item.Geo = ProcessTrafficTracker.Instance.GetGeo(item.AppPath);
         }
 
         return items;

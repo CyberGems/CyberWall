@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
+using CyberWall.Common.Geo;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Service.Engine;
@@ -65,6 +66,7 @@ public sealed class ProcessTrafficTracker : IDisposable
     private volatile bool _running;
     private int _pollLock;
     private readonly ConcurrentDictionary<string, ProcessActivityState> _activities = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, GeoResult> _appGeoCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<int, string?> _pidPathCache = new();
     private DateTime _lastCacheCleanup = DateTime.UtcNow;
     private int[] _activePidsSnapshot = Array.Empty<int>();
@@ -141,6 +143,101 @@ public sealed class ProcessTrafficTracker : IDisposable
                 state.LastActivityUtc = DateTime.UtcNow;
             }
         }
+
+        var geo = GeoCountry.Lookup(remoteAddress);
+        if (geo.HasCountry || geo.Kind == GeoKind.Local)
+        {
+            _appGeoCache[appPath] = geo;
+            try
+            {
+                var norm = AppRule.Normalize(appPath);
+                if (!string.Equals(norm, appPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    _appGeoCache[norm] = geo;
+                }
+            }
+            catch { }
+        }
+    }
+
+    public GeoResult GetGeo(string appPath)
+    {
+        if (string.IsNullOrWhiteSpace(appPath)) return GeoResult.Unknown;
+
+        // 1. Direct active state endpoint
+        if (_activities.TryGetValue(appPath, out var state))
+        {
+            string? ep;
+            lock (state) ep = state.LastEndpoint ?? state.LastBlockedEndpoint;
+            if (!string.IsNullOrEmpty(ep))
+            {
+                var geo = GeoCountry.Lookup(ep);
+                if (geo.HasCountry || geo.Kind == GeoKind.Local)
+                {
+                    _appGeoCache[appPath] = geo;
+                    return geo;
+                }
+            }
+        }
+
+        // 2. Normalized path active state endpoint
+        try
+        {
+            var norm = AppRule.Normalize(appPath);
+            if (!string.Equals(norm, appPath, StringComparison.OrdinalIgnoreCase) &&
+                _activities.TryGetValue(norm, out state))
+            {
+                string? ep;
+                lock (state) ep = state.LastEndpoint ?? state.LastBlockedEndpoint;
+                if (!string.IsNullOrEmpty(ep))
+                {
+                    var geo = GeoCountry.Lookup(ep);
+                    if (geo.HasCountry || geo.Kind == GeoKind.Local)
+                    {
+                        _appGeoCache[appPath] = geo;
+                        _appGeoCache[norm] = geo;
+                        return geo;
+                    }
+                }
+            }
+        }
+        catch { }
+
+        // 3. Cached geo by path or normalized path
+        if (_appGeoCache.TryGetValue(appPath, out var cached) && (cached.HasCountry || cached.Kind == GeoKind.Local))
+        {
+            return cached;
+        }
+
+        try
+        {
+            var norm = AppRule.Normalize(appPath);
+            if (_appGeoCache.TryGetValue(norm, out cached) && (cached.HasCountry || cached.Kind == GeoKind.Local))
+            {
+                return cached;
+            }
+        }
+        catch { }
+
+        // 4. Fallback search by process filename across cached geos
+        try
+        {
+            var fileName = Path.GetFileName(appPath);
+            if (!string.IsNullOrEmpty(fileName))
+            {
+                foreach (var kvp in _appGeoCache)
+                {
+                    if (kvp.Key.EndsWith(fileName, StringComparison.OrdinalIgnoreCase) &&
+                        (kvp.Value.HasCountry || kvp.Value.Kind == GeoKind.Local))
+                    {
+                        return kvp.Value;
+                    }
+                }
+            }
+        }
+        catch { }
+
+        return GeoResult.Unknown;
     }
 
     public ProcessActivityInfo GetActivity(string appPath, Verdict verdict = Verdict.Allow)
@@ -327,6 +424,19 @@ public sealed class ProcessTrafficTracker : IDisposable
                         {
                             state.LastBlockedUtc = utc;
                             state.LastBlockedEndpoint = endpoint;
+                        }
+                    }
+
+                    if (entry.Geo.HasCountry || entry.Geo.Kind == GeoKind.Local)
+                    {
+                        _appGeoCache[appPath] = entry.Geo;
+                    }
+                    else
+                    {
+                        var geo = GeoCountry.Lookup(endpoint);
+                        if (geo.HasCountry || geo.Kind == GeoKind.Local)
+                        {
+                            _appGeoCache[appPath] = geo;
                         }
                     }
                 }
