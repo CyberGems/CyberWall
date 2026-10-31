@@ -56,7 +56,10 @@ public static class NetworkEndpoint
         if (string.IsNullOrWhiteSpace(endpoint)) return null;
         var value = endpoint.Trim();
 
-        // 1. Bracketed IPv6: [2001:db8::1]:8080 or [2001:db8::1]
+        // 1. If already a valid IP address (IPv4 or IPv6), return it directly without chopping
+        if (IPAddress.TryParse(value, out _)) return value;
+
+        // 2. Bracketed IPv6 with port: [2001:db8::1]:8080
         if (value[0] == '[')
         {
             var close = value.IndexOf(']');
@@ -67,19 +70,13 @@ public static class NetworkEndpoint
             }
         }
 
-        // 2. IPv4 with port: 1.2.3.4:80
+        // 3. IPv4 with port: 1.2.3.4:80
         var colon = value.LastIndexOf(':');
         if (colon > 0)
         {
             var head = value[..colon];
             if (IPAddress.TryParse(head, out var parsed) && parsed.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
                 return head;
-        }
-
-        // 3. Plain IP address (IPv4 or unbracketed IPv6 without port)
-        if (IPAddress.TryParse(value, out var ip))
-        {
-            return ip.ToString();
         }
 
         return null;
