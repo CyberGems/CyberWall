@@ -418,6 +418,11 @@ public static class Strings
         ["NavSettingsTooltip"] = ("Preferences, alerts, and system configuration", "Preferencias, alertas y configuración del sistema"),
         ["SettingsSubtitle"] = ("Preferences • Alerts & Notifications • System Options", "Preferencias • Alertas y Notificaciones • Opciones del Sistema"),
         ["MoreSettings"] = ("Settings...", "Configuración..."),
+        ["EditRule"] = ("Edit rule", "Editar regla"),
+        ["ToggleRuleTooltip"] = ("Toggle firewall permission", "Alternar permiso de firewall"),
+        ["SearchOnlineTooltip"] = ("Search online for information about this program", "Buscar información sobre este programa en internet"),
+        ["OpenFolderTooltip"] = ("Open containing folder in File Explorer", "Abrir carpeta contenedora en el Explorador"),
+        ["RemoveRuleTooltip"] = ("Remove rule from list", "Eliminar regla de la lista"),
     };
 
     public static string T(string key, params object[] args)

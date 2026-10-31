@@ -42,7 +42,7 @@ public partial class FloatingTrafficWidget : Window
     private bool _online = true;
     private bool _compactMode;
     private long _lastCompactToggleTime;
-    private bool _moreMenuWasOpen;
+    private long _widgetMenuClosedTimestamp;
     private double _currentDown;
     private double _currentUp;
     private double _peakDown;
@@ -443,16 +443,22 @@ public partial class FloatingTrafficWidget : Window
         return false;
     }
 
-    private void MoreButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void WidgetMenu_Opened(object sender, RoutedEventArgs e)
     {
-        _moreMenuWasOpen = WidgetMenu.IsOpen;
+        MoreButton.Tag = "Active";
+    }
+
+    private void WidgetMenu_Closed(object sender, RoutedEventArgs e)
+    {
+        _widgetMenuClosedTimestamp = Stopwatch.GetTimestamp();
+        MoreButton.Tag = null;
     }
 
     private void MoreButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_moreMenuWasOpen)
+        if (_widgetMenuClosedTimestamp != 0 &&
+            Stopwatch.GetElapsedTime(_widgetMenuClosedTimestamp).TotalMilliseconds < 300)
         {
-            _moreMenuWasOpen = false;
             return;
         }
 

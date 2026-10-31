@@ -1717,18 +1717,24 @@ public partial class MainWindow : Window
 
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
 
-    private bool _moreMenuWasOpen;
+    private long _moreMenuClosedTimestamp;
 
-    private void MoreBtn_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void MoreOptionsMenu_Opened(object sender, RoutedEventArgs e)
     {
-        _moreMenuWasOpen = MoreBtn.ContextMenu?.IsOpen == true;
+        MoreBtn.Tag = "Active";
+    }
+
+    private void MoreOptionsMenu_Closed(object sender, RoutedEventArgs e)
+    {
+        _moreMenuClosedTimestamp = Stopwatch.GetTimestamp();
+        MoreBtn.Tag = null;
     }
 
     private void MoreBtn_Click(object sender, RoutedEventArgs e)
     {
-        if (_moreMenuWasOpen)
+        if (_moreMenuClosedTimestamp != 0 &&
+            Stopwatch.GetElapsedTime(_moreMenuClosedTimestamp).TotalMilliseconds < 300)
         {
-            _moreMenuWasOpen = false;
             return;
         }
 
