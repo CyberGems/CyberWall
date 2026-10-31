@@ -1727,9 +1727,16 @@ public partial class MainWindow : Window
 
     private void MoreOptionsMenu_Closed(object sender, RoutedEventArgs e)
     {
-        if (Mouse.LeftButton == MouseButtonState.Pressed || MoreBtn.IsMouseOver)
+        _moreMenuDismissedAtUtc = DateTime.UtcNow;
+    }
+
+    private void MoreBtn_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (MoreBtn.ContextMenu is { IsOpen: true } menu)
         {
             _moreMenuDismissedAtUtc = DateTime.UtcNow;
+            menu.IsOpen = false;
+            e.Handled = true;
         }
     }
 
@@ -1737,7 +1744,7 @@ public partial class MainWindow : Window
     {
         if (MoreBtn.ContextMenu is not { } menu) return;
 
-        if (menu.IsOpen || DateTime.UtcNow - _moreMenuDismissedAtUtc < MoreMenuReopenGuard)
+        if (menu.IsOpen || (DateTime.UtcNow - _moreMenuDismissedAtUtc) < MoreMenuReopenGuard)
         {
             _moreMenuDismissedAtUtc = DateTime.MinValue;
             menu.IsOpen = false;

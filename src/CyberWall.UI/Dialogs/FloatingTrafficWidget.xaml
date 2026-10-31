@@ -226,6 +226,7 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button x:Name="MoreButton" Style="{StaticResource WidgetIconButton}"
+                            PreviewMouseLeftButtonDown="MoreButton_PreviewMouseLeftButtonDown"
                             Click="MoreButton_Click">
                         <Path Data="M 5,10.5 a 1.5,1.5 0 1 0 0,3 a 1.5,1.5 0 1 0 0,-3 M 12,10.5 a 1.5,1.5 0 1 0 0,3 a 1.5,1.5 0 1 0 0,-3 M 19,10.5 a 1.5,1.5 0 1 0 0,3 a 1.5,1.5 0 1 0 0,-3"
                               Width="14" Height="14" Stretch="Uniform"

@@ -14,6 +14,7 @@ public partial class App : System.Windows.Application
     static App()
     {
         AppContext.SetSwitch("Switch.System.Windows.Controls.ToolTip.OptOutOfWCAG21ToolTipBehavior", true);
+        DpiAwarenessHelper.Initialize();
     }
 
     public static AppSettings Settings { get; private set; } = null!;
@@ -62,6 +63,7 @@ public partial class App : System.Windows.Application
 
     protected override void OnStartup(System.Windows.StartupEventArgs e)
     {
+        DpiAwarenessHelper.Initialize();
         Settings = AppSettings.Load();
 
         // The installer delegates the startup task to the application so that it does

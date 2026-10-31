@@ -446,6 +446,16 @@ public partial class FloatingTrafficWidget : Window
         return false;
     }
 
+    private void MoreButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (WidgetMenu.IsOpen)
+        {
+            _widgetMenuDismissedAtUtc = DateTime.UtcNow;
+            WidgetMenu.IsOpen = false;
+            e.Handled = true;
+        }
+    }
+
     private void WidgetMenu_Opened(object sender, RoutedEventArgs e)
     {
         _widgetMenuDismissedAtUtc = DateTime.MinValue;
@@ -453,15 +463,12 @@ public partial class FloatingTrafficWidget : Window
 
     private void WidgetMenu_Closed(object sender, RoutedEventArgs e)
     {
-        if (Mouse.LeftButton == MouseButtonState.Pressed || MoreButton.IsMouseOver)
-        {
-            _widgetMenuDismissedAtUtc = DateTime.UtcNow;
-        }
+        _widgetMenuDismissedAtUtc = DateTime.UtcNow;
     }
 
     private void MoreButton_Click(object sender, RoutedEventArgs e)
     {
-        if (WidgetMenu.IsOpen || DateTime.UtcNow - _widgetMenuDismissedAtUtc < WidgetMenuReopenGuard)
+        if (WidgetMenu.IsOpen || (DateTime.UtcNow - _widgetMenuDismissedAtUtc) < WidgetMenuReopenGuard)
         {
             _widgetMenuDismissedAtUtc = DateTime.MinValue;
             WidgetMenu.IsOpen = false;

@@ -1,4 +1,4 @@
-﻿; Script generated for CyberWall
+; Script generated for CyberWall
 ; Windows Filtering Platform Application Firewall
 ; Built by CyberGems (https://cybergems.org)
 
@@ -57,6 +57,11 @@ Source: ".\publish-win64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdi
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExeName}"; IconFilename: "{app}\Assets\CyberWall.ico"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon; IconFilename: "{app}\Assets\CyberWall.ico"
 ; Startup uses a Task Scheduler entry so the app can start elevated without a UAC prompt
+
+[Registry]
+; Clean up any legacy AppCompatFlags from older installers that forced HIGHDPIAWARE (locks app to System 96 DPI)
+Root: HKLM; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"; ValueType: none; ValueName: "{app}\{#AppExeName}"; Flags: deletevalue uninsdeletevalue
+Root: HKCU; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"; ValueType: none; ValueName: "{app}\{#AppExeName}"; Flags: deletevalue uninsdeletevalue
 
 [Run]
 ; The startup task and the self-allow firewall rules are created by the application:
