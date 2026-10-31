@@ -60,6 +60,7 @@ public sealed class AppSettings
     // Floating traffic widget (desktop companion window).
     public bool TrafficWidgetVisible { get; set; } = false;
     public bool TrafficWidgetAlwaysOnTop { get; set; } = true;
+    public bool TrafficWidgetCompactMode { get; set; } = false;
     public bool TrafficWidgetShowGraph { get; set; } = true;
     public bool TrafficWidgetShowSession { get; set; } = true;
     public bool TrafficWidgetBoundsSaved { get; set; } = false;

@@ -40,6 +40,9 @@ public partial class FloatingTrafficWidget : Window
     private bool _firewallActive = true;
     private FirewallMode _firewallMode = FirewallMode.Ask;
     private bool _online = true;
+    private bool _compactMode;
+    private long _lastCompactToggleTime;
+    private bool _moreMenuWasOpen;
     private double _currentDown;
     private double _currentUp;
     private double _peakDown;
@@ -70,6 +73,7 @@ public partial class FloatingTrafficWidget : Window
         InitializeComponent();
         CyberWallWindowChrome.Apply(this, 12);
         Icon = AppIconHelper.CreateShieldImageSource(64);
+        _compactMode = App.Settings.TrafficWidgetCompactMode;
         ApplyAlwaysOnTop(App.Settings.TrafficWidgetAlwaysOnTop);
         ApplySectionVisibility();
         RefreshLanguage();
@@ -102,12 +106,15 @@ public partial class FloatingTrafficWidget : Window
         GraphTitleText.Text = Strings.T("WidgetGraphTitle");
         GraphLegendDownText.Text = Strings.T("LegendDownload");
         GraphLegendUpText.Text = Strings.T("LegendUpload");
+        MoreButton.ToolTip = Strings.T("WidgetMore");
+        AutomationProperties.SetName(MoreButton, Strings.T("WidgetMore"));
         CloseButton.ToolTip = Strings.T("WidgetClose");
         AutomationProperties.SetName(CloseButton, Strings.T("WidgetClose"));
         AutomationProperties.SetName(PinButton, Strings.T("WidgetAlwaysOnTop"));
         UpdatePinToolTip();
 
         WidgetPinItem.Header = Strings.T("WidgetAlwaysOnTop");
+        WidgetCompactItem.Header = Strings.T("WidgetCompactMode");
         WidgetShowItem.Header = Strings.T("WidgetShowMainWindow");
         WidgetTrafficItem.Header = Strings.T("TrafficMonitorMenu");
         WidgetGraphItem.Header = Strings.T("WidgetShowGraph");
@@ -143,11 +150,50 @@ public partial class FloatingTrafficWidget : Window
 
     private void ApplySectionVisibility()
     {
-        GraphSection.Visibility = App.Settings.TrafficWidgetShowGraph ? Visibility.Visible : Visibility.Collapsed;
-        SessionDivider.Visibility = App.Settings.TrafficWidgetShowSession ? Visibility.Visible : Visibility.Collapsed;
-        SessionSection.Visibility = App.Settings.TrafficWidgetShowSession ? Visibility.Visible : Visibility.Collapsed;
+        HeaderDivider.Visibility = _compactMode ? Visibility.Collapsed : Visibility.Visible;
+        DownRow.Visibility = _compactMode ? Visibility.Collapsed : Visibility.Visible;
+        RowDivider.Visibility = _compactMode ? Visibility.Collapsed : Visibility.Visible;
+        UpRow.Visibility = _compactMode ? Visibility.Collapsed : Visibility.Visible;
+
+        // In compact mode, the live graph is the focal element and is always visible
+        GraphSection.Visibility = (_compactMode || App.Settings.TrafficWidgetShowGraph) ? Visibility.Visible : Visibility.Collapsed;
+        GraphSection.Margin = _compactMode ? new Thickness(0, 4, 0, 0) : new Thickness(0, 10, 0, 0);
+
+        SessionDivider.Visibility = (!_compactMode && App.Settings.TrafficWidgetShowSession) ? Visibility.Visible : Visibility.Collapsed;
+        SessionSection.Visibility = (!_compactMode && App.Settings.TrafficWidgetShowSession) ? Visibility.Visible : Visibility.Collapsed;
+
+        WidgetCompactItem.IsChecked = _compactMode;
         WidgetGraphItem.IsChecked = App.Settings.TrafficWidgetShowGraph;
         WidgetSessionItem.IsChecked = App.Settings.TrafficWidgetShowSession;
+
+        WidgetGraphItem.IsEnabled = !_compactMode;
+        WidgetSessionItem.IsEnabled = !_compactMode;
+    }
+
+    public void ToggleCompactMode()
+    {
+        long now = Stopwatch.GetTimestamp();
+        if (Stopwatch.GetElapsedTime(_lastCompactToggleTime, now).TotalMilliseconds < 250) return;
+        _lastCompactToggleTime = now;
+
+        SetCompactMode(!_compactMode);
+    }
+
+    public void SetCompactMode(bool compact)
+    {
+        _compactMode = compact;
+        App.Settings.TrafficWidgetCompactMode = compact;
+        App.Settings.Save();
+        ApplySectionVisibility();
+
+        if (GraphSection.Visibility == Visibility.Visible)
+        {
+            var history = NetworkSpeedService.Instance.GetHistory(HistorySlots);
+            var effectiveSnapshot = IsMuted
+                ? new NetworkSpeedSnapshot(0, 0, _snapshot.TotalBytesReceived, _snapshot.TotalBytesSent, _snapshot.AdapterName, _snapshot.IsConnected)
+                : _snapshot;
+            WidgetTrafficGraph.UpdateData(history, effectiveSnapshot);
+        }
     }
 
     private void UpdatePinToolTip() => PinButton.ToolTip = Strings.T("WidgetAlwaysOnTop");
@@ -178,8 +224,12 @@ public partial class FloatingTrafficWidget : Window
             ? new NetworkSpeedSnapshot(0, 0, _snapshot.TotalBytesReceived, _snapshot.TotalBytesSent, _snapshot.AdapterName, _snapshot.IsConnected)
             : _snapshot;
 
-        DownGraph.UpdateData(history, effectiveSnapshot);
-        UpGraph.UpdateData(history, effectiveSnapshot);
+        if (!_compactMode)
+        {
+            DownGraph.UpdateData(history, effectiveSnapshot);
+            UpGraph.UpdateData(history, effectiveSnapshot);
+        }
+
         if (GraphSection.Visibility == Visibility.Visible)
         {
             WidgetTrafficGraph.UpdateData(history, effectiveSnapshot);
@@ -224,7 +274,8 @@ public partial class FloatingTrafficWidget : Window
         GraphSection.ToolTip = string.Join("\n",
             Strings.T("WidgetGraphTitle"),
             $"{Strings.T("WidgetTipPeak")}: {NetworkSpeedService.FormatSpeed(peak)}",
-            $"{Strings.T("TrafficHistorySubtitle")} · {_historySampleCount}/60");
+            $"{Strings.T("TrafficHistorySubtitle")} · {_historySampleCount}/60",
+            Strings.T("WidgetCompactHint"));
     }
 
     private static string BuildMetricTip(string title, double current, double peak, string sessionLabel, long sessionBytes) =>
@@ -233,7 +284,8 @@ public partial class FloatingTrafficWidget : Window
             $"{Strings.T("WidgetTipCurrent")}: {NetworkSpeedService.FormatSpeed(current)}",
             $"{Strings.T("WidgetTipPeak")}: {NetworkSpeedService.FormatSpeed(peak)}",
             $"{sessionLabel} {NetworkSpeedService.FormatBytes(sessionBytes)}",
-            Strings.T("WidgetHistoryHint"));
+            Strings.T("WidgetHistoryHint"),
+            Strings.T("WidgetCompactHint"));
 
     #endregion
 
@@ -351,9 +403,16 @@ public partial class FloatingTrafficWidget : Window
     {
         if (e.ButtonState != MouseButtonState.Pressed) return;
 
-        // Pressing a button (pin, close) must toggle it instead of starting a window drag,
+        // Pressing a button (pin, close, more) must toggle it instead of starting a window drag,
         // otherwise the drag loop swallows the click.
         if (IsInsideButton(e.OriginalSource as DependencyObject)) return;
+
+        if (e.ClickCount == 2)
+        {
+            ToggleCompactMode();
+            e.Handled = true;
+            return;
+        }
 
         try
         {
@@ -362,6 +421,14 @@ public partial class FloatingTrafficWidget : Window
         catch (InvalidOperationException)
         {
             // DragMove throws when the button was released between the event and the call.
+        }
+    }
+
+    private void Window_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton == MouseButton.Left && !IsInsideButton(e.OriginalSource as DependencyObject))
+        {
+            ToggleCompactMode();
         }
     }
 
@@ -374,6 +441,24 @@ public partial class FloatingTrafficWidget : Window
         }
 
         return false;
+    }
+
+    private void MoreButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _moreMenuWasOpen = WidgetMenu.IsOpen;
+    }
+
+    private void MoreButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_moreMenuWasOpen)
+        {
+            _moreMenuWasOpen = false;
+            return;
+        }
+
+        WidgetMenu.PlacementTarget = MoreButton;
+        WidgetMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        WidgetMenu.IsOpen = true;
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => CloseRequested?.Invoke();
@@ -390,6 +475,11 @@ public partial class FloatingTrafficWidget : Window
         var onTop = WidgetPinItem.IsChecked;
         ApplyAlwaysOnTop(onTop);
         AlwaysOnTopChanged?.Invoke(onTop);
+    }
+
+    private void WidgetCompactItem_Click(object sender, RoutedEventArgs e)
+    {
+        SetCompactMode(WidgetCompactItem.IsChecked == true);
     }
 
     private void WidgetShowItem_Click(object sender, RoutedEventArgs e) => ShowMainWindowRequested?.Invoke();
