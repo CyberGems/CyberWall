@@ -31,21 +31,11 @@ public partial class FloatingTrafficWidget : Window
 
     private const int HistorySlots = 60;
 
-    /// <summary>One extra sample is drawn left of the window so the slide never shows a gap.</summary>
-    private const int ChartPoints = HistorySlots + 1;
-
     private static readonly MediaColor OnlineColor = MediaColor.FromRgb(0x4A, 0xDE, 0x80);
     private static readonly MediaColor WarningColor = MediaColor.FromRgb(0xFB, 0x92, 0x3C);
     private static readonly MediaColor OfflineColor = MediaColor.FromRgb(0xEF, 0x44, 0x44);
 
     private readonly DispatcherTimer _timer;
-    private readonly DispatcherTimer _slideTimer;
-    private readonly List<(TranslateTransform Shift, double Step)> _shiftTargets = new();
-    private long _slideStartedAt;
-    private double _slideDurationSeconds;
-    private long _lastDataTickAt;
-    private double[] _previousDown = Array.Empty<double>();
-    private double[] _previousUp = Array.Empty<double>();
     private bool _positionApplied;
     private bool _firewallActive = true;
     private FirewallMode _firewallMode = FirewallMode.Ask;
@@ -87,11 +77,6 @@ public partial class FloatingTrafficWidget : Window
         _timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(1) };
         _timer.Tick += (_, _) => RefreshData();
 
-        // Cheap slide animation: only moves a retained drawing between 1 s samples, never
-        // rebuilds geometry per frame.
-        _slideTimer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromSeconds(1.0 / 30) };
-        _slideTimer.Tick += (_, _) => AdvanceSlide();
-
         ConnectivityService.Instance.ConnectivityChanged += OnConnectivityChanged;
 
         Loaded += (_, _) => ApplyInitialPosition();
@@ -127,6 +112,7 @@ public partial class FloatingTrafficWidget : Window
         WidgetTrafficItem.Header = Strings.T("TrafficMonitorMenu");
         WidgetGraphItem.Header = Strings.T("WidgetShowGraph");
         WidgetSessionItem.Header = Strings.T("WidgetShowSession");
+        WidgetTrafficGraph.RefreshLanguage();
     }
 
     public void ApplyAlwaysOnTop(bool onTop)
@@ -176,7 +162,7 @@ public partial class FloatingTrafficWidget : Window
         service.Start();
         _snapshot = service.CurrentSnapshot;
 
-        var history = service.GetHistory(ChartPoints);
+        var history = service.GetHistory(HistorySlots);
         _historySampleCount = Math.Min(history.Count, HistorySlots);
         _peakDown = 0;
         _peakUp = 0;
@@ -187,7 +173,17 @@ public partial class FloatingTrafficWidget : Window
         }
 
         UpdateValues();
-        DrawCharts(history);
+
+        var effectiveSnapshot = IsMuted
+            ? new NetworkSpeedSnapshot(0, 0, _snapshot.TotalBytesReceived, _snapshot.TotalBytesSent, _snapshot.AdapterName, _snapshot.IsConnected)
+            : _snapshot;
+
+        DownGraph.UpdateData(history, effectiveSnapshot);
+        UpGraph.UpdateData(history, effectiveSnapshot);
+        if (GraphSection.Visibility == Visibility.Visible)
+        {
+            WidgetTrafficGraph.UpdateData(history, effectiveSnapshot);
+        }
     }
 
     /// <summary>True while readings must display zero: offline adapter, no connectivity or killswitch lockdown.</summary>
@@ -210,149 +206,6 @@ public partial class FloatingTrafficWidget : Window
         // unfiltered) and green while protection is active, mirroring the main indicator.
         var dotColor = IsMuted ? OfflineColor : !_firewallActive ? WarningColor : OnlineColor;
         StatusDot.Fill = new SolidColorBrush(dotColor);
-    }
-
-    private void DrawCharts(IReadOnlyList<TrafficHistoryPoint> history)
-    {
-        // Pad history into a fixed chart array. The oldest slot is drawn just outside the left
-        // edge so the slide animation never exposes an empty strip (one extra point).
-        var downSeries = new double[ChartPoints];
-        var upSeries = new double[ChartPoints];
-
-        int offset = ChartPoints - history.Count;
-        for (int i = 0; i < history.Count; i++)
-        {
-            int slot = offset + i;
-            if (slot >= 0 && slot < ChartPoints)
-            {
-                downSeries[slot] = history[i].DownloadBps;
-                upSeries[slot] = history[i].UploadBps;
-            }
-        }
-
-        int last = ChartPoints - 1;
-        if (IsMuted)
-        {
-            downSeries[last] = 0;
-            upSeries[last] = 0;
-        }
-        else
-        {
-            downSeries[last] = _snapshot.DownloadBps;
-            upSeries[last] = _snapshot.UploadBps;
-        }
-
-        // Shared scale with a 32 KB/s floor so idle traffic stays visible, 15% headroom.
-        double maxRate = 32.0 * 1024.0;
-        for (int i = 0; i < ChartPoints; i++)
-        {
-            if (downSeries[i] > maxRate) maxRate = downSeries[i];
-            if (upSeries[i] > maxRate) maxRate = upSeries[i];
-        }
-        double maxScale = maxRate * 1.15;
-
-        _shiftTargets.Clear();
-        if (RowDownCanvas.ActualWidth > 10)
-        {
-            DrawSeries(RowDownLinePath, RowDownAreaPath, downSeries, maxScale, RowDownCanvas.ActualWidth, RowDownCanvas.ActualHeight);
-            _shiftTargets.Add((RowDownShift, RowDownCanvas.ActualWidth / (ChartPoints - 2)));
-        }
-        if (RowUpCanvas.ActualWidth > 10)
-        {
-            DrawSeries(RowUpLinePath, RowUpAreaPath, upSeries, maxScale, RowUpCanvas.ActualWidth, RowUpCanvas.ActualHeight);
-            _shiftTargets.Add((RowUpShift, RowUpCanvas.ActualWidth / (ChartPoints - 2)));
-        }
-        if (GraphSection.Visibility == Visibility.Visible && GraphCanvasHost.ActualWidth > 10)
-        {
-            DrawSeries(CombinedDownLinePath, CombinedDownAreaPath, downSeries, maxScale, GraphCanvasHost.ActualWidth, GraphCanvasHost.ActualHeight);
-            DrawSeries(CombinedUpLinePath, CombinedUpAreaPath, upSeries, maxScale, GraphCanvasHost.ActualWidth, GraphCanvasHost.ActualHeight);
-            _shiftTargets.Add((CombinedShift, GraphCanvasHost.ActualWidth / (ChartPoints - 2)));
-        }
-
-        bool dataChanged = !downSeries.SequenceEqual(_previousDown) || !upSeries.SequenceEqual(_previousUp);
-        _previousDown = downSeries;
-        _previousUp = upSeries;
-        BeginSlide(dataChanged);
-    }
-
-    /// <summary>
-    /// Starts a one-sample slide towards the freshly built geometry. Only the translate
-    /// transforms move while the animation runs; geometry is never rebuilt per frame.
-    /// </summary>
-    private void BeginSlide(bool dataChanged)
-    {
-        long now = Stopwatch.GetTimestamp();
-        bool animate = dataChanged && SystemParameters.ClientAreaAnimation && IsVisible;
-        if (animate)
-        {
-            _slideDurationSeconds = _lastDataTickAt != 0
-                ? Math.Clamp(Stopwatch.GetElapsedTime(_lastDataTickAt, now).TotalSeconds, 0.25, 2.0)
-                : 1.0;
-            _lastDataTickAt = now;
-            _slideStartedAt = now;
-            foreach (var target in _shiftTargets) target.Shift.X = target.Step;
-            _slideTimer.Start();
-        }
-        else
-        {
-            _lastDataTickAt = now;
-            _slideTimer.Stop();
-            foreach (var target in _shiftTargets) target.Shift.X = 0;
-        }
-    }
-
-    private void AdvanceSlide()
-    {
-        double elapsed = Stopwatch.GetElapsedTime(_slideStartedAt, Stopwatch.GetTimestamp()).TotalSeconds;
-        double progress = Math.Clamp(elapsed / _slideDurationSeconds, 0.0, 1.0);
-        foreach (var target in _shiftTargets) target.Shift.X = target.Step * (1.0 - progress);
-        if (progress >= 1.0) _slideTimer.Stop();
-    }
-
-    private void StopSlide()
-    {
-        _slideTimer.Stop();
-        foreach (var target in _shiftTargets) target.Shift.X = 0;
-    }
-
-    private static void DrawSeries(Path linePath, Path areaPath, double[] series, double maxScale, double width, double height)
-    {
-        if (height <= 4 || width <= 10) return;
-
-        // series[0] sits one step left of the window; series[^1] sits on the right edge.
-        var pts = new WPoint[series.Length];
-        double stepX = width / (series.Length - 2);
-        for (int i = 0; i < series.Length; i++)
-        {
-            double ratio = Math.Clamp(series[i] / maxScale, 0.0, 1.0);
-            pts[i] = new WPoint((i - 1) * stepX, height - (ratio * (height - 4)) - 2);
-        }
-
-        var lineGeom = new StreamGeometry();
-        using (var ctx = lineGeom.Open())
-        {
-            ctx.BeginFigure(pts[0], false, false);
-            for (int i = 1; i < series.Length; i++)
-            {
-                ctx.LineTo(pts[i], true, true);
-            }
-        }
-        lineGeom.Freeze();
-        linePath.Data = lineGeom;
-
-        var areaGeom = new StreamGeometry();
-        using (var ctx = areaGeom.Open())
-        {
-            ctx.BeginFigure(new WPoint(pts[0].X, height), true, true);
-            ctx.LineTo(pts[0], true, false);
-            for (int i = 1; i < series.Length; i++)
-            {
-                ctx.LineTo(pts[i], true, true);
-            }
-            ctx.LineTo(new WPoint(pts[^1].X, height), true, false);
-        }
-        areaGeom.Freeze();
-        areaPath.Data = areaGeom;
     }
 
     #endregion
@@ -439,7 +292,6 @@ public partial class FloatingTrafficWidget : Window
         else
         {
             _timer.Stop();
-            StopSlide();
         }
     }
 
@@ -479,7 +331,6 @@ public partial class FloatingTrafficWidget : Window
     private void Widget_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         _timer.Stop();
-        _slideTimer.Stop();
         ConnectivityService.Instance.ConnectivityChanged -= OnConnectivityChanged;
         if (!_positionApplied) return;
 
@@ -550,6 +401,14 @@ public partial class FloatingTrafficWidget : Window
         App.Settings.TrafficWidgetShowGraph = WidgetGraphItem.IsChecked == true;
         App.Settings.Save();
         ApplySectionVisibility();
+        if (GraphSection.Visibility == Visibility.Visible)
+        {
+            var history = NetworkSpeedService.Instance.GetHistory(HistorySlots);
+            var effectiveSnapshot = IsMuted
+                ? new NetworkSpeedSnapshot(0, 0, _snapshot.TotalBytesReceived, _snapshot.TotalBytesSent, _snapshot.AdapterName, _snapshot.IsConnected)
+                : _snapshot;
+            WidgetTrafficGraph.UpdateData(history, effectiveSnapshot);
+        }
     }
 
     private void WidgetSessionItem_Click(object sender, RoutedEventArgs e)

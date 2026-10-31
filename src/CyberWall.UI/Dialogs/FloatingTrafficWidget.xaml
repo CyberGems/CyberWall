@@ -1,6 +1,7 @@
 <Window x:Class="CyberWall.UI.Dialogs.FloatingTrafficWidget"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctrl="clr-namespace:CyberWall.UI.Controls"
         Title="CyberWall"
         Width="330"
         SizeToContent="Height"
@@ -244,27 +245,24 @@
                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
                     <StackPanel Orientation="Horizontal">
                         <Path Data="M 5 1.5 L 5 11 M 5 11 L 1.6 6.7 M 5 11 L 8.4 6.7"
-                              Stroke="#38BDF8" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Stroke="#00E5FF" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                               Width="8" Height="10" Stretch="Uniform" Margin="0,0,5,0" VerticalAlignment="Center"/>
                         <TextBlock x:Name="DownLabel" Text="Descarga" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
                     </StackPanel>
-                    <TextBlock x:Name="DownValueText" Text="0.0 B/s" FontSize="15" FontWeight="Bold" Foreground="#38BDF8" Margin="0,3,0,0"/>
+                    <TextBlock x:Name="DownValueText" Text="0.0 B/s" FontSize="15" FontWeight="Bold" Foreground="#00E5FF" Margin="0,3,0,0"/>
                 </StackPanel>
                 <Border Grid.Column="1" Background="{DynamicResource HeaderBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" ClipToBounds="True" Height="38">
-                    <Canvas x:Name="RowDownCanvas">
-                        <Canvas.RenderTransform>
-                            <TranslateTransform x:Name="RowDownShift"/>
-                        </Canvas.RenderTransform>
-                        <Path x:Name="RowDownAreaPath">
-                            <Path.Fill>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                    <GradientStop Color="#4038BDF8" Offset="0.0"/>
-                                    <GradientStop Color="#0038BDF8" Offset="1.0"/>
-                                </LinearGradientBrush>
-                            </Path.Fill>
-                        </Path>
-                        <Path x:Name="RowDownLinePath" Stroke="#38BDF8" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
-                    </Canvas>
+                    <ctrl:TrafficGraphControl x:Name="DownGraph"
+                                              Height="38"
+                                              DownloadColor="#00E5FF"
+                                              ShowUpload="False"
+                                              ShowGrid="False"
+                                              ShowTimeLabels="False"
+                                              ShowHoverInspection="False"
+                                              ShowScaleLabels="False"
+                                              ShowPlotBorder="False"
+                                              PlotBackground="Transparent"
+                                              CornerRadius="7"/>
                 </Border>
             </Grid>
 
@@ -290,20 +288,17 @@
                     <TextBlock x:Name="UpValueText" Text="0.0 B/s" FontSize="15" FontWeight="Bold" Foreground="#22C55E" Margin="0,3,0,0"/>
                 </StackPanel>
                 <Border Grid.Column="1" Background="{DynamicResource HeaderBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" ClipToBounds="True" Height="38">
-                    <Canvas x:Name="RowUpCanvas">
-                        <Canvas.RenderTransform>
-                            <TranslateTransform x:Name="RowUpShift"/>
-                        </Canvas.RenderTransform>
-                        <Path x:Name="RowUpAreaPath">
-                            <Path.Fill>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                    <GradientStop Color="#3022C55E" Offset="0.0"/>
-                                    <GradientStop Color="#0022C55E" Offset="1.0"/>
-                                </LinearGradientBrush>
-                            </Path.Fill>
-                        </Path>
-                        <Path x:Name="RowUpLinePath" Stroke="#22C55E" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
-                    </Canvas>
+                    <ctrl:TrafficGraphControl x:Name="UpGraph"
+                                              Height="38"
+                                              UploadColor="#22C55E"
+                                              ShowDownload="False"
+                                              ShowGrid="False"
+                                              ShowTimeLabels="False"
+                                              ShowHoverInspection="False"
+                                              ShowScaleLabels="False"
+                                              ShowPlotBorder="False"
+                                              PlotBackground="Transparent"
+                                              CornerRadius="7"/>
                 </Border>
             </Grid>
 
@@ -324,46 +319,26 @@
                           ToolTipOpening="GraphSection_ToolTipOpening">
                         <TextBlock x:Name="GraphTitleText" Text="Telemetría en vivo" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <Ellipse Width="7" Height="7" Fill="#38BDF8" Margin="0,0,3,0" VerticalAlignment="Center"/>
+                            <Ellipse Width="7" Height="7" Fill="#00E5FF" Margin="0,0,3,0" VerticalAlignment="Center"/>
                             <TextBlock x:Name="GraphLegendDownText" Text="Descarga" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
                             <Ellipse Width="7" Height="7" Fill="#22C55E" Margin="0,0,3,0" VerticalAlignment="Center"/>
                             <TextBlock x:Name="GraphLegendUpText" Text="Subida" FontSize="9.5" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Grid>
 
-                    <Grid Grid.Row="1" x:Name="GraphCanvasHost" Height="62" ClipToBounds="True">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <Border Grid.Row="0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Opacity="0.3"/>
-                            <Border Grid.Row="1" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Opacity="0.3"/>
-                        </Grid>
-                        <Canvas>
-                            <Canvas.RenderTransform>
-                                <TranslateTransform x:Name="CombinedShift"/>
-                            </Canvas.RenderTransform>
-                            <Path x:Name="CombinedDownAreaPath">
-                                <Path.Fill>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Color="#4038BDF8" Offset="0.0"/>
-                                        <GradientStop Color="#0038BDF8" Offset="1.0"/>
-                                    </LinearGradientBrush>
-                                </Path.Fill>
-                            </Path>
-                            <Path x:Name="CombinedDownLinePath" Stroke="#38BDF8" StrokeThickness="1.7" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
-                            <Path x:Name="CombinedUpAreaPath">
-                                <Path.Fill>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Color="#3022C55E" Offset="0.0"/>
-                                        <GradientStop Color="#0022C55E" Offset="1.0"/>
-                                    </LinearGradientBrush>
-                                </Path.Fill>
-                            </Path>
-                            <Path x:Name="CombinedUpLinePath" Stroke="#22C55E" StrokeThickness="1.7" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
-                        </Canvas>
-                    </Grid>
+                    <ctrl:TrafficGraphControl x:Name="WidgetTrafficGraph" Grid.Row="1"
+                                              Height="62"
+                                              MaxSamples="60"
+                                              CompactMode="False"
+                                              ShowGrid="True"
+                                              ShowTimeLabels="False"
+                                              ShowScaleLabels="False"
+                                              ShowHoverInspection="True"
+                                              ShowPlotBorder="False"
+                                              PlotBackground="Transparent"
+                                              CornerRadius="6"
+                                              DownloadColor="#00E5FF"
+                                              UploadColor="#22C55E"/>
                 </Grid>
             </Border>
 
@@ -384,7 +359,7 @@
                     <TextBlock x:Name="AdapterVal" Text="-" FontSize="10" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" MaxWidth="150" TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="↓ " Foreground="#38BDF8" FontWeight="Bold" FontSize="10"/>
+                    <TextBlock Text="↓ " Foreground="#00E5FF" FontWeight="Bold" FontSize="10"/>
                     <TextBlock x:Name="SessionDownVal" Text="0 B" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}" Margin="0,0,8,0"/>
                     <TextBlock Text="↑ " Foreground="#22C55E" FontWeight="Bold" FontSize="10"/>
                     <TextBlock x:Name="SessionUpVal" Text="0 B" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}"/>

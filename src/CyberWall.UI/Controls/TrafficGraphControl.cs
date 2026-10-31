@@ -64,6 +64,22 @@ public class TrafficGraphControl : AnimatedHistoryGraph
         nameof(PlotBorderBrush), typeof(Brush), typeof(TrafficGraphControl),
         new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
 
+    public static readonly DependencyProperty ShowPlotBorderProperty = DependencyProperty.Register(
+        nameof(ShowPlotBorder), typeof(bool), typeof(TrafficGraphControl),
+        new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+
+    public static readonly DependencyProperty CornerRadiusProperty = DependencyProperty.Register(
+        nameof(CornerRadius), typeof(double), typeof(TrafficGraphControl),
+        new FrameworkPropertyMetadata(8.0, FrameworkPropertyMetadataOptions.AffectsRender));
+
+    public static readonly DependencyProperty ShowDownloadProperty = DependencyProperty.Register(
+        nameof(ShowDownload), typeof(bool), typeof(TrafficGraphControl),
+        new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+
+    public static readonly DependencyProperty ShowUploadProperty = DependencyProperty.Register(
+        nameof(ShowUpload), typeof(bool), typeof(TrafficGraphControl),
+        new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+
     public Color DownloadColor
     {
         get => (Color)GetValue(DownloadColorProperty);
@@ -123,6 +139,32 @@ public class TrafficGraphControl : AnimatedHistoryGraph
         get => (Brush?)GetValue(PlotBorderBrushProperty);
         set => SetValue(PlotBorderBrushProperty, value);
     }
+
+    public bool ShowPlotBorder
+    {
+        get => (bool)GetValue(ShowPlotBorderProperty);
+        set => SetValue(ShowPlotBorderProperty, value);
+    }
+
+    public double CornerRadius
+    {
+        get => (double)GetValue(CornerRadiusProperty);
+        set => SetValue(CornerRadiusProperty, value);
+    }
+
+    public bool ShowDownload
+    {
+        get => (bool)GetValue(ShowDownloadProperty);
+        set => SetValue(ShowDownloadProperty, value);
+    }
+
+    public bool ShowUpload
+    {
+        get => (bool)GetValue(ShowUploadProperty);
+        set => SetValue(ShowUploadProperty, value);
+    }
+
+    public double? ExternalMaxScale { get; set; }
 
     public bool IsPaused
     {
@@ -229,14 +271,20 @@ public class TrafficGraphControl : AnimatedHistoryGraph
         up[capacity - 1] = (float)snapshot.UploadBps;
 
         // Auto-scale with 15% headroom and a 32 KB/s minimum ceiling
-        double maxRate = 32.0 * 1024.0;
-        for (int i = 0; i < capacity; i++)
+        if (ExternalMaxScale.HasValue)
         {
-            if (down[i] > maxRate) maxRate = down[i];
-            if (up[i] > maxRate) maxRate = up[i];
+            _targetMax = Math.Max(32.0 * 1024.0, ExternalMaxScale.Value);
         }
-
-        _targetMax = maxRate * 1.15;
+        else
+        {
+            double maxRate = 32.0 * 1024.0;
+            for (int i = 0; i < capacity; i++)
+            {
+                if (ShowDownload && down[i] > maxRate) maxRate = down[i];
+                if (ShowUpload && up[i] > maxRate) maxRate = up[i];
+            }
+            _targetMax = maxRate * 1.15;
+        }
         _renderedMax = _targetMax;
 
         _downSeries = down;
@@ -275,14 +323,21 @@ public class TrafficGraphControl : AnimatedHistoryGraph
         up[capacity - 1] = (float)snapshot.UploadBps;
 
         // Auto-scale with 15% headroom and a 32 KB/s minimum ceiling
-        double maxRate = 32.0 * 1024.0;
-        for (int i = 0; i < capacity; i++)
+        if (ExternalMaxScale.HasValue)
         {
-            if (down[i] > maxRate) maxRate = down[i];
-            if (up[i] > maxRate) maxRate = up[i];
+            _targetMax = Math.Max(32.0 * 1024.0, ExternalMaxScale.Value);
+        }
+        else
+        {
+            double maxRate = 32.0 * 1024.0;
+            for (int i = 0; i < capacity; i++)
+            {
+                if (ShowDownload && down[i] > maxRate) maxRate = down[i];
+                if (ShowUpload && up[i] > maxRate) maxRate = up[i];
+            }
+            _targetMax = maxRate * 1.15;
         }
 
-        _targetMax = maxRate * 1.15;
         if (Math.Abs(_renderedMax - 32.0 * 1024.0) < 1.0)
         {
             _renderedMax = _targetMax;
@@ -304,7 +359,7 @@ public class TrafficGraphControl : AnimatedHistoryGraph
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
-        if (CompactMode || !ShowHoverInspection) return;
+        if (!ShowHoverInspection) return;
 
         _hoverPos = e.GetPosition(this);
         var now = Stopwatch.GetTimestamp();
@@ -334,19 +389,25 @@ public class TrafficGraphControl : AnimatedHistoryGraph
 
         double w = ActualWidth;
         double h = ActualHeight;
-        if (w < 40 || h < 30) return;
+        if (w < 20 || h < 10) return;
 
         EnsurePaints();
 
         double timeAxisHeight = (ShowTimeLabels && !CompactMode) ? 19.0 : 0.0;
         double plotWidth = w;
-        double plotHeight = Math.Max(20.0, h - timeAxisHeight);
+        double plotHeight = Math.Max(10.0, h - timeAxisHeight);
         var plotRect = new Rect(0, 0, plotWidth, plotHeight);
 
         // 1. Draw Plot Card Background and subtle border
-        var bgBrush = PlotBackground ?? DefaultBackgroundBrush;
-        var borderPen = PlotBorderBrush != null ? new Pen(PlotBorderBrush, 1.0) : DefaultBorderPen;
-        dc.DrawRoundedRectangle(bgBrush, borderPen, plotRect, 8, 8);
+        var bgBrush = PlotBackground ?? (CompactMode ? Brushes.Transparent : DefaultBackgroundBrush);
+        var borderPen = ShowPlotBorder
+            ? (PlotBorderBrush != null ? new Pen(PlotBorderBrush, 1.0) : DefaultBorderPen)
+            : null;
+
+        if (bgBrush != Brushes.Transparent || borderPen != null)
+        {
+            dc.DrawRoundedRectangle(bgBrush, borderPen, plotRect, CornerRadius, CornerRadius);
+        }
 
         // 2. Draw Subtle Grid Lines & Scale Markers
         double currentMax = _renderedMax > 0 ? _renderedMax : 32.0 * 1024.0;
@@ -390,20 +451,21 @@ public class TrafficGraphControl : AnimatedHistoryGraph
 
         // 3. Clip and Render Data Curves
         int capacity = Math.Max(2, MaxSamples);
-        var clipGeo = new RectangleGeometry(new Rect(plotRect.Left + 1, plotRect.Top + 1, plotRect.Width - 2, plotRect.Height - 2), 7, 7);
+        double clipRadius = Math.Max(0.0, CornerRadius - 1.0);
+        var clipGeo = new RectangleGeometry(new Rect(plotRect.Left + 1, plotRect.Top + 1, Math.Max(0, plotRect.Width - 2), Math.Max(0, plotRect.Height - 2)), clipRadius, clipRadius);
         dc.PushClip(clipGeo);
 
         SetHistoryWidth(plotWidth, capacity);
         dc.PushTransform(HistoryTransform);
 
         // Draw Download Spline (Cyan Glow)
-        if (_downSeries != null && _downSeries.Length > 0)
+        if (ShowDownload && _downSeries != null && _downSeries.Length > 0)
         {
             _downDrawing.Draw(dc, _downSeries, plotRect, currentMax, capacity, PrimaryPrefix, _downFill, _downPen);
         }
 
         // Draw Upload Spline (Emerald Green Glow)
-        if (_upSeries != null && _upSeries.Length > 0)
+        if (ShowUpload && _upSeries != null && _upSeries.Length > 0)
         {
             _upDrawing.Draw(dc, _upSeries, plotRect, currentMax, capacity, SecondaryPrefix, _upFill, _upPen);
         }
@@ -469,7 +531,7 @@ public class TrafficGraphControl : AnimatedHistoryGraph
         }
 
         // 5. Interactive Hover Guide & Floating Tooltip Pill
-        if (_hoverPos.HasValue && !CompactMode && ShowHoverInspection && _downSeries != null && _downSeries.Length > 0)
+        if (_hoverPos.HasValue && ShowHoverInspection && _downSeries != null && _downSeries.Length > 0)
         {
             double mx = _hoverPos.Value.X;
             if (mx >= plotRect.Left && mx <= plotRect.Right)
@@ -493,94 +555,134 @@ public class TrafficGraphControl : AnimatedHistoryGraph
                     guidePen.Freeze();
                     dc.DrawLine(guidePen, new Point(ptX, plotRect.Top + 2), new Point(ptX, plotRect.Bottom - 2));
 
-                    // Highlight dots on the curves
+                    // Highlight dots on the visible curves
                     double usableH = Math.Max(1.0, plotHeight - 6.0);
                     double normDown = Math.Clamp(downVal / currentMax, 0.0, 1.0);
                     double normUp = Math.Clamp(upVal / currentMax, 0.0, 1.0);
                     double ptYDown = (plotRect.Bottom - 1.0) - (normDown * usableH);
                     double ptYUp = (plotRect.Bottom - 1.0) - (normUp * usableH);
 
-                    // Download Dot (Cyan)
-                    var downHaloBrush = new SolidColorBrush(Color.FromArgb(70, DownloadColor.R, DownloadColor.G, DownloadColor.B));
-                    downHaloBrush.Freeze();
-                    var downCoreBrush = new SolidColorBrush(DownloadColor);
-                    downCoreBrush.Freeze();
-                    dc.DrawEllipse(downHaloBrush, null, new Point(ptX, ptYDown), 5.5, 5.5);
-                    dc.DrawEllipse(downCoreBrush, null, new Point(ptX, ptYDown), 3.0, 3.0);
-                    dc.DrawEllipse(WhiteBrush, null, new Point(ptX, ptYDown), 1.2, 1.2);
+                    SolidColorBrush? downCoreBrush = null;
+                    if (ShowDownload)
+                    {
+                        var downHaloBrush = new SolidColorBrush(Color.FromArgb(70, DownloadColor.R, DownloadColor.G, DownloadColor.B));
+                        downHaloBrush.Freeze();
+                        downCoreBrush = new SolidColorBrush(DownloadColor);
+                        downCoreBrush.Freeze();
+                        dc.DrawEllipse(downHaloBrush, null, new Point(ptX, ptYDown), 5.5, 5.5);
+                        dc.DrawEllipse(downCoreBrush, null, new Point(ptX, ptYDown), 3.0, 3.0);
+                        dc.DrawEllipse(WhiteBrush, null, new Point(ptX, ptYDown), 1.2, 1.2);
+                    }
 
-                    // Upload Dot (Green)
-                    var upHaloBrush = new SolidColorBrush(Color.FromArgb(70, UploadColor.R, UploadColor.G, UploadColor.B));
-                    upHaloBrush.Freeze();
-                    var upCoreBrush = new SolidColorBrush(UploadColor);
-                    upCoreBrush.Freeze();
-                    dc.DrawEllipse(upHaloBrush, null, new Point(ptX, ptYUp), 5.5, 5.5);
-                    dc.DrawEllipse(upCoreBrush, null, new Point(ptX, ptYUp), 3.0, 3.0);
-                    dc.DrawEllipse(WhiteBrush, null, new Point(ptX, ptYUp), 1.2, 1.2);
+                    SolidColorBrush? upCoreBrush = null;
+                    if (ShowUpload)
+                    {
+                        var upHaloBrush = new SolidColorBrush(Color.FromArgb(70, UploadColor.R, UploadColor.G, UploadColor.B));
+                        upHaloBrush.Freeze();
+                        upCoreBrush = new SolidColorBrush(UploadColor);
+                        upCoreBrush.Freeze();
+                        dc.DrawEllipse(upHaloBrush, null, new Point(ptX, ptYUp), 5.5, 5.5);
+                        dc.DrawEllipse(upCoreBrush, null, new Point(ptX, ptYUp), 3.0, 3.0);
+                        dc.DrawEllipse(WhiteBrush, null, new Point(ptX, ptYUp), 1.2, 1.2);
+                    }
 
                     // Formatted Tooltip text
                     int secondsAgo = count - 1 - hoverIdx;
                     string timeText = FormatRelativeTime(secondsAgo);
-
-                    string downSpeedStr = NetworkSpeedService.FormatSpeed(downVal);
-                    string upSpeedStr = NetworkSpeedService.FormatSpeed(upVal);
 
                     var ftTime = new FormattedText(
                         timeText,
                         CultureInfo.CurrentCulture,
                         System.Windows.FlowDirection.LeftToRight,
                         AxisBoldTypeface,
-                        9.5,
+                        9.0,
                         AxisTextBrush,
                         dpi);
 
-                    var ftDown = new FormattedText(
-                        $"↓ {downSpeedStr}",
-                        CultureInfo.CurrentCulture,
-                        System.Windows.FlowDirection.LeftToRight,
-                        AxisBoldTypeface,
-                        10.0,
-                        downCoreBrush,
-                        dpi);
+                    FormattedText? ftDown = (ShowDownload && downCoreBrush != null)
+                        ? new FormattedText($"↓ {NetworkSpeedService.FormatSpeed(downVal)}", CultureInfo.CurrentCulture, System.Windows.FlowDirection.LeftToRight, AxisBoldTypeface, 9.5, downCoreBrush, dpi)
+                        : null;
 
-                    var ftUp = new FormattedText(
-                        $"↑ {upSpeedStr}",
-                        CultureInfo.CurrentCulture,
-                        System.Windows.FlowDirection.LeftToRight,
-                        AxisBoldTypeface,
-                        10.0,
-                        upCoreBrush,
-                        dpi);
+                    FormattedText? ftUp = (ShowUpload && upCoreBrush != null)
+                        ? new FormattedText($"↑ {NetworkSpeedService.FormatSpeed(upVal)}", CultureInfo.CurrentCulture, System.Windows.FlowDirection.LeftToRight, AxisBoldTypeface, 9.5, upCoreBrush, dpi)
+                        : null;
 
-                    double tipW = Math.Max(ftTime.Width + 15.0, Math.Max(ftDown.Width, ftUp.Width)) + 18.0;
-                    double tipH = ftTime.Height + ftDown.Height + ftUp.Height + 14.0;
-
-                    double tipX = ptX + 12;
-                    if (tipX + tipW > plotRect.Right - 8)
+                    if (plotRect.Height < 80)
                     {
-                        tipX = ptX - tipW - 12;
+                        // Compact 2-line layout
+                        double speedsW = (ftDown?.Width ?? 0) + (ftUp != null ? (ftDown != null ? 8.0 : 0) + ftUp.Width : 0);
+                        double tipW = Math.Max(ftTime.Width + 14.0, speedsW) + 16.0;
+                        double speedH = Math.Max(ftDown?.Height ?? 0, ftUp?.Height ?? 0);
+                        double tipH = ftTime.Height + speedH + 9.0;
+
+                        double tipX = ptX + 10;
+                        if (tipX + tipW > plotRect.Right - 6) tipX = ptX - tipW - 10;
+                        tipX = Math.Clamp(tipX, plotRect.Left + 4, Math.Max(plotRect.Left + 4, plotRect.Right - tipW - 4));
+                        double tipY = Math.Clamp(_hoverPos.Value.Y - tipH / 2.0, plotRect.Top + 4, Math.Max(plotRect.Top + 4, plotRect.Bottom - tipH - 4));
+                        var tipRect = new Rect(tipX, tipY, tipW, tipH);
+
+                        dc.DrawRoundedRectangle(TooltipBgBrush, TooltipBorderPen, tipRect, 5, 5);
+
+                        // Vector clock icon
+                        double clockRadius = 3.5;
+                        double clockCx = tipRect.Left + 8.5;
+                        double clockCy = tipRect.Top + 3.0 + (ftTime.Height / 2.0);
+                        dc.DrawEllipse(null, ClockPen, new Point(clockCx, clockCy), clockRadius, clockRadius);
+                        dc.DrawLine(ClockPen, new Point(clockCx, clockCy), new Point(clockCx, clockCy - 2.0));
+                        dc.DrawLine(ClockPen, new Point(clockCx, clockCy), new Point(clockCx + 1.5, clockCy));
+
+                        dc.DrawText(ftTime, new Point(tipRect.Left + 15.0, tipRect.Top + 2.5));
+
+                        double curX = tipRect.Left + 8.0;
+                        double speedY = tipRect.Top + ftTime.Height + 4.5;
+                        if (ftDown != null)
+                        {
+                            dc.DrawText(ftDown, new Point(curX, speedY));
+                            curX += ftDown.Width + 8.0;
+                        }
+                        if (ftUp != null)
+                        {
+                            dc.DrawText(ftUp, new Point(curX, speedY));
+                        }
                     }
+                    else
+                    {
+                        // Standard 3-line layout
+                        double maxDataW = Math.Max(ftDown?.Width ?? 0, ftUp?.Width ?? 0);
+                        double tipW = Math.Max(ftTime.Width + 15.0, maxDataW) + 18.0;
+                        double tipH = ftTime.Height + (ftDown != null ? ftDown.Height + 2.0 : 0) + (ftUp != null ? ftUp.Height + 2.0 : 0) + 12.0;
 
-                    double tipY = Math.Clamp(_hoverPos.Value.Y - tipH / 2.0, plotRect.Top + 6, plotRect.Bottom - tipH - 6);
-                    var tipRect = new Rect(tipX, tipY, tipW, tipH);
+                        double tipX = ptX + 12;
+                        if (tipX + tipW > plotRect.Right - 8) tipX = ptX - tipW - 12;
+                        tipX = Math.Clamp(tipX, plotRect.Left + 4, Math.Max(plotRect.Left + 4, plotRect.Right - tipW - 4));
+                        double tipY = Math.Clamp(_hoverPos.Value.Y - tipH / 2.0, plotRect.Top + 6, Math.Max(plotRect.Top + 6, plotRect.Bottom - tipH - 6));
+                        var tipRect = new Rect(tipX, tipY, tipW, tipH);
 
-                    dc.DrawRoundedRectangle(TooltipBgBrush, TooltipBorderPen, tipRect, 6, 6);
+                        dc.DrawRoundedRectangle(TooltipBgBrush, TooltipBorderPen, tipRect, 6, 6);
 
-                    // Draw crisp vector clock icon: circle + hour hand + minute hand
-                    double clockRadius = 4.0;
-                    double clockLeft = tipX + 8.0;
-                    double clockCenterY = tipY + 4.0 + (ftTime.Height / 2.0);
-                    var clockCenter = new Point(clockLeft + clockRadius, clockCenterY);
+                        // Draw crisp vector clock icon
+                        double clockRadius = 4.0;
+                        double clockLeft = tipX + 8.0;
+                        double clockCenterY = tipY + 4.0 + (ftTime.Height / 2.0);
+                        var clockCenter = new Point(clockLeft + clockRadius, clockCenterY);
 
-                    dc.DrawEllipse(null, ClockPen, clockCenter, clockRadius, clockRadius);
-                    dc.DrawLine(ClockPen, clockCenter, new Point(clockCenter.X, clockCenter.Y - 2.5));
-                    dc.DrawLine(ClockPen, clockCenter, new Point(clockCenter.X + 2.0, clockCenter.Y));
+                        dc.DrawEllipse(null, ClockPen, clockCenter, clockRadius, clockRadius);
+                        dc.DrawLine(ClockPen, clockCenter, new Point(clockCenter.X, clockCenter.Y - 2.5));
+                        dc.DrawLine(ClockPen, clockCenter, new Point(clockCenter.X + 2.0, clockCenter.Y));
 
-                    // Draw time text next to clock
-                    dc.DrawText(ftTime, new Point(clockLeft + (clockRadius * 2.0) + 5.0, tipY + 4.0));
+                        dc.DrawText(ftTime, new Point(clockLeft + (clockRadius * 2.0) + 5.0, tipY + 4.0));
 
-                    dc.DrawText(ftDown, new Point(tipX + 8, tipY + 4 + ftTime.Height + 2));
-                    dc.DrawText(ftUp, new Point(tipX + 8, tipY + 4 + ftTime.Height + ftDown.Height + 4));
+                        double curY = tipY + 4.0 + ftTime.Height + 2.0;
+                        if (ftDown != null)
+                        {
+                            dc.DrawText(ftDown, new Point(tipX + 8.0, curY));
+                            curY += ftDown.Height + 2.0;
+                        }
+                        if (ftUp != null)
+                        {
+                            dc.DrawText(ftUp, new Point(tipX + 8.0, curY));
+                        }
+                    }
                 }
             }
         }
