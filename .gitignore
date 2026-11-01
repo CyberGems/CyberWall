@@ -1,15 +1,2 @@
-bin/
-obj/
-publish/
-out/
-.vs/
-*.user
-*.suo
-TestResults/
-artifacts/
-AGENTS.md
-CLAUDE.md
-.cursor/
-.kilo/
-.cursorrules
-.github/copilot-instructions.md
+# Shared dependency exclusion
+node_modules/
