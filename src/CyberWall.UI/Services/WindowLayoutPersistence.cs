@@ -117,13 +117,13 @@ internal static class WindowLayoutPersistence
         window.Top = area.Top + (area.Height - window.Height) / 2;
     }
 
-    private static void KeepOnCurrentWorkArea(Window window)
+    public static void KeepOnCurrentWorkArea(Window window)
     {
         var area = WorkAreaMaximize.GetWorkAreaDip(window);
-        window.Width = Math.Min(window.Width, area.Width);
-        window.Height = Math.Min(window.Height, area.Height);
-        window.Left = Math.Clamp(window.Left, area.Left, area.Right - window.Width);
-        window.Top = Math.Clamp(window.Top, area.Top, area.Bottom - window.Height);
+        window.Width = Math.Max(window.MinWidth, Math.Min(window.Width, area.Width));
+        window.Height = Math.Max(window.MinHeight, Math.Min(window.Height, area.Height));
+        window.Left = Math.Max(area.Left, Math.Min(window.Left, area.Right - window.Width));
+        window.Top = Math.Max(area.Top, Math.Min(window.Top, area.Bottom - window.Height));
     }
 
     private static bool IsValid(Rect bounds) =>

@@ -289,12 +289,26 @@ public partial class MainWindow : Window
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        const int WM_DPICHANGED = 0x02E0;
         const int WM_MOUSEACTIVATE = 0x0021;
         const int WM_SETCURSOR = 0x0020;
         const int WM_LBUTTONDOWN = 0x0201;
         const int WM_NCLBUTTONDOWN = 0x00A1;
         const int WM_RBUTTONDOWN = 0x0204;
         const int WM_NCRBUTTONDOWN = 0x00A4;
+
+        if (msg == WM_DPICHANGED)
+        {
+            // WPF applies the suggested DPI rectangle first. Then fit the restored
+            // window to the target monitor's working area in its new DPI context.
+            Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
+            {
+                if (WorkAreaMaximize.IsFilled(this))
+                    WorkAreaMaximize.Fill(this);
+                else
+                    WindowLayoutPersistence.KeepOnCurrentWorkArea(this);
+            }));
+        }
 
         if (App.WM_SHOW_MAIN_WINDOW != 0 && msg == App.WM_SHOW_MAIN_WINDOW)
         {
@@ -421,14 +435,19 @@ public partial class MainWindow : Window
             MoreAboutItem.Header = Strings.T("AboutCyberWall");
         }
         TabFirewallText.Text = Strings.T("NavFirewall");
+        AutomationProperties.SetName(TabFirewallBtn, TabFirewallText.Text);
         TabFirewallBtn.ToolTip = Strings.T("NavFirewallTooltip");
         TabTrafficText.Text = Strings.T("NavTraffic");
+        AutomationProperties.SetName(TabTrafficBtn, TabTrafficText.Text);
         TabTrafficBtn.ToolTip = Strings.T("NavTrafficTooltip");
         TabConnectionsText.Text = Strings.T("NavConnections");
+        AutomationProperties.SetName(TabConnectionsBtn, TabConnectionsText.Text);
         TabConnectionsBtn.ToolTip = Strings.T("NavConnectionsTooltip");
         TabStatsText.Text = Strings.T("NavStats");
+        AutomationProperties.SetName(TabStatsBtn, TabStatsText.Text);
         TabStatsBtn.ToolTip = Strings.T("NavStatsTooltip");
         TabSettingsText.Text = Strings.T("NavSettings");
+        AutomationProperties.SetName(TabSettingsBtn, TabSettingsText.Text);
         TabSettingsBtn.ToolTip = Strings.T("NavSettingsTooltip");
 
         TrafficMonitorTabContent?.RefreshLanguage();
@@ -1917,6 +1936,43 @@ public partial class MainWindow : Window
             AllowedRowDef.Height = GridLength.Auto;
             BlockedRowDef.Height = GridLength.Auto;
         }
+    }
+
+    private void FirewallTabContent_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (RulesPathColumn == null || AllowedGrid == null || BlockedGrid == null)
+            return;
+
+        // Keep the program name and row actions usable when the restored window
+        // has fewer logical pixels on a high-DPI monitor.
+        var showPath = e.NewSize.Width >= 1050;
+        RulesPathColumn.Width = showPath ? new GridLength(2.2, GridUnitType.Star) : new GridLength(0);
+        RulesPathHeader.Visibility = showPath ? Visibility.Visible : Visibility.Collapsed;
+        AllowColPath.Visibility = showPath ? Visibility.Visible : Visibility.Collapsed;
+        BlockColPath.Visibility = showPath ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (TabFirewallText == null || WfpBadge == null)
+            return;
+
+        var compact = e.NewSize.Width < 1100;
+        var textVisibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        TabFirewallText.Visibility = textVisibility;
+        TabTrafficText.Visibility = textVisibility;
+        TabConnectionsText.Visibility = textVisibility;
+        TabStatsText.Visibility = textVisibility;
+        TabSettingsText.Visibility = textVisibility;
+        SubtitleText.Visibility = textVisibility;
+        WfpBadge.Visibility = textVisibility;
+
+        var padding = compact ? new Thickness(8, 0, 8, 0) : new Thickness(14, 0, 14, 0);
+        TabFirewallBtn.Padding = padding;
+        TabTrafficBtn.Padding = padding;
+        TabConnectionsBtn.Padding = padding;
+        TabStatsBtn.Padding = padding;
+        TabSettingsBtn.Padding = padding;
     }
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
