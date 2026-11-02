@@ -13,9 +13,19 @@ public sealed class WfpEngine : IDisposable
     public bool IsEnabled => _enabled;
     public bool IsRealBlock => _realBlock;
 
-    public bool TryEnable()
+    /// <summary>
+    /// Enables the engine. The optional <paramref name="provisionRules"/> delegate
+    /// re-creates the saved application allow rules after the core rules are in place
+    /// and before the machine-wide default-deny starts, so no program loses
+    /// connectivity at the switch.
+    /// </summary>
+    public bool TryEnable(Action? provisionRules = null)
     {
-        if (_enabled) return true;
+        if (_enabled)
+        {
+            provisionRules?.Invoke();
+            return true;
+        }
         try
         {
             var session = new WfpInterop.FWPM_SESSION0
@@ -31,11 +41,14 @@ public sealed class WfpEngine : IDisposable
                 r = WfpInterop.FwpmTransactionBegin0(_engine, 0);
                 if (r == 0) WfpInterop.FwpmTransactionCommit0(_engine);
             }
-            _realBlock = RealFirewall.TryEnableBlockAll();
-            _enabled = true;
-            return true;
         }
-        catch (Exception ex) { Debug.WriteLine(ex); _realBlock = RealFirewall.TryEnableBlockAll(); _enabled = true; return true; }
+        catch (Exception ex) { Debug.WriteLine(ex); }
+
+        // The engine owns the state from now on, also when the real block cannot be
+        // applied (non-admin runs), so the callers observe a consistent engine state.
+        _enabled = true;
+        _realBlock = RealFirewall.TryEnableBlockAll(provisionRules);
+        return true;
     }
 
     public bool Disable()

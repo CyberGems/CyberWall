@@ -67,7 +67,38 @@ public static class RealFirewall
         return inbound ? name + "-in" : name;
     }
 
-    public static bool TryEnableBlockAll()
+    /// <summary>
+    /// Switches the machine-wide firewall policy to default-deny in the order that
+    /// keeps the host connected: first the core rules and the application allow rules
+    /// are provisioned while outbound traffic is still allowed, and only then the
+    /// policy is switched. Applying the block first would cut the connectivity of
+    /// every program whose allow rule has not been re-created yet, which reads as a
+    /// temporary loss of the internet connection on every start of the protection.
+    /// </summary>
+    /// <param name="provisionRules">Re-creates the application allow rules that must be in place before the default-deny starts.</param>
+    public static bool TryEnableBlockAll(Action? provisionRules = null)
+        => EnableDefaultDeny(PrepareDefaultDenyRules, provisionRules ?? (() => { }), ApplyDefaultDenyPolicy);
+
+    /// <summary>
+    /// Enable sequence with injectable steps so the ordering is covered by tests.
+    /// The preparation and the rule provisioning run while outbound traffic is still
+    /// allowed, and a failed preparation never switches the policy, so the machine
+    /// cannot end up in the default-deny state without its allow rules.
+    /// </summary>
+    internal static bool EnableDefaultDeny(Func<bool> prepareRules, Action provisionRules, Func<bool> applyDefaultDeny)
+    {
+        if (!prepareRules()) return false;
+        provisionRules();
+        return applyDefaultDeny();
+    }
+
+    /// <summary>
+    /// Prepares the switch to default-deny: captures the policy the user had, removes
+    /// the legacy rule names and provisions CyberWall itself and the core services
+    /// (DNS, DHCP, NTP, loopback, Defender and the WebView2 runtimes). The firewall
+    /// policy is not touched here, so nothing is cut yet.
+    /// </summary>
+    internal static bool PrepareDefaultDenyRules()
     {
         if (!IsAdmin) return false;
 
@@ -75,6 +106,24 @@ public static class RealFirewall
         if (policy != null)
         {
             CaptureOriginalActions(policy);
+        }
+
+        // Legacy per-application rules are dropped first so they cannot keep blocking
+        // programs after the naming scheme changed.
+        RemoveLegacyRules();
+        EnsureSelfAllowed();
+        EnsureCoreServicesAllowed();
+        return true;
+    }
+
+    /// <summary>Switches every profile to "block inbound, block outbound".</summary>
+    internal static bool ApplyDefaultDenyPolicy()
+    {
+        if (!IsAdmin) return false;
+
+        var policy = GetFwPolicy();
+        if (policy != null)
+        {
             ApplyProfileActions(policy, ActionBlock, ActionBlock);
         }
 
@@ -84,12 +133,6 @@ public static class RealFirewall
             Debug.WriteLine("RealFirewall: unable to switch the firewall policy to default-deny.");
             return false;
         }
-
-        // Legacy per-application rules are dropped first so they cannot keep blocking
-        // programs after the naming scheme changed.
-        RemoveLegacyRules();
-        EnsureSelfAllowed();
-        EnsureCoreServicesAllowed();
         return true;
     }
 

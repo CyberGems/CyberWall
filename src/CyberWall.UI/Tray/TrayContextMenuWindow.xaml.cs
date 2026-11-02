@@ -203,12 +203,22 @@ public partial class TrayContextMenuWindow : Window
         if (_updatingUi) return;
         if (MasterSwitch.IsChecked == true)
         {
-            _svc.Enable(App.Settings.FirewallMode);
+            // The enable re-creates the saved allow rules before the default-deny
+            // starts, so it runs in the background and the states are refreshed when
+            // it is done.
+            var mode = App.Settings.FirewallMode;
+            App.Settings.FirewallEnabled = true;
+            App.Settings.Save();
+            _ = Task.Run(() =>
+            {
+                _svc.Enable(mode);
+                _mainWindow.Dispatcher.Invoke(() => _mainWindow.RefreshStatusFromExternal());
+                Dispatcher.Invoke(UpdateProtectionState);
+            });
+            return;
         }
-        else
-        {
-            _svc.Disable();
-        }
+
+        _svc.Disable();
         App.Settings.FirewallEnabled = _svc.IsMasterOn;
         App.Settings.Save();
         _mainWindow.Dispatcher.Invoke(() => _mainWindow.RefreshStatusFromExternal());

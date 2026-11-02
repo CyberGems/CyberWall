@@ -120,7 +120,7 @@ public partial class MainWindow : Window
     private readonly NotificationStore _notifications = new();
     private List<AppRule> _all = new();
     private bool _loading;
-    private bool _isEnablingOnStartup;
+    private bool _isEnabling;
     private bool _updatingStatus;
     private bool _notifOpen;
     private bool _layoutRestored;
@@ -170,11 +170,11 @@ public partial class MainWindow : Window
         RefreshLanguage();
         if (App.Settings.FirewallEnabled)
         {
-            _isEnablingOnStartup = true;
+            _isEnabling = true;
             Task.Run(() =>
             {
                 var ok = _svc.Enable(App.Settings.FirewallMode);
-                _isEnablingOnStartup = false;
+                _isEnabling = false;
                 if (!ok && _svc.OwnedByAnotherHost)
                 {
                     Dispatcher.BeginInvoke(StartOwnershipRetry);
@@ -1232,7 +1232,7 @@ public partial class MainWindow : Window
         _updatingStatus = true;
         try
         {
-            if (_isEnablingOnStartup)
+            if (_isEnabling)
             {
                 MasterToggle.IsChecked = true;
                 MasterToggle.IsEnabled = false;
@@ -1358,7 +1358,7 @@ public partial class MainWindow : Window
 
     private void MasterToggle_Changed(object sender, RoutedEventArgs e)
     {
-        if (_loading || _updatingStatus || _isEnablingOnStartup) return;
+        if (_loading || _updatingStatus || _isEnabling) return;
         if (_svc.OwnedByAnotherHost)
         {
             // Another host owns the engine, the toggle is not actionable here.
@@ -1368,28 +1368,47 @@ public partial class MainWindow : Window
         if (MasterToggle.IsChecked == true)
         {
             var m = ModeFromIndex(ModeBox.SelectedIndex);
-            _svc.Enable(m);
-            _notifications.PurgeObsoleteProtectionOffNotifications();
-            if (App.Settings.ToastProtectionEventsEnabled)
+
+            // The saved allow rules are re-created before the default-deny starts,
+            // which takes a few seconds with a large rule set: the enable runs in the
+            // background while the UI shows the enabling state.
+            _isEnabling = true;
+            UpdateStatus();
+            Task.Run(() =>
             {
-                AppInfoToast.ShowToast(Strings.T("NotifProtectionOn"), Strings.T("NotifProtectionOnDesc"), appPath: null, ToastBadgeType.Success);
-            }
+                _svc.Enable(m);
+                _isEnabling = false;
+                Dispatcher.BeginInvoke(() =>
+                {
+                    _notifications.PurgeObsoleteProtectionOffNotifications();
+                    if (App.Settings.ToastProtectionEventsEnabled)
+                    {
+                        AppInfoToast.ShowToast(Strings.T("NotifProtectionOn"), Strings.T("NotifProtectionOnDesc"), appPath: null, ToastBadgeType.Success);
+                    }
+                    UpdateStatus();
+                });
+            });
+
+            // The user's decision is persisted right away: the persisted state is the
+            // intent the next start enables from, exactly like the startup flow.
+            App.Settings.FirewallEnabled = true;
+            App.Settings.FirewallMode = m;
+            App.Settings.Save();
+            return;
         }
-        else
+
+        if (!_svc.Disable())
         {
-            if (!_svc.Disable())
-            {
-                AppInfoToast.ShowToast(
-                    Strings.T("ProtectionRestoreFailedTitle"),
-                    Strings.T("ProtectionRestoreFailedDesc"),
-                    appPath: null,
-                    ToastBadgeType.Danger);
-            }
-            _notifications.Add(AppNotificationKind.ProtectionOff);
-            if (App.Settings.ToastProtectionEventsEnabled)
-            {
-                AppInfoToast.ShowToast(Strings.T("NotifProtectionOffTitle"), Strings.T("NotifProtectionOffDesc"), appPath: null, ToastBadgeType.Warning);
-            }
+            AppInfoToast.ShowToast(
+                Strings.T("ProtectionRestoreFailedTitle"),
+                Strings.T("ProtectionRestoreFailedDesc"),
+                appPath: null,
+                ToastBadgeType.Danger);
+        }
+        _notifications.Add(AppNotificationKind.ProtectionOff);
+        if (App.Settings.ToastProtectionEventsEnabled)
+        {
+            AppInfoToast.ShowToast(Strings.T("NotifProtectionOffTitle"), Strings.T("NotifProtectionOffDesc"), appPath: null, ToastBadgeType.Warning);
         }
         App.Settings.FirewallEnabled = _svc.IsMasterOn;
         App.Settings.FirewallMode = _svc.Mode;

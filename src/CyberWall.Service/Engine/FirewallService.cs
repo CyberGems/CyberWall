@@ -49,50 +49,52 @@ public sealed class FirewallService : IDisposable
         _ownsEngine = true;
 
         Mode = mode == FirewallMode.Disabled ? FirewallMode.Ask : mode;
-        var ok = Wfp.TryEnable();
+        lock (_sessionLock) _reappliedAllows.Clear();
+        BlockedLog.TryDeleteTempFile();
+
+        // The watchdog is armed before the policy switch: a crash at any point of the
+        // enable sequence must never leave the host in default-deny without recovery.
+        StartHeartbeat();
+
+        // Preload all saved allow rules into memory synchronously in microseconds (< 0.1ms)
+        // so running applications are immediately recognized as allowed by ConnectionMonitor
+        var rulesToSync = new List<AppRule>();
+        if (Mode != FirewallMode.Killswitch)
+        {
+            lock (_sessionLock)
+            {
+                foreach (var rule in Store.All)
+                {
+                    if (rule.EffectiveOutboundVerdict == Verdict.Allow || rule.EffectiveInboundVerdict == Verdict.Allow)
+                    {
+                        var key = SafeKey(rule.AppPath);
+                        _reappliedAllows.Add(key);
+                        rulesToSync.Add(rule);
+                    }
+                }
+            }
+        }
+
+        // The saved allow rules are re-created while outbound traffic is still allowed
+        // and the default-deny only starts once every rule is in place, so no program
+        // loses connectivity during the enable.
+        var ok = Wfp.TryEnable(() =>
+        {
+            foreach (var rule in rulesToSync)
+            {
+                try
+                {
+                    Wfp.ApplyAppRule(rule.AppPath, rule.EffectiveInboundVerdict, rule.EffectiveOutboundVerdict);
+                }
+                catch { }
+            }
+        });
+
         if (ok)
         {
-            lock (_sessionLock) _reappliedAllows.Clear();
-            RealFirewall.EnsureSelfAllowed();
-            BlockedLog.TryDeleteTempFile();
-            StartHeartbeat();
-
             if (Mode == FirewallMode.Killswitch)
             {
                 Wfp.SetKillswitch(true);
-            }
-            else
-            {
-                // Preload all saved allow rules into memory synchronously in microseconds (< 0.1ms)
-                // so running applications are immediately recognized as allowed by ConnectionMonitor
-                var rulesToSync = new List<AppRule>();
-                lock (_sessionLock)
-                {
-                    _reappliedAllows.Clear();
-                    foreach (var rule in Store.All)
-                    {
-                        if (rule.EffectiveOutboundVerdict == Verdict.Allow || rule.EffectiveInboundVerdict == Verdict.Allow)
-                        {
-                            var key = SafeKey(rule.AppPath);
-                            _reappliedAllows.Add(key);
-                            rulesToSync.Add(rule);
-                        }
-                    }
-                }
-
-                // Verify and synchronize Windows Firewall rules asynchronously in background
-                // so MainWindow renders instantly (< 100ms)
-                _ = Task.Run(() =>
-                {
-                    foreach (var rule in rulesToSync)
-                    {
-                        try
-                        {
-                            Wfp.ApplyAppRule(rule.AppPath, rule.EffectiveInboundVerdict, rule.EffectiveOutboundVerdict);
-                        }
-                        catch { }
-                    }
-                });
             }
             Monitor.Start(this);
         }
@@ -195,14 +197,17 @@ public sealed class FirewallService : IDisposable
     public void SetMode(FirewallMode mode)
     {
         if (mode == FirewallMode.Disabled) { Disable(); return; }
-        var oldMode = Mode;
-        Mode = mode;
         if (!IsEnabled)
         {
-            Wfp.TryEnable();
-            Monitor.Start(this);
+            // Turning the engine on through the mode selector takes the same
+            // ownership and provisioning path as the master switch, so the saved
+            // allow rules are in place before the default-deny starts.
+            Enable(mode);
+            return;
         }
 
+        var oldMode = Mode;
+        Mode = mode;
         if (Mode == FirewallMode.Killswitch)
         {
             lock (_sessionLock) _reappliedAllows.Clear();
