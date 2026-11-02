@@ -4,27 +4,36 @@
 
 <p align="center">
   <a href="https://cybergems.org/apps/cyberwall/">
-    <img src="https://cybergems.org/banners/cyberwall.png" alt="CyberWall, per-application network control for Windows" />
+    <img src="https://cybergems.org/banners/cyberwall.png" alt="Block unwanted app connections in real time" />
   </a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/CyberGems/CyberWall/releases/latest"><img src="https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2FCyberGems%2FCyberWall%2Fmaster%2FDirectory.Build.props&query=%2FProject%2FPropertyGroup%2FVersion&prefix=%20Download%20CyberWall%20v&suffix=%20&style=for-the-badge&label=&labelColor=0891B2&color=0891B2" alt="Download Latest Release" /><img src="https://img.shields.io/badge/Windows_10%2F11_(64--bit)-2563EB?style=for-the-badge" alt="Windows 10/11 (64-bit)" /></a>
-  &nbsp;<a href="https://github.com/CyberGems/CyberWall/releases"><img src="https://img.shields.io/badge/All_releases-30363D?style=for-the-badge&logo=github&logoColor=white" alt="All Releases" /></a>&nbsp;<a href="https://github.com/CyberGems/CyberWall/blob/master/CHANGELOG.md"><img src="https://img.shields.io/badge/Changelog-475569?style=for-the-badge" alt="Changelog" /></a>
+  <a href="https://github.com/CyberGems/CyberWall/releases/latest"><img src="https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2FCyberGems%2FCyberWall%2Fmaster%2FDirectory.Build.props&query=%2FProject%2FPropertyGroup%2FVersion&prefix=%20Download%20v&suffix=%20&style=for-the-badge&label=&labelColor=0891B2&color=0891B2" alt="Download Latest Release" /><img src="https://img.shields.io/badge/Windows_10%2F11_(64--bit)-2563EB?style=for-the-badge" alt="Windows 10/11 (64-bit)" /></a>
+  &nbsp;<a href="https://github.com/CyberGems/CyberWall/releases"><img src="https://img.shields.io/badge/All_releases-30363D?style=for-the-badge&logo=github&logoColor=white" alt="All Releases" /></a>&nbsp;<a href="https://github.com/CyberGems/CyberWall/blob/master/CHANGELOG.md"></a>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/License-GPL--3.0-1F2428.svg?style=flat-square&color=334155" alt="License" />&nbsp;
   <img src="https://img.shields.io/badge/Platform-Windows_10%2F11-1F2428.svg?style=flat-square&color=334155" alt="Platform" />&nbsp;
   <img src="https://img.shields.io/badge/.NET-10.0-1F2428.svg?style=flat-square&logo=dotnet&logoColor=white&color=334155" alt=".NET" />&nbsp;
-  <a href="https://github.com/CyberGems/CyberWall/wiki"><img src="https://img.shields.io/badge/Wiki-Documentation-1F2428?style=flat-square&logo=gitbook&logoColor=white&color=334155" alt="Wiki" /></a>
+  <a href="https://github.com/CyberGems/CyberWall/wiki"><img src="https://img.shields.io/badge/Wiki-Documentation-1F2428?style=flat-square&logo=gitbook&logoColor=white&color=334155" alt="Wiki" /></a>&nbsp;
+  <a href="https://github.com/CyberGems/CyberWall/blob/main/CHANGELOG.md"><img src="https://img.shields.io/badge/Changelog-475569?style=flat-square" alt="Changelog" /></a>
 </p>
+
+---
+
+<div align="center">
+
+### Per-application network control for Windows
+
+</div>
 
 ---
 
 ## 📑 Table of Contents
 
-- [What is CyberWall?](#what-is-cyberwall)
+- [👋 Introduction](#-introduction)
 - [🛡️ Why CyberWall? Real-World Threat Protection](#️-why-cyberwall-real-world-threat-protection)
 - [✨ Key Features](#-key-features)
 - [🚀 Getting Started](#-getting-started)
@@ -47,7 +56,7 @@
 
 ---
 
-## What is CyberWall?
+## 👋 Introduction
 
 CyberWall is a modern, lightweight **per-application firewall** for Windows, built on the **Windows Filtering Platform (WFP)** and the **Windows Advanced Firewall** that ship with the operating system. Its default-deny model intercepts unknown network activity and asks whether each executable should be allowed once, always allowed, or blocked with a persistent rule. Real-time prompts, connection monitoring, rule management, traffic statistics, and clear application identity make outbound access easier to understand and control without installing a third-party kernel driver.
 
