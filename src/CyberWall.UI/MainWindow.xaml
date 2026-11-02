@@ -888,6 +888,7 @@
                                               ContentTemplate="{TemplateBinding ContentTemplate}"
                                               ContentStringFormat="{TemplateBinding ContentStringFormat}"
                                               Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="Stretch"
                                               Visibility="Collapsed"/>
                         </DockPanel>
                         <ControlTemplate.Triggers>
@@ -1328,15 +1329,15 @@
                             <Border x:Name="RulesColumnHeader" Height="34"
                                     Background="{DynamicResource HeaderBgBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1" CornerRadius="8" SnapsToDevicePixels="True">
-                                <Grid>
+                                <Grid x:Name="RulesColumnGrid" SizeChanged="RulesColumnGrid_SizeChanged">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="56"/>
-                                        <ColumnDefinition Width="175"/>
-                                        <ColumnDefinition Width="1.4*"/>
+                                        <ColumnDefinition x:Name="RulesStateColumn" Width="56"/>
+                                        <ColumnDefinition x:Name="RulesActivityColumn" Width="175"/>
+                                        <ColumnDefinition x:Name="RulesProgramColumn" Width="1.4*"/>
                                         <ColumnDefinition x:Name="RulesPathColumn" Width="2.2*"/>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="56"/>
-                                        <ColumnDefinition Width="115"/>
+                                        <ColumnDefinition x:Name="RulesActionColumn" Width="100"/>
+                                        <ColumnDefinition x:Name="RulesCountryColumn" Width="56"/>
+                                        <ColumnDefinition x:Name="RulesDirectionColumn" Width="115"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock x:Name="StateHeaderText" Grid.Column="0" Text="Estado" Foreground="{DynamicResource TextBrush}"
                                                FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1447,7 +1448,7 @@
                         <!-- Allowed Section -->
                         <Border x:Name="AllowedSectionBorder" Grid.Row="0" Background="Transparent" BorderThickness="0" Margin="0,0,0,4" Visibility="Collapsed">
                             <Expander x:Name="AllowedExpander" Style="{StaticResource ModernExpander}" Header="Permitidas (0)" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Expanded="Expander_StateChanged" Collapsed="Expander_StateChanged">
-                                <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True"
+                                <DataGrid x:Name="AllowedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" HorizontalAlignment="Stretch" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True"
                                           EnableRowVirtualization="True" EnableColumnVirtualization="False"
                                           VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
                                           VirtualizingPanel.ScrollUnit="Pixel" ScrollViewer.CanContentScroll="True"
@@ -1681,7 +1682,7 @@
                         <!-- Blocked Section -->
                         <Border x:Name="BlockedSectionBorder" Grid.Row="1" Background="Transparent" BorderThickness="0" Margin="0,4,0,0" Visibility="Collapsed">
                             <Expander x:Name="BlockedExpander" Style="{StaticResource ModernExpander}" Header="Bloqueadas (0)" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="13" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Expanded="Expander_StateChanged" Collapsed="Expander_StateChanged">
-                                <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True"
+                                <DataGrid x:Name="BlockedGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="None" Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" GridLinesVisibility="None" CanUserAddRows="False" CanUserSortColumns="True" AlternationCount="2" Margin="0" HorizontalAlignment="Stretch" FocusVisualStyle="{x:Null}" SelectionMode="Single" SelectionUnit="FullRow" IsSynchronizedWithCurrentItem="True"
                                           EnableRowVirtualization="True" EnableColumnVirtualization="False"
                                           VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
                                           VirtualizingPanel.ScrollUnit="Pixel" ScrollViewer.CanContentScroll="True"

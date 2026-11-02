@@ -138,6 +138,7 @@ public partial class MainWindow : Window
 
     private int _firewallTimeWindowSeconds = 60;
     private bool _isFirewallChartPaused;
+    private bool _rulesColumnSyncQueued;
 
     static MainWindow()
     {
@@ -1946,10 +1947,41 @@ public partial class MainWindow : Window
         // Keep the program name and row actions usable when the restored window
         // has fewer logical pixels on a high-DPI monitor.
         var showPath = e.NewSize.Width >= 1050;
-        RulesPathColumn.Width = showPath ? new GridLength(2.2, GridUnitType.Star) : new GridLength(0);
-        RulesPathHeader.Visibility = showPath ? Visibility.Visible : Visibility.Collapsed;
-        AllowColPath.Visibility = showPath ? Visibility.Visible : Visibility.Collapsed;
-        BlockColPath.Visibility = showPath ? Visibility.Visible : Visibility.Collapsed;
+        if (showPath != (RulesPathColumn.Width.Value > 0))
+        {
+            RulesPathColumn.Width = showPath ? new GridLength(2.2, GridUnitType.Star) : new GridLength(0);
+            RulesPathHeader.Visibility = showPath ? Visibility.Visible : Visibility.Collapsed;
+            AllowColPath.Visibility = showPath ? Visibility.Visible : Visibility.Collapsed;
+            BlockColPath.Visibility = showPath ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        QueueRulesColumnSync();
+    }
+
+    private void RulesColumnGrid_SizeChanged(object sender, SizeChangedEventArgs e) => QueueRulesColumnSync();
+
+    private void QueueRulesColumnSync()
+    {
+        if (_rulesColumnSyncQueued)
+            return;
+
+        _rulesColumnSyncQueued = true;
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+        {
+            _rulesColumnSyncQueued = false;
+            if (RulesColumnGrid == null || RulesColumnGrid.ActualWidth <= 0 || AllowedGrid == null || BlockedGrid == null)
+                return;
+
+            // The pinned header owns the layout. Explicit pixel widths prevent
+            // recycled DataGrid star columns from retaining a stale narrow width.
+            AllowColState.Width = BlockColState.Width = new DataGridLength(RulesStateColumn.ActualWidth);
+            AllowColActivity.Width = BlockColActivity.Width = new DataGridLength(RulesActivityColumn.ActualWidth);
+            AllowColProg.Width = BlockColProg.Width = new DataGridLength(RulesProgramColumn.ActualWidth);
+            AllowColPath.Width = BlockColPath.Width = new DataGridLength(RulesPathColumn.ActualWidth);
+            AllowColAction.Width = BlockColAction.Width = new DataGridLength(RulesActionColumn.ActualWidth);
+            AllowColCountry.Width = BlockColCountry.Width = new DataGridLength(RulesCountryColumn.ActualWidth);
+            AllowColDir.Width = BlockColDir.Width = new DataGridLength(RulesDirectionColumn.ActualWidth);
+        }));
     }
 
     private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -1973,6 +2005,13 @@ public partial class MainWindow : Window
         TabConnectionsBtn.Padding = padding;
         TabStatsBtn.Padding = padding;
         TabSettingsBtn.Padding = padding;
+
+        var iconMargin = compact ? new Thickness(0) : new Thickness(0, 0, 7, 0);
+        TabFirewallIcon.Margin = iconMargin;
+        TabTrafficIcon.Margin = iconMargin;
+        TabConnectionsIcon.Margin = iconMargin;
+        TabStatsIcon.Margin = iconMargin;
+        TabSettingsIcon.Margin = iconMargin;
     }
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
