@@ -25,7 +25,7 @@
 
 <div align="center">
 
-### Per-application network control for Windows
+### A default-deny firewall that asks before any program reaches the internet
 
 </div>
 
@@ -58,7 +58,7 @@
 
 ## 👋 Introduction
 
-CyberWall is a modern, lightweight **per-application firewall** for Windows, built on the **Windows Filtering Platform (WFP)** and the **Windows Advanced Firewall** that ship with the operating system. Its default-deny model intercepts unknown network activity and asks whether each executable should be allowed once, always allowed, or blocked with a persistent rule. Real-time prompts, connection monitoring, rule management, traffic statistics, and clear application identity make outbound access easier to understand and control without installing a third-party kernel driver.
+Every program on your PC can reach the internet the moment it runs, and most firewalls either let it happen silently or ask you about ports and protocols. CyberWall flips that: nothing gets out unless you allow that specific executable. It runs on the Windows Filtering Platform and the built-in Advanced Firewall — no third-party kernel driver — and turns unknown activity into a simple prompt: allow once, always allow, or block with a persistent rule. The same window shows live connections, traffic statistics, rule management and a clear identity for each app. Built with **.NET 10** and **WPF**.
 
 *Free and open source (GPLv3): no ads, no tracking, and no data collection. Just enjoy it.*
 

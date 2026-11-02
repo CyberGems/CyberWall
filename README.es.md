@@ -25,7 +25,7 @@
 
 <div align="center">
 
-### Control de red por aplicación para Windows
+### Un firewall de denegación por defecto que pregunta antes de que un programa salga a internet
 
 </div>
 
@@ -58,7 +58,7 @@
 
 ## 👋 Introducción
 
-CyberWall es un cortafuegos moderno y ligero **por aplicación** para Windows, construido sobre la **Windows Filtering Platform (WFP)** y el **Cortafuegos Avanzado de Windows** que ya vienen con el sistema operativo. Su modelo de denegación por defecto intercepta la actividad de red desconocida y pregunta si cada ejecutable debe permitirse una vez, permitirse siempre o bloquearse con una regla persistente. Los avisos en tiempo real, la monitorización de conexiones, la gestión de reglas, las estadísticas de tráfico y la identificación clara de las aplicaciones hacen que el acceso de salida sea más fácil de entender y controlar sin instalar un controlador de kernel de terceros.
+Cualquier programa de tu PC puede salir a internet en cuanto se ejecuta, y la mayoría de los firewalls lo permiten en silencio o te preguntan por puertos y protocolos. CyberWall lo invierte: nada sale si no autorizas ese ejecutable concreto. Funciona sobre Windows Filtering Platform y el Firewall avanzado del sistema —sin drivers de terceros— y convierte la actividad desconocida en una pregunta simple: permitir una vez, permitir siempre o bloquear con una regla persistente. La misma ventana muestra conexiones en vivo, estadísticas de tráfico, gestión de reglas e identidad clara de cada aplicación. Construido con **.NET 10** y **WPF**.
 
 *Gratuito y de código abierto (GPLv3): sin anuncios, sin rastreo y sin recogida de datos. Solo disfrútalo.*
 
