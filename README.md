@@ -34,6 +34,7 @@
 ## 📑 Table of Contents
 
 - [👋 Introduction](#-introduction)
+- [📸 Screenshots](#-screenshots)
 - [🛡️ Why CyberWall? Real-World Threat Protection](#️-why-cyberwall-real-world-threat-protection)
 - [✨ Key Features](#-key-features)
 - [🚀 Getting Started](#-getting-started)
@@ -61,6 +62,14 @@
 Every program on your PC can reach the internet the moment it runs, and most firewalls either let it happen silently or ask you about ports and protocols. CyberWall flips that: nothing gets out unless you allow that specific executable. It runs on the Windows Filtering Platform and the built-in Advanced Firewall — no third-party kernel driver — and turns unknown activity into a simple prompt: allow once, always allow, or block with a persistent rule. The same window shows live connections, traffic statistics, rule management and a clear identity for each app. Built with **.NET 10** and **WPF**.
 
 *Free and open source (GPLv3): no ads, no tracking, and no data collection. Just enjoy it.*
+
+---
+
+<!-- Screenshots: pending the bilingual EN/ES gallery in the capture plan at https://github.com/CyberGems/CyberGems.github.io/blob/main/docs/screenshots.md — replace the blockquote, keep this heading and the TOC entry. -->
+
+## 📸 Screenshots
+
+> Coming soon...
 
 ---
 

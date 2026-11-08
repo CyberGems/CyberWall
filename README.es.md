@@ -34,6 +34,7 @@
 ## 📑 Table of Contents
 
 - [👋 Introducción](#-introducción)
+- [📸 Capturas](#-capturas)
 - [🛡️ ¿Por qué CyberWall? Protección frente a amenazas reales](#️-por-qué-cyberwall-protección-frente-a-amenazas-reales)
 - [✨ Funciones principales](#-funciones-principales)
 - [🚀 Primeros pasos](#-primeros-pasos)
@@ -61,6 +62,14 @@
 Cualquier programa de tu PC puede salir a internet en cuanto se ejecuta, y la mayoría de los firewalls lo permiten en silencio o te preguntan por puertos y protocolos. CyberWall lo invierte: nada sale si no autorizas ese ejecutable concreto. Funciona sobre Windows Filtering Platform y el Firewall avanzado del sistema —sin drivers de terceros— y convierte la actividad desconocida en una pregunta simple: permitir una vez, permitir siempre o bloquear con una regla persistente. La misma ventana muestra conexiones en vivo, estadísticas de tráfico, gestión de reglas e identidad clara de cada aplicación. Construido con **.NET 10** y **WPF**.
 
 *Gratuito y de código abierto (GPLv3): sin anuncios, sin rastreo y sin recogida de datos. Solo disfrútalo.*
+
+---
+
+<!-- Capturas: pendiente de la galería bilingüe ES/EN del plan en https://github.com/CyberGems/CyberGems.github.io/blob/main/docs/screenshots.md — sustituir la cita, conservar este título y su entrada en el índice. -->
+
+## 📸 Capturas
+
+> Próximamente...
 
 ---
 
