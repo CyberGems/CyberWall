@@ -34,7 +34,7 @@
 ## 📑 Table of Contents
 
 - [👋 Introducción](#-introducción)
-- [📸 Capturas](#-capturas)
+- [🖼️ Capturas](#️-capturas)
 - [🛡️ ¿Por qué CyberWall? Protección frente a amenazas reales](#️-por-qué-cyberwall-protección-frente-a-amenazas-reales)
 - [✨ Funciones principales](#-funciones-principales)
 - [🚀 Primeros pasos](#-primeros-pasos)
@@ -67,7 +67,7 @@ Cualquier programa de tu PC puede salir a internet en cuanto se ejecuta, y la ma
 
 <!-- Capturas: pendiente de la galería bilingüe ES/EN del plan en https://github.com/CyberGems/CyberGems.github.io/blob/main/docs/screenshots.md — sustituir la cita, conservar este título y su entrada en el índice. -->
 
-## 📸 Capturas
+## 🖼️ Capturas
 
 > Próximamente...
 

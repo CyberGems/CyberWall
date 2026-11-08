@@ -34,7 +34,7 @@
 ## 📑 Table of Contents
 
 - [👋 Introduction](#-introduction)
-- [📸 Screenshots](#-screenshots)
+- [🖼️ Screenshots](#️-screenshots)
 - [🛡️ Why CyberWall? Real-World Threat Protection](#️-why-cyberwall-real-world-threat-protection)
 - [✨ Key Features](#-key-features)
 - [🚀 Getting Started](#-getting-started)
@@ -67,7 +67,7 @@ Every program on your PC can reach the internet the moment it runs, and most fir
 
 <!-- Screenshots: pending the bilingual EN/ES gallery in the capture plan at https://github.com/CyberGems/CyberGems.github.io/blob/main/docs/screenshots.md — replace the blockquote, keep this heading and the TOC entry. -->
 
-## 📸 Screenshots
+## 🖼️ Screenshots
 
 > Coming soon...
 
