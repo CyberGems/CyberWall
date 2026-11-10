@@ -464,9 +464,10 @@ public partial class MainWindow : Window
         ModeLbl.Text = Strings.T("Mode");
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
         FirewallChartTitleText.Text = $"{Strings.T("TrafficTelemetryTitle")} ({(_firewallTimeWindowSeconds <= 60 ? "60s" : "5 min")})";
-        FirewallTime1mBtn.Content = Strings.T("ChartTime1m");
+        var heroCompact = ActualWidth > 0 && ActualWidth < 950;
+        FirewallTime1mBtn.Content = heroCompact ? "1m" : Strings.T("ChartTime1m");
         FirewallTime1mBtn.ToolTip = Strings.T("ChartTime1mTooltip");
-        FirewallTime5mBtn.Content = Strings.T("ChartTime5m");
+        FirewallTime5mBtn.Content = heroCompact ? "5m" : Strings.T("ChartTime5m");
         FirewallTime5mBtn.ToolTip = Strings.T("ChartTime5mTooltip");
         FirewallPeakPill.ToolTip = Strings.T("ChartScaleTooltip");
         FirewallPauseChartBtn.ToolTip = _isFirewallChartPaused ? Strings.T("ChartResumeTooltip") : Strings.T("ChartPauseTooltip");
@@ -2259,7 +2260,7 @@ public partial class MainWindow : Window
         if (TabFirewallText == null || WfpBadge == null)
             return;
 
-        var compact = e.NewSize.Width < 1100;
+        var compact = e.NewSize.Width < 980;
         var textVisibility = compact ? Visibility.Collapsed : Visibility.Visible;
         TabFirewallText.Visibility = textVisibility;
         TabTrafficText.Visibility = textVisibility;
@@ -2279,6 +2280,17 @@ public partial class MainWindow : Window
         TabTrafficIcon.Margin = iconMargin;
         TabConnectionsIcon.Margin = iconMargin;
         TabStatsIcon.Margin = iconMargin;
+
+        var heroCompact = e.NewSize.Width < 950;
+        if (FirewallPeakPill != null)
+        {
+            FirewallPeakPill.Visibility = heroCompact ? Visibility.Collapsed : Visibility.Visible;
+        }
+        if (FirewallTime1mBtn != null && FirewallTime5mBtn != null)
+        {
+            FirewallTime1mBtn.Content = heroCompact ? "1m" : Strings.T("ChartTime1m");
+            FirewallTime5mBtn.Content = heroCompact ? "5m" : Strings.T("ChartTime5m");
+        }
     }
 
     private bool _isSearchClosing;

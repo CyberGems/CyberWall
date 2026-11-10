@@ -989,7 +989,7 @@
                                     <TextBlock x:Name="WfpBadgeText" Text="WFP ENGINE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
                                 </Border>
                             </StackPanel>
-                            <TextBlock x:Name="SubtitleText" Text="Application Layer Firewall &amp; Real-Time Network Filter" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
+                            <TextBlock x:Name="SubtitleText" Text="Protección con filtro en tiempo real" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
                         </StackPanel>
                     </StackPanel>
 
@@ -1223,8 +1223,8 @@
                                     <ColumnDefinition Width="Auto"/>
                                     <!-- Center Block: Live Network Wave Graph (Flexible) -->
                                     <ColumnDefinition Width="*"/>
-                                    <!-- Right Block: Live Speeds & Controls -->
-                                    <ColumnDefinition Width="Auto"/>
+                                    <!-- Right Block: Live Speeds & Controls (Fixed 170px to lock graph width) -->
+                                    <ColumnDefinition Width="170"/>
                                 </Grid.ColumnDefinitions>
 
                                 <!-- LEFT BLOCK: Master Protection Toggle & Mode Dropdown -->
@@ -1270,6 +1270,17 @@
                                         CornerRadius="10" Margin="4,0,14,0" SnapsToDevicePixels="True"
                                         Padding="6,4" MinWidth="260">
                                     <Grid>
+                                        <!-- Subtle High-Tech Depth Gradient Overlay -->
+                                        <Border CornerRadius="8" IsHitTestVisible="False">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                    <GradientStop Color="#08FFFFFF" Offset="0.0"/>
+                                                    <GradientStop Color="#00000000" Offset="0.35"/>
+                                                    <GradientStop Color="#14000000" Offset="1.0"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                        </Border>
+
                                         <!-- Title indicator in the upper-left corner of the graph -->
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="4,2,0,0" Panel.ZIndex="2" IsHitTestVisible="False">
                                             <Path Data="M 7 1 L 2 8 L 6 8 L 5 14 L 11 6 L 7 6 Z"
@@ -1311,18 +1322,24 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <!-- Top Row: Real-time Speeds Pill -->
+                                    <!-- Top Row: Real-time Speeds Pill (Fixed width to avoid jitter) -->
                                     <Border x:Name="FirewallThroughputPill" Grid.Row="0"
                                             Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                            BorderThickness="1" CornerRadius="6" Padding="8,4" Margin="0,0,0,6"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right" Cursor="Hand"
+                                            BorderThickness="1" CornerRadius="6" Padding="6,4" Margin="0,0,0,6"
+                                            Width="170" VerticalAlignment="Center" HorizontalAlignment="Right" Cursor="Hand"
                                             MouseLeftButtonUp="FirewallThroughputPill_Click" ToolTipService.InitialShowDelay="200">
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Path Data="M 3.5 0 H 6.5 V 5.5 H 9.5 L 5 10 L 0.5 5.5 H 3.5 Z" Fill="{DynamicResource AccentBrush}" Width="8" Height="9" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                            <TextBlock x:Name="FirewallDownSpeedText" Text="0.0 B/s" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,8,0"/>
-                                            <Path Data="M 5 0 L 9.5 4.5 H 6.5 V 10 H 3.5 V 4.5 H 0.5 Z" Fill="#22C55E" Width="8" Height="9" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                            <TextBlock x:Name="FirewallUpSpeedText" Text="0.0 B/s" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="SemiBold"/>
-                                        </StackPanel>
+                                        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="62"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="62"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Path Grid.Column="0" Data="M 3.5 0 H 6.5 V 5.5 H 9.5 L 5 10 L 0.5 5.5 H 3.5 Z" Fill="{DynamicResource AccentBrush}" Width="8" Height="9" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                            <TextBlock x:Name="FirewallDownSpeedText" Grid.Column="1" Text="0.0 B/s" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" TextAlignment="Left"/>
+                                            <Path Grid.Column="2" Data="M 5 0 L 9.5 4.5 H 6.5 V 10 H 3.5 V 4.5 H 0.5 Z" Fill="#22C55E" Width="8" Height="9" Stretch="Uniform" VerticalAlignment="Center" Margin="3,0,3,0"/>
+                                            <TextBlock x:Name="FirewallUpSpeedText" Grid.Column="3" Text="0.0 B/s" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" TextAlignment="Left"/>
+                                        </Grid>
                                     </Border>
 
                                     <!-- Bottom Row: 1m / 5m Time Segmented Toggle + Pause Button -->
