@@ -2,8 +2,15 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Height="16">
-    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Grid Width="20" Height="13" VerticalAlignment="Center">
+    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Center">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Flag / World Icon: Always strictly centered in the cell -->
+        <Grid Grid.Column="1" Width="20" Height="13" VerticalAlignment="Center">
             <Image x:Name="FlagImage" Width="20" Height="13" Stretch="Uniform"
                    HorizontalAlignment="Center" VerticalAlignment="Center"
                    SnapsToDevicePixels="True" Visibility="Collapsed"/>
@@ -23,13 +30,15 @@
                     HorizontalAlignment="Center" VerticalAlignment="Center"
                     Visibility="Collapsed" Margin="-1"/>
         </Grid>
-        <Border x:Name="CountBadgeBorder" Margin="3,0,0,0" Padding="3,0" Height="13" CornerRadius="3"
+
+        <!-- Count Badge: Positioned in Column 2 to the right, never displacing the flag -->
+        <Border Grid.Column="2" x:Name="CountBadgeBorder" Margin="3,0,0,0" Padding="3,0" Height="13" CornerRadius="3"
                 Background="{DynamicResource CardSecondaryBrush}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0.6"
-                VerticalAlignment="Center" Visibility="Collapsed">
+                VerticalAlignment="Center" HorizontalAlignment="Left" Visibility="Collapsed">
             <TextBlock x:Name="CountBadgeText" FontSize="8.5" FontWeight="SemiBold"
                        Foreground="{DynamicResource SubTextBrush}"
                        VerticalAlignment="Center" HorizontalAlignment="Center"/>
         </Border>
-    </StackPanel>
+    </Grid>
 </UserControl>

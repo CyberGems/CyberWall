@@ -453,6 +453,42 @@
             </Setter>
         </Style>
 
+        <!-- Compact Mode ComboBox: compact closed trigger with full-width dropdown popup -->
+        <Style x:Key="ModeComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource ModernComboBox}">
+            <Setter Property="Width" Value="130"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton Name="ToggleButton" Template="{StaticResource ComboBoxToggleButton}" Grid.Column="2" Focusable="false" IsChecked="{Binding Path=IsDropDownOpen,Mode=TwoWay,RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press"/>
+                            <TextBlock x:Name="SelectedModeText"
+                                       IsHitTestVisible="False"
+                                       Text="{Binding SelectedItem.Tag, RelativeSource={RelativeSource TemplatedParent}}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       FontSize="{TemplateBinding FontSize}"
+                                       FontWeight="{TemplateBinding FontWeight}"
+                                       Margin="10,3,24,3"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Left"
+                                       TextTrimming="CharacterEllipsis"/>
+                            <Popup Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                                <Grid Name="DropDown" SnapsToDevicePixels="True" MinWidth="215" MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <Border x:Name="DropDownBorder" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1" CornerRadius="8" Margin="0,4,0,4">
+                                        <Border.Effect>
+                                            <DropShadowEffect Color="Black" Opacity="0.4" BlurRadius="12" ShadowDepth="4"/>
+                                        </Border.Effect>
+                                        <ScrollViewer Margin="4,6" SnapsToDevicePixels="True">
+                                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style TargetType="ComboBoxItem">
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -1189,28 +1225,28 @@
                                 </Grid.ColumnDefinitions>
 
                                 <!-- Left: Master Switch + Status Title -->
-                                <Grid VerticalAlignment="Center" Margin="0,0,12,0">
+                                <Grid VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,12,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <CheckBox x:Name="MasterToggle" Grid.Column="0" Style="{StaticResource MasterToggleSwitch}" Checked="MasterToggle_Changed" Unchecked="MasterToggle_Changed"/>
-                                    <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <StackPanel Grid.Column="1" Margin="12,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal">
                                             <Ellipse x:Name="StatusDot" Width="9" Height="9" Fill="#4ADE80" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                             <TextBlock x:Name="MasterLabel" Text="PROTECCIÓN ACTIVA" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
                                         </StackPanel>
-                                        <TextBlock x:Name="StatusText" Foreground="{DynamicResource SubTextBrush}" FontSize="11" Margin="0,2,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" MaxWidth="205" Text="Filtrado en tiempo real"/>
+                                        <TextBlock x:Name="StatusText" HorizontalAlignment="Left" Foreground="{DynamicResource SubTextBrush}" FontSize="11" Margin="0,2,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" MaxWidth="205" Text="Filtrado en tiempo real"/>
                                     </StackPanel>
                                 </Grid>
 
                                 <!-- Right: Mode Dropdown -->
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                     <TextBlock x:Name="ModeLbl" Text="Modo:" Foreground="{DynamicResource SubTextBrush}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                    <ComboBox x:Name="ModeBox" Width="220" Height="32" Style="{StaticResource ModernComboBox}" IsTabStop="False" FocusVisualStyle="{x:Null}" SelectionChanged="ModeBox_SelectionChanged">
-                                        <ComboBoxItem Content="Preguntar para conectar"/>
-                                        <ComboBoxItem Content="Bloquear sin preguntar"/>
-                                        <ComboBoxItem Content="Bloqueo total (Killswitch)"/>
+                                    <ComboBox x:Name="ModeBox" Height="32" Style="{StaticResource ModeComboBoxStyle}" IsTabStop="False" FocusVisualStyle="{x:Null}" SelectionChanged="ModeBox_SelectionChanged">
+                                        <ComboBoxItem Content="Preguntar para conectar" Tag="Preguntar"/>
+                                        <ComboBoxItem Content="Bloquear sin preguntar" Tag="Bloquear"/>
+                                        <ComboBoxItem Content="Bloqueo total (Killswitch)" Tag="Bloqueo total"/>
                                     </ComboBox>
                                 </StackPanel>
                             </Grid>
@@ -1436,6 +1472,7 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                                 <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
                                             <Button x:Name="SearchIconBtn" Grid.Column="0" Background="Transparent" BorderThickness="0"
                                                     Cursor="Hand" Margin="0,0,8,0" VerticalAlignment="Center"
@@ -1469,14 +1506,36 @@
                                                          TextChanged="SearchBox_TextChanged" PreviewKeyDown="SearchBox_PreviewKeyDown"
                                                          LostFocus="SearchBox_LostFocus"/>
                                             </Grid>
+                                            <!-- Quick Country Filter Chip (Dismissable) -->
+                                            <Button x:Name="CountryFilterChip" Grid.Column="2" Visibility="Collapsed"
+                                                    Margin="4,0,2,0" VerticalAlignment="Center" Background="{DynamicResource CardSecondaryBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1"
+                                                    Cursor="Hand" Click="CountryFilterChip_Click" ToolTip="Quitar filtro de país">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="ChipBd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="5,1.5">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="ChipBd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock x:Name="CountryFilterChipText" Text="US" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                                    <Path Data="M 1 1 L 6 6 M 6 1 L 1 6" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="6" Height="6" Stretch="Uniform" Margin="4,0,0,0" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
                                             <!-- Match Count Badge -->
-                                            <Border x:Name="SearchMatchBadge" Grid.Column="2" Visibility="Collapsed"
+                                            <Border x:Name="SearchMatchBadge" Grid.Column="3" Visibility="Collapsed"
                                                     Margin="4,0,2,0" VerticalAlignment="Center"
                                                     Background="{DynamicResource CardSecondaryBrush}" CornerRadius="4" Padding="5,1.5">
                                                 <TextBlock x:Name="SearchMatchText" Text="0" FontSize="10"
                                                            FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
                                             </Border>
-                                            <Button x:Name="SearchClearBtn" Grid.Column="3" Width="20" Height="20"
+                                            <Button x:Name="SearchClearBtn" Grid.Column="4" Width="20" Height="20"
                                                     Background="Transparent" BorderThickness="0" Cursor="Hand"
                                                     Click="SearchClearBtn_Click" Margin="4,0,0,0" ToolTip="Cerrar búsqueda (Esc)">
                                                 <Button.Template>

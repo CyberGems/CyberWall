@@ -489,9 +489,9 @@ public partial class MainWindow : Window
         var m = IndexFromMode(_svc.Mode);
         _loading = true;
         ModeBox.Items.Clear();
-        ModeBox.Items.Add(new ComboBoxItem { Content = Strings.T("ModeAsk") });
-        ModeBox.Items.Add(new ComboBoxItem { Content = Strings.T("ModeBlockAll") });
-        ModeBox.Items.Add(new ComboBoxItem { Content = Strings.T("ModeKillswitch") });
+        ModeBox.Items.Add(new ComboBoxItem { Content = Strings.T("ModeAsk"), Tag = Strings.T("ModeAskShort") });
+        ModeBox.Items.Add(new ComboBoxItem { Content = Strings.T("ModeBlockAll"), Tag = Strings.T("ModeBlockAllShort") });
+        ModeBox.Items.Add(new ComboBoxItem { Content = Strings.T("ModeKillswitch"), Tag = Strings.T("ModeKillswitchShort") });
         ModeBox.SelectedIndex = m;
         _loading = false;
         UpdateMaximizeButtonIcon();
@@ -1135,6 +1135,20 @@ public partial class MainWindow : Window
             AllowedGrid.ItemsSource = allowedRows;
             UpdateExpanderHeaders();
 
+            if (CountryFilterChip != null && CountryFilterChipText != null)
+            {
+                if (!string.IsNullOrEmpty(countryFilter))
+                {
+                    CountryFilterChip.Visibility = Visibility.Visible;
+                    CountryFilterChipText.Text = countryFilter.ToUpperInvariant();
+                    CountryFilterChip.ToolTip = Strings.T("ClearCountryFilterHint");
+                }
+                else
+                {
+                    CountryFilterChip.Visibility = Visibility.Collapsed;
+                }
+            }
+
             int matchCount = blockedRows.Count + allowedRows.Count;
             if (string.IsNullOrWhiteSpace(filter) && string.IsNullOrEmpty(countryFilter))
             {
@@ -1145,17 +1159,9 @@ public partial class MainWindow : Window
                 if (SearchMatchBadge != null && SearchMatchText != null)
                 {
                     SearchMatchBadge.Visibility = Visibility.Visible;
-                    if (!string.IsNullOrEmpty(countryFilter))
-                    {
-                        var cLabel = CountryDisplay.Label(new GeoResult(GeoKind.Country, countryFilter));
-                        SearchMatchText.Text = $"{cLabel} ({matchCount})";
-                    }
-                    else
-                    {
-                        SearchMatchText.Text = matchCount == 1
-                            ? string.Format(Strings.T("SearchMatchSingle"), matchCount)
-                            : string.Format(Strings.T("SearchMatchPlural"), matchCount);
-                    }
+                    SearchMatchText.Text = matchCount == 1
+                        ? string.Format(Strings.T("SearchMatchSingle"), matchCount)
+                        : string.Format(Strings.T("SearchMatchPlural"), matchCount);
                 }
             }
         }
@@ -2318,6 +2324,7 @@ public partial class MainWindow : Window
             }
         }
 
+        if (CountryFilterChip != null) CountryFilterChip.Visibility = Visibility.Collapsed;
         if (SearchMatchBadge != null) SearchMatchBadge.Visibility = Visibility.Collapsed;
 
         _isSearchClosing = true;
@@ -2387,6 +2394,16 @@ public partial class MainWindow : Window
             RefreshRules();
         }
         e.Handled = true;
+    }
+
+    private void CountryFilterChip_Click(object sender, RoutedEventArgs e)
+    {
+        _countryFilter = null;
+        if (CountryFilterChip != null) CountryFilterChip.Visibility = Visibility.Collapsed;
+        if (string.IsNullOrEmpty(SearchBox?.Text))
+            CloseSearch(clearText: true);
+        else
+            RefreshRules();
     }
 
     private void ShowRecentSearchesMenu(FrameworkElement target)
