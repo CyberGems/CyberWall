@@ -338,9 +338,10 @@
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="IsTabStop" Value="False"/>
-            <Setter Property="ToolTipService.InitialShowDelay" Value="250"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
-            <Setter Property="ToolTipService.ShowDuration" Value="3000"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="400"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="2500"/>
+            <Setter Property="ToolTipService.Placement" Value="Bottom"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -370,9 +371,10 @@
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="IsTabStop" Value="False"/>
-            <Setter Property="ToolTipService.InitialShowDelay" Value="250"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
-            <Setter Property="ToolTipService.ShowDuration" Value="3000"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="400"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="2500"/>
+            <Setter Property="ToolTipService.Placement" Value="Bottom"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -732,6 +734,11 @@
             <MenuItem Header="{Binding Converter={StaticResource T}, ConverterParameter=CopyPathTooltip}" Style="{StaticResource ModernMenuItem}" Click="ContextCopy_Click">
                 <MenuItem.Icon>
                     <Path Fill="{DynamicResource SubTextBrush}" Stretch="Uniform" Width="12" Height="12" Data="M4.2,3.4 H9.6 V9.2 H4.2 Z M6.2,1.6 H11.6 V7.4 H10.2 V3 H6.2 Z"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="{Binding Converter={StaticResource T}, ConverterParameter=CopyExeName}" Style="{StaticResource ModernMenuItem}" Click="ContextCopyExeName_Click">
+                <MenuItem.Icon>
+                    <Path Fill="{DynamicResource SubTextBrush}" Stretch="Uniform" Width="12" Height="12" Data="M2,2 H10 V3.5 H2 Z M2,5.5 H12 V7 H2 Z M2,9 H8 V10.5 H2 Z"/>
                 </MenuItem.Icon>
             </MenuItem>
             <MenuItem Header="{Binding Converter={StaticResource T}, ConverterParameter=OpenFolderTooltip}" Style="{StaticResource ModernMenuItem}" Click="ContextFolder_Click">
@@ -1411,10 +1418,10 @@
                                         </Border>
                                     </Grid>
 
-                                    <!-- Inline Expandable Search Bar Overlay (GlassWire-style) -->
+                                    <!-- Inline Expandable Search Bar Overlay -->
                                     <Border x:Name="HeaderSearchBar" Visibility="Collapsed"
                                             HorizontalAlignment="Left" VerticalAlignment="Stretch"
-                                            Width="320"
+                                            Width="330"
                                             Background="{DynamicResource HeaderBgBrush}"
                                             BorderBrush="{DynamicResource BorderBrush}"
                                             BorderThickness="0,0,1,0"
@@ -1423,6 +1430,7 @@
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto"/>
                                                 <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
                                             <Button x:Name="SearchIconBtn" Grid.Column="0" Background="Transparent" BorderThickness="0"
@@ -1457,7 +1465,14 @@
                                                          TextChanged="SearchBox_TextChanged" PreviewKeyDown="SearchBox_PreviewKeyDown"
                                                          LostFocus="SearchBox_LostFocus"/>
                                             </Grid>
-                                            <Button x:Name="SearchClearBtn" Grid.Column="2" Width="20" Height="20"
+                                            <!-- Match Count Badge -->
+                                            <Border x:Name="SearchMatchBadge" Grid.Column="2" Visibility="Collapsed"
+                                                    Margin="4,0,2,0" VerticalAlignment="Center"
+                                                    Background="{DynamicResource CardSecondaryBrush}" CornerRadius="4" Padding="5,1.5">
+                                                <TextBlock x:Name="SearchMatchText" Text="0" FontSize="10"
+                                                           FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <Button x:Name="SearchClearBtn" Grid.Column="3" Width="20" Height="20"
                                                     Background="Transparent" BorderThickness="0" Cursor="Hand"
                                                     Click="SearchClearBtn_Click" Margin="4,0,0,0" ToolTip="Cerrar búsqueda (Esc)">
                                                 <Button.Template>
@@ -1532,9 +1547,9 @@
                                                                 <TextBlock Grid.Column="1"
                                                                            services:SearchHighlight.Text="{Binding DisplayName}"
                                                                            services:SearchHighlight.SearchTerm="{Binding Tag, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                                           services:TrimmedToolTip.Enable="True"
                                                                            FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
-                                                                           ToolTip="{Binding DisplayName}"
-                                                                           ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="150" ToolTipService.ShowDuration="6000"/>
+                                                                           ToolTip="{Binding DisplayName}"/>
                                                                 <Button x:Name="QuickEditBtn" Grid.Column="2" Style="{StaticResource RowQuickButton}" ToolTip="{Binding Converter={StaticResource T}, ConverterParameter=EditRule}" Tag="{Binding}" Click="QuickEdit_Click" Margin="3,0,0,0">
                                                                     <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.2" Fill="Transparent" Stretch="Uniform" Width="10" Height="10" Data="M 12 4 L 14 6 L 6 14 L 4 14 L 4 12 L 12 4 Z M 13 3 L 15 5 L 14.5 5.5 L 12.5 3.5 Z"/>
                                                                 </Button>
@@ -1666,10 +1681,10 @@
                                                         <DataTemplate>
                                                             <TextBlock services:SearchHighlight.Text="{Binding AppPath}"
                                                                        services:SearchHighlight.SearchTerm="{Binding Tag, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                                       services:TrimmedToolTip.Enable="True"
                                                                        Margin="12,0" VerticalAlignment="Center"
                                                                        Foreground="{DynamicResource SubTextBrush}" FontSize="11" TextTrimming="CharacterEllipsis"
-                                                                       ToolTip="{Binding AppPath}"
-                                                                       ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="150" ToolTipService.ShowDuration="6000"/>
+                                                                       ToolTip="{Binding AppPath}"/>
                                                         </DataTemplate>
                                                     </DataGridTemplateColumn.CellTemplate>
                                                 </DataGridTemplateColumn>
@@ -1766,9 +1781,9 @@
                                                             <TextBlock Grid.Column="1"
                                                                        services:SearchHighlight.Text="{Binding DisplayName}"
                                                                        services:SearchHighlight.SearchTerm="{Binding Tag, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                                       services:TrimmedToolTip.Enable="True"
                                                                        FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
-                                                                       ToolTip="{Binding DisplayName}"
-                                                                       ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="150" ToolTipService.ShowDuration="6000"/>
+                                                                       ToolTip="{Binding DisplayName}"/>
                                                             <Button x:Name="QuickEditBtn" Grid.Column="2" Style="{StaticResource RowQuickButton}" ToolTip="{Binding Converter={StaticResource T}, ConverterParameter=EditRule}" Tag="{Binding}" Click="QuickEdit_Click" Margin="3,0,0,0">
                                                                 <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.2" Fill="Transparent" Stretch="Uniform" Width="10" Height="10" Data="M 12 4 L 14 6 L 6 14 L 4 14 L 4 12 L 12 4 Z M 13 3 L 15 5 L 14.5 5.5 L 12.5 3.5 Z"/>
                                                             </Button>
@@ -1900,10 +1915,10 @@
                                                     <DataTemplate>
                                                         <TextBlock services:SearchHighlight.Text="{Binding AppPath}"
                                                                    services:SearchHighlight.SearchTerm="{Binding Tag, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                                   services:TrimmedToolTip.Enable="True"
                                                                    Margin="12,0" VerticalAlignment="Center"
                                                                    Foreground="{DynamicResource SubTextBrush}" FontSize="11" TextTrimming="CharacterEllipsis"
-                                                                   ToolTip="{Binding AppPath}"
-                                                                   ToolTipService.InitialShowDelay="300" ToolTipService.BetweenShowDelay="150" ToolTipService.ShowDuration="6000"/>
+                                                                   ToolTip="{Binding AppPath}"/>
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>

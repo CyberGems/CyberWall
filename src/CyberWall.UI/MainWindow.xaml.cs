@@ -1039,6 +1039,22 @@ public partial class MainWindow : Window
             BlockedGrid.ItemsSource = blockedRows;
             AllowedGrid.ItemsSource = allowedRows;
             UpdateExpanderHeaders();
+
+            if (string.IsNullOrWhiteSpace(filter))
+            {
+                if (SearchMatchBadge != null) SearchMatchBadge.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                int matchCount = blockedRows.Count + allowedRows.Count;
+                if (SearchMatchBadge != null && SearchMatchText != null)
+                {
+                    SearchMatchBadge.Visibility = Visibility.Visible;
+                    SearchMatchText.Text = matchCount == 1
+                        ? string.Format(Strings.T("SearchMatchSingle"), matchCount)
+                        : string.Format(Strings.T("SearchMatchPlural"), matchCount);
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -1720,6 +1736,17 @@ public partial class MainWindow : Window
         try { System.Windows.Clipboard.SetText(path); } catch { }
     }
 
+    private void ContextCopyExeName_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem item) return;
+        var r = item.DataContext as AppRule ?? (item.DataContext as AppRuleRow)?.Rule ?? (item.Tag as AppRule) ?? (item.Tag as AppRuleRow)?.Rule;
+        if (r == null && (AllowedGrid.SelectedItem as AppRuleRow)?.Rule is { } selRow) r = selRow;
+        if (r == null && (BlockedGrid.SelectedItem as AppRuleRow)?.Rule is { } selBlockRow) r = selBlockRow;
+        var exe = System.IO.Path.GetFileName(r?.AppPath);
+        if (string.IsNullOrEmpty(exe)) return;
+        try { System.Windows.Clipboard.SetText(exe); } catch { }
+    }
+
     private void ContextFolder_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not MenuItem item) return;
@@ -2093,7 +2120,7 @@ public partial class MainWindow : Window
         HeaderSearchBar.Visibility = Visibility.Visible;
         HeaderSearchBar.IsHitTestVisible = true;
 
-        var widthAnim = new DoubleAnimation(56, 320, TimeSpan.FromMilliseconds(180))
+        var widthAnim = new DoubleAnimation(56, 330, TimeSpan.FromMilliseconds(180))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
@@ -2118,10 +2145,12 @@ public partial class MainWindow : Window
             SearchBox.Text = "";
         }
 
+        if (SearchMatchBadge != null) SearchMatchBadge.Visibility = Visibility.Collapsed;
+
         _isSearchClosing = true;
         HeaderSearchBar.IsHitTestVisible = false;
 
-        var currentWidth = HeaderSearchBar.ActualWidth > 0 ? HeaderSearchBar.ActualWidth : 320;
+        var currentWidth = HeaderSearchBar.ActualWidth > 0 ? HeaderSearchBar.ActualWidth : 330;
         var widthAnim = new DoubleAnimation(currentWidth, 56, TimeSpan.FromMilliseconds(140))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
@@ -2138,7 +2167,7 @@ public partial class MainWindow : Window
                 HeaderSearchBar.Visibility = Visibility.Collapsed;
                 HeaderSearchBar.BeginAnimation(WidthProperty, null);
                 HeaderSearchBar.BeginAnimation(OpacityProperty, null);
-                HeaderSearchBar.Width = 320;
+                HeaderSearchBar.Width = 330;
                 HeaderSearchBar.Opacity = 1.0;
                 HeaderSearchBar.IsHitTestVisible = true;
                 _isSearchClosing = false;
