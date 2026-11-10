@@ -429,6 +429,13 @@ public static class Strings
         ["SearchOnlineTooltip"] = ("Search online for information about this program", "Buscar información sobre este programa en internet"),
         ["OpenFolderTooltip"] = ("Open containing folder in File Explorer", "Abrir carpeta contenedora en el Explorador"),
         ["RemoveRuleTooltip"] = ("Remove rule from list", "Eliminar regla de la lista"),
+        ["CtxUndo"] = ("Undo", "Deshacer"),
+        ["CtxRedo"] = ("Redo", "Rehacer"),
+        ["CtxCut"] = ("Cut", "Cortar"),
+        ["CtxCopy"] = ("Copy", "Copiar"),
+        ["CtxPaste"] = ("Paste", "Pegar"),
+        ["CtxSelectAll"] = ("Select all", "Seleccionar todo"),
+        ["CtxDelete"] = ("Delete", "Eliminar"),
     };
 
     public static string T(string key, params object[] args)

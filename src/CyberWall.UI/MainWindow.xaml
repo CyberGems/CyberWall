@@ -1453,6 +1453,7 @@
                                                 <TextBox x:Name="SearchBox" Background="Transparent" Foreground="{DynamicResource TextBrush}"
                                                          CaretBrush="{DynamicResource AccentBrush}" BorderThickness="0"
                                                          VerticalAlignment="Center" FontSize="12"
+                                                         ctrl:TextFieldContextMenu.Enabled="True"
                                                          TextChanged="SearchBox_TextChanged" PreviewKeyDown="SearchBox_PreviewKeyDown"
                                                          LostFocus="SearchBox_LostFocus"/>
                                             </Grid>
