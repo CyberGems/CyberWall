@@ -1290,7 +1290,7 @@
 
                                         <!-- Col 0: Estado with search trigger icon sharing the cell -->
                                         <Border x:Name="StateHeaderBorder" Grid.Column="0" Margin="2,2" CornerRadius="6" Cursor="Hand"
-                                                MouseLeftButtonUp="StateHeaderBorder_Click" ToolTip="Buscar reglas... (Ctrl+F)">
+                                                MouseLeftButtonUp="StateHeaderBorder_Click" MouseRightButtonUp="StateHeaderBorder_RightClick" ToolTip="Buscar reglas... (Ctrl+F)">
                                             <Border.Style>
                                                 <Style TargetType="Border">
                                                     <Setter Property="Background" Value="Transparent"/>
@@ -1426,9 +1426,27 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <Path Grid.Column="0" Fill="{DynamicResource SubTextBrush}"
-                                                  Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,8,0"
-                                                  Data="M6,1.2 C3.4,1.2 1.2,3.4 1.2,6 C1.2,8.6 3.4,10.8 6,10.8 C7.1,10.8 8.1,10.4 8.9,9.8 L11.1,12 L12,11.1 L9.8,8.9 C10.4,8.1 10.8,7.1 10.8,6 C10.8,3.4 8.6,1.2 6,1.2 Z M6,2.4 C7.99,2.4 9.6,4.01 9.6,6 C9.6,7.99 7.99,9.6 6,9.6 C4.01,9.6 2.4,7.99 2.4,6 C2.4,4.01 4.01,2.4 6,2.4 Z"/>
+                                            <Button x:Name="SearchIconBtn" Grid.Column="0" Background="Transparent" BorderThickness="0"
+                                                    Cursor="Hand" Margin="0,0,8,0" VerticalAlignment="Center"
+                                                    Click="SearchIconBtn_Click">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="IconBd" Background="Transparent" CornerRadius="4" Padding="3">
+                                                            <Path Fill="{DynamicResource SubTextBrush}"
+                                                                  Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center"
+                                                                  Data="M6,1.2 C3.4,1.2 1.2,3.4 1.2,6 C1.2,8.6 3.4,10.8 6,10.8 C7.1,10.8 8.1,10.4 8.9,9.8 L11.1,12 L12,11.1 L9.8,8.9 C10.4,8.1 10.8,7.1 10.8,6 C10.8,3.4 8.6,1.2 6,1.2 Z M6,2.4 C7.99,2.4 9.6,4.01 9.6,6 C9.6,7.99 7.99,9.6 6,9.6 C4.01,9.6 2.4,7.99 2.4,6 C2.4,4.01 4.01,2.4 6,2.4 Z"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="IconBd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                                <Button.ContextMenu>
+                                                    <ContextMenu x:Name="RecentSearchesMenu" Style="{StaticResource ModernContextMenu}"/>
+                                                </Button.ContextMenu>
+                                            </Button>
                                             <Grid Grid.Column="1" VerticalAlignment="Center">
                                                 <TextBlock x:Name="SearchPlaceholder" Text="Buscar programa o ruta..."
                                                            Foreground="{DynamicResource SubTextBrush}" FontSize="12"

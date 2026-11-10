@@ -21,6 +21,7 @@ using CyberWall.UI.Services;
 using System.Windows.Automation;
 using System.Windows.Controls.Primitives;
 using MenuItem = System.Windows.Controls.MenuItem;
+using ContextMenu = System.Windows.Controls.ContextMenu;
 using RadioButton = System.Windows.Controls.RadioButton;
 using Brush = System.Windows.Media.Brush;
 using Color = System.Windows.Media.Color;
@@ -1501,6 +1502,11 @@ public partial class MainWindow : Window
             SearchClearBtn.ToolTip = Strings.T("CloseSearchTooltip");
         }
 
+        if (SearchIconBtn != null)
+        {
+            SearchIconBtn.ToolTip = Strings.T("RecentSearchesTooltip");
+        }
+
         if (ActivityHeaderBorder != null)
         {
             ActivityHeaderBorder.ToolTip = Strings.T("ActivitySortTooltip");
@@ -2035,27 +2041,190 @@ public partial class MainWindow : Window
         TabStatsIcon.Margin = iconMargin;
     }
 
+    private bool _isSearchClosing;
+
     public void OpenSearch()
     {
         if (HeaderSearchBar == null) return;
+        _isSearchClosing = false;
         HeaderSearchBar.Visibility = Visibility.Visible;
+        HeaderSearchBar.IsHitTestVisible = true;
+
+        var widthAnim = new DoubleAnimation(68, 320, TimeSpan.FromMilliseconds(180))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        var opacityAnim = new DoubleAnimation(0.2, 1.0, TimeSpan.FromMilliseconds(180))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+
+        HeaderSearchBar.BeginAnimation(WidthProperty, widthAnim);
+        HeaderSearchBar.BeginAnimation(OpacityProperty, opacityAnim);
+
         SearchBox.Focus();
         SearchBox.SelectAll();
     }
 
     public void CloseSearch(bool clearText = true)
     {
-        if (HeaderSearchBar == null) return;
+        if (HeaderSearchBar == null || HeaderSearchBar.Visibility != Visibility.Visible || _isSearchClosing) return;
+
         if (clearText && !string.IsNullOrEmpty(SearchBox.Text))
         {
             SearchBox.Text = "";
         }
-        HeaderSearchBar.Visibility = Visibility.Collapsed;
+
+        _isSearchClosing = true;
+        HeaderSearchBar.IsHitTestVisible = false;
+
+        var currentWidth = HeaderSearchBar.ActualWidth > 0 ? HeaderSearchBar.ActualWidth : 320;
+        var widthAnim = new DoubleAnimation(currentWidth, 68, TimeSpan.FromMilliseconds(140))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+        };
+        var opacityAnim = new DoubleAnimation(HeaderSearchBar.Opacity, 0.0, TimeSpan.FromMilliseconds(130))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+        };
+
+        opacityAnim.Completed += (s, e) =>
+        {
+            if (_isSearchClosing)
+            {
+                HeaderSearchBar.Visibility = Visibility.Collapsed;
+                HeaderSearchBar.BeginAnimation(WidthProperty, null);
+                HeaderSearchBar.BeginAnimation(OpacityProperty, null);
+                HeaderSearchBar.Width = 320;
+                HeaderSearchBar.Opacity = 1.0;
+                HeaderSearchBar.IsHitTestVisible = true;
+                _isSearchClosing = false;
+            }
+        };
+
+        HeaderSearchBar.BeginAnimation(WidthProperty, widthAnim);
+        HeaderSearchBar.BeginAnimation(OpacityProperty, opacityAnim);
     }
 
     private void StateHeaderBorder_Click(object sender, MouseButtonEventArgs e)
     {
         OpenSearch();
+    }
+
+    private void StateHeaderBorder_RightClick(object sender, MouseButtonEventArgs e)
+    {
+        ShowRecentSearchesMenu(StateHeaderBorder);
+        e.Handled = true;
+    }
+
+    private void SearchIconBtn_Click(object sender, RoutedEventArgs e)
+    {
+        ShowRecentSearchesMenu(SearchIconBtn);
+    }
+
+    private void ShowRecentSearchesMenu(FrameworkElement target)
+    {
+        if (RecentSearchesMenu == null || target == null) return;
+        PopulateRecentSearchesMenu(RecentSearchesMenu);
+        RecentSearchesMenu.PlacementTarget = target;
+        RecentSearchesMenu.Placement = PlacementMode.Bottom;
+        RecentSearchesMenu.IsOpen = true;
+    }
+
+    private void PopulateRecentSearchesMenu(ContextMenu menu)
+    {
+        if (menu == null) return;
+        menu.Items.Clear();
+
+        var titleItem = new MenuItem
+        {
+            Header = Strings.T("RecentSearches"),
+            IsEnabled = false,
+            FontWeight = FontWeights.Bold,
+            FontSize = 11.5,
+            Style = (Style)FindResource("ModernMenuItem"),
+            Icon = new System.Windows.Shapes.Path
+            {
+                Data = Geometry.Parse("M 12 2 A 10 10 0 1 0 12 22 A 10 10 0 0 0 12 2 Z M 12 6 L 12 12 L 16 14"),
+                Stroke = (Brush)FindResource("SubTextBrush"),
+                StrokeThickness = 1.4,
+                Width = 12,
+                Height = 12,
+                Stretch = Stretch.Uniform,
+                VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Center
+            }
+        };
+        menu.Items.Add(titleItem);
+        menu.Items.Add(new Separator { Style = (Style)FindResource("ModernMenuSeparator") });
+
+        var recents = App.Settings.RecentSearches;
+        if (recents != null && recents.Count > 0)
+        {
+            foreach (var term in recents.Take(3))
+            {
+                var item = new MenuItem
+                {
+                    Header = term,
+                    Style = (Style)FindResource("ModernMenuItem"),
+                    Icon = new System.Windows.Shapes.Path
+                    {
+                        Data = Geometry.Parse("M6,1.2 C3.4,1.2 1.2,3.4 1.2,6 C1.2,8.6 3.4,10.8 6,10.8 C7.1,10.8 8.1,10.4 8.9,9.8 L11.1,12 L12,11.1 L9.8,8.9 C10.4,8.1 10.8,7.1 10.8,6 C10.8,3.4 8.6,1.2 6,1.2 Z M6,2.4 C7.99,2.4 9.6,4.01 9.6,6 C9.6,7.99 7.99,9.6 6,9.6 C4.01,9.6 2.4,7.99 2.4,6 C2.4,4.01 4.01,2.4 6,2.4 Z"),
+                        Fill = (Brush)FindResource("SubTextBrush"),
+                        Width = 11,
+                        Height = 11,
+                        Stretch = Stretch.Uniform,
+                        VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center
+                    }
+                };
+                var searchTerm = term;
+                item.Click += (s, e) =>
+                {
+                    OpenSearch();
+                    SearchBox.Text = searchTerm;
+                    SearchBox.CaretIndex = searchTerm.Length;
+                    SearchBox.Focus();
+                    RefreshRules(searchTerm);
+                };
+                menu.Items.Add(item);
+            }
+
+            menu.Items.Add(new Separator { Style = (Style)FindResource("ModernMenuSeparator") });
+            var clearItem = new MenuItem
+            {
+                Header = Strings.T("ClearRecentSearches"),
+                Style = (Style)FindResource("ModernMenuItem"),
+                Icon = new System.Windows.Shapes.Path
+                {
+                    Data = Geometry.Parse("M 1 1 L 7 7 M 7 1 L 1 7"),
+                    Stroke = (Brush)FindResource("SubTextBrush"),
+                    StrokeThickness = 1.4,
+                    StrokeStartLineCap = PenLineCap.Round,
+                    StrokeEndLineCap = PenLineCap.Round,
+                    Width = 8,
+                    Height = 8,
+                    Stretch = Stretch.Uniform,
+                    VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                    HorizontalAlignment = System.Windows.HorizontalAlignment.Center
+                }
+            };
+            clearItem.Click += (s, e) =>
+            {
+                App.Settings.ClearRecentSearches();
+            };
+            menu.Items.Add(clearItem);
+        }
+        else
+        {
+            var emptyItem = new MenuItem
+            {
+                Header = Strings.T("NoRecentSearches"),
+                IsEnabled = false,
+                Style = (Style)FindResource("ModernMenuItem")
+            };
+            menu.Items.Add(emptyItem);
+        }
     }
 
     private void SearchClearBtn_Click(object sender, RoutedEventArgs e)
@@ -2068,6 +2237,10 @@ public partial class MainWindow : Window
         if (string.IsNullOrEmpty(SearchBox.Text))
         {
             CloseSearch(clearText: false);
+        }
+        else if (SearchBox.Text.Trim().Length >= 2)
+        {
+            App.Settings.AddRecentSearch(SearchBox.Text.Trim());
         }
     }
 
@@ -2140,9 +2313,22 @@ public partial class MainWindow : Window
 
     private async void SearchBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
+        if (e.Key == System.Windows.Input.Key.Down && string.IsNullOrEmpty(SearchBox.Text) && App.Settings.RecentSearches.Count > 0)
+        {
+            e.Handled = true;
+            ShowRecentSearchesMenu(SearchIconBtn ?? (FrameworkElement)SearchBox);
+            return;
+        }
+
         if (e.Key == System.Windows.Input.Key.Down || e.Key == System.Windows.Input.Key.Enter || e.Key == System.Windows.Input.Key.Tab)
         {
             e.Handled = true;
+            var q = SearchBox.Text.Trim();
+            if (q.Length >= 2)
+            {
+                App.Settings.AddRecentSearch(q);
+            }
+
             if (_refreshRulesDebounceTimer != null && _refreshRulesDebounceTimer.IsEnabled)
             {
                 _refreshRulesDebounceTimer.Stop();

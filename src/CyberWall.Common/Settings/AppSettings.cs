@@ -54,6 +54,26 @@ public sealed class AppSettings
     public bool ToastAutoBlockEnabled { get; set; } = true;
     public bool AllowedRulesExpanded { get; set; } = true;
     public bool BlockedRulesExpanded { get; set; } = true;
+    public List<string> RecentSearches { get; set; } = new();
+
+    public void AddRecentSearch(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query)) return;
+        var trimmed = query.Trim();
+        RecentSearches.RemoveAll(s => string.Equals(s, trimmed, StringComparison.OrdinalIgnoreCase));
+        RecentSearches.Insert(0, trimmed);
+        if (RecentSearches.Count > 3)
+        {
+            RecentSearches.RemoveRange(3, RecentSearches.Count - 3);
+        }
+        Save();
+    }
+
+    public void ClearRecentSearches()
+    {
+        RecentSearches.Clear();
+        Save();
+    }
     public bool MainWindowBoundsSaved { get; set; } = false;
     public string MainWindowMonitor { get; set; } = "";
 
