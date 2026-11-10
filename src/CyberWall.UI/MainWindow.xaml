@@ -1126,6 +1126,14 @@
                                         </MenuItem.Icon>
                                     </MenuItem>
 
+                                    <MenuItem x:Name="MoreResetWindowSizeItem" Header="Restablecer tamaño de ventana" Style="{StaticResource ModernMenuItem}" Click="ResetWindowSize_Click">
+                                        <MenuItem.Icon>
+                                            <Path Data="M 3 3 H 21 V 17 H 3 Z M 8 10 H 16 M 12 6 V 14"
+                                                  Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                                  Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+
                                     <Separator Style="{StaticResource ModernMenuSeparator}"/>
 
                                     <MenuItem x:Name="MoreDocsItem" Header="Documentación y Wiki" Style="{StaticResource ModernMenuItem}" Click="MoreDocs_Click">

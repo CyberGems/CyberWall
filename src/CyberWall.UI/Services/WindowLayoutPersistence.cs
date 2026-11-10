@@ -85,6 +85,41 @@ internal static class WindowLayoutPersistence
         }
     }
 
+    public static void ResetToDefault(Window window, AppSettings settings)
+    {
+        try
+        {
+            WorkAreaMaximize.Restore(window);
+            window.WindowState = WindowState.Normal;
+
+            var area = WorkAreaMaximize.GetWorkAreaDip(window);
+            const double defaultWidth = 1160;
+            const double defaultHeight = 720;
+
+            window.Width = Math.Min(defaultWidth, area.Width);
+            window.Height = Math.Min(defaultHeight, area.Height);
+            window.Left = area.Left + Math.Max(0, (area.Width - window.Width) / 2);
+            window.Top = area.Top + Math.Max(0, (area.Height - window.Height) / 2);
+
+            var handle = new WindowInteropHelper(window).Handle;
+            var screen = handle != IntPtr.Zero
+                ? FormsScreen.FromHandle(handle)
+                : FormsScreen.PrimaryScreen;
+
+            settings.MainWindowBoundsSaved = true;
+            settings.MainWindowMonitor = screen?.DeviceName ?? string.Empty;
+            settings.MainWindowWidth = window.Width;
+            settings.MainWindowHeight = window.Height;
+            settings.MainWindowLeft = window.Left;
+            settings.MainWindowTop = window.Top;
+            settings.MainWindowMaximized = false;
+            settings.Save();
+        }
+        catch
+        {
+        }
+    }
+
     private static bool HasMonitor(string deviceName)
     {
         if (string.IsNullOrWhiteSpace(deviceName))

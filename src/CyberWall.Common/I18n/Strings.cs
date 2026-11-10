@@ -449,6 +449,7 @@ public static class Strings
         ["FilterByCountryHint"] = ("Click to filter by this country", "Clic para filtrar por este país"),
         ["ClearCountryFilterHint"] = ("Click to clear country filter", "Clic para quitar el filtro de país"),
         ["CountryFilterActive"] = ("Country: {0}", "País: {0}"),
+        ["ResetWindowSize"] = ("Reset window size", "Restablecer tamaño de ventana"),
     };
 
     public static string T(string key, params object[] args)

@@ -437,6 +437,7 @@ public partial class MainWindow : Window
             MoreLogItem.Header = Strings.T("ConnectionLogMenu");
             MoreStatsItem.Header = Strings.T("TrafficStatsMenu");
             MoreSettingsItem.Header = Strings.T("MoreSettings");
+            MoreResetWindowSizeItem.Header = Strings.T("ResetWindowSize");
             MoreDocsItem.Header = Strings.T("DocumentationWiki");
             MoreFaqItem.Header = Strings.T("Faq");
             MoreChangelogItem.Header = Strings.T("Changelog");
@@ -2129,6 +2130,11 @@ public partial class MainWindow : Window
 
     private void RefreshRules_Click(object sender, RoutedEventArgs e)
         => RefreshRules(SearchBox.Text);
+
+    private void ResetWindowSize_Click(object sender, RoutedEventArgs e)
+    {
+        WindowLayoutPersistence.ResetToDefault(this, App.Settings);
+    }
 
     private void MoreDocs_Click(object sender, RoutedEventArgs e)
         => OpenExternalUrl("https://github.com/CyberGems/CyberWall/wiki");
