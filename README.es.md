@@ -94,6 +94,10 @@ Así es como CyberWall protege tu equipo frente a amenazas reales, en términos 
 
 ## ✨ Funciones principales
 
+- **Widget de tráfico de red flotante**: ventana compañera ligera para el escritorio con gráficos spline de velocidad en tiempo real, totales de sesión, modo compacto y fijación siempre encima.
+- **Panel ejecutivo de protección unificado**: diseño compacto en una sola fila que integra el interruptor maestro, selector de modo, onda de tráfico en vivo, escala dinámica y píldoras de velocidad con rangos de 1 min, 5 min y 10 min.
+- **Filtro rápido por país**: banderas de país de destino en las reglas con filtrado en un clic, chips de filtro activo e insignias de múltiples países.
+- **Búsqueda expandible animada**: resaltado de texto coincidente en tiempo real, contador de coincidencias e historial de búsquedas recientes en la cabecera de reglas.
 - **Detección de descartes WFP en tiempo real**: detección de descartes en el kernel basada en eventos mediante la auditoría de Windows Filtering Platform (ID de evento `5157`). Intercepta con precisión los procesos CLI de vida corta (`git`, `curl`, `dotnet`, `ssh`) en milisegundos.
 - **Aplicación nativa del cortafuegos**: las decisiones se aplican como reglas por aplicación en el Cortafuegos Avanzado de Windows (`HNetCfg.FwPolicy2`), con `netsh` y PowerShell como alternativas. Nunca se instala ningún filtro ni controlador propio.
 - **Denegación por defecto a prueba de fallos**: una tarea programada restaura la política de denegación por defecto si CyberWall se detiene de forma inesperada y la restauración se verifica releyendo la política, de modo que un fallo nunca puede dejar el equipo sin conectividad. Al desactivar la protección se conservan las reglas core de DNS, DHCP, NTP y loopback, así las aplicaciones que usan localhost siguen funcionando.

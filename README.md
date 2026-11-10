@@ -94,6 +94,10 @@ Here is how CyberWall protects your computer against real-world threats in plain
 
 ## ✨ Key Features
 
+- **Floating Network Traffic Widget**: Lightweight companion desktop window with real-time spline throughput graphs, session statistics, compact mode, and always-on-top pinning.
+- **Executive Hero Dashboard**: Compact single-row layout uniting master protection switch, mode selector, live traffic wave, dynamic scale indicator, and throughput pills with 1m, 5m, and 10m time ranges.
+- **Quick Country Filtering**: Destination country flags in rule rows with one-click filtering, active filter chips, and multi-country badges.
+- **Animated Expandable Search**: Real-time keyword highlighting, match counters, and recent search history in the rules header.
 - **Real-Time WFP Drop Detection**: Event-driven kernel drop detection through the Windows Filtering Platform audit events (`Event ID 5157`). Accurately intercepts short-lived CLI processes (`git`, `curl`, `dotnet`, `ssh`) within milliseconds.
 - **Native Firewall Enforcement**: Decisions are applied as per-application rules in the Windows Advanced Firewall (`HNetCfg.FwPolicy2`), with `netsh` and PowerShell as fallbacks. No custom filter or driver is ever installed.
 - **Crash-Safe Default Deny**: The default-deny profile policy is restored by a scheduled task if CyberWall stops unexpectedly, and the restore is verified by reading the policy back, so a crash can never leave the machine without connectivity. Turning the protection off keeps the core DNS, DHCP, NTP and loopback rules, so applications that use localhost keep working.
