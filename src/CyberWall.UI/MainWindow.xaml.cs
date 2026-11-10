@@ -49,7 +49,6 @@ public partial class MainWindow : Window
         TabTrafficBtn.IsChecked = tab == MainTab.TrafficMonitor;
         TabConnectionsBtn.IsChecked = tab == MainTab.ConnectionsLog;
         TabStatsBtn.IsChecked = tab == MainTab.Statistics;
-        TabSettingsBtn.IsChecked = tab == MainTab.Settings;
 
         FirewallTabContent.Visibility = tab == MainTab.Firewall ? Visibility.Visible : Visibility.Collapsed;
         TrafficMonitorTabContent.Visibility = tab == MainTab.TrafficMonitor ? Visibility.Visible : Visibility.Collapsed;
@@ -65,7 +64,12 @@ public partial class MainWindow : Window
         TabTrafficIcon.Stroke = tab == MainTab.TrafficMonitor ? accentBrush : subTextBrush;
         TabConnectionsIcon.Stroke = tab == MainTab.ConnectionsLog ? accentBrush : subTextBrush;
         TabStatsIcon.Stroke = tab == MainTab.Statistics ? accentBrush : subTextBrush;
-        TabSettingsIcon.Stroke = tab == MainTab.Settings ? accentBrush : subTextBrush;
+
+        if (SettingsBtn != null)
+            SettingsBtn.Tag = tab == MainTab.Settings ? "Active" : null;
+
+        if (tab != MainTab.Settings)
+            _previousTab = tab;
 
         // Lifecycle hooks
         if (tab == MainTab.Firewall)
@@ -417,6 +421,9 @@ public partial class MainWindow : Window
         SubtitleText.Text = Strings.T("AppSubtitle");
         FooterStatusText.Text = Strings.T("StatusFooter");
         NotifBtn.ToolTip = Strings.T("Notifications");
+        AutomationProperties.SetName(NotifBtn, Strings.T("Notifications"));
+        SettingsBtn.ToolTip = Strings.T("NavSettingsTooltip");
+        AutomationProperties.SetName(SettingsBtn, Strings.T("NavSettings"));
         MoreBtn.ToolTip = Strings.T("MoreOptions");
         AutomationProperties.SetName(MoreBtn, Strings.T("MoreOptions"));
         if (MoreOptionsMenu != null)
@@ -447,9 +454,6 @@ public partial class MainWindow : Window
         TabStatsText.Text = Strings.T("NavStats");
         AutomationProperties.SetName(TabStatsBtn, TabStatsText.Text);
         TabStatsBtn.ToolTip = Strings.T("NavStatsTooltip");
-        TabSettingsText.Text = Strings.T("NavSettings");
-        AutomationProperties.SetName(TabSettingsBtn, TabSettingsText.Text);
-        TabSettingsBtn.ToolTip = Strings.T("NavSettingsTooltip");
 
         TrafficMonitorTabContent?.RefreshLanguage();
         ConnectionsLogTabContent?.RefreshLanguage();
@@ -1487,6 +1491,16 @@ public partial class MainWindow : Window
         CountryHeaderText.Text = countryHdr;
         DirectionHeaderText.Text = dirHdr;
 
+        if (StateHeaderBorder != null)
+        {
+            StateHeaderBorder.ToolTip = Strings.T("SearchRulesTooltip");
+        }
+
+        if (SearchClearBtn != null)
+        {
+            SearchClearBtn.ToolTip = Strings.T("CloseSearchTooltip");
+        }
+
         if (ActivityHeaderBorder != null)
         {
             ActivityHeaderBorder.ToolTip = Strings.T("ActivitySortTooltip");
@@ -1754,7 +1768,17 @@ public partial class MainWindow : Window
         SelectTab(MainTab.TrafficMonitor);
     }
 
-    private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
+    private MainTab _previousTab = MainTab.Firewall;
+
+    private void Settings_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender == SettingsBtn && CurrentTab == MainTab.Settings)
+        {
+            SelectTab(_previousTab);
+            return;
+        }
+        OpenSettings();
+    }
 
     private DateTime _moreMenuDismissedAtUtc = DateTime.MinValue;
     private static readonly TimeSpan MoreMenuReopenGuard = TimeSpan.FromMilliseconds(500);
@@ -1975,8 +1999,8 @@ public partial class MainWindow : Window
             // The pinned header owns the layout. Explicit pixel widths prevent
             // recycled DataGrid star columns from retaining a stale narrow width.
             AllowColState.Width = BlockColState.Width = new DataGridLength(RulesStateColumn.ActualWidth);
-            AllowColActivity.Width = BlockColActivity.Width = new DataGridLength(RulesActivityColumn.ActualWidth);
             AllowColProg.Width = BlockColProg.Width = new DataGridLength(RulesProgramColumn.ActualWidth);
+            AllowColActivity.Width = BlockColActivity.Width = new DataGridLength(RulesActivityColumn.ActualWidth);
             AllowColPath.Width = BlockColPath.Width = new DataGridLength(RulesPathColumn.ActualWidth);
             AllowColAction.Width = BlockColAction.Width = new DataGridLength(RulesActionColumn.ActualWidth);
             AllowColCountry.Width = BlockColCountry.Width = new DataGridLength(RulesCountryColumn.ActualWidth);
@@ -1995,7 +2019,6 @@ public partial class MainWindow : Window
         TabTrafficText.Visibility = textVisibility;
         TabConnectionsText.Visibility = textVisibility;
         TabStatsText.Visibility = textVisibility;
-        TabSettingsText.Visibility = textVisibility;
         SubtitleText.Visibility = textVisibility;
         WfpBadge.Visibility = textVisibility;
 
@@ -2004,14 +2027,48 @@ public partial class MainWindow : Window
         TabTrafficBtn.Padding = padding;
         TabConnectionsBtn.Padding = padding;
         TabStatsBtn.Padding = padding;
-        TabSettingsBtn.Padding = padding;
 
         var iconMargin = compact ? new Thickness(0) : new Thickness(0, 0, 7, 0);
         TabFirewallIcon.Margin = iconMargin;
         TabTrafficIcon.Margin = iconMargin;
         TabConnectionsIcon.Margin = iconMargin;
         TabStatsIcon.Margin = iconMargin;
-        TabSettingsIcon.Margin = iconMargin;
+    }
+
+    public void OpenSearch()
+    {
+        if (HeaderSearchBar == null) return;
+        HeaderSearchBar.Visibility = Visibility.Visible;
+        SearchBox.Focus();
+        SearchBox.SelectAll();
+    }
+
+    public void CloseSearch(bool clearText = true)
+    {
+        if (HeaderSearchBar == null) return;
+        if (clearText && !string.IsNullOrEmpty(SearchBox.Text))
+        {
+            SearchBox.Text = "";
+        }
+        HeaderSearchBar.Visibility = Visibility.Collapsed;
+    }
+
+    private void StateHeaderBorder_Click(object sender, MouseButtonEventArgs e)
+    {
+        OpenSearch();
+    }
+
+    private void SearchClearBtn_Click(object sender, RoutedEventArgs e)
+    {
+        CloseSearch(clearText: true);
+    }
+
+    private void SearchBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(SearchBox.Text))
+        {
+            CloseSearch(clearText: false);
+        }
     }
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -2021,10 +2078,6 @@ public partial class MainWindow : Window
 
         if (SearchPlaceholder != null)
             SearchPlaceholder.Visibility = hasText ? Visibility.Collapsed : Visibility.Visible;
-        if (SearchClearBtn != null)
-            SearchClearBtn.Visibility = hasText ? Visibility.Visible : Visibility.Collapsed;
-        if (SearchHotkeyHint != null)
-            SearchHotkeyHint.Visibility = hasText ? Visibility.Collapsed : Visibility.Visible;
 
         // Skip heavy search on 1 single char to avoid freezes on large rule sets; search on empty or >= 2 chars
         if (string.IsNullOrEmpty(text))
@@ -2035,12 +2088,6 @@ public partial class MainWindow : Window
         {
             RefreshRules(text);
         }
-    }
-
-    private void SearchClearBtn_Click(object sender, RoutedEventArgs e)
-    {
-        SearchBox.Text = "";
-        SearchBox.Focus();
     }
 
     private void SelectAndFocusRow(System.Windows.Controls.DataGrid grid, int index)
@@ -2110,11 +2157,7 @@ public partial class MainWindow : Window
         }
         else if (e.Key == System.Windows.Input.Key.Escape)
         {
-            if (!string.IsNullOrEmpty(SearchBox.Text))
-            {
-                SearchBox.Text = "";
-                await ExecuteRefreshRulesAsync("");
-            }
+            CloseSearch(clearText: true);
             e.Handled = true;
         }
     }
@@ -2122,6 +2165,13 @@ public partial class MainWindow : Window
     private void DataGrid_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (sender is not System.Windows.Controls.DataGrid grid) return;
+
+        if (e.Key == System.Windows.Input.Key.Escape && HeaderSearchBar?.Visibility == Visibility.Visible)
+        {
+            CloseSearch(clearText: true);
+            e.Handled = true;
+            return;
+        }
 
         if (e.Key == System.Windows.Input.Key.Space)
         {
@@ -2194,8 +2244,7 @@ public partial class MainWindow : Window
     {
         if (e.Key == System.Windows.Input.Key.F && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
         {
-            SearchBox.Focus();
-            SearchBox.SelectAll();
+            OpenSearch();
             e.Handled = true;
             return;
         }

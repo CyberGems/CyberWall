@@ -155,6 +155,8 @@ public static class Strings
         ["BandwidthHistory"] = ("60s History →", "Historial 60s →"),
         ["Settings"] = ("Settings", "Configuración"),
         ["SearchPlaceholder"] = ("Search program or path...", "Buscar programa o ruta..."),
+        ["SearchRulesTooltip"] = ("Search rules... (Ctrl+F)", "Buscar reglas... (Ctrl+F)"),
+        ["CloseSearchTooltip"] = ("Close search (Esc)", "Cerrar búsqueda (Esc)"),
         ["Allowed"] = ("Allowed", "Permitidas"),
         ["Blocked"] = ("Blocked", "Bloqueadas"),
         ["Program"] = ("Program", "Programa"),
