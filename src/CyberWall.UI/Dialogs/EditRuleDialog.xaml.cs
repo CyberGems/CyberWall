@@ -20,6 +20,7 @@ public partial class EditRuleDialog : Window, IModalAttentionWindow
     public string? CountryCode => Geo.Iso2;
     public bool HasCountry => Geo.HasCountry;
     public string CountryLabel => CountryDisplay.Label(Geo);
+    public IReadOnlyList<string>? RecentCountries { get; }
 
     private DateTime _lastAttentionTime = DateTime.MinValue;
 
@@ -28,13 +29,14 @@ public partial class EditRuleDialog : Window, IModalAttentionWindow
         ModalAttentionHelper.Trigger(this, OuterBorder, WindowScale, WindowGlow, ref _lastAttentionTime);
     }
 
-    public EditRuleDialog(AppRule rule, GeoResult? geo = null)
+    public EditRuleDialog(AppRule rule, GeoResult? geo = null, IReadOnlyList<string>? recentCountries = null)
     {
         AppPath = rule.AppPath;
         DisplayName = rule.DisplayName;
         InboundVerdict = rule.EffectiveInboundVerdict;
         OutboundVerdict = rule.EffectiveOutboundVerdict;
         Geo = geo ?? GeoResult.Unknown;
+        RecentCountries = recentCountries;
 
         InitializeComponent();
         Icon = AppIconHelper.CreateShieldImageSource(64);
@@ -48,7 +50,17 @@ public partial class EditRuleDialog : Window, IModalAttentionWindow
         CountryFlag.CountryCode = CountryCode ?? "";
         CountryFlag.HasCountry = HasCountry;
         CountryNameLbl.Text = CountryLabel;
-        CountryBadge.ToolTip = CountryLabel;
+        if (RecentCountries != null && RecentCountries.Count > 1)
+        {
+            var others = RecentCountries.Where(c => !string.Equals(c, CountryCode, StringComparison.OrdinalIgnoreCase)).ToList();
+            CountryBadge.ToolTip = others.Count > 0
+                ? $"{CountryLabel}\n{Strings.T("RecentCountries")}: {string.Join(", ", others)}"
+                : CountryLabel;
+        }
+        else
+        {
+            CountryBadge.ToolTip = CountryLabel;
+        }
 
         PopulateOptions();
         RefreshLanguage();

@@ -261,8 +261,8 @@
 
         <!-- Title Bar Window Control Button Styles -->
         <Style x:Key="TitleWindowButton" TargetType="Button">
-            <Setter Property="Width" Value="42"/>
-            <Setter Property="Height" Value="32"/>
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="34"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -279,12 +279,16 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="6" SnapsToDevicePixels="True">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -294,8 +298,8 @@
         </Style>
 
         <Style x:Key="TitleCloseButton" TargetType="Button">
-            <Setter Property="Width" Value="42"/>
-            <Setter Property="Height" Value="32"/>
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="34"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -312,12 +316,16 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="6" SnapsToDevicePixels="True">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="#E81123"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#C4101E"/>
                                 <Setter Property="Foreground" Value="#FFFFFF"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -510,10 +518,10 @@
         <Style x:Key="TitleBarIconButton" TargetType="Button">
             <Setter Property="Width" Value="36"/>
             <Setter Property="Height" Value="36"/>
-            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -532,23 +540,21 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             </Trigger>
                             <DataTrigger Binding="{Binding ContextMenu.IsOpen, RelativeSource={RelativeSource Self}}" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Active">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
                                 <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="1"/>
                                 <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
                             </DataTrigger>
                         </ControlTemplate.Triggers>
@@ -829,7 +835,7 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Flat expander headers with a standalone chevron instead of a circular button -->
+        <!-- Flat expander headers with modern section bar -->
         <Style x:Key="ModernExpander" TargetType="Expander">
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="Template">
@@ -845,21 +851,22 @@
                                           Foreground="{TemplateBinding Foreground}"
                                           BorderBrush="Transparent"
                                           BorderThickness="0"
-                                          Padding="8,7"
+                                          Padding="0"
+                                          Margin="0,4,0,3"
                                           HorizontalContentAlignment="Left"
                                           FocusVisualStyle="{x:Null}">
                                 <ToggleButton.Template>
                                     <ControlTemplate TargetType="ToggleButton">
                                         <Border x:Name="HeaderBorder"
-                                                Background="{TemplateBinding Background}"
-                                                BorderBrush="{TemplateBinding BorderBrush}"
-                                                BorderThickness="{TemplateBinding BorderThickness}"
-                                                CornerRadius="6"
-                                                Padding="{TemplateBinding Padding}"
+                                                Background="{DynamicResource CardSecondaryBrush}"
+                                                BorderBrush="{DynamicResource BorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="7"
+                                                Padding="12,6"
                                                 SnapsToDevicePixels="True">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="18"/>
+                                                    <ColumnDefinition Width="20"/>
                                                     <ColumnDefinition Width="*"/>
                                                 </Grid.ColumnDefinitions>
                                                 <Path x:Name="Arrow"
@@ -883,7 +890,11 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="HeaderBorder" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                                <Setter TargetName="HeaderBorder" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
+                                                <Setter TargetName="HeaderBorder" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="HeaderBorder" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
                                             </Trigger>
                                             <Trigger Property="IsChecked" Value="True">
                                                 <Setter TargetName="Arrow" Property="RenderTransform">
@@ -1016,7 +1027,7 @@
                                       HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
                             </Grid>
                         </Button>
-                        <Button x:Name="MoreBtn" Style="{StaticResource TitleBarIconButton}" Margin="0,0,14,0"
+                        <Button x:Name="MoreBtn" Style="{StaticResource TitleBarIconButton}" Margin="0,0,8,0"
                                 PreviewMouseLeftButtonDown="MoreBtn_PreviewMouseLeftButtonDown"
                                 Click="MoreBtn_Click" ToolTip="Más opciones" AutomationProperties.Name="Más opciones">
                             <Button.ContextMenu>
@@ -1141,15 +1152,13 @@
                         </Button>
 
                         <!-- Minimize, Maximize, Close Buttons -->
-                        <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="2">
-                            <StackPanel Orientation="Horizontal">
-                                <Button x:Name="MinimizeBtn" Content="─" Style="{StaticResource TitleWindowButton}" ToolTip="Minimizar" Click="Minimize_Click"/>
-                                <Button x:Name="MaximizeBtn" Style="{StaticResource TitleWindowButton}" ToolTip="Maximizar" Click="Maximize_Click">
-                                    <Path x:Name="MaximizeIconPath" Data="M 3 7 L 3 3 L 7 3 M 3 3 L 6.5 6.5 M 11 7 L 11 11 L 7 11 M 11 11 L 7.5 7.5" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" Width="9.5" Height="9.5" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Button>
-                                <Button x:Name="CloseBtn" Content="✕" Style="{StaticResource TitleCloseButton}" ToolTip="Cerrar" Click="Close_Click"/>
-                            </StackPanel>
-                        </Border>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button x:Name="MinimizeBtn" Content="─" Style="{StaticResource TitleWindowButton}" ToolTip="Minimizar" Click="Minimize_Click" Margin="0,0,2,0"/>
+                            <Button x:Name="MaximizeBtn" Style="{StaticResource TitleWindowButton}" ToolTip="Maximizar" Click="Maximize_Click" Margin="0,0,2,0">
+                                <Path x:Name="MaximizeIconPath" Data="M 3 7 L 3 3 L 7 3 M 3 3 L 6.5 6.5 M 11 7 L 11 11 L 7 11 M 11 11 L 7.5 7.5" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.3" Width="9.5" Height="9.5" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button>
+                            <Button x:Name="CloseBtn" Content="✕" Style="{StaticResource TitleCloseButton}" ToolTip="Cerrar" Click="Close_Click"/>
+                        </StackPanel>
                     </StackPanel>
                 </Grid>
 
@@ -2005,6 +2014,31 @@
                 <TextBlock x:Name="FooterStatusText" Foreground="{DynamicResource SubTextBrush}" FontSize="11" Text="Windows 10/11 • WFP Kernel Engine • Admin Privileges Active • Persistent Rules"/>
                 <TextBlock x:Name="LogPathText" HorizontalAlignment="Right" Foreground="{DynamicResource SubTextBrush}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
             </DockPanel>
+        </Border>
+
+        <!-- Micro Copy Confirmation Pill Notification -->
+        <Border x:Name="CopyFeedbackPill" Grid.RowSpan="3"
+                HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                Margin="0,0,0,36"
+                Background="{DynamicResource HeaderBgBrush}"
+                BorderBrush="{DynamicResource BorderLightBrush}"
+                BorderThickness="1"
+                CornerRadius="14"
+                Padding="14,6"
+                Opacity="0"
+                Visibility="Collapsed"
+                IsHitTestVisible="False"
+                Panel.ZIndex="999">
+            <Border.Effect>
+                <DropShadowEffect Color="Black" Opacity="0.35" BlurRadius="10" ShadowDepth="2"/>
+            </Border.Effect>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Path Data="M 3 8 L 6 11 L 13 4" Stroke="{DynamicResource AccentBrush}" StrokeThickness="2"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="12" Height="10"
+                      Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBlock x:Name="CopyFeedbackText" Text="Copiado" FontSize="11" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+            </StackPanel>
         </Border>
     </Grid>
 </Border>

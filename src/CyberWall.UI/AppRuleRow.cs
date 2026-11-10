@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using CyberWall.Common;
 using CyberWall.Common.Geo;
+using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.UI.Services;
 
@@ -17,14 +18,31 @@ public sealed class AppRuleRow : INotifyPropertyChanged
         init => _geo = value;
     }
 
-    public void UpdateGeo(GeoResult geo)
+    private IReadOnlyList<string>? _recentCountries;
+    public IReadOnlyList<string>? RecentCountries
     {
-        if (_geo != geo)
+        get => _recentCountries;
+        set
+        {
+            if (_recentCountries != value)
+            {
+                _recentCountries = value;
+                OnPropertyChanged(nameof(RecentCountries));
+                OnPropertyChanged(nameof(CountryLabel));
+            }
+        }
+    }
+
+    public void UpdateGeo(GeoResult geo, IReadOnlyList<string>? recentCountries = null)
+    {
+        if (_geo != geo || _recentCountries != recentCountries)
         {
             _geo = geo;
+            if (recentCountries != null) _recentCountries = recentCountries;
             OnPropertyChanged(nameof(Geo));
             OnPropertyChanged(nameof(HasCountry));
             OnPropertyChanged(nameof(CountryCode));
+            OnPropertyChanged(nameof(RecentCountries));
             OnPropertyChanged(nameof(CountryLabel));
         }
     }
@@ -44,7 +62,22 @@ public sealed class AppRuleRow : INotifyPropertyChanged
     public Verdict OutboundVerdict => Rule.EffectiveOutboundVerdict;
     public bool HasCountry => Geo.HasCountry;
     public string CountryCode => Geo.HasCountry ? Geo.Iso2 ?? "" : "";
-    public string CountryLabel => CountryDisplay.Label(Geo);
+    public string CountryLabel
+    {
+        get
+        {
+            var baseLabel = CountryDisplay.Label(Geo);
+            if (RecentCountries != null && RecentCountries.Count > 1)
+            {
+                var others = RecentCountries.Where(c => !string.Equals(c, CountryCode, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (others.Count > 0)
+                {
+                    return $"{baseLabel} ({Strings.T("RecentCountries")}: {string.Join(", ", others)})";
+                }
+            }
+            return baseLabel;
+        }
+    }
 
     public ProcessActivityLevel ActivityLevel
     {

@@ -130,6 +130,7 @@ public partial class MainWindow : Window
     private bool _notifOpen;
     private bool _layoutRestored;
     private readonly Dictionary<string, string> _lastRemoteByApp = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, List<string>> _recentCountriesByApp = new(StringComparer.OrdinalIgnoreCase);
     private TrayService? _tray;
     private UpdateCheckResult? _activeUpdateResult;
     private Dialogs.FloatingTrafficWidget? _trafficWidget;
@@ -1114,14 +1115,29 @@ public partial class MainWindow : Window
 
         ProcessTrafficTracker.Instance.RecordActivity(ev.AppPath, ev.RemoteAddress, ev.RemotePort, isBlocked);
         var resolvedGeo = GeoCountry.Lookup(ev.RemoteAddress);
-        if (resolvedGeo.HasCountry)
+        if (resolvedGeo.HasCountry && !string.IsNullOrEmpty(resolvedGeo.Iso2))
         {
-            UpdateRowGeoIfMatching(AllowedGrid, ev.AppPath, resolvedGeo);
-            UpdateRowGeoIfMatching(BlockedGrid, ev.AppPath, resolvedGeo);
+            var appKey = AppRule.Normalize(ev.AppPath);
+            if (!_recentCountriesByApp.TryGetValue(appKey, out var cList))
+            {
+                cList = new List<string>();
+                _recentCountriesByApp[appKey] = cList;
+            }
+            cList.RemoveAll(c => string.Equals(c, resolvedGeo.Iso2, StringComparison.OrdinalIgnoreCase));
+            cList.Insert(0, resolvedGeo.Iso2);
+            if (cList.Count > 3) cList.RemoveRange(3, cList.Count - 3);
+
+            UpdateRowGeoIfMatching(AllowedGrid, ev.AppPath, resolvedGeo, cList);
+            UpdateRowGeoIfMatching(BlockedGrid, ev.AppPath, resolvedGeo, cList);
+        }
+        else if (resolvedGeo.HasCountry)
+        {
+            UpdateRowGeoIfMatching(AllowedGrid, ev.AppPath, resolvedGeo, null);
+            UpdateRowGeoIfMatching(BlockedGrid, ev.AppPath, resolvedGeo, null);
         }
     }
 
-    private static void UpdateRowGeoIfMatching(System.Windows.Controls.DataGrid? grid, string appPath, GeoResult geo)
+    private static void UpdateRowGeoIfMatching(System.Windows.Controls.DataGrid? grid, string appPath, GeoResult geo, IReadOnlyList<string>? recent)
     {
         if (grid?.ItemsSource is IEnumerable<AppRuleRow> rows)
         {
@@ -1131,14 +1147,14 @@ public partial class MainWindow : Window
                 if (string.Equals(r.AppPath, appPath, StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(AppRule.Normalize(r.AppPath), norm, StringComparison.OrdinalIgnoreCase))
                 {
-                    r.UpdateGeo(geo);
+                    r.UpdateGeo(geo, recent);
                     break;
                 }
             }
         }
     }
 
-    private static AppRuleRow ToRow(AppRule rule, Dictionary<string, string> last)
+    private AppRuleRow ToRow(AppRule rule, Dictionary<string, string> last)
     {
         string? ip = null;
         if (!last.TryGetValue(rule.AppPath, out ip))
@@ -1167,7 +1183,14 @@ public partial class MainWindow : Window
             }
         }
 
-        var row = new AppRuleRow { Rule = rule, Geo = geo };
+        var norm = AppRule.Normalize(rule.AppPath);
+        _recentCountriesByApp.TryGetValue(norm, out var recentList);
+        var row = new AppRuleRow
+        {
+            Rule = rule,
+            Geo = geo,
+            RecentCountries = recentList != null ? recentList.ToArray() : (geo.HasCountry && !string.IsNullOrEmpty(geo.Iso2) ? [geo.Iso2] : null)
+        };
         row.UpdateActivity(ProcessTrafficTracker.Instance);
         return row;
     }
@@ -1664,7 +1687,10 @@ public partial class MainWindow : Window
             geo = GeoCountry.Lookup(ip);
         }
 
-        var dlg = new EditRuleDialog(rule, geo) { Owner = this };
+        var norm = AppRule.Normalize(rule.AppPath);
+        _recentCountriesByApp.TryGetValue(norm, out var recentList);
+        var initialList = recentList != null ? recentList.ToArray() : (geo is { HasCountry: true, Iso2: { } iso } ? [iso] : null);
+        var dlg = new EditRuleDialog(rule, geo, initialList) { Owner = this };
         if (dlg.ShowDialog() == true)
         {
             _svc.UpdateRule(rule.AppPath, dlg.InboundVerdict, dlg.OutboundVerdict);
@@ -1725,6 +1751,34 @@ public partial class MainWindow : Window
         if (r != null) ExecuteSearchOnline(r);
     }
 
+    private System.Windows.Threading.DispatcherTimer? _copyFeedbackTimer;
+
+    private void ShowCopyFeedback(string text)
+    {
+        if (CopyFeedbackPill == null || CopyFeedbackText == null) return;
+        CopyFeedbackText.Text = text;
+        CopyFeedbackPill.Visibility = Visibility.Visible;
+        CopyFeedbackPill.BeginAnimation(UIElement.OpacityProperty, null);
+        CopyFeedbackPill.Opacity = 1.0;
+
+        if (_copyFeedbackTimer == null)
+        {
+            _copyFeedbackTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(1800)
+            };
+            _copyFeedbackTimer.Tick += (_, _) =>
+            {
+                _copyFeedbackTimer.Stop();
+                var anim = new System.Windows.Media.Animation.DoubleAnimation(1.0, 0.0, TimeSpan.FromMilliseconds(200));
+                anim.Completed += (_, _) => CopyFeedbackPill.Visibility = Visibility.Collapsed;
+                CopyFeedbackPill.BeginAnimation(UIElement.OpacityProperty, anim);
+            };
+        }
+        _copyFeedbackTimer.Stop();
+        _copyFeedbackTimer.Start();
+    }
+
     private void ContextCopy_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not MenuItem item) return;
@@ -1734,6 +1788,8 @@ public partial class MainWindow : Window
         var path = r?.AppPath;
         if (string.IsNullOrEmpty(path)) return;
         try { System.Windows.Clipboard.SetText(path); } catch { }
+        var disp = path.Length > 45 ? path[..20] + "…" + path[^22..] : path;
+        ShowCopyFeedback($"{Strings.T("CopiedPrefix")}: {disp}");
     }
 
     private void ContextCopyExeName_Click(object sender, RoutedEventArgs e)
@@ -1745,6 +1801,7 @@ public partial class MainWindow : Window
         var exe = System.IO.Path.GetFileName(r?.AppPath);
         if (string.IsNullOrEmpty(exe)) return;
         try { System.Windows.Clipboard.SetText(exe); } catch { }
+        ShowCopyFeedback($"{Strings.T("CopiedPrefix")}: {exe}");
     }
 
     private void ContextFolder_Click(object sender, RoutedEventArgs e)
@@ -2442,6 +2499,8 @@ public partial class MainWindow : Window
                 if (!string.IsNullOrEmpty(textToCopy))
                 {
                     try { System.Windows.Clipboard.SetText(textToCopy); } catch { }
+                    var disp = textToCopy.Length > 45 ? textToCopy[..20] + "…" + textToCopy[^22..] : textToCopy;
+                    ShowCopyFeedback($"{Strings.T("CopiedPrefix")}: {disp}");
                     e.Handled = true;
                     return;
                 }
@@ -2544,6 +2603,8 @@ public partial class MainWindow : Window
                     if (!string.IsNullOrEmpty(textToCopy))
                     {
                         try { System.Windows.Clipboard.SetText(textToCopy); } catch { }
+                        var disp = textToCopy.Length > 45 ? textToCopy[..20] + "…" + textToCopy[^22..] : textToCopy;
+                        ShowCopyFeedback($"{Strings.T("CopiedPrefix")}: {disp}");
                         e.Handled = true;
                         return;
                     }

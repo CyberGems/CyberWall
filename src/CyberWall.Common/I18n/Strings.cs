@@ -334,6 +334,8 @@ public static class Strings
         ["SearchOnline"] = ("Search online", "Buscar en línea"),
         ["CopyPathTooltip"] = ("Copy path to clipboard", "Copiar ruta al portapapeles"),
         ["CopyExeName"] = ("Copy executable name", "Copiar nombre del ejecutable"),
+        ["RecentCountries"] = ("Recent countries", "Países recientes"),
+        ["CopiedPrefix"] = ("Copied", "Copiado"),
         ["SearchMatchSingle"] = ("{0} match", "{0} coincidencia"),
         ["SearchMatchPlural"] = ("{0} matches", "{0} coincidencias"),
         ["ActivityHeader"] = ("Activity", "Actividad"),
