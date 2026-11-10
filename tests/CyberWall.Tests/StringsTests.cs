@@ -12,6 +12,7 @@ namespace CyberWall.Tests;
 public class StringsTests
 {
     private static readonly Regex CallPattern = new(@"Strings\.T\(\s*""([A-Za-z0-9_]+)""", RegexOptions.Compiled);
+    private static readonly Regex XamlPattern = new(@"Converter=\{StaticResource\s+T\},\s*ConverterParameter=([A-Za-z0-9_]+)|ConverterParameter=([A-Za-z0-9_]+)[^}]*Converter=\{StaticResource\s+T\}", RegexOptions.Compiled);
 
     public static TheoryData<string> AllKeys()
     {
@@ -34,6 +35,16 @@ public class StringsTests
                 var key = match.Groups[1].Value;
                 if (!known.Contains(key)) missing.Add($"{Path.GetFileName(file)}: {key}");
             }
+            if (file.EndsWith(".xaml", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (Match match in XamlPattern.Matches(text))
+                {
+                    var key = match.Groups[1].Success && !string.IsNullOrEmpty(match.Groups[1].Value)
+                        ? match.Groups[1].Value
+                        : match.Groups[2].Value;
+                    if (!known.Contains(key)) missing.Add($"{Path.GetFileName(file)}: {key}");
+                }
+            }
         }
 
         Assert.Empty(missing);
@@ -43,7 +54,11 @@ public class StringsTests
     public void EveryCatalogKeyIsUsedSomewhere()
     {
         var source = string.Join("\n", SourceFiles().Select(File.ReadAllText));
-        var unused = KnownKeys().Where(key => !source.Contains($"\"{key}\"", StringComparison.Ordinal)).ToList();
+        var unused = KnownKeys().Where(key =>
+            !source.Contains($"\"{key}\"", StringComparison.Ordinal) &&
+            !source.Contains($"ConverterParameter={key}", StringComparison.Ordinal) &&
+            !source.Contains($"ConverterParameter=\"{key}\"", StringComparison.Ordinal)
+        ).ToList();
 
         Assert.Empty(unused);
     }
@@ -65,7 +80,14 @@ public class StringsTests
     public void TranslationsDifferBetweenLanguages()
     {
         // Terms that are written the same in both languages.
-        var intentionallyIdentical = new HashSet<string>(StringComparer.Ordinal) { "NavFirewall", "MonitorN" };
+        var intentionallyIdentical = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "NavFirewall",
+            "MonitorN",
+            "ChartTime1m",
+            "ChartTime5m",
+            "ChartTime10m"
+        };
 
         var previous = Strings.Current;
         try
@@ -108,7 +130,8 @@ public class StringsTests
     private static IEnumerable<string> SourceFiles()
     {
         var root = RepositoryRoot();
-        return Directory.EnumerateFiles(Path.Combine(root, "src"), "*.cs", SearchOption.AllDirectories)
+        return Directory.EnumerateFiles(Path.Combine(root, "src"), "*.*", SearchOption.AllDirectories)
+            .Where(f => f.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".xaml", StringComparison.OrdinalIgnoreCase))
             .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
             .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
             .Where(f => !f.EndsWith("I18n" + Path.DirectorySeparatorChar + "Strings.cs", StringComparison.OrdinalIgnoreCase));

@@ -424,7 +424,7 @@ public partial class MainWindow : Window
         FooterStatusText.Text = Strings.T("StatusFooter");
         NotifBtn.ToolTip = Strings.T("Notifications");
         AutomationProperties.SetName(NotifBtn, Strings.T("Notifications"));
-        SettingsBtn.ToolTip = Strings.T("Settings");
+        SettingsBtn.ToolTip = Strings.T("NavSettingsTooltip");
         AutomationProperties.SetName(SettingsBtn, Strings.T("Settings"));
         MoreBtn.ToolTip = Strings.T("MoreOptions");
         AutomationProperties.SetName(MoreBtn, Strings.T("MoreOptions"));
@@ -1151,7 +1151,7 @@ public partial class MainWindow : Window
                 {
                     CountryFilterChip.Visibility = Visibility.Visible;
                     CountryFilterChipText.Text = countryFilter.ToUpperInvariant();
-                    CountryFilterChip.ToolTip = Strings.T("ClearCountryFilterHint");
+                    CountryFilterChip.ToolTip = string.Format(Strings.T("CountryFilterActive"), countryFilter.ToUpperInvariant()) + " · " + Strings.T("ClearCountryFilterHint");
                 }
                 else
                 {
@@ -1769,10 +1769,13 @@ public partial class MainWindow : Window
         ActionHeaderText.Text = actHdr;
         CountryHeaderText.Text = countryHdr;
         DirectionHeaderText.Text = dirHdr;
+        if (AllowColState != null) AllowColState.Header = Strings.T("State");
+        if (BlockColState != null) BlockColState.Header = Strings.T("State");
 
         if (StateHeaderBorder != null)
         {
             StateHeaderBorder.ToolTip = Strings.T("SearchRulesTooltip");
+            AutomationProperties.SetName(StateHeaderBorder, Strings.T("State"));
         }
 
         if (SearchClearBtn != null)
