@@ -67,6 +67,21 @@ public sealed class AppRuleRow : INotifyPropertyChanged
     public string CountryCountBadge => RecentCountries != null && RecentCountries.Count > 1
         ? $"+{RecentCountries.Count - 1}"
         : string.Empty;
+
+    private bool _isCountryFilterActive;
+    public bool IsCountryFilterActive
+    {
+        get => _isCountryFilterActive;
+        set
+        {
+            if (_isCountryFilterActive != value)
+            {
+                _isCountryFilterActive = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(CountryLabel));
+            }
+        }
+    }
     public string CountryLabel
     {
         get
@@ -79,6 +94,13 @@ public sealed class AppRuleRow : INotifyPropertyChanged
                 {
                     return $"{baseLabel} ({Strings.T("RecentCountries")}: {string.Join(", ", others)})";
                 }
+            }
+            if (HasCountry)
+            {
+                var hint = IsCountryFilterActive
+                    ? Strings.T("ClearCountryFilterHint")
+                    : Strings.T("FilterByCountryHint");
+                return $"{baseLabel} • {hint}";
             }
             return baseLabel;
         }

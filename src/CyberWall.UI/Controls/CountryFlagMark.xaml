@@ -18,6 +18,10 @@
                     </Canvas>
                 </Viewbox>
             </Border>
+            <Border x:Name="ActiveFilterRing" Width="22" Height="15" CornerRadius="3"
+                    BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1.2"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Visibility="Collapsed" Margin="-1"/>
         </Grid>
         <Border x:Name="CountBadgeBorder" Margin="3,0,0,0" Padding="3,0" Height="13" CornerRadius="3"
                 Background="{DynamicResource CardSecondaryBrush}"

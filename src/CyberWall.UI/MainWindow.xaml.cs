@@ -424,8 +424,8 @@ public partial class MainWindow : Window
         FooterStatusText.Text = Strings.T("StatusFooter");
         NotifBtn.ToolTip = Strings.T("Notifications");
         AutomationProperties.SetName(NotifBtn, Strings.T("Notifications"));
-        SettingsBtn.ToolTip = Strings.T("NavSettingsTooltip");
-        AutomationProperties.SetName(SettingsBtn, Strings.T("NavSettings"));
+        SettingsBtn.ToolTip = Strings.T("Settings");
+        AutomationProperties.SetName(SettingsBtn, Strings.T("Settings"));
         MoreBtn.ToolTip = Strings.T("MoreOptions");
         AutomationProperties.SetName(MoreBtn, Strings.T("MoreOptions"));
         if (MoreOptionsMenu != null)
@@ -889,6 +889,7 @@ public partial class MainWindow : Window
     private int _refreshGeneration;
     private DispatcherTimer? _refreshRulesDebounceTimer;
     private string? _pendingFilter;
+    private string? _countryFilter;
 
     internal void RefreshRules(string? filter = null)
     {
@@ -930,7 +931,13 @@ public partial class MainWindow : Window
 
         var sortBy = _sortBy;
         var sortAsc = _sortAsc;
+        var countryFilter = _countryFilter;
         var lastRemoteDict = new Dictionary<string, string>(_lastRemoteByApp, StringComparer.OrdinalIgnoreCase);
+        var recentCountriesDict = new Dictionary<string, List<string>>(_recentCountriesByApp.Count, StringComparer.OrdinalIgnoreCase);
+        foreach (var kvp in _recentCountriesByApp)
+        {
+            recentCountriesDict[kvp.Key] = new List<string>(kvp.Value);
+        }
 
         try
         {
@@ -953,6 +960,40 @@ public partial class MainWindow : Window
                     ? storeRules
                     : storeRules.Where(r => r.DisplayName.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
                                             r.AppPath.Contains(filter, StringComparison.OrdinalIgnoreCase)).ToList();
+
+                if (!string.IsNullOrEmpty(countryFilter))
+                {
+                    q = q.Where(r => MatchesCountryFilter(r, countryFilter, last, recentCountriesDict)).ToList();
+                }
+
+                static bool MatchesCountryFilter(AppRule r, string targetIso, Dictionary<string, string> lastIps, Dictionary<string, List<string>> recents)
+                {
+                    var norm = AppRule.Normalize(r.AppPath);
+                    if (recents.TryGetValue(norm, out var rList) && rList.Any(c => string.Equals(c, targetIso, StringComparison.OrdinalIgnoreCase)))
+                        return true;
+
+                    string? ip = null;
+                    if (!lastIps.TryGetValue(r.AppPath, out ip))
+                    {
+                        var fn = Path.GetFileName(r.AppPath);
+                        if (!string.IsNullOrEmpty(fn)) lastIps.TryGetValue(fn, out ip);
+                    }
+                    var geo = GeoCountry.Lookup(ip);
+                    if (geo.HasCountry && string.Equals(geo.Iso2, targetIso, StringComparison.OrdinalIgnoreCase))
+                        return true;
+
+                    var activity = ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict);
+                    var ep = activity.LastEndpoint ?? activity.LastBlockedEndpoint;
+                    if (!string.IsNullOrEmpty(ep))
+                    {
+                        var liveIp = NetworkEndpoint.ExtractAddress(ep);
+                        var liveGeo = GeoCountry.Lookup(liveIp);
+                        if (liveGeo.HasCountry && string.Equals(liveGeo.Iso2, targetIso, StringComparison.OrdinalIgnoreCase))
+                            return true;
+                    }
+
+                    return false;
+                }
 
                 // Prewarm icon cache in background thread so UI binding never blocks on disk/shell I/O
                 PathToIconConverter.Prewarm(q.Select(r => r.AppPath));
@@ -1094,19 +1135,27 @@ public partial class MainWindow : Window
             AllowedGrid.ItemsSource = allowedRows;
             UpdateExpanderHeaders();
 
-            if (string.IsNullOrWhiteSpace(filter))
+            int matchCount = blockedRows.Count + allowedRows.Count;
+            if (string.IsNullOrWhiteSpace(filter) && string.IsNullOrEmpty(countryFilter))
             {
                 if (SearchMatchBadge != null) SearchMatchBadge.Visibility = Visibility.Collapsed;
             }
             else
             {
-                int matchCount = blockedRows.Count + allowedRows.Count;
                 if (SearchMatchBadge != null && SearchMatchText != null)
                 {
                     SearchMatchBadge.Visibility = Visibility.Visible;
-                    SearchMatchText.Text = matchCount == 1
-                        ? string.Format(Strings.T("SearchMatchSingle"), matchCount)
-                        : string.Format(Strings.T("SearchMatchPlural"), matchCount);
+                    if (!string.IsNullOrEmpty(countryFilter))
+                    {
+                        var cLabel = CountryDisplay.Label(new GeoResult(GeoKind.Country, countryFilter));
+                        SearchMatchText.Text = $"{cLabel} ({matchCount})";
+                    }
+                    else
+                    {
+                        SearchMatchText.Text = matchCount == 1
+                            ? string.Format(Strings.T("SearchMatchSingle"), matchCount)
+                            : string.Format(Strings.T("SearchMatchPlural"), matchCount);
+                    }
                 }
             }
         }
@@ -1238,10 +1287,15 @@ public partial class MainWindow : Window
 
         var norm = AppRule.Normalize(rule.AppPath);
         _recentCountriesByApp.TryGetValue(norm, out var recentList);
+        var isFilterActive = !string.IsNullOrEmpty(_countryFilter) &&
+            ((geo.HasCountry && string.Equals(_countryFilter, geo.Iso2, StringComparison.OrdinalIgnoreCase)) ||
+             (recentList != null && recentList.Any(c => string.Equals(c, _countryFilter, StringComparison.OrdinalIgnoreCase))));
+
         var row = new AppRuleRow
         {
             Rule = rule,
             Geo = geo,
+            IsCountryFilterActive = isFilterActive,
             RecentCountries = recentList != null ? recentList.ToArray() : (geo.HasCountry && !string.IsNullOrEmpty(geo.Iso2) ? [geo.Iso2] : null)
         };
         row.UpdateActivity(ProcessTrafficTracker.Instance);
@@ -1463,8 +1517,8 @@ public partial class MainWindow : Window
             StatusDot.Fill = on ? new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0xDE, 0x80)) : new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xEF, 0x44, 0x44));
             ModeBox.IsEnabled = on;
             _trafficWidget?.SetFirewallState(on, _svc.Mode);
-            var real = _svc.Wfp.IsRealBlock ? " • WFP Real" : " • Simulado";
-            if (!on) StatusText.Text = Strings.T("StatusDisabled") + real;
+            var simSuffix = _svc.Wfp.IsRealBlock ? string.Empty : (Strings.Current == Lang.Es ? " (simulado)" : " (simulated)");
+            if (!on) StatusText.Text = Strings.T("StatusDisabled") + simSuffix;
             else
             {
                 var statusKey = _svc.Mode switch
@@ -1473,7 +1527,7 @@ public partial class MainWindow : Window
                     FirewallMode.Killswitch => "StatusEnabledKillswitch",
                     _ => "StatusEnabledAsk"
                 };
-                StatusText.Text = Strings.T(statusKey) + real;
+                StatusText.Text = Strings.T(statusKey) + simSuffix;
             }
             _tray?.UpdateState();
         }
@@ -2250,9 +2304,18 @@ public partial class MainWindow : Window
     {
         if (HeaderSearchBar == null || HeaderSearchBar.Visibility != Visibility.Visible || _isSearchClosing) return;
 
-        if (clearText && !string.IsNullOrEmpty(SearchBox.Text))
+        bool filterWasActive = !string.IsNullOrEmpty(_countryFilter);
+        if (clearText)
         {
-            SearchBox.Text = "";
+            _countryFilter = null;
+            if (!string.IsNullOrEmpty(SearchBox.Text))
+            {
+                SearchBox.Text = "";
+            }
+            else if (filterWasActive)
+            {
+                RefreshRules();
+            }
         }
 
         if (SearchMatchBadge != null) SearchMatchBadge.Visibility = Visibility.Collapsed;
@@ -2302,6 +2365,28 @@ public partial class MainWindow : Window
     private void SearchIconBtn_Click(object sender, RoutedEventArgs e)
     {
         ShowRecentSearchesMenu(SearchIconBtn);
+    }
+
+    private void CountryFlag_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement el || el.DataContext is not AppRuleRow row) return;
+        if (!row.HasCountry || string.IsNullOrEmpty(row.CountryCode)) return;
+
+        if (string.Equals(_countryFilter, row.CountryCode, StringComparison.OrdinalIgnoreCase))
+        {
+            _countryFilter = null;
+            if (string.IsNullOrEmpty(SearchBox?.Text))
+                CloseSearch(clearText: true);
+            else
+                RefreshRules();
+        }
+        else
+        {
+            _countryFilter = row.CountryCode;
+            OpenSearch();
+            RefreshRules();
+        }
+        e.Handled = true;
     }
 
     private void ShowRecentSearchesMenu(FrameworkElement target)

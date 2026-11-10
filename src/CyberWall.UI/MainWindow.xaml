@@ -9,7 +9,7 @@
         WindowStartupLocation="Manual" WindowStyle="None" AllowsTransparency="False" Background="{DynamicResource BgBrush}"
         ResizeMode="CanResize" PreviewKeyDown="Window_PreviewKeyDown" SizeChanged="MainWindow_SizeChanged"
         TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType" TextOptions.TextHintingMode="Fixed"
-        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        UseLayoutRounding="True" SnapsToDevicePixels="True" ToolTipService.BetweenShowDelay="0"
         FontFamily="Segoe UI Variable Text, Segoe UI, -apple-system, BlinkMacSystemFont, Roboto, sans-serif">
 
     <Window.Resources>
@@ -227,9 +227,9 @@
             <Setter Property="Height" Value="32"/>
             <Setter Property="Padding" Value="14,0"/>
             <Setter Property="Margin" Value="2,0"/>
-            <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
-            <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="400"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="2500"/>
             <Setter Property="ToolTipService.Placement" Value="Bottom"/>
             <Setter Property="ToolTipService.VerticalOffset" Value="4"/>
             <Setter Property="Template">
@@ -271,9 +271,9 @@
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="IsTabStop" Value="False"/>
-            <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
-            <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="400"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="2500"/>
             <Setter Property="ToolTipService.Placement" Value="Bottom"/>
             <Setter Property="ToolTipService.VerticalOffset" Value="4"/>
             <Setter Property="Template">
@@ -308,9 +308,9 @@
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="IsTabStop" Value="False"/>
-            <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
-            <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="400"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="2500"/>
             <Setter Property="ToolTipService.Placement" Value="Bottom"/>
             <Setter Property="ToolTipService.VerticalOffset" Value="4"/>
             <Setter Property="Template">
@@ -489,9 +489,9 @@
             <Setter Property="Padding" Value="14,6"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-            <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
-            <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="400"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="2500"/>
             <Setter Property="ToolTipService.Placement" Value="Bottom"/>
             <Setter Property="ToolTipService.VerticalOffset" Value="4"/>
             <Setter Property="Template">
@@ -527,9 +527,9 @@
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="IsTabStop" Value="False"/>
-            <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
-            <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="400"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="2500"/>
             <Setter Property="ToolTipService.Placement" Value="Bottom"/>
             <Setter Property="ToolTipService.VerticalOffset" Value="4"/>
             <Setter Property="Template">
@@ -570,9 +570,9 @@
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-            <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
-            <Setter Property="ToolTipService.BetweenShowDelay" Value="150"/>
-            <Setter Property="ToolTipService.ShowDuration" Value="4000"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="400"/>
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="0"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="2500"/>
             <Setter Property="ToolTipService.Placement" Value="Bottom"/>
             <Setter Property="ToolTipService.VerticalOffset" Value="4"/>
             <Setter Property="Template">
@@ -1200,7 +1200,7 @@
                                             <Ellipse x:Name="StatusDot" Width="9" Height="9" Fill="#4ADE80" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                             <TextBlock x:Name="MasterLabel" Text="PROTECCIÓN ACTIVA" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
                                         </StackPanel>
-                                        <TextBlock x:Name="StatusText" Foreground="{DynamicResource SubTextBrush}" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap" Text="Bloqueo por defecto • Preguntando por nuevas conexiones • WFP Tiempo Real"/>
+                                        <TextBlock x:Name="StatusText" Foreground="{DynamicResource SubTextBrush}" FontSize="11" Margin="0,2,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" MaxWidth="205" Text="Filtrado en tiempo real"/>
                                     </StackPanel>
                                 </Grid>
 
@@ -1632,7 +1632,7 @@
                                             <DataGridTemplateColumn x:Name="AllowColCountry" Header="País" Width="56" CanUserSort="True" SortMemberPath="CountryLabel" HeaderStyle="{StaticResource StateColumnHeader}">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <ctrl:CountryFlagMark CountryCode="{Binding CountryCode}" HasCountry="{Binding HasCountry}" BadgeText="{Binding CountryCountBadge}" ToolTip="{Binding CountryLabel}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        <ctrl:CountryFlagMark CountryCode="{Binding CountryCode}" HasCountry="{Binding HasCountry}" BadgeText="{Binding CountryCountBadge}" IsFilterActive="{Binding IsCountryFilterActive}" ToolTip="{Binding CountryLabel}" Cursor="Hand" MouseLeftButtonUp="CountryFlag_Click" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
@@ -1868,7 +1868,7 @@
                                             <DataGridTemplateColumn x:Name="BlockColCountry" Header="País" Width="56" CanUserSort="True" SortMemberPath="CountryLabel" HeaderStyle="{StaticResource StateColumnHeader}">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <ctrl:CountryFlagMark CountryCode="{Binding CountryCode}" HasCountry="{Binding HasCountry}" BadgeText="{Binding CountryCountBadge}" ToolTip="{Binding CountryLabel}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        <ctrl:CountryFlagMark CountryCode="{Binding CountryCode}" HasCountry="{Binding HasCountry}" BadgeText="{Binding CountryCountBadge}" IsFilterActive="{Binding IsCountryFilterActive}" ToolTip="{Binding CountryLabel}" Cursor="Hand" MouseLeftButtonUp="CountryFlag_Click" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>

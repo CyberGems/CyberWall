@@ -23,12 +23,12 @@ public static class Strings
         ["ModeAsk"] = ("Ask to connect", "Preguntar para conectar"),
         ["ModeBlockAll"] = ("Block without asking", "Bloquear sin preguntar"),
         ["ModeKillswitch"] = ("Lockdown (Killswitch)", "Bloqueo total (Killswitch)"),
-        ["StatusEnabledAsk"] = ("Protected • Asking for new connections • WFP Real-time", "Protegido • Preguntando por nuevas conexiones • WFP Tiempo Real"),
-        ["StatusEnabledBlock"] = ("Silent block • Auto-blocking unknown apps • WFP Real-time", "Bloquear sin preguntar • Bloqueando desconocidas en silencio • WFP Tiempo Real"),
-        ["StatusEnabledKillswitch"] = ("Lockdown active • All network traffic blocked • WFP Real-time", "Bloqueo total activo • Todo el tráfico bloqueado • WFP Tiempo Real"),
-        ["StatusDisabled"] = ("Disabled: all incoming/outgoing connections allowed", "Desactivado: todas las conexiones entrantes/salientes permitidas"),
-        ["StatusEnabling"] = ("Starting network filtering engine...", "Iniciando motor de filtrado de red..."),
-        ["StatusServiceOwned"] = ("Protection is enforced by the CyberWall Windows Service. Stop the service to manage it from this window.", "La protección la aplica el servicio de Windows de CyberWall. Detén el servicio para gestionarla desde esta ventana."),
+        ["StatusEnabledAsk"] = ("Real-time filtering", "Filtrado en tiempo real"),
+        ["StatusEnabledBlock"] = ("Silent blocking", "Bloqueo silencioso"),
+        ["StatusEnabledKillswitch"] = ("Total lockdown", "Bloqueo total"),
+        ["StatusDisabled"] = ("Filtering disabled", "Filtrado desactivado"),
+        ["StatusEnabling"] = ("Starting network filter...", "Iniciando filtrado..."),
+        ["StatusServiceOwned"] = ("Managed by service", "Gestionado por servicio"),
         ["Allow"] = ("Allow", "Permitir"),
         ["All"] = ("All", "Todos"),
         ["Block"] = ("Block", "Bloquear"),
@@ -441,6 +441,9 @@ public static class Strings
         ["CtxPaste"] = ("Paste", "Pegar"),
         ["CtxSelectAll"] = ("Select all", "Seleccionar todo"),
         ["CtxDelete"] = ("Delete", "Eliminar"),
+        ["FilterByCountryHint"] = ("Click to filter by this country", "Clic para filtrar por este país"),
+        ["ClearCountryFilterHint"] = ("Click to clear country filter", "Clic para quitar el filtro de país"),
+        ["CountryFilterActive"] = ("Country: {0}", "País: {0}"),
     };
 
     public static string T(string key, params object[] args)

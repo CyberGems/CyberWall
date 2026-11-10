@@ -23,6 +23,10 @@ public partial class CountryFlagMark : System.Windows.Controls.UserControl
         DependencyProperty.Register(nameof(BadgeText), typeof(string), typeof(CountryFlagMark),
             new PropertyMetadata("", (d, _) => ((CountryFlagMark)d).RefreshBadge()));
 
+    public static readonly DependencyProperty IsFilterActiveProperty =
+        DependencyProperty.Register(nameof(IsFilterActive), typeof(bool), typeof(CountryFlagMark),
+            new PropertyMetadata(false, (d, _) => ((CountryFlagMark)d).RefreshFilterActive()));
+
     public string CountryCode
     {
         get => (string)GetValue(CountryCodeProperty);
@@ -39,6 +43,12 @@ public partial class CountryFlagMark : System.Windows.Controls.UserControl
     {
         get => (string)GetValue(BadgeTextProperty);
         set => SetValue(BadgeTextProperty, value);
+    }
+
+    public bool IsFilterActive
+    {
+        get => (bool)GetValue(IsFilterActiveProperty);
+        set => SetValue(IsFilterActiveProperty, value);
     }
 
     public void Apply(GeoResult result)
@@ -63,9 +73,18 @@ public partial class CountryFlagMark : System.Windows.Controls.UserControl
         }
     }
 
+    private void RefreshFilterActive()
+    {
+        if (ActiveFilterRing != null)
+        {
+            ActiveFilterRing.Visibility = IsFilterActive ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
     private void Refresh()
     {
         RefreshBadge();
+        RefreshFilterActive();
         if (FlagImage == null || UnknownFlagBorder == null) return;
         var src = HasCountry ? FlagPainter.Create(CountryCode) : null;
         if (src != null)
