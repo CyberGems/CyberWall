@@ -40,11 +40,17 @@ english.CreateShortcutGroup=Create shortcuts:
 english.CyberWallShortcut=CyberWall (Firewall)
 english.OptionsGroup=Options:
 english.RunAtStartup=Run CyberWall when Windows starts
+english.CloseBeforeUninstall=CyberWall is still running. Choose Exit from the CyberWall icon menu in the notification area, then click Retry.
+english.StopServiceBeforeUninstall=The CyberWall Firewall service is still running. Stop it in the Windows Services app, then click Retry.
+english.ServiceStatusUnknownBeforeUninstall=The uninstaller could not verify that the CyberWall Firewall service has stopped. Check its status in the Windows Services app, then click Retry.
 
 spanish.CreateShortcutGroup=Crear accesos directos:
 spanish.CyberWallShortcut=CyberWall (Firewall)
 spanish.OptionsGroup=Opciones:
 spanish.RunAtStartup=Ejecutar CyberWall al iniciar Windows
+spanish.CloseBeforeUninstall=CyberWall sigue abierto. Elige Salir en el menú del icono de CyberWall en la bandeja del sistema y haz clic en Reintentar.
+spanish.StopServiceBeforeUninstall=El servicio CyberWall Firewall sigue en ejecución. Detenlo en la aplicación Servicios de Windows y haz clic en Reintentar.
+spanish.ServiceStatusUnknownBeforeUninstall=El desinstalador no pudo comprobar que el servicio CyberWall Firewall se haya detenido. Revisa su estado en la aplicación Servicios de Windows y haz clic en Reintentar.
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CyberWallShortcut}"; GroupDescription: "{cm:CreateShortcutGroup}"
@@ -76,3 +82,102 @@ Filename: "netsh"; Parameters: "advfirewall set allprofiles firewallpolicy block
 Filename: "schtasks"; Parameters: "delete /tn ""CyberWall"" /f"; Flags: runhidden; RunOnceId: "RemoveStartupTask"
 Filename: "schtasks"; Parameters: "delete /tn ""CyberWall Recovery"" /f"; Flags: runhidden; RunOnceId: "RemoveRecoveryTask"
 Filename: "powershell.exe"; Parameters: "-NoProfile -NonInteractive -WindowStyle Hidden -Command ""Get-NetFirewallRule -DisplayName 'CyberWall-*' -ErrorAction SilentlyContinue | Remove-NetFirewallRule -ErrorAction SilentlyContinue"""; Flags: runhidden; RunOnceId: "RemoveFirewallRules"
+
+[Code]
+const
+  SC_MANAGER_CONNECT = 1;
+  SERVICE_QUERY_STATUS = 4;
+  SERVICE_STOPPED = 1;
+  ERROR_SERVICE_DOES_NOT_EXIST = 1060;
+
+type
+  TServiceStatus = record
+    ServiceType: Cardinal;
+    CurrentState: Cardinal;
+    ControlsAccepted: Cardinal;
+    Win32ExitCode: Cardinal;
+    ServiceSpecificExitCode: Cardinal;
+    CheckPoint: Cardinal;
+    WaitHint: Cardinal;
+  end;
+
+function OpenSCManager(MachineName, DatabaseName: LongWord; DesiredAccess: Cardinal): THandle;
+  external 'OpenSCManagerW@advapi32.dll stdcall uninstallonly';
+function OpenService(Manager: THandle; ServiceName: String; DesiredAccess: Cardinal): THandle;
+  external 'OpenServiceW@advapi32.dll stdcall uninstallonly';
+function QueryServiceStatus(Service: THandle; var Status: TServiceStatus): Integer;
+  external 'QueryServiceStatus@advapi32.dll stdcall uninstallonly';
+function CloseServiceHandle(Handle: THandle): Integer;
+  external 'CloseServiceHandle@advapi32.dll stdcall uninstallonly';
+
+function CyberWallServiceState: Cardinal;
+var
+  Manager, Service: THandle;
+  Status: TServiceStatus;
+  ErrorCode: Integer;
+begin
+  { Zero means the status could not be verified. }
+  Result := 0;
+  Manager := OpenSCManager(0, 0, SC_MANAGER_CONNECT);
+  if Manager = 0 then
+  begin
+    Log('Could not open the Service Control Manager. Error ' + IntToStr(DLLGetLastError));
+    Exit;
+  end;
+
+  try
+    Service := OpenService(Manager, 'CyberWall', SERVICE_QUERY_STATUS);
+    if Service = 0 then
+    begin
+      ErrorCode := DLLGetLastError;
+      if ErrorCode = ERROR_SERVICE_DOES_NOT_EXIST then
+        Result := SERVICE_STOPPED
+      else
+        Log('Could not open the CyberWall service. Error ' + IntToStr(ErrorCode));
+      Exit;
+    end;
+
+    try
+      if QueryServiceStatus(Service, Status) <> 0 then
+        Result := Status.CurrentState
+      else
+        Log('Could not query the CyberWall service. Error ' + IntToStr(DLLGetLastError));
+    finally
+      CloseServiceHandle(Service);
+    end;
+  finally
+    CloseServiceHandle(Manager);
+  end;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  BlockMessage: String;
+  ServiceState: Cardinal;
+begin
+  if CurUninstallStep <> usUninstall then
+    Exit;
+
+  { Wait for the desktop app and the optional service before running firewall cleanup. }
+  while True do
+  begin
+    if CheckForMutexes('Global\CyberWall_SingleInstance_Mutex') then
+      BlockMessage := CustomMessage('CloseBeforeUninstall')
+    else
+    begin
+      ServiceState := CyberWallServiceState;
+      if ServiceState = SERVICE_STOPPED then
+        Exit;
+      if ServiceState = 0 then
+        BlockMessage := CustomMessage('ServiceStatusUnknownBeforeUninstall')
+      else
+        BlockMessage := CustomMessage('StopServiceBeforeUninstall');
+    end;
+
+    Log(BlockMessage);
+    if UninstallSilent then
+      Abort;
+    if MsgBox(BlockMessage, mbInformation, MB_RETRYCANCEL) <> IDRETRY then
+      Abort;
+  end;
+end;
