@@ -41,19 +41,19 @@ public partial class CountryFlagMark : System.Windows.Controls.UserControl
 
     private void Refresh()
     {
-        if (FlagImage == null || GlobePath == null) return;
+        if (FlagImage == null || UnknownFlagBorder == null) return;
         var src = HasCountry ? FlagPainter.Create(CountryCode) : null;
         if (src != null)
         {
             FlagImage.Source = src;
             FlagImage.Visibility = Visibility.Visible;
-            GlobePath.Visibility = Visibility.Collapsed;
+            UnknownFlagBorder.Visibility = Visibility.Collapsed;
         }
         else
         {
             FlagImage.Source = null;
             FlagImage.Visibility = Visibility.Collapsed;
-            GlobePath.Visibility = Visibility.Visible;
+            UnknownFlagBorder.Visibility = Visibility.Visible;
         }
     }
 }

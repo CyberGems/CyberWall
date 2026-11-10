@@ -6,10 +6,17 @@
         <Image x:Name="FlagImage" Width="20" Height="13" Stretch="Uniform"
                HorizontalAlignment="Center" VerticalAlignment="Center"
                SnapsToDevicePixels="True" Visibility="Collapsed"/>
-        <Path x:Name="GlobePath" Stretch="Uniform" Width="13" Height="13"
-              Fill="Transparent" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.6"
-              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-              HorizontalAlignment="Center" VerticalAlignment="Center"
-              Data="M 12 2 A 10 10 0 1 0 12 22 A 10 10 0 1 0 12 2 M 2 12 H 22 M 12 2 C 16 6.5 16 17.5 12 22 M 12 2 C 8 6.5 8 17.5 12 22"/>
+        <Border x:Name="UnknownFlagBorder" Width="20" Height="13" CornerRadius="2.5"
+                Background="{DynamicResource CardSecondaryBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0.8"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                SnapsToDevicePixels="True" Visibility="Visible">
+            <Viewbox Stretch="Uniform" Margin="2,1.5">
+                <Canvas Width="36" Height="24">
+                    <Path Fill="{DynamicResource SubTextBrush}"
+                          Data="M 3.5,5.5 C 4.5,3.5 9,3.5 11,4.5 C 12.5,5.5 12,8 10,9 C 10,10.5 8,11.5 6.5,11 C 4.5,11 3.5,8 3.5,5.5 Z M 13,2.5 C 14.5,2.5 15,3.8 14,4.5 C 13,4.5 12,3.5 13,2.5 Z M 8,12 C 9.5,12 11.5,13.5 11,16 C 10.5,18.5 9,21 8,21 C 7,21 6.5,15 8,12 Z M 16,4 C 18,3.5 20,4.5 20,6 C 19,7.5 17,7.5 16,6 C 15.5,5 15.5,4.5 16,4 Z M 16,8.5 C 19,8.5 21.5,10 20.5,13.5 C 19.5,16.5 18,18 17,18 C 15.5,16.5 15,12 16,8.5 Z M 21,4 C 26,3 32,4 33,6.5 C 31,8.5 29,8 28,10 C 26,11.5 24,10 23,11 C 21.5,9.5 20.5,6.5 21,4 Z M 27.5,15.5 C 31,15.5 32,17.5 31,19 C 29,20 27,19 27,17.5 C 27,16 27.5,15.5 27.5,15.5 Z"/>
+                </Canvas>
+            </Viewbox>
+        </Border>
     </Grid>
 </UserControl>

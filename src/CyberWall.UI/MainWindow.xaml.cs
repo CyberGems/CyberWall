@@ -2431,6 +2431,23 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (e.Key == System.Windows.Input.Key.C && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            var isShift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
+            var r = (grid.SelectedItem as AppRuleRow)?.Rule ?? (grid.SelectedItem as AppRule);
+            var path = r?.AppPath;
+            if (!string.IsNullOrEmpty(path))
+            {
+                var textToCopy = isShift ? System.IO.Path.GetFileName(path) : path;
+                if (!string.IsNullOrEmpty(textToCopy))
+                {
+                    try { System.Windows.Clipboard.SetText(textToCopy); } catch { }
+                    e.Handled = true;
+                    return;
+                }
+            }
+        }
+
         if (e.Key == System.Windows.Input.Key.Space)
         {
             e.Handled = true;
@@ -2512,6 +2529,26 @@ public partial class MainWindow : Window
             RefreshRules(SearchBox.Text);
             e.Handled = true;
             return;
+        }
+
+        if (e.Key == System.Windows.Input.Key.C && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            if (e.OriginalSource is not System.Windows.Controls.Primitives.TextBoxBase)
+            {
+                var isShift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
+                var r = (AllowedGrid.SelectedItem as AppRuleRow)?.Rule ?? (BlockedGrid.SelectedItem as AppRuleRow)?.Rule;
+                var path = r?.AppPath;
+                if (!string.IsNullOrEmpty(path))
+                {
+                    var textToCopy = isShift ? System.IO.Path.GetFileName(path) : path;
+                    if (!string.IsNullOrEmpty(textToCopy))
+                    {
+                        try { System.Windows.Clipboard.SetText(textToCopy); } catch { }
+                        e.Handled = true;
+                        return;
+                    }
+                }
+            }
         }
 
         if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
