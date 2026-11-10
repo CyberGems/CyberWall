@@ -276,6 +276,7 @@ public partial class MainWindow : Window
             CheckForUpdatesOnStartup();
             WarnAboutFailedPolicyRestore();
             if (App.Settings.TrafficWidgetVisible) SetTrafficWidgetVisible(true);
+            else UpdateWidgetButtonState(false);
         };
         PreviewMouseDown += (_, _) => NotifyActiveModalAttention();
         _loading = false;
@@ -424,6 +425,16 @@ public partial class MainWindow : Window
         FooterStatusText.Text = Strings.T("StatusFooter");
         NotifBtn.ToolTip = Strings.T("Notifications");
         AutomationProperties.SetName(NotifBtn, Strings.T("Notifications"));
+        if (WidgetBtn != null)
+        {
+            WidgetBtn.ToolTip = Strings.T("FloatingWidgetTooltip");
+            AutomationProperties.SetName(WidgetBtn, Strings.T("NetworkWidgetMenu"));
+        }
+        if (FirewallWidgetPopoutBtn != null)
+        {
+            FirewallWidgetPopoutBtn.ToolTip = Strings.T("FloatingWidgetTooltip");
+            AutomationProperties.SetName(FirewallWidgetPopoutBtn, Strings.T("NetworkWidgetMenu"));
+        }
         SettingsBtn.ToolTip = Strings.T("NavSettingsTooltip");
         AutomationProperties.SetName(SettingsBtn, Strings.T("Settings"));
         MoreBtn.ToolTip = Strings.T("MoreOptions");
@@ -2169,6 +2180,9 @@ public partial class MainWindow : Window
 
     private void OpenTrafficHistory_Click(object sender, RoutedEventArgs e) => SelectTab(MainTab.TrafficMonitor);
 
+    private void WidgetBtn_Click(object sender, RoutedEventArgs e) =>
+        SetTrafficWidgetVisible(_trafficWidget?.IsVisible != true);
+
     private void MoreWidget_Click(object sender, RoutedEventArgs e) =>
         SetTrafficWidgetVisible(_trafficWidget?.IsVisible != true);
 
@@ -2213,8 +2227,27 @@ public partial class MainWindow : Window
             _trafficWidget?.Hide();
         }
 
+        UpdateWidgetButtonState(visible);
         App.Settings.TrafficWidgetVisible = visible;
         App.Settings.Save();
+    }
+
+    private void UpdateWidgetButtonState(bool visible)
+    {
+        if (WidgetBtn != null)
+        {
+            WidgetBtn.Tag = visible ? "Active" : null;
+        }
+        if (FirewallWidgetPopoutBtn != null)
+        {
+            FirewallWidgetPopoutBtn.Tag = visible ? "Active" : null;
+            if (FirewallWidgetPopoutBtnIcon != null)
+            {
+                FirewallWidgetPopoutBtnIcon.Stroke = visible
+                    ? (System.Windows.Media.Brush)FindResource("AccentBrush")
+                    : (System.Windows.Media.Brush)FindResource("SubTextBrush");
+            }
+        }
     }
 
     private void RulesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)

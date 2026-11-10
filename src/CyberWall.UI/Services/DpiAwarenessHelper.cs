@@ -43,8 +43,9 @@ internal static class DpiAwarenessHelper
             string currentExe = Process.GetCurrentProcess().MainModule?.FileName ?? string.Empty;
             string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             string installedExe = Path.Combine(programFiles, "CyberWall", "CyberWall.exe");
+            string dotnetExe = Path.Combine(programFiles, "dotnet", "dotnet.exe");
 
-            var pathsToCheck = new[] { currentExe, installedExe }
+            var pathsToCheck = new[] { currentExe, installedExe, dotnetExe }
                 .Where(p => !string.IsNullOrWhiteSpace(p))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
