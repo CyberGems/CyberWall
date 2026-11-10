@@ -903,8 +903,85 @@ public partial class MainWindow : Window
                 // Prewarm icon cache in background thread so UI binding never blocks on disk/shell I/O
                 PathToIconConverter.Prewarm(q.Select(r => r.AppPath));
 
+                static int GetSearchRank(AppRule r, string searchTerm)
+                {
+                    var name = r.DisplayName;
+                    var exeName = Path.GetFileName(r.AppPath);
+
+                    if (string.Equals(name, searchTerm, StringComparison.OrdinalIgnoreCase))
+                        return 0; // Exact match on DisplayName
+                    if (!string.IsNullOrEmpty(exeName) && string.Equals(exeName, searchTerm, StringComparison.OrdinalIgnoreCase))
+                        return 1; // Exact match on executable filename
+                    if (name.StartsWith(searchTerm, StringComparison.OrdinalIgnoreCase))
+                        return 2; // DisplayName starts with search term
+                    if (!string.IsNullOrEmpty(exeName) && exeName.StartsWith(searchTerm, StringComparison.OrdinalIgnoreCase))
+                        return 3; // Executable filename starts with search term
+                    if (name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                        return 4; // DisplayName contains search term
+                    if (!string.IsNullOrEmpty(exeName) && exeName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                        return 5; // Executable filename contains search term
+
+                    return 6; // Path / folder match only
+                }
+
+                var searchFilter = filter?.Trim();
+                var hasSearchFilter = !string.IsNullOrEmpty(searchFilter);
+
                 IEnumerable<AppRule> SortRules(IEnumerable<AppRule> items)
                 {
+                    if (hasSearchFilter)
+                    {
+                        if (sortBy is "Activity" or "IsActiveTraffic" or "ActivityLevel" or "Bandwidth")
+                        {
+                            return sortAsc
+                                ? items.OrderBy(r => GetSearchRank(r, searchFilter!))
+                                       .ThenByDescending(r => ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).TotalBps)
+                                       .ThenByDescending(r => (int)ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).Level)
+                                       .ThenBy(r => r.DisplayName)
+                                : items.OrderBy(r => GetSearchRank(r, searchFilter!))
+                                       .ThenBy(r => ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).TotalBps)
+                                       .ThenBy(r => (int)ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict).Level)
+                                       .ThenBy(r => r.DisplayName);
+                        }
+
+                        Func<AppRule, object> searchKey = sortBy switch
+                        {
+                            "AppPath" => r => r.AppPath,
+                            "Direction" => r => (int)r.EffectiveInboundVerdict * 2 + (int)r.EffectiveOutboundVerdict,
+                            "Country" => r =>
+                            {
+                                string? ip = null;
+                                try
+                                {
+                                    last.TryGetValue(AppRule.Normalize(r.AppPath), out ip);
+                                    ip ??= last.GetValueOrDefault(r.AppPath);
+                                }
+                                catch
+                                {
+                                    last.TryGetValue(r.AppPath, out ip);
+                                }
+                                var geo = GeoCountry.Lookup(ip);
+                                if (!geo.HasCountry)
+                                {
+                                    var activity = ProcessTrafficTracker.Instance.GetActivity(r.AppPath, r.Verdict);
+                                    var ep = activity.LastEndpoint ?? activity.LastBlockedEndpoint;
+                                    if (!string.IsNullOrEmpty(ep))
+                                    {
+                                        var liveIp = NetworkEndpoint.ExtractAddress(ep);
+                                        var liveGeo = GeoCountry.Lookup(liveIp);
+                                        if (liveGeo.HasCountry) geo = liveGeo;
+                                    }
+                                }
+                                return CountryDisplay.Label(geo);
+                            },
+                            _ => r => r.DisplayName
+                        };
+
+                        return sortAsc
+                            ? items.OrderBy(r => GetSearchRank(r, searchFilter!)).ThenBy(searchKey)
+                            : items.OrderBy(r => GetSearchRank(r, searchFilter!)).ThenByDescending(searchKey);
+                    }
+
                     if (sortBy is "Activity" or "IsActiveTraffic" or "ActivityLevel" or "Bandwidth")
                     {
                         return sortAsc

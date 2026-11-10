@@ -29,34 +29,45 @@ internal static class ShellFolderHelper
         {
             try
             {
+                var dir = File.Exists(path) ? Path.GetDirectoryName(path) : (Directory.Exists(path) ? path : null);
+                if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return;
+
+                // Attempt native in-process shell selection via STA thread
                 if (File.Exists(path))
                 {
-                    IntPtr pidl = ILCreateFromPathW(path);
-                    if (pidl != IntPtr.Zero)
+                    bool success = false;
+                    var staThread = new Thread(() =>
                     {
                         try
                         {
-                            if (SHOpenFolderAndSelectItems(pidl, 0, null, 0) == 0)
+                            IntPtr pidl = ILCreateFromPathW(path);
+                            if (pidl != IntPtr.Zero)
                             {
-                                return;
+                                try
+                                {
+                                    if (SHOpenFolderAndSelectItems(pidl, 0, null, 0) == 0)
+                                    {
+                                        success = true;
+                                    }
+                                }
+                                finally
+                                {
+                                    ILFree(pidl);
+                                }
                             }
                         }
-                        finally
-                        {
-                            ILFree(pidl);
-                        }
+                        catch { }
+                    });
+                    staThread.SetApartmentState(ApartmentState.STA);
+                    staThread.Start();
+                    if (staThread.Join(400) && success)
+                    {
+                        return;
                     }
-
-                    // Fallback to command-line explorer if shell API was not available
-                    Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = true });
-                    return;
                 }
 
-                var dir = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
-                {
-                    Process.Start(new ProcessStartInfo("explorer.exe", dir) { UseShellExecute = true });
-                }
+                // Instant direct folder launch (sub-200ms) avoiding the multi-second /select delay
+                Process.Start(new ProcessStartInfo("explorer.exe", $"\"{dir}\"") { UseShellExecute = true });
             }
             catch (Exception ex)
             {

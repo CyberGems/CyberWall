@@ -32,31 +32,31 @@ public static class ThemeManager
 
     private static readonly Dictionary<AppTheme, Palette> Palettes = new()
     {
-        // CyberWall Theme: Cybernetic Navy & Electric Neon Cyan / Emerald
+        // CyberWall Theme: Refined Slate Navy & Electric Neon Cyan
         [AppTheme.CyberWall] = new(
-            Bg: "#070B12",
-            Card: "#0E1726",
-            CardSecondary: "#131F33",
-            SelectionBg: "#162844",
-            Border: "#1C2E4A",
-            BorderLight: "#2A436A",
-            Text: "#F0F6FC",
-            SubText: "#8BA2C4",
+            Bg: "#0B0E14",
+            Card: "#141822",
+            CardSecondary: "#1A202D",
+            SelectionBg: "#1E283B",
+            Border: "#242F41",
+            BorderLight: "#34425A",
+            Text: "#EEF2F6",
+            SubText: "#94A0B4",
             Accent: "#00E5FF",
             AccentGlow: "#3300E5FF",
-            AccentFg: "#070B12",
-            GridAlt: "#0A111D",
-            HeaderBg: "#111C2E",
-            BadgeAllowBg: "#0A2E24",
+            AccentFg: "#0B0E14",
+            GridAlt: "#10141C",
+            HeaderBg: "#181E2B",
+            BadgeAllowBg: "#0D2A22",
             BadgeAllowFg: "#00F5A0",
-            BadgeBlockBg: "#3B121E",
+            BadgeBlockBg: "#38141D",
             BadgeBlockFg: "#FF4D6D",
-            BadgeWarnBg: "#3D2410",
+            BadgeWarnBg: "#3D2611",
             BadgeWarnFg: "#FB923C",
-            SearchBg: "#0A1220",
-            InputBg: "#0A1220",
+            SearchBg: "#101520",
+            InputBg: "#101520",
             SwitchActive: "#00E5FF",
-            SwitchTrack: "#1C2E4A"),
+            SwitchTrack: "#242F41"),
 
         // Dark Theme: Refined Neutral Charcoal, Slate & Electric Indigo
         [AppTheme.Dark] = new(
