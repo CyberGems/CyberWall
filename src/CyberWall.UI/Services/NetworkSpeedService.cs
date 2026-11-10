@@ -157,9 +157,9 @@ public sealed class NetworkSpeedService
             lock (_historyLock)
             {
                 _history.Add(new TrafficHistoryPoint(DateTime.UtcNow, downBps, upBps));
-                if (_history.Count > 360)
+                if (_history.Count > 720)
                 {
-                    _history.RemoveRange(0, _history.Count - 360);
+                    _history.RemoveRange(0, _history.Count - 720);
                 }
             }
 

@@ -511,10 +511,22 @@ public class TrafficGraphControl : AnimatedHistoryGraph
                 var ft15 = new FormattedText("-15s", CultureInfo.CurrentCulture, System.Windows.FlowDirection.LeftToRight, AxisTypeface, 9.5, AxisTextBrush, dpi);
                 dc.DrawText(ft15, new Point(plotRect.Left + (plotWidth * 0.75) - (ft15.Width / 2.0), textY));
             }
-            else
+            else if (MaxSamples <= 300)
             {
                 // 5-minute scale (300s): ticks at -5m, -4m, -3m, -2m, -1m, Ahora
                 string[] labels = { "-5m", "-4m", "-3m", "-2m", "-1m" };
+                for (int i = 0; i < 5; i++)
+                {
+                    double ratio = i / 5.0;
+                    var ft = new FormattedText(labels[i], CultureInfo.CurrentCulture, System.Windows.FlowDirection.LeftToRight, AxisTypeface, 9.5, AxisTextBrush, dpi);
+                    double posX = i == 0 ? plotRect.Left + 4 : plotRect.Left + (plotWidth * ratio) - (ft.Width / 2.0);
+                    dc.DrawText(ft, new Point(posX, textY));
+                }
+            }
+            else
+            {
+                // 10-minute scale (600s): ticks at -10m, -8m, -6m, -4m, -2m, Ahora
+                string[] labels = { "-10m", "-8m", "-6m", "-4m", "-2m" };
                 for (int i = 0; i < 5; i++)
                 {
                     double ratio = i / 5.0;

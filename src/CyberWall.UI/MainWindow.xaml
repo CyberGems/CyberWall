@@ -1287,7 +1287,7 @@
                                                   Fill="{DynamicResource AccentBrush}"
                                                   Width="8" Height="9" Stretch="Uniform"
                                                   Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="FirewallChartTitleText" Text="Telemetría en Vivo (60s)"
+                                            <TextBlock x:Name="FirewallChartTitleText" Text="Tráfico de Red en Vivo (60s)"
                                                        FontSize="10" FontWeight="SemiBold"
                                                        Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
                                         </StackPanel>
@@ -1303,6 +1303,8 @@
                                         <!-- Smooth Organic Spline Traffic Graph (Responsive Height) -->
                                         <ctrl:TrafficGraphControl x:Name="FirewallTrafficGraph"
                                                                   Height="54"
+                                                                  PlotBackground="Transparent"
+                                                                  ShowPlotBorder="False"
                                                                   DownloadColor="#00E5FF"
                                                                   UploadColor="#22C55E"
                                                                   MaxSamples="60"
@@ -1342,9 +1344,9 @@
                                         </Grid>
                                     </Border>
 
-                                    <!-- Bottom Row: 1m / 5m Time Segmented Toggle + Pause Button -->
+                                    <!-- Bottom Row: 1m / 5m / 10m Time Segmented Toggle + Pause Button -->
                                     <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                        <!-- 1m / 5m Segmented Toggle -->
+                                        <!-- 1m / 5m / 10m Segmented Toggle -->
                                         <Border Background="{DynamicResource HeaderBgBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                                 BorderThickness="1" CornerRadius="6" Padding="2" VerticalAlignment="Center" Margin="0,0,6,0">
                                             <StackPanel Orientation="Horizontal">
@@ -1352,6 +1354,8 @@
                                                              IsChecked="True" Click="FirewallTimeWindow_Click" Tag="60" ToolTipService.InitialShowDelay="200"/>
                                                 <RadioButton x:Name="FirewallTime5mBtn" Content="5 min" Style="{StaticResource ChartSegmentRadioStyle}"
                                                              Click="FirewallTimeWindow_Click" Tag="300" ToolTipService.InitialShowDelay="200"/>
+                                                <RadioButton x:Name="FirewallTime10mBtn" Content="10 min" Style="{StaticResource ChartSegmentRadioStyle}"
+                                                             Click="FirewallTimeWindow_Click" Tag="600" ToolTipService.InitialShowDelay="200"/>
                                             </StackPanel>
                                         </Border>
 
@@ -2104,7 +2108,7 @@
                                 <Image Source="pack://application:,,,/Assets/CyberWall.png" Width="52" Height="52" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock x:Name="RulesLoadingTitle" Text="Cargando reglas..." FontWeight="SemiBold" FontSize="15" Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center"/>
-                            <TextBlock x:Name="RulesLoadingSub" Text="Preparando aplicaciones y telemetría" FontSize="12" Foreground="{DynamicResource SubTextBrush}" Margin="0,5,0,0" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="RulesLoadingSub" Text="Preparando aplicaciones y monitor de red" FontSize="12" Foreground="{DynamicResource SubTextBrush}" Margin="0,5,0,0" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Border>
                     </Grid>

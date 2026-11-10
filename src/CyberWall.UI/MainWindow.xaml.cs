@@ -463,12 +463,19 @@ public partial class MainWindow : Window
         SettingsTabContent?.RefreshLanguage();
         ModeLbl.Text = Strings.T("Mode");
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
-        FirewallChartTitleText.Text = $"{Strings.T("TrafficTelemetryTitle")} ({(_firewallTimeWindowSeconds <= 60 ? "60s" : "5 min")})";
-        var heroCompact = ActualWidth > 0 && ActualWidth < 950;
-        FirewallTime1mBtn.Content = heroCompact ? "1m" : Strings.T("ChartTime1m");
+        var rangeLabel = _firewallTimeWindowSeconds switch
+        {
+            <= 60 => "60s",
+            <= 300 => "5 min",
+            _ => "10 min"
+        };
+        FirewallChartTitleText.Text = $"{Strings.T("TrafficTelemetryTitle")} ({rangeLabel})";
+        FirewallTime1mBtn.Content = Strings.T("ChartTime1m");
         FirewallTime1mBtn.ToolTip = Strings.T("ChartTime1mTooltip");
-        FirewallTime5mBtn.Content = heroCompact ? "5m" : Strings.T("ChartTime5m");
+        FirewallTime5mBtn.Content = Strings.T("ChartTime5m");
         FirewallTime5mBtn.ToolTip = Strings.T("ChartTime5mTooltip");
+        FirewallTime10mBtn.Content = Strings.T("ChartTime10m");
+        FirewallTime10mBtn.ToolTip = Strings.T("ChartTime10mTooltip");
         FirewallPeakPill.ToolTip = Strings.T("ChartScaleTooltip");
         FirewallPauseChartBtn.ToolTip = _isFirewallChartPaused ? Strings.T("ChartResumeTooltip") : Strings.T("ChartPauseTooltip");
         FirewallThroughputPill.ToolTip = Strings.T("TopConsumersHeader");
@@ -497,6 +504,7 @@ public partial class MainWindow : Window
         _loading = false;
         UpdateMaximizeButtonIcon();
         UpdateCloseButtonTooltip();
+        UpdateStatus();
     }
 
     public void UpdateCloseButtonTooltip()
@@ -1557,6 +1565,35 @@ public partial class MainWindow : Window
         UpdateFirewallTelemetry(snapshot);
     }
 
+    private bool _isStatusDotPulsing;
+    private void UpdateStatusDotAnimation(NetworkSpeedSnapshot snapshot)
+    {
+        if (StatusDot == null) return;
+        var on = _svc.IsMasterOn;
+        var hasActiveTraffic = on && (snapshot.DownloadBps > 500 || snapshot.UploadBps > 500);
+
+        if (hasActiveTraffic && !_isStatusDotPulsing)
+        {
+            _isStatusDotPulsing = true;
+            var anim = new System.Windows.Media.Animation.DoubleAnimation
+            {
+                From = 1.0,
+                To = 0.45,
+                Duration = TimeSpan.FromMilliseconds(700),
+                AutoReverse = true,
+                RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever,
+                EasingFunction = new System.Windows.Media.Animation.SineEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut }
+            };
+            StatusDot.BeginAnimation(UIElement.OpacityProperty, anim);
+        }
+        else if (!hasActiveTraffic && _isStatusDotPulsing)
+        {
+            _isStatusDotPulsing = false;
+            StatusDot.BeginAnimation(UIElement.OpacityProperty, null);
+            StatusDot.Opacity = 1.0;
+        }
+    }
+
     private void UpdateFirewallTelemetry(NetworkSpeedSnapshot? snapshot = null)
     {
         snapshot ??= NetworkSpeedService.Instance.CurrentSnapshot;
@@ -1571,6 +1608,7 @@ public partial class MainWindow : Window
         }
 
         UpdateFirewallScaleText();
+        UpdateStatusDotAnimation(snapshot);
     }
 
     private void UpdateFirewallScaleText()
@@ -1585,12 +1623,23 @@ public partial class MainWindow : Window
         if (sender is RadioButton btn && int.TryParse(btn.Tag?.ToString(), out int seconds))
         {
             _firewallTimeWindowSeconds = seconds;
-            FirewallChartTitleText.Text = $"{Strings.T("TrafficTelemetryTitle")} ({(_firewallTimeWindowSeconds <= 60 ? "60s" : "5 min")})";
+            var rangeLabel = _firewallTimeWindowSeconds switch
+            {
+                <= 60 => "60s",
+                <= 300 => "5 min",
+                _ => "10 min"
+            };
+            FirewallChartTitleText.Text = $"{Strings.T("TrafficTelemetryTitle")} ({rangeLabel})";
             var snapshot = NetworkSpeedService.Instance.CurrentSnapshot;
             var history = NetworkSpeedService.Instance.GetHistory(_firewallTimeWindowSeconds);
             FirewallTrafficGraph?.SwitchTimeframe(seconds, history, snapshot);
             UpdateFirewallScaleText();
         }
+    }
+
+    public void ToggleFirewallPause()
+    {
+        FirewallPauseChartBtn_Click(FirewallPauseChartBtn, new RoutedEventArgs());
     }
 
     private void FirewallPauseChartBtn_Click(object sender, RoutedEventArgs e)
@@ -2280,17 +2329,6 @@ public partial class MainWindow : Window
         TabTrafficIcon.Margin = iconMargin;
         TabConnectionsIcon.Margin = iconMargin;
         TabStatsIcon.Margin = iconMargin;
-
-        var heroCompact = e.NewSize.Width < 950;
-        if (FirewallPeakPill != null)
-        {
-            FirewallPeakPill.Visibility = heroCompact ? Visibility.Collapsed : Visibility.Visible;
-        }
-        if (FirewallTime1mBtn != null && FirewallTime5mBtn != null)
-        {
-            FirewallTime1mBtn.Content = heroCompact ? "1m" : Strings.T("ChartTime1m");
-            FirewallTime5mBtn.Content = heroCompact ? "5m" : Strings.T("ChartTime5m");
-        }
     }
 
     private bool _isSearchClosing;
@@ -2743,6 +2781,26 @@ public partial class MainWindow : Window
 
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
+        if ((e.Key == System.Windows.Input.Key.Space || e.Key == System.Windows.Input.Key.P) && Keyboard.Modifiers == ModifierKeys.None)
+        {
+            if (e.OriginalSource is not System.Windows.Controls.Primitives.TextBoxBase &&
+                e.OriginalSource is not System.Windows.Controls.PasswordBox)
+            {
+                if (CurrentTab == MainTab.Firewall)
+                {
+                    ToggleFirewallPause();
+                    e.Handled = true;
+                    return;
+                }
+                if (CurrentTab == MainTab.TrafficMonitor && TrafficMonitorTabContent != null)
+                {
+                    TrafficMonitorTabContent.TogglePause();
+                    e.Handled = true;
+                    return;
+                }
+            }
+        }
+
         if (e.Key == System.Windows.Input.Key.F && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
         {
             OpenSearch();

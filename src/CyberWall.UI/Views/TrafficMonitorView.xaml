@@ -218,15 +218,16 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock x:Name="ChartTitleText" Text="Telemetría en Vivo (Últimos 60 segundos)" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="ChartTitleText" Text="Tráfico de Red en Vivo (60s)" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
 
                     <!-- Controls & Legend -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                        <!-- 1m / 5m Time Window Segmented Toggle -->
+                        <!-- 1m / 5m / 10m Time Window Segmented Toggle -->
                         <Border Background="{DynamicResource HeaderBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="2" Margin="0,0,8,0" VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal">
                                 <RadioButton x:Name="Time1mBtn" Content="1 min" Style="{StaticResource ChartSegmentRadioStyle}" IsChecked="True" Click="TimeWindow_Click" Tag="60" ToolTipService.InitialShowDelay="200"/>
                                 <RadioButton x:Name="Time5mBtn" Content="5 min" Style="{StaticResource ChartSegmentRadioStyle}" Click="TimeWindow_Click" Tag="300" ToolTipService.InitialShowDelay="200"/>
+                                <RadioButton x:Name="Time10mBtn" Content="10 min" Style="{StaticResource ChartSegmentRadioStyle}" Click="TimeWindow_Click" Tag="600" ToolTipService.InitialShowDelay="200"/>
                             </StackPanel>
                         </Border>
 

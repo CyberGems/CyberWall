@@ -96,7 +96,13 @@ public partial class TrafficMonitorView : UserControl
     {
         DownTitleLbl.Text = Strings.T("LegendDownload");
         UpTitleLbl.Text = Strings.T("LegendUpload");
-        ChartTitleText.Text = $"{Strings.T("TrafficTelemetryTitle")} ({(_timeWindowSeconds <= 60 ? "60s" : "5 min")})";
+        var rangeLabel = _timeWindowSeconds switch
+        {
+            <= 60 => "60s",
+            <= 300 => "5 min",
+            _ => "10 min"
+        };
+        ChartTitleText.Text = $"{Strings.T("TrafficTelemetryTitle")} ({rangeLabel})";
         LegendDownText.Text = Strings.T("LegendDownload");
         LegendUpText.Text = Strings.T("LegendUpload");
 
@@ -104,6 +110,8 @@ public partial class TrafficMonitorView : UserControl
         Time1mBtn.ToolTip = Strings.T("ChartTime1mTooltip");
         Time5mBtn.Content = Strings.T("ChartTime5m");
         Time5mBtn.ToolTip = Strings.T("ChartTime5mTooltip");
+        Time10mBtn.Content = Strings.T("ChartTime10m");
+        Time10mBtn.ToolTip = Strings.T("ChartTime10mTooltip");
         ChartPeakPill.ToolTip = Strings.T("ChartScaleTooltip");
         PauseChartBtn.ToolTip = _isChartPaused ? Strings.T("ChartResumeTooltip") : Strings.T("ChartPauseTooltip");
 
@@ -234,6 +242,11 @@ public partial class TrafficMonitorView : UserControl
         ChartPeakRateText.Text = $"▲ {Strings.T("ChartScaleLabel", formatted)}";
     }
 
+    public void TogglePause()
+    {
+        PauseChartBtn_Click(PauseChartBtn, new RoutedEventArgs());
+    }
+
     private void PauseChartBtn_Click(object sender, RoutedEventArgs e)
     {
         _isChartPaused = !_isChartPaused;
@@ -252,7 +265,13 @@ public partial class TrafficMonitorView : UserControl
         if (sender is RadioButton btn && int.TryParse(btn.Tag?.ToString(), out int seconds))
         {
             _timeWindowSeconds = seconds;
-            ChartTitleText.Text = $"{Strings.T("TrafficTelemetryTitle")} ({(_timeWindowSeconds <= 60 ? "60s" : "5 min")})";
+            var rangeLabel = _timeWindowSeconds switch
+            {
+                <= 60 => "60s",
+                <= 300 => "5 min",
+                _ => "10 min"
+            };
+            ChartTitleText.Text = $"{Strings.T("TrafficTelemetryTitle")} ({rangeLabel})";
             var snapshot = NetworkSpeedService.Instance.CurrentSnapshot;
             var history = NetworkSpeedService.Instance.GetHistory(_timeWindowSeconds);
             LiveTrafficGraph?.SwitchTimeframe(seconds, history, snapshot);
