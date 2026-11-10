@@ -1480,11 +1480,9 @@ public partial class MainWindow : Window
         var pathHdr = Strings.T("Path") + (_sortBy == "AppPath" ? (_sortAsc ? " ▾" : " ▴") : "");
         var actHdr = Strings.T("Action");
         var dirHdr = Strings.T("Direction") + (_sortBy == "Direction" ? (_sortAsc ? " ▾" : " ▴") : "");
-        var stateHdr = Strings.T("State");
         var countryHdr = Strings.T("Country") + (_sortBy == "Country" ? (_sortAsc ? " ▾" : " ▴") : "");
         var activityHdr = Strings.T("ActivityHeader") + (_sortBy is "Activity" or "IsActiveTraffic" or "Bandwidth" ? (_sortAsc ? " ▾" : " ▴") : "");
 
-        StateHeaderText.Text = stateHdr;
         ActivityHeaderText.Text = activityHdr;
         ProgramHeaderText.Text = progHdr;
         PathHeaderText.Text = pathHdr;
@@ -1512,7 +1510,6 @@ public partial class MainWindow : Window
             ActivityHeaderBorder.ToolTip = Strings.T("ActivitySortTooltip");
         }
 
-        AllowColState.Header = stateHdr;
         AllowColActivity.Header = activityHdr;
         AllowColProg.Header = progHdr;
         AllowColPath.Header = pathHdr;
@@ -1520,7 +1517,6 @@ public partial class MainWindow : Window
         AllowColCountry.Header = countryHdr;
         AllowColDir.Header = dirHdr;
 
-        BlockColState.Header = stateHdr;
         BlockColActivity.Header = activityHdr;
         BlockColProg.Header = progHdr;
         BlockColPath.Header = pathHdr;
@@ -1653,22 +1649,7 @@ public partial class MainWindow : Window
         var r = item.DataContext as AppRule ?? (item.DataContext as AppRuleRow)?.Rule ?? (item.Tag as AppRule) ?? (item.Tag as AppRuleRow)?.Rule;
         if (r == null && (AllowedGrid.SelectedItem as AppRuleRow)?.Rule is { } selRow) r = selRow;
         if (r == null && (BlockedGrid.SelectedItem as AppRuleRow)?.Rule is { } selBlockRow) r = selBlockRow;
-        var path = r?.AppPath;
-        if (string.IsNullOrEmpty(path)) return;
-        try
-        {
-            if (File.Exists(path))
-            {
-                Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = true });
-                return;
-            }
-            var dir = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
-            {
-                Process.Start(new ProcessStartInfo("explorer.exe", dir) { UseShellExecute = true });
-            }
-        }
-        catch { }
+        ShellFolderHelper.OpenFolderAndSelect(r?.AppPath);
     }
 
     private void ContextRemove_Click(object sender, RoutedEventArgs e)
@@ -1703,22 +1684,7 @@ public partial class MainWindow : Window
     {
         if (sender is not FrameworkElement btn) return;
         var r = btn.Tag as AppRule ?? (btn.Tag as AppRuleRow)?.Rule;
-        var path = r?.AppPath;
-        if (string.IsNullOrEmpty(path)) return;
-        try
-        {
-            if (File.Exists(path))
-            {
-                Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = true });
-                return;
-            }
-            var dir = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
-            {
-                Process.Start(new ProcessStartInfo("explorer.exe", dir) { UseShellExecute = true });
-            }
-        }
-        catch { }
+        ShellFolderHelper.OpenFolderAndSelect(r?.AppPath);
     }
 
     private void QuickRemove_Click(object sender, RoutedEventArgs e)
@@ -2050,7 +2016,7 @@ public partial class MainWindow : Window
         HeaderSearchBar.Visibility = Visibility.Visible;
         HeaderSearchBar.IsHitTestVisible = true;
 
-        var widthAnim = new DoubleAnimation(68, 320, TimeSpan.FromMilliseconds(180))
+        var widthAnim = new DoubleAnimation(56, 320, TimeSpan.FromMilliseconds(180))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
@@ -2079,7 +2045,7 @@ public partial class MainWindow : Window
         HeaderSearchBar.IsHitTestVisible = false;
 
         var currentWidth = HeaderSearchBar.ActualWidth > 0 ? HeaderSearchBar.ActualWidth : 320;
-        var widthAnim = new DoubleAnimation(currentWidth, 68, TimeSpan.FromMilliseconds(140))
+        var widthAnim = new DoubleAnimation(currentWidth, 56, TimeSpan.FromMilliseconds(140))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
         };
