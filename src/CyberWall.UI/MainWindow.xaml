@@ -1341,7 +1341,7 @@
                                             <ColumnDefinition x:Name="RulesProgramColumn" Width="1.4*"/>
                                             <ColumnDefinition x:Name="RulesPathColumn" Width="2.2*"/>
                                             <ColumnDefinition x:Name="RulesActionColumn" Width="100"/>
-                                            <ColumnDefinition x:Name="RulesCountryColumn" Width="56"/>
+                                            <ColumnDefinition x:Name="RulesCountryColumn" Width="68"/>
                                             <ColumnDefinition x:Name="RulesDirectionColumn" Width="115"/>
                                             <ColumnDefinition x:Name="RulesActivityColumn" Width="175"/>
                                         </Grid.ColumnDefinitions>
@@ -1688,7 +1688,7 @@
                                                 </DataGridTemplateColumn>
 
                                             <!-- Country of last seen destination -->
-                                            <DataGridTemplateColumn x:Name="AllowColCountry" Header="País" Width="56" CanUserSort="True" SortMemberPath="CountryLabel" HeaderStyle="{StaticResource StateColumnHeader}">
+                                            <DataGridTemplateColumn x:Name="AllowColCountry" Header="País" Width="68" CanUserSort="True" SortMemberPath="CountryLabel" HeaderStyle="{StaticResource StateColumnHeader}">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <ctrl:CountryFlagMark CountryCode="{Binding CountryCode}" HasCountry="{Binding HasCountry}" BadgeText="{Binding CountryCountBadge}" IsFilterActive="{Binding IsCountryFilterActive}" ToolTip="{Binding CountryLabel}" Cursor="Hand" MouseLeftButtonUp="CountryFlag_Click" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1924,7 +1924,7 @@
                                             </DataGridTemplateColumn>
 
                                             <!-- Country of last seen destination -->
-                                            <DataGridTemplateColumn x:Name="BlockColCountry" Header="País" Width="56" CanUserSort="True" SortMemberPath="CountryLabel" HeaderStyle="{StaticResource StateColumnHeader}">
+                                            <DataGridTemplateColumn x:Name="BlockColCountry" Header="País" Width="68" CanUserSort="True" SortMemberPath="CountryLabel" HeaderStyle="{StaticResource StateColumnHeader}">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <ctrl:CountryFlagMark CountryCode="{Binding CountryCode}" HasCountry="{Binding HasCountry}" BadgeText="{Binding CountryCountBadge}" IsFilterActive="{Binding IsCountryFilterActive}" ToolTip="{Binding CountryLabel}" Cursor="Hand" MouseLeftButtonUp="CountryFlag_Click" HorizontalAlignment="Center" VerticalAlignment="Center"/>

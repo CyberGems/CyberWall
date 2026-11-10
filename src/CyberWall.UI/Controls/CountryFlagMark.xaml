@@ -1,16 +1,11 @@
 <UserControl x:Class="CyberWall.UI.Controls.CountryFlagMark"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Height="16">
-    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Center">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-
-        <!-- Flag / World Icon: Always strictly centered in the cell -->
-        <Grid Grid.Column="1" Width="20" Height="13" VerticalAlignment="Center">
+             Height="16" ClipToBounds="False">
+    <!-- Centered zero-displacement layout: the flag is strictly centered, badge sits to its right without moving the flag -->
+    <Grid HorizontalAlignment="Center" VerticalAlignment="Center" ClipToBounds="False">
+        <!-- Flag / World Icon (20x13): always 20px wide at center -->
+        <Grid x:Name="FlagContainer" Width="20" Height="13" HorizontalAlignment="Center" VerticalAlignment="Center">
             <Image x:Name="FlagImage" Width="20" Height="13" Stretch="Uniform"
                    HorizontalAlignment="Center" VerticalAlignment="Center"
                    SnapsToDevicePixels="True" Visibility="Collapsed"/>
@@ -31,11 +26,13 @@
                     Visibility="Collapsed" Margin="-1"/>
         </Grid>
 
-        <!-- Count Badge: Positioned in Column 2 to the right, never displacing the flag -->
-        <Border Grid.Column="2" x:Name="CountBadgeBorder" Margin="3,0,0,0" Padding="3,0" Height="13" CornerRadius="3"
+        <!-- Count Badge: Anchored 23px from the flag's left edge (3px to the right of the 20px flag). -->
+        <!-- Negative right margin (-50) ensures the parent Grid measured width stays 20px, so the flag center NEVER shifts. -->
+        <Border x:Name="CountBadgeBorder" HorizontalAlignment="Left" VerticalAlignment="Center"
+                Margin="23,0,-50,0" Padding="3.5,0" Height="13" CornerRadius="3"
                 Background="{DynamicResource CardSecondaryBrush}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0.6"
-                VerticalAlignment="Center" HorizontalAlignment="Left" Visibility="Collapsed">
+                Visibility="Collapsed">
             <TextBlock x:Name="CountBadgeText" FontSize="8.5" FontWeight="SemiBold"
                        Foreground="{DynamicResource SubTextBrush}"
                        VerticalAlignment="Center" HorizontalAlignment="Center"/>
