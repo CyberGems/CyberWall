@@ -4,6 +4,30 @@ All notable changes to CyberWall are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Published builds and their download links live on the [Releases](https://github.com/CyberGems/CyberWall/releases) page.
 
+## 2.4.0 - 2026-11-10
+
+### Added
+
+- A floating desktop companion widget (`FloatingTrafficWidget`) with real-time spline throughput graphs, session totals, compact mode, always-on-top toggle, and one-click access to the Traffic Monitor.
+- Unified executive hero dashboard row combining the master firewall switch, mode dropdown, live network wave graph, scale indicator, and throughput pills with 1m, 5m, and 10m time ranges.
+- Quick country filtering: clicking a country flag filters rules by destination country with a dedicated filter chip and match count.
+- Animated expandable search bar in the rules header with real-time keyword highlighting, match counters, and recent search history.
+- Context menus with app-themed edit actions (Undo, Redo, Cut, Copy, Paste, Select All, Delete) and "Copy executable name".
+- Space and P keyboard shortcuts to pause and resume the live traffic graphs.
+- Reset window size and position option in the title bar More menu.
+
+### Changed
+
+- Disabled window transparency to enable full GPU rendering and hardware acceleration across Windows versions.
+- Optimized startup and rule loading with non-blocking background initialization and DataGrid row virtualization.
+- Streamlined protection status labels and title bar tooltips for improved layout clarity and multi-monitor scaling.
+
+### Fixed
+
+- Fixed sticky tooltip persistence when moving the cursor quickly between title bar buttons.
+- Fixed bracketed IPv6 endpoint parsing with ports.
+- Fixed country flag alignment in expanded rule lists.
+
 ## 2.3.1 - 2026-10-27
 
 ### Changed

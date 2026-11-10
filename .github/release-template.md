@@ -6,9 +6,8 @@
 
 ### 🚀 What's new in this release
 
-<!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section and highlights with the ACTUAL release notes for this specific new version before tagging. NEVER leave or copy previous version notes! Use 25-45 words for the summary, lead with user-facing changes, and do not repeat the app name or version. Add the same changes to CHANGELOG.md. -->
 <!-- changelog-summary:start -->
-The installer no longer launches command-line tools to register startup or to add firewall rules: the application now creates its scheduled task and its own allow rules. Setup no longer shows the process-creation pattern that antivirus heuristics scored as suspicious.
+Introduces a floating traffic companion widget with real-time spline graphs, an executive hero dashboard uniting the master switch and live bandwidth wave, instant country filtering chips, animated search with keyword highlighting, and responsive layout scaling.
 <!-- changelog-summary:end -->
 
 > **New to CyberWall?** A real-time Windows firewall for viewing per-app traffic and allowing or blocking connections with one click.
@@ -17,18 +16,25 @@ The installer no longer launches command-line tools to register startup or to ad
 
 ### ✨ Key Features & Highlights
 
-- 🧰 **An installer that no longer calls system tools**:
-  - The startup task is registered by the application through the Task Scheduler API, not by `schtasks.exe`.
-  - The allow rules for the application and the service are created by the application, not by `netsh.exe`, and they are refreshed on every start.
-  - The result is the same: a logon task with the highest privileges and allow rules for both executables.
+- 🪟 **Floating Network Companion Widget**:
+  - A lightweight desktop companion window displaying real-time upload/download spline graphs and session totals.
+  - Features compact and expanded view modes, Always on Top pinning, and instant navigation to the Traffic Monitor.
 
-- 🛡️ **Fewer heuristic triggers**:
-  - Setup no longer spawns the command-line tools that read as attacker behaviour, which is what the antivirus engines scored in the previous release.
-  - The uninstaller keeps its own cleanup, so an interrupted installation can still restore the Windows firewall policy.
+- 📊 **Unified Executive Hero Dashboard**:
+  - Sleek single-row layout integrating the master firewall toggle, mode selector, live traffic wave, dynamic scale indicator, and throughput pills.
+  - Added selectable 1m, 5m, and 10m time window ranges with keyboard shortcuts (`Space` / `P`) to pause and resume sampling.
 
-- ✅ **Verification**:
-  - 105 unit tests run before packaging, and the pipeline builds and uploads both artifacts to VirusTotal.
-  - Every release publishes the SHA256 of the installer and the portable archive.
+- 🌍 **Instant Country Filtering & Visual Badges**:
+  - Click any country flag in the rules list to filter connections by destination country instantly.
+  - Active filter chip in the search bar with one-click clear, accompanied by country count badges (`+N`).
+
+- 🔍 **Animated Search & Themed Context Menus**:
+  - Smooth expandable search bar with real-time text matching, hit counts, and recent search history.
+  - Fully themed text context menus (Undo, Redo, Cut, Copy, Paste, Select All, Delete) and "Copy executable name" command.
+
+- ⚡ **Performance & Display Polish**:
+  - Window transparency disabled to unlock full GPU hardware acceleration on modern Windows.
+  - DataGrid row virtualization for smooth scrolling with large rule catalogs, non-blocking startup initialization, and a "Reset window size" option in the title bar menu.
 
 ### ⚠️ Unsigned build
 
@@ -39,24 +45,31 @@ This build is still unsigned while the SignPath Foundation application is under 
 
 ### 🚀 Novedades de esta versión
 
-El instalador ya no lanza herramientas de línea de comandos para registrar el inicio ni para añadir reglas de firewall: la aplicación crea su tarea programada y sus propias reglas de permiso. La instalación deja de mostrar el patrón de creación de procesos que las heurísticas de antivirus marcaban como sospechoso.
+Introduce un widget flotante de tráfico con gráficos spline en tiempo real, un panel ejecutivo que unifica el interruptor principal y la onda de ancho de banda en vivo, filtros rápidos por país, búsqueda animada con resaltado de coincidencias y escalado responsivo.
 
 ---
 
 ### ✨ Novedades destacadas
 
-- 🧰 **Un instalador que ya no llama a herramientas del sistema**:
-  - La tarea de inicio la registra la aplicación con la API del Programador de tareas, no `schtasks.exe`.
-  - Las reglas de permiso de la aplicación y del servicio las crea la propia aplicación, no `netsh.exe`, y se refrescan en cada arranque.
-  - El resultado es el mismo: una tarea al iniciar sesión con privilegios máximos y reglas de permiso para ambos ejecutables.
+- 🪟 **Widget de red flotante**:
+  - Ventana flotante ligera de escritorio que muestra gráficos spline en tiempo real de subida/bajada y totales de sesión.
+  - Ofrece modos compacto y extendido, fijación siempre encima y acceso directo al Monitor de tráfico.
 
-- 🛡️ **Menos disparadores de heurísticas**:
-  - La instalación ya no crea los procesos que se leen como comandos de un atacante, que es lo que marcaron los motores de antivirus en la versión anterior.
-  - El desinstalador conserva su propia limpieza, así una instalación interrumpida todavía puede restaurar la política del firewall de Windows.
+- 📊 **Panel ejecutivo de protección unificado**:
+  - Diseño elegante en una sola fila que integra el interruptor maestro, selector de modo, onda de tráfico en vivo, indicador de escala dinámica y píldoras de velocidad.
+  - Rangos de tiempo seleccionables (1 min, 5 min y 10 min) con atajos de teclado (`Espacio` / `P`) para pausar y reanudar la telemetría.
 
-- ✅ **Verificación**:
-  - 105 pruebas unitarias se ejecutan antes de empaquetar, y la canalización compila y sube ambos artefactos a VirusTotal.
-  - Cada release publica el SHA256 del instalador y del archivo portable.
+- 🌍 **Filtro rápido por país y badges visuales**:
+  - Haz clic en cualquier bandera de país para filtrar al instante las reglas por país de destino.
+  - Chip de filtro activo en la barra de búsqueda con eliminación en un clic e indicadores de recuento de países (`+N`).
+
+- 🔍 **Búsqueda animada y menús contextuales temáticos**:
+  - Barra de búsqueda expandible con animación fluida, resaltado de texto coincidente en tiempo real, contador de coincidencias e historial de búsquedas recientes.
+  - Menús contextuales propios del tema de la aplicación (Deshacer, Rehacer, Cortar, Copiar, Pegar, Seleccionar todo, Eliminar) y comando para "Copiar nombre del ejecutable".
+
+- ⚡ **Rendimiento y refinamiento visual**:
+  - Renderizado directo por GPU desbloqueado al prescindir de transparencia en la ventana principal.
+  - Virtualización de filas en DataGrid para desplazamiento ultrarrápido con catálogos grandes de reglas, inicialización en segundo plano sin bloqueos y opción de "Restablecer tamaño de ventana" en el menú superior.
 
 ### ⚠️ Compilación sin firmar
 
