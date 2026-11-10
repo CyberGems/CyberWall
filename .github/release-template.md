@@ -36,10 +36,6 @@ Introduces a floating traffic companion widget with real-time spline graphs, an 
   - Window transparency disabled to unlock full GPU hardware acceleration on modern Windows.
   - DataGrid row virtualization for smooth scrolling with large rule catalogs, non-blocking startup initialization, and a "Reset window size" option in the title bar menu.
 
-### ⚠️ Unsigned build
-
-This build is still unsigned while the SignPath Foundation application is under review. Verify the file with the SHA256 below or with the VirusTotal report. If a browser or Defender blocks the download, the [installation guide](https://github.com/CyberGems/CyberWall/wiki/Installation-and-Setup#antivirus-false-positives) explains how to keep it.
-
 <details>
 <summary><b>🌐 Ver notas de la versión en Español</b></summary>
 
@@ -70,10 +66,6 @@ Introduce un widget flotante de tráfico con gráficos spline en tiempo real, un
 - ⚡ **Rendimiento y refinamiento visual**:
   - Renderizado directo por GPU desbloqueado al prescindir de transparencia en la ventana principal.
   - Virtualización de filas en DataGrid para desplazamiento ultrarrápido con catálogos grandes de reglas, inicialización en segundo plano sin bloqueos y opción de "Restablecer tamaño de ventana" en el menú superior.
-
-### ⚠️ Compilación sin firmar
-
-Esta compilación sigue sin firmar mientras se revisa la solicitud a SignPath Foundation. Verifica el archivo con el SHA256 de abajo o con el informe de VirusTotal. Si un navegador o Defender bloquean la descarga, la [guía de instalación](https://github.com/CyberGems/CyberWall/wiki/Installation-and-Setup#antivirus-false-positives) explica cómo conservarla.
 
 </details>
 
