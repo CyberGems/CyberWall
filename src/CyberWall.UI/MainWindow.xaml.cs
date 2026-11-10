@@ -632,6 +632,7 @@ public partial class MainWindow : Window
         _notifications.RemoveRelated(AppNotificationKind.PendingDecision, appPath);
     }
 
+    private int _lastNotifCount;
     private void UpdateNotifBadge()
     {
         UpdateAvailableButtonState();
@@ -640,10 +641,62 @@ public partial class MainWindow : Window
         if (count <= 0)
         {
             NotifBadge.Visibility = Visibility.Collapsed;
+            _lastNotifCount = 0;
             return;
         }
         NotifBadgeText.Text = count > 99 ? "99+" : count.ToString();
         NotifBadge.Visibility = Visibility.Visible;
+        if (count > _lastNotifCount)
+        {
+            TriggerNotifPulse();
+        }
+        _lastNotifCount = count;
+    }
+
+    private void TriggerNotifPulse()
+    {
+        if (NotifBadge != null)
+        {
+            var scale = new ScaleTransform(1.0, 1.0);
+            NotifBadge.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
+            NotifBadge.RenderTransform = scale;
+
+            var anim = new DoubleAnimationUsingKeyFrames
+            {
+                Duration = TimeSpan.FromMilliseconds(650),
+                KeyFrames = new DoubleKeyFrameCollection
+                {
+                    new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)),
+                    new EasingDoubleKeyFrame(1.35, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(220)), new QuadraticEase { EasingMode = EasingMode.EaseOut }),
+                    new EasingDoubleKeyFrame(0.92, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(420)), new QuadraticEase { EasingMode = EasingMode.EaseInOut }),
+                    new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(650)), new QuadraticEase { EasingMode = EasingMode.EaseOut }),
+                }
+            };
+            scale.BeginAnimation(ScaleTransform.ScaleXProperty, anim);
+            scale.BeginAnimation(ScaleTransform.ScaleYProperty, anim);
+        }
+
+        if (NotifBellPath != null)
+        {
+            var rotate = new RotateTransform(0);
+            NotifBellPath.RenderTransformOrigin = new System.Windows.Point(0.5, 0.15);
+            NotifBellPath.RenderTransform = rotate;
+
+            var swingAnim = new DoubleAnimationUsingKeyFrames
+            {
+                Duration = TimeSpan.FromMilliseconds(650),
+                KeyFrames = new DoubleKeyFrameCollection
+                {
+                    new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)),
+                    new EasingDoubleKeyFrame(-12, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(120)), new QuadraticEase { EasingMode = EasingMode.EaseOut }),
+                    new EasingDoubleKeyFrame(10, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(260)), new QuadraticEase { EasingMode = EasingMode.EaseInOut }),
+                    new EasingDoubleKeyFrame(-6, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(390)), new QuadraticEase { EasingMode = EasingMode.EaseInOut }),
+                    new EasingDoubleKeyFrame(3, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(510)), new QuadraticEase { EasingMode = EasingMode.EaseInOut }),
+                    new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(650)), new QuadraticEase { EasingMode = EasingMode.EaseOut }),
+                }
+            };
+            rotate.BeginAnimation(RotateTransform.AngleProperty, swingAnim);
+        }
     }
 
     public void ShowNotifications()

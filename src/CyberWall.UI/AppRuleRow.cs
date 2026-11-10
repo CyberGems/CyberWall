@@ -29,6 +29,7 @@ public sealed class AppRuleRow : INotifyPropertyChanged
                 _recentCountries = value;
                 OnPropertyChanged(nameof(RecentCountries));
                 OnPropertyChanged(nameof(CountryLabel));
+                OnPropertyChanged(nameof(CountryCountBadge));
             }
         }
     }
@@ -44,6 +45,7 @@ public sealed class AppRuleRow : INotifyPropertyChanged
             OnPropertyChanged(nameof(CountryCode));
             OnPropertyChanged(nameof(RecentCountries));
             OnPropertyChanged(nameof(CountryLabel));
+            OnPropertyChanged(nameof(CountryCountBadge));
         }
     }
 
@@ -62,6 +64,9 @@ public sealed class AppRuleRow : INotifyPropertyChanged
     public Verdict OutboundVerdict => Rule.EffectiveOutboundVerdict;
     public bool HasCountry => Geo.HasCountry;
     public string CountryCode => Geo.HasCountry ? Geo.Iso2 ?? "" : "";
+    public string CountryCountBadge => RecentCountries != null && RecentCountries.Count > 1
+        ? $"+{RecentCountries.Count - 1}"
+        : string.Empty;
     public string CountryLabel
     {
         get

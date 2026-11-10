@@ -55,10 +55,10 @@ public sealed class DirectionDisplayConverter : IValueConverter
 
 public sealed class DirectionPathConverter : IValueConverter
 {
-    private const string PathBoth = "M 0 1.5 H 6.5 V 0 L 11 2.75 L 6.5 5.5 V 4 H 0 Z M 11 7.5 H 4.5 V 6 L 0 8.75 L 4.5 11.5 V 10 H 11 Z";
-    private const string PathOutbound = "M 5.5 0 L 10.5 4.5 H 7.5 V 11 H 3.5 V 4.5 H 0.5 Z";
-    private const string PathInbound = "M 3.5 0 H 7.5 V 6.5 H 10.5 L 5.5 11 L 0.5 6.5 H 3.5 Z";
-    private const string PathNone = "M 1 4.5 H 10 V 6.5 H 1 Z M 5.5 0.5 A 5 5 0 1 0 5.5 10.5 A 5 5 0 1 0 5.5 0.5 M 5.5 2 A 3.5 3.5 0 1 1 5.5 9 A 3.5 3.5 0 1 1 5.5 2";
+    private const string PathBoth = "M 1.5 3.5 H 10.5 M 7.5 1 L 10.5 3.5 L 7.5 6 M 10.5 8.5 H 1.5 M 4.5 6 L 1.5 8.5 L 4.5 11";
+    private const string PathOutbound = "M 6 10.5 V 1.5 M 2.5 5 L 6 1.5 L 9.5 5";
+    private const string PathInbound = "M 6 1.5 V 10.5 M 2.5 7 L 6 10.5 L 9.5 7";
+    private const string PathNone = "M 1 6 A 5 5 0 1 0 11 6 A 5 5 0 1 0 1 6 M 3.2 6 H 8.8";
 
     public object Convert(object v, Type _, object __, CultureInfo ___)
     {

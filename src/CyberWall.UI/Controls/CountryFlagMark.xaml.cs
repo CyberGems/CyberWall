@@ -19,6 +19,10 @@ public partial class CountryFlagMark : System.Windows.Controls.UserControl
         DependencyProperty.Register(nameof(HasCountry), typeof(bool), typeof(CountryFlagMark),
             new PropertyMetadata(false, (d, _) => ((CountryFlagMark)d).Refresh()));
 
+    public static readonly DependencyProperty BadgeTextProperty =
+        DependencyProperty.Register(nameof(BadgeText), typeof(string), typeof(CountryFlagMark),
+            new PropertyMetadata("", (d, _) => ((CountryFlagMark)d).RefreshBadge()));
+
     public string CountryCode
     {
         get => (string)GetValue(CountryCodeProperty);
@@ -31,6 +35,12 @@ public partial class CountryFlagMark : System.Windows.Controls.UserControl
         set => SetValue(HasCountryProperty, value);
     }
 
+    public string BadgeText
+    {
+        get => (string)GetValue(BadgeTextProperty);
+        set => SetValue(BadgeTextProperty, value);
+    }
+
     public void Apply(GeoResult result)
     {
         HasCountry = result.HasCountry;
@@ -39,8 +49,23 @@ public partial class CountryFlagMark : System.Windows.Controls.UserControl
         Refresh();
     }
 
+    private void RefreshBadge()
+    {
+        if (CountBadgeBorder == null || CountBadgeText == null) return;
+        if (!string.IsNullOrEmpty(BadgeText))
+        {
+            CountBadgeText.Text = BadgeText;
+            CountBadgeBorder.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            CountBadgeBorder.Visibility = Visibility.Collapsed;
+        }
+    }
+
     private void Refresh()
     {
+        RefreshBadge();
         if (FlagImage == null || UnknownFlagBorder == null) return;
         var src = HasCountry ? FlagPainter.Create(CountryCode) : null;
         if (src != null)
