@@ -62,9 +62,9 @@
                                 <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardBrush}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-                                <Setter TargetName="Bd" Property="BorderThickness" Value="1"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentGlowBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="Transparent"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="0"/>
                                 <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -174,7 +174,7 @@
                         <TextBlock Text="🔍" FontSize="11" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <Grid Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock x:Name="SearchPlaceholder" Text="Filtrar en el registro (app, IP, puerto)..." Foreground="{DynamicResource SubTextBrush}" FontSize="11.5" VerticalAlignment="Center" IsHitTestVisible="False" Opacity="0.55"/>
-                            <TextBox x:Name="SearchBox" Background="Transparent" Foreground="{DynamicResource TextBrush}" CaretBrush="{DynamicResource AccentBrush}" BorderThickness="0" VerticalAlignment="Center" FontSize="11.5" TextChanged="SearchBox_TextChanged"/>
+                            <TextBox x:Name="SearchBox" Background="Transparent" Foreground="{DynamicResource TextBrush}" CaretBrush="{DynamicResource AccentBrush}" BorderThickness="0" VerticalAlignment="Center" FontSize="11.5" TextChanged="SearchBox_TextChanged" ctrl:TextFieldContextMenu.Enabled="True"/>
                         </Grid>
                     </Grid>
                 </Border>

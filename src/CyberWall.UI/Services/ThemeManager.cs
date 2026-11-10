@@ -115,7 +115,18 @@ public static class ThemeManager
     {
         var p = Palettes[theme];
         var res = WApp.Current.Resources;
-        void Set(string k, string hex) => res[k] = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex)!);
+        void Set(string k, string hex)
+        {
+            var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex)!;
+            if (res.Contains(k) && res[k] is System.Windows.Media.SolidColorBrush existing && !existing.IsFrozen)
+            {
+                existing.Color = color;
+            }
+            else
+            {
+                res[k] = new System.Windows.Media.SolidColorBrush(color);
+            }
+        }
         Set("BgBrush", p.Bg);
         Set("CardBrush", p.Card);
         Set("CardSecondaryBrush", p.CardSecondary);
