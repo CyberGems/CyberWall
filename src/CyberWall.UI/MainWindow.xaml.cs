@@ -2336,11 +2336,28 @@ public partial class MainWindow : Window
     public bool IsTrafficWidgetVisible => _trafficWidget?.IsVisible == true;
 
     /// <summary>
+    /// Computes the protection state and mode to push to the floating widget, accounting
+    /// for startup enabling and external ownership by the Windows service.
+    /// </summary>
+    internal static (bool Active, FirewallMode Mode) ResolveWidgetFirewallState(
+        bool isEnabling,
+        bool ownedByAnotherHost,
+        bool isMasterOn,
+        FirewallMode configuredMode,
+        FirewallMode serviceMode)
+    {
+        if (isEnabling) return (true, configuredMode);
+        if (ownedByAnotherHost) return (true, serviceMode);
+        return (isMasterOn, serviceMode);
+    }
+
+    /// <summary>
     /// Shows or hides the floating traffic widget and keeps the setting in sync so it comes
     /// back on the next start when it was left open.
     /// </summary>
     public void SetTrafficWidgetVisible(bool visible)
     {
+        bool boundsUpdated = false;
         if (visible)
         {
             if (_trafficWidget == null)
@@ -2362,7 +2379,13 @@ public partial class MainWindow : Window
                 _trafficWidget.ShowMainWindowRequested += ShowMainWindow;
             }
 
-            _trafficWidget.SetFirewallState(_svc.OwnedByAnotherHost || _svc.IsMasterOn, _svc.Mode);
+            var (widgetActive, widgetMode) = ResolveWidgetFirewallState(
+                _isEnabling,
+                _svc.OwnedByAnotherHost,
+                _svc.IsMasterOn,
+                App.Settings.FirewallMode,
+                _svc.Mode);
+            _trafficWidget.SetFirewallState(widgetActive, widgetMode);
             _trafficWidget.Show();
         }
         else
@@ -2372,13 +2395,17 @@ public partial class MainWindow : Window
                 App.Settings.TrafficWidgetLeft = _trafficWidget.Left;
                 App.Settings.TrafficWidgetTop = _trafficWidget.Top;
                 App.Settings.TrafficWidgetBoundsSaved = true;
+                boundsUpdated = true;
             }
             _trafficWidget?.Hide();
         }
 
         UpdateWidgetButtonState(visible);
-        App.Settings.TrafficWidgetVisible = visible;
-        App.Settings.Save();
+        if (App.Settings.TrafficWidgetVisible != visible || boundsUpdated)
+        {
+            App.Settings.TrafficWidgetVisible = visible;
+            App.Settings.Save();
+        }
     }
 
     private void UpdateWidgetButtonState(bool visible)

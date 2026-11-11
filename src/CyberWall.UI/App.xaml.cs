@@ -122,6 +122,12 @@ public partial class App : System.Windows.Application
         if (isStartingMinimized)
         {
             mainWindow.CheckForUpdatesOnStartup();
+            if (Settings.TrafficWidgetVisible)
+            {
+                // Loaded does not run while MainWindow stays hidden in the tray, so restore
+                // the floating widget explicitly when it was left open in the last session.
+                mainWindow.SetTrafficWidgetVisible(true);
+            }
         }
         else
         {
