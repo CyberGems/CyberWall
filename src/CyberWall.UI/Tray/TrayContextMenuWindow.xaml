@@ -99,6 +99,45 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Clickable Menu Row with Embedded Toggle Switch -->
+        <Style x:Key="MenuActionToggleStyle" TargetType="CheckBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0" VerticalAlignment="Center"/>
+                                <CheckBox Grid.Column="1" Style="{StaticResource MenuToggleSwitch}"
+                                          IsChecked="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                          IsHitTestVisible="False" Focusable="False" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid>
@@ -200,6 +239,14 @@
                         <TextBlock x:Name="StatsText" Text="Estadísticas de tráfico" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
+
+                <!-- Floating Traffic Widget Toggle -->
+                <CheckBox x:Name="WidgetSwitch" Style="{StaticResource MenuActionToggleStyle}" Checked="WidgetSwitch_Changed" Unchecked="WidgetSwitch_Changed">
+                    <StackPanel Orientation="Horizontal">
+                        <Path x:Name="WidgetIcon" Data="M 3 4 H 21 V 18 H 3 Z M 3 8 H 21 M 6 15 L 9 11 L 12 14 L 15 10 L 18 13" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="13" Height="14" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center" Fill="Transparent"/>
+                        <TextBlock x:Name="WidgetText" Text="Widget flotante" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </CheckBox>
 
                 <!-- Help (Expandable Accordion) -->
                 <Button x:Name="HelpBtn" Style="{StaticResource MenuActionButtonStyle}" Click="Help_Click">

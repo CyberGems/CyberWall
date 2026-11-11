@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Interop;
 using System.Windows.Media;
 using CyberWall.Common.I18n;
@@ -32,6 +33,7 @@ public partial class TrayContextMenuWindow : Window
         Title = Strings.T("WindowTrayMenu");
         LoadLocalizedStrings();
         UpdateProtectionState();
+        UpdateWidgetState();
 
         WindowStartupLocation = WindowStartupLocation.Manual;
         SizeChanged += (_, _) => PositionWindow();
@@ -135,6 +137,9 @@ public partial class TrayContextMenuWindow : Window
         SettingsText.Text = Strings.T("Settings");
         LogText.Text = Strings.T("OpenLog");
         StatsText.Text = Strings.T("StatsMenu");
+        var widgetLabel = Strings.T("TrayFloatingWidget");
+        WidgetText.Text = widgetLabel;
+        AutomationProperties.SetName(WidgetSwitch, widgetLabel);
         HelpText.Text = Strings.T("Help");
         SubHelpText.Text = Strings.T("Help");
         SubFaqText.Text = Strings.T("Faq");
@@ -159,6 +164,15 @@ public partial class TrayContextMenuWindow : Window
             FirewallMode.Killswitch => Strings.T("ModeKillswitch"),
             _ => Strings.T("ModeAsk")
         };
+        _updatingUi = false;
+    }
+
+    private void UpdateWidgetState()
+    {
+        _updatingUi = true;
+        bool active = _mainWindow.IsTrafficWidgetVisible;
+        WidgetSwitch.IsChecked = active;
+        WidgetIcon.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, active ? "AccentBrush" : "SubTextBrush");
         _updatingUi = false;
     }
 
@@ -212,6 +226,14 @@ public partial class TrayContextMenuWindow : Window
         App.Settings.Save();
         _mainWindow.Dispatcher.Invoke(() => _mainWindow.RefreshStatusFromExternal());
         UpdateProtectionState();
+    }
+
+    private void WidgetSwitch_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_updatingUi) return;
+        bool visible = WidgetSwitch.IsChecked == true;
+        _mainWindow.Dispatcher.Invoke(() => _mainWindow.SetTrafficWidgetVisible(visible));
+        UpdateWidgetState();
     }
 
     private void OpenApp_Click(object sender, RoutedEventArgs e)

@@ -232,6 +232,7 @@ public static class Strings
         ["WidgetTipPeak"] = ("Peak (60s)", "Pico (60s)"),
         ["WidgetHistoryHint"] = ("Live history of the last 60 seconds", "Historial en vivo de los últimos 60 segundos"),
         ["FloatingWidgetTooltip"] = ("Toggle floating network widget", "Alternar widget de red flotante"),
+        ["TrayFloatingWidget"] = ("Floating widget", "Widget flotante"),
         ["NotificationPosition"] = ("Notification position", "Posición de notificación"),
         ["PosDesc"] = ("Choose where connection alerts appear.", "Elegir dónde aparecen las alertas de conexión."),
         ["NotificationMonitor"] = ("Notification monitor", "Monitor de notificación"),

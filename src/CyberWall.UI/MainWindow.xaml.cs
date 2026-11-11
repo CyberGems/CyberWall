@@ -2332,11 +2332,14 @@ public partial class MainWindow : Window
     private void MoreWidget_Click(object sender, RoutedEventArgs e) =>
         SetTrafficWidgetVisible(_trafficWidget?.IsVisible != true);
 
+    /// <summary>True while the floating traffic widget window is visible on screen.</summary>
+    public bool IsTrafficWidgetVisible => _trafficWidget?.IsVisible == true;
+
     /// <summary>
     /// Shows or hides the floating traffic widget and keeps the setting in sync so it comes
     /// back on the next start when it was left open.
     /// </summary>
-    private void SetTrafficWidgetVisible(bool visible)
+    public void SetTrafficWidgetVisible(bool visible)
     {
         if (visible)
         {
