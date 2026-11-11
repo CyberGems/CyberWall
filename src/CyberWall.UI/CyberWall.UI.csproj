@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <InternalsVisibleTo Include="CyberWall.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\CyberWall.Common\CyberWall.Common.csproj" />
     <ProjectReference Include="..\CyberWall.Service\CyberWall.Service.csproj" />
   </ItemGroup>

@@ -27,6 +27,7 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
     private double _wavePhase = 0.0;
     private const int WaveSegments = 48;
     private readonly WPoint[] _wavePoints = new WPoint[WaveSegments + 1];
+    private Window? _hostWindow;
     private bool _isRenderingHooked;
     private bool _wasFlat;
 
@@ -43,6 +44,13 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         RefreshLanguage();
         Loaded += (_, _) =>
         {
+            if (_hostWindow != null) _hostWindow.StateChanged -= OnHostWindowStateChanged;
+            _hostWindow = Window.GetWindow(this);
+            if (_hostWindow != null) _hostWindow.StateChanged += OnHostWindowStateChanged;
+
+            RenderStabilityManager.Instance.RenderPausedChanged -= OnRenderPausedChanged;
+            RenderStabilityManager.Instance.RenderPausedChanged += OnRenderPausedChanged;
+
             UpdateRenderingState();
 
             ConnectivityService.Instance.ConnectivityChanged += OnConnectivityChanged;
@@ -54,6 +62,10 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         };
         Unloaded += (_, _) =>
         {
+            if (_hostWindow != null) _hostWindow.StateChanged -= OnHostWindowStateChanged;
+            _hostWindow = null;
+
+            RenderStabilityManager.Instance.RenderPausedChanged -= OnRenderPausedChanged;
             UnhookRendering();
 
             ConnectivityService.Instance.ConnectivityChanged -= OnConnectivityChanged;
@@ -64,12 +76,23 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
         IsVisibleChanged += (_, _) => UpdateRenderingState();
     }
 
+    private void OnHostWindowStateChanged(object? sender, EventArgs e) => UpdateRenderingState();
+
+    private void OnRenderPausedChanged(bool paused)
+    {
+        UpdateRenderingState();
+        if (!paused)
+        {
+            OnSpeedUpdated(NetworkSpeedService.Instance.CurrentSnapshot);
+        }
+    }
+
     private void UpdateRenderingState()
     {
-        bool shouldRender = IsLoaded && IsVisible;
+        bool shouldRender = IsLoaded && IsVisible && !RenderStabilityManager.Instance.IsRenderPaused;
         if (shouldRender)
         {
-            var win = Window.GetWindow(this);
+            var win = _hostWindow ?? Window.GetWindow(this);
             if (win != null && win.WindowState == WindowState.Minimized)
                 shouldRender = false;
         }
@@ -104,6 +127,8 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
 
     private void OnSpeedUpdated(NetworkSpeedSnapshot snapshot)
     {
+        if (RenderStabilityManager.Instance.IsRenderPaused) return;
+
         if (!Dispatcher.CheckAccess())
         {
             Dispatcher.BeginInvoke(() => OnSpeedUpdated(snapshot));
@@ -171,15 +196,18 @@ public partial class NetworkTrafficIndicator : System.Windows.Controls.UserContr
 
     private void OnRendering(object? sender, EventArgs e)
     {
-        if (!IsVisible)
+        if (!IsVisible || RenderStabilityManager.Instance.IsRenderPaused)
         {
             UnhookRendering();
             return;
         }
 
-        var window = Window.GetWindow(this);
+        var window = _hostWindow ?? Window.GetWindow(this);
         if (window != null && window.WindowState == WindowState.Minimized)
+        {
+            UnhookRendering();
             return;
+        }
 
         var current = _stopwatch.Elapsed;
         var elapsed = (current - _lastRenderingTime).TotalSeconds;

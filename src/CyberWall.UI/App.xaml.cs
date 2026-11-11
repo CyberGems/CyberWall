@@ -112,6 +112,7 @@ public partial class App : System.Windows.Application
 
         Strings.Current = Settings.Language;
         ThemeManager.Apply(Settings.Theme);
+        RenderStabilityManager.Instance.Attach(this);
 
         base.OnStartup(e);
 
@@ -198,6 +199,7 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        RenderStabilityManager.Instance.Detach();
         try
         {
             _singleInstanceMutex?.ReleaseMutex();

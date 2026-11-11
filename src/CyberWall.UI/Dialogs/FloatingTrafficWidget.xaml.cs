@@ -35,7 +35,12 @@ public partial class FloatingTrafficWidget : Window
     private static readonly MediaColor WarningColor = MediaColor.FromRgb(0xFB, 0x92, 0x3C);
     private static readonly MediaColor OfflineColor = MediaColor.FromRgb(0xEF, 0x44, 0x44);
 
+    private static readonly SolidColorBrush OnlineDotBrush = FreezeDotBrush(OnlineColor);
+    private static readonly SolidColorBrush WarningDotBrush = FreezeDotBrush(WarningColor);
+    private static readonly SolidColorBrush OfflineDotBrush = FreezeDotBrush(OfflineColor);
+
     private readonly DispatcherTimer _timer;
+    private IntPtr _windowHandle;
     private bool _positionApplied;
     private bool _firewallActive = true;
     private FirewallMode _firewallMode = FirewallMode.Ask;
@@ -84,6 +89,7 @@ public partial class FloatingTrafficWidget : Window
         _timer.Tick += (_, _) => RefreshData();
 
         ConnectivityService.Instance.ConnectivityChanged += OnConnectivityChanged;
+        RenderStabilityManager.Instance.RenderPausedChanged += OnRenderPausedChanged;
 
         Loaded += (_, _) => ApplyInitialPosition();
         IsVisibleChanged += Widget_IsVisibleChanged;
@@ -205,6 +211,8 @@ public partial class FloatingTrafficWidget : Window
 
     private void RefreshData()
     {
+        if (RenderStabilityManager.Instance.IsRenderPaused) return;
+
         var service = NetworkSpeedService.Instance;
         // Keep the shared sampler alive even when the main window is hidden in the tray and
         // its indicator has stopped it. Start() is a no-op while it is already running.
@@ -257,8 +265,14 @@ public partial class FloatingTrafficWidget : Window
         AdapterVal.Text = string.IsNullOrWhiteSpace(_snapshot.AdapterName) ? "-" : _snapshot.AdapterName;
         // Red while readings are muted, amber while protection is off (traffic is real but
         // unfiltered) and green while protection is active, mirroring the main indicator.
-        var dotColor = IsMuted ? OfflineColor : !_firewallActive ? WarningColor : OnlineColor;
-        StatusDot.Fill = new SolidColorBrush(dotColor);
+        StatusDot.Fill = IsMuted ? OfflineDotBrush : !_firewallActive ? WarningDotBrush : OnlineDotBrush;
+    }
+
+    private static SolidColorBrush FreezeDotBrush(MediaColor color)
+    {
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+        return brush;
     }
 
     #endregion
@@ -331,7 +345,9 @@ public partial class FloatingTrafficWidget : Window
 
         if (PresentationSource.FromVisual(this) is HwndSource source)
         {
+            _windowHandle = source.Handle;
             source.AddHook(WindowMessageHook);
+            RenderStabilityManager.Instance.RegisterWindow(_windowHandle);
         }
     }
 
@@ -341,12 +357,31 @@ public partial class FloatingTrafficWidget : Window
         {
             // Coming back from a hidden period, the display layout may have changed meanwhile.
             if (_positionApplied) MoveOnScreen(Left, Top);
-            RefreshData();
-            _timer.Start();
+            if (!RenderStabilityManager.Instance.IsRenderPaused)
+            {
+                RefreshData();
+                _timer.Start();
+            }
         }
         else
         {
             _timer.Stop();
+        }
+    }
+
+    private void OnRenderPausedChanged(bool paused)
+    {
+        if (paused)
+        {
+            _timer.Stop();
+            return;
+        }
+
+        if (IsVisible)
+        {
+            if (_positionApplied) MoveOnScreen(Left, Top);
+            RefreshData();
+            _timer.Start();
         }
     }
 
@@ -359,11 +394,13 @@ public partial class FloatingTrafficWidget : Window
         }
 
         _online = online;
-        RefreshData();
+        if (!RenderStabilityManager.Instance.IsRenderPaused) RefreshData();
     }
 
     private IntPtr WindowMessageHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        RenderStabilityManager.Instance.HandleWindowMessage(msg, wParam);
+
         if (msg == WM_DISPLAYCHANGE)
         {
             // A monitor was added, removed or rearranged while the widget is on screen.
@@ -387,6 +424,9 @@ public partial class FloatingTrafficWidget : Window
     {
         _timer.Stop();
         ConnectivityService.Instance.ConnectivityChanged -= OnConnectivityChanged;
+        RenderStabilityManager.Instance.RenderPausedChanged -= OnRenderPausedChanged;
+        RenderStabilityManager.Instance.UnregisterWindow(_windowHandle);
+        _windowHandle = IntPtr.Zero;
         if (!_positionApplied) return;
 
         // The widget only closes at application shutdown; persist its last position.

@@ -144,6 +144,7 @@ public partial class MainWindow : Window
     private TrayService? _tray;
     private UpdateCheckResult? _activeUpdateResult;
     private Dialogs.FloatingTrafficWidget? _trafficWidget;
+    private IntPtr _windowHandle;
 
     private static readonly SolidColorBrush UpdateNormalBgBrush = new(System.Windows.Media.Color.FromRgb(0x1D, 0x26, 0x36));
     private static readonly SolidColorBrush UpdateNormalBorderBrush = new(System.Windows.Media.Color.FromRgb(0x2D, 0x3A, 0x4E));
@@ -223,6 +224,8 @@ public partial class MainWindow : Window
         ProcessTrafficTracker.Instance.Start();
         NetworkSpeedService.Instance.SpeedUpdated += OnNetworkSpeedUpdated;
         NetworkSpeedService.Instance.Start();
+        RenderStabilityManager.Instance.RenderPausedChanged += OnRenderPausedChanged;
+        RenderStabilityManager.Instance.SoftwareFallbackActivated += OnSoftwareFallbackActivated;
         ConnectivityService.Instance.Start(_notifications);
         AppInfoMonitorService.Instance.Start(_notifications, _svc);
         PathToIconConverter.IconChanged += OnAppIconChanged;
@@ -239,6 +242,10 @@ public partial class MainWindow : Window
             ProcessTrafficTracker.Instance.ActivityUpdated -= OnActivityUpdated;
             ProcessTrafficTracker.Instance.Stop();
             NetworkSpeedService.Instance.SpeedUpdated -= OnNetworkSpeedUpdated;
+            RenderStabilityManager.Instance.RenderPausedChanged -= OnRenderPausedChanged;
+            RenderStabilityManager.Instance.SoftwareFallbackActivated -= OnSoftwareFallbackActivated;
+            RenderStabilityManager.Instance.UnregisterWindow(_windowHandle);
+            _windowHandle = IntPtr.Zero;
             GeoCountry.Updated -= OnGeoUpdated;
             _svc.OnAllowedActivity -= OnAllowedActivity;
             if (!_svc.OwnedByAnotherHost)
@@ -259,7 +266,12 @@ public partial class MainWindow : Window
             }
             _svc.Dispose();
         };
-        StateChanged += (_, _) => Dispatcher.InvokeAsync(UpdateMaximizeButtonIcon);
+        StateChanged += (_, _) =>
+        {
+            Dispatcher.InvokeAsync(UpdateMaximizeButtonIcon);
+            UpdateStatusDotState();
+        };
+        IsVisibleChanged += (_, _) => UpdateStatusDotState();
         UpdateMaximizeButtonIcon();
         Loaded += (_, _) =>
         {
@@ -297,7 +309,12 @@ public partial class MainWindow : Window
     {
         base.OnSourceInitialized(e);
         var source = PresentationSource.FromVisual(this) as HwndSource;
-        source?.AddHook(WndProc);
+        if (source != null)
+        {
+            _windowHandle = source.Handle;
+            source.AddHook(WndProc);
+            RenderStabilityManager.Instance.RegisterWindow(_windowHandle);
+        }
 
         if (!_layoutRestored)
         {
@@ -308,6 +325,7 @@ public partial class MainWindow : Window
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        RenderStabilityManager.Instance.HandleWindowMessage(msg, wParam);
         const int WM_DPICHANGED = 0x02E0;
         const int WM_MOUSEACTIVATE = 0x0021;
         const int WM_SETCURSOR = 0x0020;
@@ -1635,23 +1653,50 @@ public partial class MainWindow : Window
 
     private void OnNetworkSpeedUpdated(NetworkSpeedSnapshot snapshot)
     {
-        if (CurrentTab != MainTab.Firewall) return;
+        if (CurrentTab != MainTab.Firewall || RenderStabilityManager.Instance.IsRenderPaused) return;
 
         if (!Dispatcher.CheckAccess())
         {
-            Dispatcher.BeginInvoke(() => OnNetworkSpeedUpdated(snapshot));
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (CurrentTab == MainTab.Firewall && !RenderStabilityManager.Instance.IsRenderPaused)
+                    UpdateFirewallTelemetry(snapshot);
+            });
             return;
         }
 
         UpdateFirewallTelemetry(snapshot);
     }
 
+    private void OnRenderPausedChanged(bool paused)
+    {
+        if (paused)
+        {
+            StopStatusDotAnimation();
+            return;
+        }
+
+        if (CurrentTab == MainTab.Firewall && IsVisible && WindowState != WindowState.Minimized)
+        {
+            UpdateFirewallTelemetry();
+        }
+    }
+
+    private void OnSoftwareFallbackActivated()
+    {
+        if (HeroShadowBackdrop != null)
+        {
+            HeroShadowBackdrop.Effect = null;
+        }
+    }
+
     private bool _isStatusDotPulsing;
     private void UpdateStatusDotAnimation(NetworkSpeedSnapshot snapshot)
     {
         if (StatusDot == null) return;
+        var canAnimate = IsVisible && WindowState != WindowState.Minimized && !RenderStabilityManager.Instance.IsRenderPaused;
         var on = _svc.IsMasterOn;
-        var hasActiveTraffic = on && (snapshot.DownloadBps > 500 || snapshot.UploadBps > 500);
+        var hasActiveTraffic = canAnimate && on && (snapshot.DownloadBps > 500 || snapshot.UploadBps > 500);
 
         if (hasActiveTraffic && !_isStatusDotPulsing)
         {
@@ -1669,9 +1714,27 @@ public partial class MainWindow : Window
         }
         else if (!hasActiveTraffic && _isStatusDotPulsing)
         {
-            _isStatusDotPulsing = false;
-            StatusDot.BeginAnimation(UIElement.OpacityProperty, null);
-            StatusDot.Opacity = 1.0;
+            StopStatusDotAnimation();
+        }
+    }
+
+    private void StopStatusDotAnimation()
+    {
+        if (StatusDot == null || !_isStatusDotPulsing) return;
+        _isStatusDotPulsing = false;
+        StatusDot.BeginAnimation(UIElement.OpacityProperty, null);
+        StatusDot.Opacity = 1.0;
+    }
+
+    private void UpdateStatusDotState()
+    {
+        if (!IsVisible || WindowState == WindowState.Minimized || RenderStabilityManager.Instance.IsRenderPaused)
+        {
+            StopStatusDotAnimation();
+        }
+        else if (CurrentTab == MainTab.Firewall)
+        {
+            UpdateStatusDotAnimation(NetworkSpeedService.Instance.CurrentSnapshot);
         }
     }
 

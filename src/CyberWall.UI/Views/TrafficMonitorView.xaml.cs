@@ -50,13 +50,34 @@ public partial class TrafficMonitorView : UserControl
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1000) };
         _refreshTimer.Tick += (_, _) =>
         {
-            if (_isActive) UpdateData();
+            if (_isActive && !RenderStabilityManager.Instance.IsRenderPaused) UpdateData();
         };
 
         Loaded += (_, _) =>
         {
-            if (_isActive) UpdateData();
+            RenderStabilityManager.Instance.RenderPausedChanged -= OnRenderPausedChanged;
+            RenderStabilityManager.Instance.RenderPausedChanged += OnRenderPausedChanged;
+            if (_isActive && !RenderStabilityManager.Instance.IsRenderPaused) UpdateData();
         };
+        Unloaded += (_, _) =>
+        {
+            RenderStabilityManager.Instance.RenderPausedChanged -= OnRenderPausedChanged;
+        };
+    }
+
+    private void OnRenderPausedChanged(bool paused)
+    {
+        if (paused)
+        {
+            _refreshTimer.Stop();
+            return;
+        }
+
+        if (_isActive)
+        {
+            UpdateData();
+            _refreshTimer.Start();
+        }
     }
 
     public void Activate()
@@ -64,8 +85,11 @@ public partial class TrafficMonitorView : UserControl
         if (_isActive) return;
         _isActive = true;
         NetworkSpeedService.Instance.SpeedUpdated += OnSpeedUpdated;
-        _refreshTimer.Start();
-        UpdateData();
+        if (!RenderStabilityManager.Instance.IsRenderPaused)
+        {
+            _refreshTimer.Start();
+            UpdateData();
+        }
     }
 
     public void Deactivate()
@@ -78,13 +102,13 @@ public partial class TrafficMonitorView : UserControl
 
     private void OnSpeedUpdated(NetworkSpeedSnapshot snapshot)
     {
-        if (!_isActive) return;
+        if (!_isActive || RenderStabilityManager.Instance.IsRenderPaused) return;
 
         if (!Dispatcher.CheckAccess())
         {
             Dispatcher.BeginInvoke(() =>
             {
-                if (_isActive) UpdateData();
+                if (_isActive && !RenderStabilityManager.Instance.IsRenderPaused) UpdateData();
             });
             return;
         }

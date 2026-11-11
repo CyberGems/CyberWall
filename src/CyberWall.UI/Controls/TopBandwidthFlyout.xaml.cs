@@ -21,11 +21,14 @@ public partial class TopBandwidthFlyout : UserControl
         RefreshLanguage();
 
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1000) };
-        _refreshTimer.Tick += (_, _) => UpdateData();
+        _refreshTimer.Tick += (_, _) =>
+        {
+            if (!RenderStabilityManager.Instance.IsRenderPaused) UpdateData();
+        };
 
         FlyoutPopup.Opened += (_, _) =>
         {
-            UpdateData();
+            if (!RenderStabilityManager.Instance.IsRenderPaused) UpdateData();
             _refreshTimer.Start();
         };
 

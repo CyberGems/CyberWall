@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
+using CyberWall.UI.Services;
 
 namespace CyberWall.UI.Controls;
 
@@ -50,6 +51,7 @@ public abstract class AnimatedHistoryGraph : FrameworkElement
     protected bool IsCurrentSample(object sample) => ReferenceEquals(_lastSample, sample);
 
     private bool CanAnimate => IsAnimationEnabled && SystemParameters.ClientAreaAnimation && IsLoaded && IsVisible &&
+                               !RenderStabilityManager.Instance.IsRenderPaused &&
                                _window is { IsVisible: true, WindowState: not WindowState.Minimized };
 
     protected void BeginSample(object sample, TimeSpan interval, float[]? primary, float[]? secondary, int capacity)
@@ -80,10 +82,13 @@ public abstract class AnimatedHistoryGraph : FrameworkElement
         }
         else
         {
-            FinishAnimation();
+            FinishAnimation(invalidate: false);
         }
 
-        InvalidateVisual();
+        if (!RenderStabilityManager.Instance.IsRenderPaused)
+        {
+            InvalidateVisual();
+        }
     }
 
     protected void SetHistoryWidth(double width, int capacity)
@@ -104,25 +109,28 @@ public abstract class AnimatedHistoryGraph : FrameworkElement
     internal bool AdvanceAnimation(long now)
     {
         if (!_animating) return false;
-        if (!CanAnimate) { FinishAnimation(); return false; }
+        if (!CanAnimate) { FinishAnimation(invalidate: !RenderStabilityManager.Instance.IsRenderPaused); return false; }
 
         var elapsed = Stopwatch.GetElapsedTime(_startedAt, now).TotalSeconds;
         var progress = Math.Clamp(elapsed / _durationSeconds, 0, 1);
         _historyTransform.X = _startOffsetSamples * (1 - progress) * _stepWidth;
         OnAnimationFrame(elapsed, progress >= 1);
-        if (progress >= 1) FinishAnimation();
+        if (progress >= 1) FinishAnimation(invalidate: false);
 
         InvalidateVisual();
         return _animating;
     }
 
-    private void FinishAnimation()
+    private void FinishAnimation(bool invalidate = true)
     {
         _animating = false;
         _historyTransform.X = 0;
         OnAnimationFrame(0, finished: true);
         GraphAnimationClock.For(Dispatcher).Remove(this);
-        InvalidateVisual();
+        if (invalidate && !RenderStabilityManager.Instance.IsRenderPaused)
+        {
+            InvalidateVisual();
+        }
     }
 
     public void ResetAnimation()
@@ -151,15 +159,37 @@ public abstract class AnimatedHistoryGraph : FrameworkElement
 
     private void OnLoaded(object sender, RoutedEventArgs args)
     {
+        if (_window is not null) _window.StateChanged -= OnWindowStateChanged;
         _window = Window.GetWindow(this);
         if (_window is not null) _window.StateChanged += OnWindowStateChanged;
+
+        RenderStabilityManager.Instance.RenderPausedChanged -= OnRenderPausedChanged;
+        RenderStabilityManager.Instance.RenderPausedChanged += OnRenderPausedChanged;
+
+        if (RenderStabilityManager.Instance.IsRenderPaused)
+        {
+            FinishAnimation(invalidate: false);
+        }
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs args)
     {
         if (_window is not null) _window.StateChanged -= OnWindowStateChanged;
         _window = null;
-        FinishAnimation();
+        RenderStabilityManager.Instance.RenderPausedChanged -= OnRenderPausedChanged;
+        FinishAnimation(invalidate: !RenderStabilityManager.Instance.IsRenderPaused);
+    }
+
+    private void OnRenderPausedChanged(bool paused)
+    {
+        if (paused)
+        {
+            FinishAnimation(invalidate: false);
+        }
+        else if (IsLoaded && IsVisible)
+        {
+            InvalidateVisual();
+        }
     }
 
     private void OnWindowStateChanged(object? sender, EventArgs args)
