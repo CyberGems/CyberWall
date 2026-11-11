@@ -1,0 +1,368 @@
+<UserControl x:Class="CyberWall.UI.Views.AboutView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType" TextOptions.TextHintingMode="Fixed"
+             UseLayoutRounding="True" SnapsToDevicePixels="True"
+             FontFamily="Segoe UI Variable Text, Segoe UI, -apple-system, BlinkMacSystemFont, Roboto, sans-serif">
+
+    <UserControl.Resources>
+        <!-- Subtle Icon Action Button for Footer Links -->
+        <Style x:Key="AboutFooterIconButton" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Suite App Button (More apps from CyberGems) -->
+        <Style x:Key="SuiteAppButton" TargetType="Button">
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="46"/>
+            <Setter Property="Margin" Value="5,0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="12" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern Action Button matching SettingsView SecondaryButtonStyle -->
+        <Style x:Key="ModernActionButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Toggle Switch Style -->
+        <Style x:Key="ModernToggleSwitch" TargetType="CheckBox">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Border x:Name="Track" Width="40" Height="22" CornerRadius="11" Background="{DynamicResource SwitchTrackBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1.2"/>
+                            <Ellipse x:Name="Thumb" Width="14" Height="14" Fill="#CBD5E1" HorizontalAlignment="Left" Margin="3,0,0,0">
+                                <Ellipse.Effect>
+                                    <DropShadowEffect Color="Black" Opacity="0.25" BlurRadius="3" ShadowDepth="1"/>
+                                </Ellipse.Effect>
+                            </Ellipse>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Track" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/>
+                                <Setter TargetName="Thumb" Property="Margin" Value="0,0,3,0"/>
+                                <Setter TargetName="Thumb" Property="Fill" Value="#FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="0,4,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Row 0: Hero Branding & Description Card -->
+        <Border Grid.Row="0" MaxWidth="960" HorizontalAlignment="Stretch"
+                Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1" CornerRadius="12" Padding="20,16" Margin="16,0,16,12">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Top Row: Logo + Title + Version Pill + Back Button -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Image Grid.Column="0" Source="pack://application:,,,/Assets/CyberWall.png"
+                           Width="48" Height="48" Stretch="Uniform"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           VerticalAlignment="Center" Margin="0,0,16,0"/>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock FontSize="22" FontWeight="Bold" FontFamily="Segoe UI Variable Display" VerticalAlignment="Center">
+                                <Run Text="Cyber" Foreground="{DynamicResource TextBrush}"/><Run Text="Wall" Foreground="{DynamicResource AccentBrush}"/>
+                            </TextBlock>
+                            <Border Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1" CornerRadius="6" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                <TextBlock x:Name="AboutVersionText" Text="Version v2.4.0" FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                            </Border>
+                        </StackPanel>
+                        <TextBlock x:Name="AboutTitleText" Text="Acerca de ᐧ CyberWall" FontSize="12"
+                                   Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
+                    </StackPanel>
+
+                    <Button x:Name="BackBtn" Grid.Column="2" Style="{StaticResource ModernActionButton}"
+                            Height="32" Padding="12,0" VerticalAlignment="Top" Click="BackBtn_Click">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Path Data="M 15 18 L 9 12 L 15 6" Stroke="{DynamicResource SubTextBrush}"
+                                  StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                  Width="10" Height="10" Stretch="Uniform" Fill="Transparent" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="BackBtnText" Text="Volver" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <!-- Bottom Row: Description Strip -->
+                <Border Grid.Row="1" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,12,0,0">
+                    <TextBlock x:Name="AboutDescriptionText" FontSize="12.5" Foreground="{DynamicResource TextBrush}"
+                               Opacity="0.9" LineHeight="20" LineStackingStrategy="BlockLineHeight" TextWrapping="Wrap"
+                               Text="CyberWall es un firewall de capa de aplicación de alto rendimiento impulsado por el motor del kernel Windows Filtering Platform (WFP) para filtrado de red por programa en tiempo real."/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Row 1: Scrollable Main Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,6,0">
+            <StackPanel MaxWidth="960" HorizontalAlignment="Stretch" Margin="16,0,16,8">
+                <!-- Section 1: Updates & Maintenance -->
+                <TextBlock x:Name="UpdatesSectionLbl" Text="Actualizaciones y Mantenimiento"
+                           Foreground="{DynamicResource AccentBrush}" FontWeight="Bold" FontSize="14.5" Margin="0,2,0,8"/>
+                <Border CornerRadius="12" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" Padding="18,12" Margin="0,0,0,14">
+                    <StackPanel>
+                        <!-- Row 1: Auto-check toggle -->
+                        <Grid MinHeight="48">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Width="34" Height="34" CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                                <Path Data="M 4 4 V 9 H 9 M 20 20 V 15 H 15 M 20 9 A 9 9 0 0 0 5.64 5.64 L 4 9 M 4 15 A 9 9 0 0 0 18.36 18.36 L 20 15"
+                                      Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      Width="14" Height="14" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                                <TextBlock x:Name="AutoUpdateTitleLbl" Text="Buscar actualizaciones al iniciar" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextBrush}"/>
+                                <TextBlock x:Name="AutoUpdateDescLbl" Text="Comprobar automáticamente si hay nuevas versiones al iniciar CyberWall." FontSize="11.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <CheckBox x:Name="AutoCheckUpdateCheck" IsChecked="True" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}"
+                                      VerticalAlignment="Center" Click="AutoCheckUpdateCheck_Click"/>
+                        </Grid>
+
+                        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,8,0,8"/>
+
+                        <!-- Row 2: Check for updates button -->
+                        <Grid MinHeight="48">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Width="34" Height="34" CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                                <Path Data="M 12 2 A 10 10 0 1 0 22 12 A 10 10 0 0 0 12 2 Z M 2 12 H 22 M 12 2 A 15.3 15.3 0 0 1 16 12 A 15.3 15.3 0 0 1 12 22 A 15.3 15.3 0 0 1 8 12 A 15.3 15.3 0 0 1 12 2 Z"
+                                      Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.3" Fill="Transparent" Width="14" Height="14" Stretch="Uniform"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                                <TextBlock x:Name="CheckUpdateTitleLbl" Text="Buscar actualizaciones" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextBrush}"/>
+                                <TextBlock x:Name="CheckUpdateDescLbl" Text="Comprobar la versión más reciente y descargar actualizaciones directamente." FontSize="11.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <Button x:Name="UpdateBtn" Grid.Column="2" Content="Comprobar ahora" Style="{StaticResource ModernActionButton}"
+                                    VerticalAlignment="Center" MinWidth="136" Height="34" Click="UpdateCheckButton_Click"/>
+                        </Grid>
+
+                        <!-- Download Progress Panel -->
+                        <StackPanel x:Name="UpdateProgressPanel" Visibility="Collapsed" Margin="48,10,0,4">
+                            <TextBlock x:Name="UpdateProgressText" Text="Descargando actualización..." FontSize="11.5" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,6"/>
+                            <ProgressBar x:Name="UpdateProgressBar" Height="6" Minimum="0" Maximum="100" Value="0" Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource CardSecondaryBrush}" BorderThickness="0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Section 2: More Apps from CyberGems -->
+                <StackPanel x:Name="SuiteSection">
+                    <TextBlock x:Name="SuiteSectionLbl" Text="Más aplicaciones de CyberGems"
+                               Foreground="{DynamicResource AccentBrush}" FontWeight="Bold" FontSize="14.5" Margin="0,2,0,8"/>
+                    <Border CornerRadius="12" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1" Padding="18,12">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <StackPanel x:Name="SuiteAppsHost" Orientation="Horizontal" VerticalAlignment="Center"/>
+                            <Button x:Name="SuiteMoreBtn" Content="Ver más..." Style="{StaticResource ModernActionButton}"
+                                    Margin="10,0,0,0" MinWidth="104" Height="34" Padding="14,0" Click="SuiteMoreBtn_Click"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Row 2: Footer Links Card -->
+        <Border Grid.Row="2" MaxWidth="960" HorizontalAlignment="Stretch"
+                Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1" CornerRadius="12" Padding="18,10" Margin="16,4,16,4">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock x:Name="AboutFooterCopyright" Grid.Column="0" Text="© CyberGems • 2026"
+                           FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}"
+                           VerticalAlignment="Center" HorizontalAlignment="Left" Cursor="Hand"
+                           MouseLeftButtonUp="AboutFooterWebsite_Click"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Website -->
+                    <Button x:Name="AboutFooterWebsiteBtn" Style="{StaticResource AboutFooterIconButton}" Click="AboutFooterWebsiteBtn_Click">
+                        <Viewbox Width="15" Height="15" Stretch="Uniform">
+                            <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.5" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"
+                                  Data="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M2 12h20 M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </Viewbox>
+                    </Button>
+
+                    <!-- Online Documentation -->
+                    <Button x:Name="AboutFooterDocsBtn" Style="{StaticResource AboutFooterIconButton}" Margin="4,0,0,0" Click="AboutFooterDocs_Click">
+                        <Viewbox Width="15" Height="15" Stretch="Uniform">
+                            <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.5" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"
+                                  Data="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                        </Viewbox>
+                    </Button>
+
+                    <!-- GitHub Repo -->
+                    <Button x:Name="AboutFooterGithubBtn" Style="{StaticResource AboutFooterIconButton}" Margin="4,0,0,0" Click="AboutFooterGithub_Click">
+                        <Viewbox Width="15" Height="15" Stretch="Uniform">
+                            <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  Data="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                        </Viewbox>
+                    </Button>
+
+                    <!-- Issues -->
+                    <Button x:Name="AboutFooterIssuesBtn" Style="{StaticResource AboutFooterIconButton}" Margin="4,0,0,0" Click="AboutFooterIssues_Click">
+                        <Viewbox Width="15" Height="15" Stretch="Uniform">
+                            <Canvas Width="24" Height="24">
+                                <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"
+                                      Data="m8 2 1.88 1.88 M14.12 3.88 16 2"/>
+                                <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent"
+                                      Data="M9 7.13v-1a3 3 0 1 1 6 0v1"/>
+                                <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent"
+                                      Data="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6z"/>
+                                <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5" StrokeStartLineCap="Round"
+                                      Data="M12 20v-9"/>
+                                <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent"
+                                      Data="M6.53 9C4.6 8.8 3 7.1 3 5 M6 13H2 M3 21c0-2.1 1.7-3.9 3.8-4 M20.97 5c0 2.1-1.6 3.8-3.5 4 M22 13h-4 M17.2 17c2.1.1 3.8 1.9 3.8 4"/>
+                            </Canvas>
+                        </Viewbox>
+                    </Button>
+
+                    <!-- Releases -->
+                    <Button x:Name="AboutFooterReleasesBtn" Style="{StaticResource AboutFooterIconButton}" Margin="4,0,0,0" Click="AboutFooterReleases_Click">
+                        <Viewbox Width="15" Height="15" Stretch="Uniform">
+                            <Canvas Width="24" Height="24">
+                                <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="2" StrokeLineJoin="Round" Fill="Transparent" Data="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.41 2.41 0 0 0 3.408 0l5.586-5.586a2.41 2.41 0 0 0 0-3.408z"/>
+                                <Ellipse Width="2.5" Height="2.5" Canvas.Left="6" Canvas.Top="6.5" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                            </Canvas>
+                        </Viewbox>
+                    </Button>
+
+                    <!-- Donate -->
+                    <Button x:Name="AboutFooterDonateBtn" Style="{StaticResource AboutFooterIconButton}" Margin="4,0,0,0" Click="AboutFooterDonate_Click">
+                        <Viewbox Width="15" Height="15" Stretch="Uniform">
+                            <Path Fill="#F43F5E"
+                                  Data="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </Viewbox>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

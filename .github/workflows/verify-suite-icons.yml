@@ -7,7 +7,7 @@ on:
       - '.github/about-icons.json'
       - '.github/workflows/verify-suite-icons.yml'
       - 'src/CyberWall.UI/SuiteCatalog.cs'
-      - 'src/CyberWall.UI/Dialogs/AboutWindow.*'
+      - 'src/CyberWall.UI/Views/AboutView.*'
       - 'src/CyberWall.Common/I18n/Strings.cs'
       - 'src/CyberWall.UI/Assets/Suite/**'
       - 'src/CyberWall.UI/CyberWall.UI.csproj'

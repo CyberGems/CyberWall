@@ -1,16 +1,20 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Settings;
+using CyberWall.UI.Dialogs;
 using CyberWall.UI.Services;
+using UserControl = System.Windows.Controls.UserControl;
+using WpfApplication = System.Windows.Application;
 
-namespace CyberWall.UI.Dialogs;
+namespace CyberWall.UI.Views;
 
-public partial class AboutWindow : Window, IModalAttentionWindow
+public partial class AboutView : UserControl
 {
     private const string RepoUrl = "https://github.com/CyberGems/CyberWall";
     private const string WebsiteUrl = "https://cybergems.org";
@@ -18,65 +22,73 @@ public partial class AboutWindow : Window, IModalAttentionWindow
     private const string DonateUrl = "https://github.com/CyberGems/CyberWall#%EF%B8%8F-donate";
 
     private readonly AppSettings _settings;
-    private DateTime _lastAttentionTime = DateTime.MinValue;
     private readonly IReadOnlyList<SuiteApp> _suiteApps = SuiteCatalog.Pick(5);
+    private bool _isChecking;
+    private bool _isDownloading;
 
-    public void TriggerAttention()
+    public event EventHandler? BackRequested;
+
+    public AboutView()
     {
-        ModalAttentionHelper.Trigger(this, OuterBorder, WindowScale, WindowGlow, ref _lastAttentionTime);
+        InitializeComponent();
+        _settings = App.Settings;
+
+        Loaded += (_, _) => LoadContent();
     }
 
-    public AboutWindow(AppSettings settings, bool checkUpdatesNow = false)
+    public void Activate()
     {
-        _settings = settings;
-        InitializeComponent();
-        Icon = AppIconHelper.CreateShieldImageSource(64);
-        CyberWallWindowChrome.Apply(this, 12);
-        Title = Strings.T("WindowAbout");
         LoadContent();
+    }
 
-        if (checkUpdatesNow)
-        {
-            Loaded += (_, _) =>
-            {
-                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, () =>
-                {
-                    UpdateCheckButton_Click(UpdateBtn, new RoutedEventArgs());
-                });
-            };
-        }
+    public void Deactivate()
+    {
     }
 
     private void LoadContent()
     {
         AutoCheckUpdateCheck.IsChecked = _settings.AutoCheckForUpdates;
-        RefreshLocalization();
+        RefreshLanguage();
     }
 
-    public void RefreshLocalization()
+    public void RefreshLanguage()
     {
         var es = Strings.Current == Lang.Es;
-        Title = Strings.T("AboutTitle");
         AboutTitleText.Text = Strings.T("AboutTitle");
         var currentVerLabel = UpdateService.GetCurrentVersionLabel();
         AboutVersionText.Text = (es ? "Versión " : "Version ") + currentVerLabel;
         AboutDescriptionText.Text = Strings.T("AboutDescription");
+
+        BackBtnText.Text = Strings.T("Back");
+        AutomationProperties.SetName(BackBtn, Strings.T("Back"));
+
         SuiteSectionLbl.Text = Strings.T("MoreAppsFromCyberGems");
         SuiteMoreBtn.Content = Strings.T("SeeMoreApps");
         RefreshSuiteApps();
+
         UpdatesSectionLbl.Text = Strings.T("UpdatesMaintenance");
         AutoUpdateTitleLbl.Text = Strings.T("AutoUpdateTitle");
         AutoUpdateDescLbl.Text = Strings.T("AutoUpdateDesc");
         CheckUpdateTitleLbl.Text = Strings.T("CheckUpdates");
         CheckUpdateDescLbl.Text = Strings.T("CheckUpdatesDesc");
-        UpdateBtn.Content = Strings.T("CheckNow");
+        if (!_isChecking && !_isDownloading)
+        {
+            UpdateBtn.Content = Strings.T("CheckNow");
+        }
+
         AboutFooterCopyright.ToolTip = Strings.T("VisitWebsite");
         AboutFooterWebsiteBtn.ToolTip = Strings.T("VisitWebsite");
+        AutomationProperties.SetName(AboutFooterWebsiteBtn, Strings.T("VisitWebsite"));
         AboutFooterDocsBtn.ToolTip = Strings.T("OnlineDocs");
+        AutomationProperties.SetName(AboutFooterDocsBtn, Strings.T("OnlineDocs"));
         AboutFooterGithubBtn.ToolTip = Strings.T("ViewGitHub");
+        AutomationProperties.SetName(AboutFooterGithubBtn, Strings.T("ViewGitHub"));
         AboutFooterIssuesBtn.ToolTip = Strings.T("ReportIssue");
+        AutomationProperties.SetName(AboutFooterIssuesBtn, Strings.T("ReportIssue"));
         AboutFooterReleasesBtn.ToolTip = Strings.T("ViewReleases");
+        AutomationProperties.SetName(AboutFooterReleasesBtn, Strings.T("ViewReleases"));
         AboutFooterDonateBtn.ToolTip = Strings.T("DonateToProject");
+        AutomationProperties.SetName(AboutFooterDonateBtn, Strings.T("DonateToProject"));
     }
 
     private void RefreshSuiteApps()
@@ -95,7 +107,7 @@ public partial class AboutWindow : Window, IModalAttentionWindow
             var image = new System.Windows.Controls.Image
             {
                 Width = 28, Height = 28, Source = bitmap,
-                Stretch = Stretch.Uniform, Opacity = 0.7, IsHitTestVisible = false
+                Stretch = Stretch.Uniform, Opacity = 0.78, IsHitTestVisible = false
             };
             RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
             var button = new System.Windows.Controls.Button
@@ -103,8 +115,8 @@ public partial class AboutWindow : Window, IModalAttentionWindow
                 Style = (Style)FindResource("SuiteAppButton"), Content = image,
                 ToolTip = $"{app.Name}: {Strings.T(app.PitchKey)}"
             };
-            System.Windows.Automation.AutomationProperties.SetName(button, app.Name);
-            void UpdateOpacity() => image.Opacity = button.IsMouseOver || button.IsKeyboardFocused ? 1 : 0.7;
+            AutomationProperties.SetName(button, app.Name);
+            void UpdateOpacity() => image.Opacity = button.IsMouseOver || button.IsKeyboardFocused ? 1 : 0.78;
             button.MouseEnter += (_, _) => UpdateOpacity();
             button.MouseLeave += (_, _) => UpdateOpacity();
             button.GotKeyboardFocus += (_, _) => UpdateOpacity();
@@ -113,6 +125,20 @@ public partial class AboutWindow : Window, IModalAttentionWindow
             SuiteAppsHost.Children.Add(button);
         }
     }
+
+    public void CheckUpdatesNow()
+    {
+        if (_isChecking || _isDownloading) return;
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, () =>
+        {
+            if (!_isChecking && !_isDownloading)
+                UpdateCheckButton_Click(UpdateBtn, new RoutedEventArgs());
+        });
+    }
+
+    private Window? OwnerWindow => Window.GetWindow(this) ?? WpfApplication.Current.MainWindow;
+
+    private void BackBtn_Click(object sender, RoutedEventArgs e) => BackRequested?.Invoke(this, EventArgs.Empty);
 
     private void SuiteMoreBtn_Click(object sender, RoutedEventArgs e) => OpenUrl("https://cybergems.org/#apps");
 
@@ -124,15 +150,19 @@ public partial class AboutWindow : Window, IModalAttentionWindow
 
     private async void UpdateCheckButton_Click(object sender, RoutedEventArgs e)
     {
+        if (_isChecking || _isDownloading) return;
+        _isChecking = true;
         UpdateBtn.IsEnabled = false;
         UpdateBtn.Content = Strings.T("CheckingUpdates");
 
         try
         {
             var result = await UpdateService.CheckForUpdatesAsync();
+            _isChecking = false;
             UpdateBtn.IsEnabled = true;
             UpdateBtn.Content = Strings.T("CheckNow");
 
+            var owner = OwnerWindow;
             if (result.IsUpdateAvailable)
             {
                 new CyberWall.Common.Notifications.NotificationStore().Add(CyberWall.Common.Models.AppNotificationKind.UpdateAvailable, detail: result.LatestVersionLabel);
@@ -143,7 +173,7 @@ public partial class AboutWindow : Window, IModalAttentionWindow
                 var msg = $"{currentLabel} {currentVerLabel}\n{latestLabel} {result.LatestVersionLabel}\n\n{promptMessage}";
 
                 var choice = ConfirmDialog.Show(
-                    this,
+                    owner,
                     Strings.T("UpdateAvailable", result.LatestVersionLabel),
                     msg,
                     Strings.T("Download"),
@@ -157,7 +187,7 @@ public partial class AboutWindow : Window, IModalAttentionWindow
             else
             {
                 ConfirmDialog.Show(
-                    this,
+                    owner,
                     Strings.T("CheckUpdates"),
                     result.StatusMessage,
                     Strings.T("Ok"),
@@ -167,10 +197,11 @@ public partial class AboutWindow : Window, IModalAttentionWindow
         }
         catch (Exception ex)
         {
+            _isChecking = false;
             UpdateBtn.IsEnabled = true;
             UpdateBtn.Content = Strings.T("CheckNow");
             ConfirmDialog.Show(
-                this,
+                OwnerWindow,
                 Strings.T("CheckUpdates"),
                 ex.Message,
                 Strings.T("Ok"),
@@ -180,6 +211,8 @@ public partial class AboutWindow : Window, IModalAttentionWindow
 
     public async Task StartUpdateDownloadAsync(UpdateCheckResult result)
     {
+        if (_isDownloading) return;
+        _isDownloading = true;
         UpdateProgressPanel.Visibility = Visibility.Visible;
         UpdateBtn.IsEnabled = false;
 
@@ -207,7 +240,7 @@ public partial class AboutWindow : Window, IModalAttentionWindow
             UpdateProgressText.Text = Strings.T("DownloadCompleted");
 
             ConfirmDialog.Show(
-                this,
+                OwnerWindow,
                 Strings.T("DownloadComplete"),
                 Strings.T("DownloadCompleteDesc"),
                 Strings.T("Ok"),
@@ -222,7 +255,7 @@ public partial class AboutWindow : Window, IModalAttentionWindow
             UpdateBtn.IsEnabled = true;
 
             var errorChoice = ConfirmDialog.Show(
-                this,
+                OwnerWindow,
                 Strings.T("DownloadFailed"),
                 $"{ex.Message}\n\n{(Strings.Current == Lang.Es ? "¿Deseas abrir la página de descargas de GitHub en el navegador?" : "Would you like to open the GitHub release page instead?")}",
                 Strings.Current == Lang.Es ? "Abrir navegador" : "Open Browser",
@@ -233,17 +266,11 @@ public partial class AboutWindow : Window, IModalAttentionWindow
                 OpenUrl(result.ReleaseUrl);
             }
         }
-    }
-
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ButtonState == MouseButtonState.Pressed)
+        finally
         {
-            DragMove();
+            _isDownloading = false;
         }
     }
-
-    private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
     private void AboutFooterWebsite_Click(object sender, MouseButtonEventArgs e)
     {
@@ -251,35 +278,17 @@ public partial class AboutWindow : Window, IModalAttentionWindow
         OpenUrl(WebsiteUrl);
     }
 
-    private void AboutFooterDocs_Click(object sender, MouseButtonEventArgs e)
-    {
-        e.Handled = true;
-        OpenUrl(WikiUrl);
-    }
+    private void AboutFooterWebsiteBtn_Click(object sender, RoutedEventArgs e) => OpenUrl(WebsiteUrl);
 
-    private void AboutFooterGithub_Click(object sender, MouseButtonEventArgs e)
-    {
-        e.Handled = true;
-        OpenUrl(RepoUrl);
-    }
+    private void AboutFooterDocs_Click(object sender, RoutedEventArgs e) => OpenUrl(WikiUrl);
 
-    private void AboutFooterIssues_Click(object sender, MouseButtonEventArgs e)
-    {
-        e.Handled = true;
-        OpenUrl($"{RepoUrl}/issues");
-    }
+    private void AboutFooterGithub_Click(object sender, RoutedEventArgs e) => OpenUrl(RepoUrl);
 
-    private void AboutFooterReleases_Click(object sender, MouseButtonEventArgs e)
-    {
-        e.Handled = true;
-        OpenUrl($"{RepoUrl}/releases");
-    }
+    private void AboutFooterIssues_Click(object sender, RoutedEventArgs e) => OpenUrl($"{RepoUrl}/issues");
 
-    private void AboutFooterDonate_Click(object sender, MouseButtonEventArgs e)
-    {
-        e.Handled = true;
-        OpenUrl(DonateUrl);
-    }
+    private void AboutFooterReleases_Click(object sender, RoutedEventArgs e) => OpenUrl($"{RepoUrl}/releases");
+
+    private void AboutFooterDonate_Click(object sender, RoutedEventArgs e) => OpenUrl(DonateUrl);
 
     private static void OpenUrl(string url)
     {

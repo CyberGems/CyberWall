@@ -35,6 +35,7 @@ public enum MainTab
     ConnectionsLog,
     Statistics,
     Settings,
+    About,
     Dashboard
 }
 
@@ -56,6 +57,7 @@ public partial class MainWindow : Window
         ConnectionsLogTabContent.Visibility = tab == MainTab.ConnectionsLog ? Visibility.Visible : Visibility.Collapsed;
         StatisticsTabContent.Visibility = tab == MainTab.Statistics ? Visibility.Visible : Visibility.Collapsed;
         SettingsTabContent.Visibility = tab == MainTab.Settings ? Visibility.Visible : Visibility.Collapsed;
+        AboutTabContent.Visibility = tab == MainTab.About ? Visibility.Visible : Visibility.Collapsed;
 
         // Update Tab Icon highlights
         var accentBrush = (System.Windows.Media.Brush)FindResource("AccentBrush");
@@ -69,7 +71,10 @@ public partial class MainWindow : Window
         if (SettingsBtn != null)
             SettingsBtn.Tag = tab == MainTab.Settings ? "Active" : null;
 
-        if (tab != MainTab.Settings)
+        if (BrandingPanel != null)
+            BrandingPanel.Tag = tab == MainTab.About ? "Active" : null;
+
+        if (tab != MainTab.Settings && tab != MainTab.About)
             _previousTab = tab;
 
         // Lifecycle hooks
@@ -95,6 +100,11 @@ public partial class MainWindow : Window
             SettingsTabContent.Activate();
         else
             SettingsTabContent.Deactivate();
+
+        if (tab == MainTab.About)
+            AboutTabContent.Activate();
+        else
+            AboutTabContent.Deactivate();
     }
 
     public void Tab_Click(object sender, RoutedEventArgs e)
@@ -159,6 +169,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        AboutTabContent.BackRequested += (_, _) => SelectTab(_previousTab);
         CyberWallWindowChrome.Apply(this, 12);
         Icon = AppIconHelper.CreateShieldImageSource(64);
         _loading = true;
@@ -397,9 +408,8 @@ public partial class MainWindow : Window
                     if (choice)
                     {
                         _notifications.MarkRelatedRead(AppNotificationKind.UpdateAvailable, null);
-                        var about = new AboutWindow(App.Settings) { Owner = this };
-                        about.Show();
-                        _ = about.StartUpdateDownloadAsync(result);
+                        OpenAbout(checkUpdatesNow: false);
+                        _ = AboutTabContent.StartUpdateDownloadAsync(result);
                     }
                 });
             }
@@ -422,6 +432,11 @@ public partial class MainWindow : Window
         TitleText.Text = "CyberWall";
         WfpBadgeText.Text = Strings.T("WfpEngineBadge");
         SubtitleText.Text = Strings.T("AppSubtitle");
+        if (BrandingPanel != null)
+        {
+            BrandingPanel.ToolTip = Strings.T("WindowAbout");
+            AutomationProperties.SetName(BrandingPanel, Strings.T("WindowAbout"));
+        }
         FooterStatusText.Text = Strings.T("StatusFooter");
         NotifBtn.ToolTip = Strings.T("Notifications");
         AutomationProperties.SetName(NotifBtn, Strings.T("Notifications"));
@@ -468,6 +483,7 @@ public partial class MainWindow : Window
         ConnectionsLogTabContent?.RefreshLanguage();
         StatisticsTabContent?.RefreshLanguage();
         SettingsTabContent?.RefreshLanguage();
+        AboutTabContent?.RefreshLanguage();
         ModeLbl.Text = Strings.T("Mode");
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
         var rangeLabel = _firewallTimeWindowSeconds switch
@@ -552,6 +568,66 @@ public partial class MainWindow : Window
     public void ExitApplication()
     {
         _tray?.RequestExit();
+    }
+
+    private bool _isBrandingPressed;
+    private System.Windows.Point _brandingDownPos;
+
+    private void BrandingPanel_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Left) return;
+        _brandingDownPos = e.GetPosition(this);
+        _isBrandingPressed = true;
+        BrandingPanel.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void BrandingPanel_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (!_isBrandingPressed) return;
+        if (e.LeftButton != MouseButtonState.Pressed)
+        {
+            _isBrandingPressed = false;
+            if (BrandingPanel.IsMouseCaptured) BrandingPanel.ReleaseMouseCapture();
+            return;
+        }
+
+        var current = e.GetPosition(this);
+        if (Math.Abs(current.X - _brandingDownPos.X) >= SystemParameters.MinimumHorizontalDragDistance ||
+            Math.Abs(current.Y - _brandingDownPos.Y) >= SystemParameters.MinimumVerticalDragDistance)
+        {
+            _isBrandingPressed = false;
+            if (BrandingPanel.IsMouseCaptured) BrandingPanel.ReleaseMouseCapture();
+            if (WorkAreaMaximize.IsFilled(this))
+            {
+                WorkAreaMaximize.Restore(this);
+                UpdateMaximizeButtonIcon();
+            }
+            DragMove();
+        }
+    }
+
+    private void BrandingPanel_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!_isBrandingPressed) return;
+        _isBrandingPressed = false;
+        var inside = new Rect(0, 0, BrandingPanel.ActualWidth, BrandingPanel.ActualHeight)
+            .Contains(e.GetPosition(BrandingPanel));
+        if (BrandingPanel.IsMouseCaptured) BrandingPanel.ReleaseMouseCapture();
+        e.Handled = true;
+
+        if (inside)
+        {
+            if (CurrentTab == MainTab.About)
+                SelectTab(_previousTab);
+            else
+                SelectTab(MainTab.About);
+        }
+    }
+
+    private void BrandingPanel_LostMouseCapture(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        _isBrandingPressed = false;
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -776,9 +852,8 @@ public partial class MainWindow : Window
             var result = await UpdateService.CheckForUpdatesAsync();
             if (!result.IsUpdateAvailable) return;
             _notifications.MarkRelatedRead(AppNotificationKind.UpdateAvailable, null);
-            var about = new AboutWindow(App.Settings) { Owner = this };
-            about.Show();
-            await about.StartUpdateDownloadAsync(result);
+            OpenAbout(checkUpdatesNow: false);
+            await AboutTabContent.StartUpdateDownloadAsync(result);
         }
         catch { }
     }
@@ -885,9 +960,8 @@ public partial class MainWindow : Window
             if (choice)
             {
                 _notifications.MarkRelatedRead(AppNotificationKind.UpdateAvailable, null);
-                var about = new AboutWindow(App.Settings) { Owner = this };
-                about.Show();
-                _ = about.StartUpdateDownloadAsync(result);
+                OpenAbout(checkUpdatesNow: false);
+                _ = AboutTabContent.StartUpdateDownloadAsync(result);
             }
         }
         catch { }
@@ -2048,11 +2122,16 @@ public partial class MainWindow : Window
 
     public void OpenSettings()
     {
-        if (WindowState == WindowState.Minimized)
-            WindowState = WindowState.Normal;
-        Show();
-        Activate();
+        ShowMainWindow();
         SelectTab(MainTab.Settings);
+    }
+
+    public void OpenAbout(bool checkUpdatesNow = false)
+    {
+        ShowMainWindow();
+        SelectTab(MainTab.About);
+        if (checkUpdatesNow)
+            AboutTabContent?.CheckUpdatesNow();
     }
 
     /// <summary>
@@ -2158,15 +2237,14 @@ public partial class MainWindow : Window
         => OpenExternalUrl("https://cybergems.org");
 
     private void MoreCheckUpdates_Click(object sender, RoutedEventArgs e)
-    {
-        var dlg = new AboutWindow(App.Settings, checkUpdatesNow: true) { Owner = this };
-        dlg.ShowDialog();
-    }
+        => OpenAbout(checkUpdatesNow: true);
 
     private void About_Click(object sender, RoutedEventArgs e)
     {
-        var dlg = new AboutWindow(App.Settings) { Owner = this };
-        dlg.ShowDialog();
+        if (CurrentTab == MainTab.About)
+            SelectTab(_previousTab);
+        else
+            OpenAbout(checkUpdatesNow: false);
     }
     
     private void OpenLog_Click(object sender, RoutedEventArgs e) => SelectTab(MainTab.ConnectionsLog);
@@ -2917,6 +2995,13 @@ public partial class MainWindow : Window
         }
 
         if (Keyboard.FocusedElement is System.Windows.Controls.TextBox) return;
+
+        if (e.Key == System.Windows.Input.Key.Escape && CurrentTab == MainTab.About)
+        {
+            SelectTab(_previousTab);
+            e.Handled = true;
+            return;
+        }
 
         if (e.Key == System.Windows.Input.Key.Home)
         {

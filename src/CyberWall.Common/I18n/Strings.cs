@@ -266,6 +266,7 @@ public static class Strings
         ["Now"] = ("Just now", "Ahora mismo"),
         ["About"] = ("About CyberWall", "Acerca de CyberWall"),
         ["AboutTitle"] = ("About ᐧ CyberWall", "Acerca de ᐧ CyberWall"),
+        ["Back"] = ("Back", "Volver"),
         ["MoreAppsFromCyberGems"] = ("More apps from CyberGems", "Más aplicaciones de CyberGems"),
         ["SeeMoreApps"] = ("See more...", "Ver más..."),
         ["Suite_cyberclock"] = ("Desktop clock", "Reloj de escritorio"),

@@ -319,31 +319,13 @@ public partial class TrayContextMenuWindow : Window
     private void SubAbout_Click(object sender, RoutedEventArgs e)
     {
         CloseMenu();
-        _mainWindow.Dispatcher.Invoke(() =>
-        {
-            var isMainVisible = _mainWindow.IsVisible && _mainWindow.WindowState != WindowState.Minimized;
-            var dlg = new Dialogs.AboutWindow(App.Settings, checkUpdatesNow: false)
-            {
-                Owner = isMainVisible ? _mainWindow : null,
-                WindowStartupLocation = isMainVisible ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen
-            };
-            dlg.ShowDialog();
-        });
+        _mainWindow.Dispatcher.Invoke(() => _mainWindow.OpenAbout(checkUpdatesNow: false));
     }
 
     private void SubCheckUpdate_Click(object sender, RoutedEventArgs e)
     {
         CloseMenu();
-        _mainWindow.Dispatcher.Invoke(() =>
-        {
-            var isMainVisible = _mainWindow.IsVisible && _mainWindow.WindowState != WindowState.Minimized;
-            var dlg = new Dialogs.AboutWindow(App.Settings, checkUpdatesNow: true)
-            {
-                Owner = isMainVisible ? _mainWindow : null,
-                WindowStartupLocation = isMainVisible ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen
-            };
-            dlg.ShowDialog();
-        });
+        _mainWindow.Dispatcher.Invoke(() => _mainWindow.OpenAbout(checkUpdatesNow: true));
     }
 
     private static void OpenUrl(string url)

@@ -996,19 +996,40 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Left: Brand Title -->
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Image Source="pack://application:,,,/Assets/CyberWall.png" Width="30" Height="30" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <StackPanel VerticalAlignment="Center">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock x:Name="TitleText" Text="CyberWall" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
-                                <Border x:Name="WfpBadge" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="6,2" Margin="10,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock x:Name="WfpBadgeText" Text="WFP ENGINE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
-                                </Border>
+                    <!-- Left: Interactive Brand Title (click -> About, drag -> Move window) -->
+                    <Border x:Name="BrandingPanel" Grid.Column="0" CornerRadius="10"
+                            Padding="6,4" Margin="-6,-4,0,-4" VerticalAlignment="Center"
+                            Cursor="Hand" ToolTip="Acerca de CyberWall" ToolTipService.InitialShowDelay="250"
+                            MouseLeftButtonDown="BrandingPanel_MouseLeftButtonDown"
+                            MouseMove="BrandingPanel_MouseMove"
+                            MouseLeftButtonUp="BrandingPanel_MouseLeftButtonUp"
+                            LostMouseCapture="BrandingPanel_LostMouseCapture">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                                    </Trigger>
+                                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Active">
+                                        <Setter Property="Background" Value="{DynamicResource AccentGlowBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Image Source="pack://application:,,,/Assets/CyberWall.png" Width="30" Height="30" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <StackPanel VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="TitleText" Text="CyberWall" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                                    <Border x:Name="WfpBadge" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="6,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock x:Name="WfpBadgeText" Text="WFP ENGINE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock x:Name="SubtitleText" Text="Protección con filtro en tiempo real" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
                             </StackPanel>
-                            <TextBlock x:Name="SubtitleText" Text="Protección con filtro en tiempo real" FontSize="11" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0"/>
                         </StackPanel>
-                    </StackPanel>
+                    </Border>
 
                     <!-- Center: GlassWire-Style Navigation Tab Bar -->
                     <Border Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -2169,6 +2190,9 @@
 
             <!-- Tab 5: Settings (Preferences, Alerts & System Configuration) -->
             <views:SettingsView x:Name="SettingsTabContent" Visibility="Collapsed"/>
+
+            <!-- Tab 6: About (App Info, Updates & CyberGems Suite) -->
+            <views:AboutView x:Name="AboutTabContent" Visibility="Collapsed"/>
         </Grid>
 
         <!-- Footer / Status Bar -->
