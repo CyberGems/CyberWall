@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Input;
@@ -22,6 +23,7 @@ public partial class PromptStackWindow : Window
     private readonly bool _autoBlockEnabled;
     private int _remaining = DefaultTimeoutSeconds;
     private bool _countdownPaused;
+    private bool _isClosing;
 
     public bool IsPreview { get; }
     public int ActiveCount => _cards.Count;
@@ -34,8 +36,9 @@ public partial class PromptStackWindow : Window
         DataContext = this;
         Title = Strings.T("WindowNetworkPrompts");
 
-        var timeoutSeconds = Math.Clamp(App.Settings.PopupAutoBlockSeconds, 15, 3600);
-        _autoBlockEnabled = !isPreview && App.Settings.PopupAutoBlockEnabled;
+        var settings = App.Settings;
+        var timeoutSeconds = Math.Clamp(settings?.PopupAutoBlockSeconds ?? DefaultTimeoutSeconds, 15, 3600);
+        _autoBlockEnabled = !isPreview && (settings?.PopupAutoBlockEnabled ?? false);
         _remaining = timeoutSeconds;
 
         SourceInitialized += (_, _) => PopupWindowHelper.ApplyNoActivateChrome(this);
@@ -105,7 +108,7 @@ public partial class PromptStackWindow : Window
         // Reset countdown to give full time for newly added items
         if (!IsPreview)
         {
-            _remaining = Math.Clamp(App.Settings.PopupAutoBlockSeconds, 15, 3600);
+            _remaining = Math.Clamp(App.Settings?.PopupAutoBlockSeconds ?? DefaultTimeoutSeconds, 15, 3600);
             UpdateCountdownLabel();
         }
 
@@ -129,7 +132,11 @@ public partial class PromptStackWindow : Window
         if (_cards.Count == 0)
         {
             _countdownTimer.Stop();
-            Close();
+            if (!_isClosing)
+            {
+                _isClosing = true;
+                Close();
+            }
             return;
         }
 
@@ -184,8 +191,9 @@ public partial class PromptStackWindow : Window
         SizeToContent = SizeToContent.Height;
         UpdateLayout();
 
-        var pos = App.Settings.NotificationPosition;
-        var mon = App.Settings.NotificationMonitor;
+        var settings = App.Settings;
+        var pos = settings?.NotificationPosition ?? PopupPosition.BottomRight;
+        var mon = settings?.NotificationMonitor ?? -1;
         PopupWindowHelper.PositionWindow(this, pos, mon, explicitStackIndex: 0);
     }
 
@@ -195,20 +203,10 @@ public partial class PromptStackWindow : Window
         _remaining--;
         if (_remaining <= 0)
         {
-            _countdownTimer.Stop();
             // Timed out: auto-block when the user opted in, otherwise close without a
             // verdict so the prompt is shown again on the next connection attempt.
-            var list = _cards.ToList();
-            _cards.Clear();
-            CardsContainer.Children.Clear();
-            Close();
-
             var decision = _autoBlockEnabled ? PopupDecision.BlockAlways : PopupDecision.Dismiss;
-            foreach (var card in list)
-            {
-                card.DecisionMade -= OnCardDecisionMade;
-                CardResolved?.Invoke(card, decision, _autoBlockEnabled);
-            }
+            ResolveAllCards(decision, timedOut: _autoBlockEnabled, closeWindow: true);
             return;
         }
         UpdateCountdownLabel();
@@ -222,52 +220,42 @@ public partial class PromptStackWindow : Window
 
     private void AllowAll_Click(object sender, RoutedEventArgs e)
     {
-        var list = _cards.ToList();
-        _cards.Clear();
-        CardsContainer.Children.Clear();
-        _countdownTimer.Stop();
-        Close();
-
-        foreach (var card in list)
-        {
-            card.DecisionMade -= OnCardDecisionMade;
-            CardResolved?.Invoke(card, PopupDecision.AllowAlways, false);
-        }
+        ResolveAllCards(PopupDecision.AllowAlways, timedOut: false, closeWindow: true);
     }
 
     private void BlockAll_Click(object sender, RoutedEventArgs e)
     {
-        var list = _cards.ToList();
-        _cards.Clear();
-        CardsContainer.Children.Clear();
-        _countdownTimer.Stop();
-        Close();
-
-        foreach (var card in list)
-        {
-            card.DecisionMade -= OnCardDecisionMade;
-            CardResolved?.Invoke(card, PopupDecision.BlockAlways, false);
-        }
+        ResolveAllCards(PopupDecision.BlockAlways, timedOut: false, closeWindow: true);
     }
 
     private void DismissAll_Click(object sender, RoutedEventArgs e) => DismissAll();
 
     public void DismissAll()
     {
+        ResolveAllCards(PopupDecision.Dismiss, timedOut: false, closeWindow: true);
+        if (IsPreview)
+        {
+            DismissPreview();
+        }
+    }
+
+    private void ResolveAllCards(PopupDecision decision, bool timedOut, bool closeWindow)
+    {
+        _countdownTimer.Stop();
         var list = _cards.ToList();
         _cards.Clear();
         CardsContainer.Children.Clear();
-        _countdownTimer.Stop();
-        Close();
+
+        if (closeWindow && !_isClosing)
+        {
+            _isClosing = true;
+            Close();
+        }
 
         foreach (var card in list)
         {
             card.DecisionMade -= OnCardDecisionMade;
-            CardResolved?.Invoke(card, PopupDecision.Dismiss, false);
-        }
-        if (IsPreview)
-        {
-            DismissPreview();
+            CardResolved?.Invoke(card, decision, timedOut);
         }
     }
 
@@ -319,10 +307,34 @@ public partial class PromptStackWindow : Window
         }
     }
 
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        if (!_isClosing)
+        {
+            _isClosing = true;
+            if (_cards.Count > 0)
+            {
+                ResolveAllCards(PopupDecision.Dismiss, timedOut: false, closeWindow: false);
+            }
+            else
+            {
+                _countdownTimer.Stop();
+            }
+        }
+
+        base.OnClosing(e);
+    }
+
     protected override void OnClosed(EventArgs e)
     {
+        _isClosing = true;
         _countdownTimer.Stop();
         base.OnClosed(e);
-        if (_activePreview == this) _activePreview = null;
+        if (_activePreview == this)
+        {
+            _previewTimer?.Stop();
+            _previewTimer = null;
+            _activePreview = null;
+        }
     }
 }

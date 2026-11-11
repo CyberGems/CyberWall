@@ -124,7 +124,7 @@ public partial class PromptCardControl : UserControl
             badge = Strings.T("Unsigned");
 
         PublisherLbl.Text = badge;
-        var isLight = App.Settings.Theme == CyberWall.Common.Settings.AppTheme.Light;
+        var isLight = App.Settings?.Theme == CyberWall.Common.Settings.AppTheme.Light;
         if (trusted)
         {
             var fgColor = isLight ? Color.FromRgb(29, 78, 216) : Color.FromRgb(0, 229, 255);
@@ -148,7 +148,7 @@ public partial class PromptCardControl : UserControl
 
     private void ApplyDirection(ConnectionEvent ev)
     {
-        var isLight = App.Settings.Theme == CyberWall.Common.Settings.AppTheme.Light;
+        var isLight = App.Settings?.Theme == CyberWall.Common.Settings.AppTheme.Light;
 
         if (ev.Direction == Direction.Inbound)
         {
