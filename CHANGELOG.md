@@ -18,12 +18,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- Unanswered connection prompts no longer save a persistent block rule by default (auto-block is now opt-in in Settings, with a one-time migration disabling it on existing setups); expired or dismissed prompts close without saving a verdict, record a pending decision notification in Notification Center with a 60-second reprompt cooldown, and keep the app blocked under the default-deny policy until answered.
 - Disabled window transparency to enable full GPU rendering and hardware acceleration across Windows versions.
 - Optimized startup and rule loading with non-blocking background initialization and DataGrid row virtualization.
 - Streamlined protection status labels and title bar tooltips for improved layout clarity and multi-monitor scaling.
+- Uninstaller now waits for the CyberWall application and Windows service to stop cleanly before removing files or firewall rules.
 
 ### Fixed
 
+- Provisioned allow rules and armed the anti-lockout watchdog before switching the Windows Firewall to default-deny, preventing connectivity drops for already-allowed programs during activation.
 - Fixed sticky tooltip persistence when moving the cursor quickly between title bar buttons.
 - Fixed bracketed IPv6 endpoint parsing with ports.
 - Fixed country flag alignment in expanded rule lists.
