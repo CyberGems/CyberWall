@@ -140,10 +140,7 @@ public partial class AppInfoToast : Window
         _autoCloseTimer.Start();
 
         UpdateStackChrome();
-        if (IsLoaded)
-        {
-            RecalculateLayoutAndPosition();
-        }
+        RecalculateLayoutAndPosition();
     }
 
     private ToastCardEntry CreateCardEntry(string title, string message, string? appPath, ToastBadgeType badgeType, string? badgeText)

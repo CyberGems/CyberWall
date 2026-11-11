@@ -26,11 +26,7 @@ public partial class AutoBlockToast : Window
         Title = Strings.T("WindowAutoBlocked");
 
         SourceInitialized += (_, _) => PopupWindowHelper.ApplyNoActivateChrome(this);
-        Loaded += (_, _) =>
-        {
-            UpdateLayout();
-            PopupWindowHelper.PositionWindow(this, App.Settings.NotificationPosition, App.Settings.NotificationMonitor);
-        };
+        Loaded += (_, _) => PositionToast();
 
         var name = ev.DisplayName;
         TitleLbl.Text = Strings.T("AutoBlockedTitle");
@@ -40,6 +36,8 @@ public partial class AutoBlockToast : Window
         CloseBtn.ToolTip = Strings.T("Close");
         AutomationProperties.SetName(CloseBtn, Strings.T("Close"));
         AutomationProperties.SetName(UndoBtn, Strings.T("AutoBlockedUndo"));
+
+        PositionToast();
 
         _autoCloseTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(12) };
         _autoCloseTimer.Tick += (_, _) =>
@@ -56,6 +54,12 @@ public partial class AutoBlockToast : Window
             _autoCloseTimer.Start();
         };
         MouseLeftButtonDown += OnBodyClick;
+    }
+
+    private void PositionToast()
+    {
+        UpdateLayout();
+        PopupWindowHelper.PositionWindow(this, App.Settings.NotificationPosition, App.Settings.NotificationMonitor);
     }
 
     public static void ShowToast(ConnectionEvent ev, Action? onUndo = null)

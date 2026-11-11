@@ -16,6 +16,17 @@ public static class PopupWindowHelper
     private const uint SWP_NOSIZE = 0x0001;
     private const uint SWP_NOZORDER = 0x0004;
     private const uint SWP_NOACTIVATE = 0x0010;
+    private const uint MONITOR_DEFAULTTONEAREST = 2;
+    private const int MDT_EFFECTIVE_DPI = 0;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RECT
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
 
     [DllImport("user32.dll", EntryPoint = "GetWindowLongA")]
     private static extern int GetWindowLong(IntPtr hwnd, int index);
@@ -26,6 +37,16 @@ public static class PopupWindowHelper
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromPoint(System.Drawing.Point pt, uint dwFlags);
+
+    [DllImport("shcore.dll")]
+    private static extern int GetDpiForMonitor(IntPtr hmonitor, int dpiType, out uint dpiX, out uint dpiY);
 
     public static Screen[] GetSortedScreens()
     {
@@ -57,142 +78,219 @@ public static class PopupWindowHelper
 
     public static void PositionWindow(Window window, PopupPosition position, int monitorIndex = -1, int? explicitStackIndex = null)
     {
-        // 1. Get the target monitor
         var screens = GetSortedScreens();
         var screen = (monitorIndex >= 0 && monitorIndex < screens.Length)
             ? screens[monitorIndex]
-            : Screen.FromPoint(Cursor.Position);
+            : (Screen.FromPoint(Cursor.Position) ?? screens.FirstOrDefault());
+        if (screen == null) return;
 
         var phys = screen.WorkingArea;
-
-        // 2. Move window to the target monitor physically first so Windows/WPF switches DPI context
+        var (scaleX, scaleY) = GetMonitorScale(screen);
+        int gapPx = (int)Math.Round(10 * scaleY);
         var hwnd = new WindowInteropHelper(window).Handle;
+
         if (hwnd != IntPtr.Zero)
         {
-            SetWindowPos(hwnd, IntPtr.Zero, phys.X, phys.Y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
-        }
-
-        // 3. Compute accurate DIP work area on that monitor via PointFromScreen
-        Rect wa;
-        try
-        {
-            if (window.IsLoaded && hwnd != IntPtr.Zero)
+            var currentScreen = Screen.FromHandle(hwnd);
+            if (!string.Equals(currentScreen.DeviceName, screen.DeviceName, StringComparison.OrdinalIgnoreCase))
             {
-                var topLeft = window.PointFromScreen(new System.Windows.Point(phys.Left, phys.Top));
-                var bottomRight = window.PointFromScreen(new System.Windows.Point(phys.Right, phys.Bottom));
-
-                wa = new Rect(
-                    window.Left + topLeft.X,
-                    window.Top + topLeft.Y,
-                    Math.Max(100, bottomRight.X - topLeft.X),
-                    Math.Max(100, bottomRight.Y - topLeft.Y));
+                // Move onto the target monitor first so Windows switches DPI context before measuring size.
+                SetWindowPos(hwnd, IntPtr.Zero, phys.X, phys.Y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
+                window.UpdateLayout();
             }
-            else
-            {
-                wa = screen.Primary ? SystemParameters.WorkArea : new Rect(screen.Bounds.X, screen.Bounds.Y, screen.WorkingArea.Width, screen.WorkingArea.Height);
-            }
-        }
-        catch
-        {
-            wa = SystemParameters.WorkArea;
-        }
 
-        const double marginX = 20;
-        const double marginY = 20;
-        const double gap = 10;
+            var (physW, physH) = GetPhysicalWindowSize(window, hwnd, scaleX, scaleY);
+            int stackOffsetPx = ComputeStackOffsetPx(window, screen, physH, gapPx, scaleY, explicitStackIndex);
+            var (leftPx, topPx) = ComputeTargetPhysicalOrigin(phys, physW, physH, scaleX, scaleY, position, stackOffsetPx);
 
-        double width = window.ActualWidth > 1 ? window.ActualWidth : window.Width > 0 ? window.Width : 516;
-        double height = window.ActualHeight > 1 ? window.ActualHeight : window.Height > 0 ? window.Height : 280;
-
-        double stackOffset;
-        if (explicitStackIndex.HasValue)
-        {
-            stackOffset = explicitStackIndex.Value * (height + gap);
-        }
-        else
-        {
-            var existing = System.Windows.Application.Current.Windows
-                .OfType<Window>()
-                .Where(w => w != window && w.IsVisible && (
-                    (w is PromptStackWindow psw && !psw.IsPreview) ||
-                    w is AppInfoToast ||
-                    w is FirstActivityToast ||
-                    w is AutoBlockToast))
-                .ToList();
-            stackOffset = existing.Sum(w => (w.ActualHeight > 1 ? w.ActualHeight : w.Height > 0 ? w.Height : 160) + gap);
+            SetWindowPos(hwnd, IntPtr.Zero, leftPx, topPx, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
+            return;
         }
 
-        double left;
-        double top;
+        // Before Show() creates the HWND, map the target physical coordinates using primary/system DPI
+        // so the window is created directly on the target monitor without flashing at primary defaults.
+        var (dipW, dipH) = GetDipWindowSize(window);
+        int prePhysW = (int)Math.Round(dipW * scaleX);
+        int prePhysH = (int)Math.Round(dipH * scaleY);
+        int preStackOffsetPx = ComputeStackOffsetPx(window, screen, prePhysH, gapPx, scaleY, explicitStackIndex);
+        var (preLeftPx, preTopPx) = ComputeTargetPhysicalOrigin(phys, prePhysW, prePhysH, scaleX, scaleY, position, preStackOffsetPx);
+
+        var (preScaleX, preScaleY) = GetPreShowDpiScale(window);
+        window.Left = preLeftPx / preScaleX;
+        window.Top = preTopPx / preScaleY;
+    }
+
+    internal static (int LeftPx, int TopPx) ComputeTargetPhysicalOrigin(
+        System.Drawing.Rectangle physWorkArea,
+        int windowWidthPx,
+        int windowHeightPx,
+        double scaleX,
+        double scaleY,
+        PopupPosition position,
+        int stackOffsetPx)
+    {
+        if (scaleX <= 0) scaleX = 1.0;
+        if (scaleY <= 0) scaleY = 1.0;
+
+        int marginX = (int)Math.Round(20 * scaleX);
+        int marginY = (int)Math.Round(20 * scaleY);
+
+        int leftPx;
+        int topPx;
 
         switch (position)
         {
             case PopupPosition.TopLeft:
-                left = wa.Left + marginX;
-                top = wa.Top + marginY + stackOffset;
+                leftPx = physWorkArea.Left + marginX;
+                topPx = physWorkArea.Top + marginY + stackOffsetPx;
                 break;
 
             case PopupPosition.TopCenter:
-                left = wa.Left + (wa.Width - width) / 2;
-                top = wa.Top + marginY + stackOffset;
+                leftPx = physWorkArea.Left + (physWorkArea.Width - windowWidthPx) / 2;
+                topPx = physWorkArea.Top + marginY + stackOffsetPx;
                 break;
 
             case PopupPosition.TopRight:
-                left = wa.Right - width - marginX;
-                top = wa.Top + marginY + stackOffset;
+                leftPx = physWorkArea.Right - windowWidthPx - marginX;
+                topPx = physWorkArea.Top + marginY + stackOffsetPx;
                 break;
 
             case PopupPosition.Left:
-                left = wa.Left + marginX;
-                top = wa.Top + (wa.Height - height) / 2 + stackOffset;
+                leftPx = physWorkArea.Left + marginX;
+                topPx = physWorkArea.Top + (physWorkArea.Height - windowHeightPx) / 2 + stackOffsetPx;
                 break;
 
             case PopupPosition.Right:
-                left = wa.Right - width - marginX;
-                top = wa.Top + (wa.Height - height) / 2 + stackOffset;
+                leftPx = physWorkArea.Right - windowWidthPx - marginX;
+                topPx = physWorkArea.Top + (physWorkArea.Height - windowHeightPx) / 2 + stackOffsetPx;
                 break;
 
             case PopupPosition.BottomLeft:
-                left = wa.Left + marginX;
-                top = wa.Bottom - height - marginY - stackOffset;
+                leftPx = physWorkArea.Left + marginX;
+                topPx = physWorkArea.Bottom - windowHeightPx - marginY - stackOffsetPx;
                 break;
 
             case PopupPosition.BottomCenter:
-                left = wa.Left + (wa.Width - width) / 2;
-                top = wa.Bottom - height - marginY - stackOffset;
+                leftPx = physWorkArea.Left + (physWorkArea.Width - windowWidthPx) / 2;
+                topPx = physWorkArea.Bottom - windowHeightPx - marginY - stackOffsetPx;
                 break;
 
             case PopupPosition.BottomRight:
             default:
-                left = wa.Right - width - marginX;
-                top = wa.Bottom - height - marginY - stackOffset;
+                leftPx = physWorkArea.Right - windowWidthPx - marginX;
+                topPx = physWorkArea.Bottom - windowHeightPx - marginY - stackOffsetPx;
                 break;
         }
 
-        // Clamp inside workArea
-        if (left < wa.Left) left = wa.Left;
-        if (left + width > wa.Right) left = wa.Right - width;
-        if (top < wa.Top) top = wa.Top;
-        if (top + height > wa.Bottom) top = wa.Bottom - height;
-
-        window.Left = SnapToDevicePixels(window, left, horizontal: true);
-        window.Top = SnapToDevicePixels(window, top, horizontal: false);
+        leftPx = Math.Clamp(leftPx, physWorkArea.Left, Math.Max(physWorkArea.Left, physWorkArea.Right - windowWidthPx));
+        topPx = Math.Clamp(topPx, physWorkArea.Top, Math.Max(physWorkArea.Top, physWorkArea.Bottom - windowHeightPx));
+        return (leftPx, topPx);
     }
 
-    private static double SnapToDevicePixels(Window window, double dip, bool horizontal)
+    private static (double Width, double Height) GetDipWindowSize(Window window)
+    {
+        double width = window.ActualWidth > 1 ? window.ActualWidth
+            : (window.Width > 0 ? window.Width : 516);
+        double height = window.ActualHeight > 1 ? window.ActualHeight
+            : (window.Height > 0 ? window.Height
+            : (window.DesiredSize.Height > 1 ? window.DesiredSize.Height : 280));
+        return (width, height);
+    }
+
+    private static (int WidthPx, int HeightPx) GetPhysicalWindowSize(Window window, IntPtr hwnd, double scaleX, double scaleY)
+    {
+        if (hwnd != IntPtr.Zero && GetWindowRect(hwnd, out var rc) && rc.Right > rc.Left && rc.Bottom > rc.Top)
+        {
+            return (rc.Right - rc.Left, rc.Bottom - rc.Top);
+        }
+
+        var (dipW, dipH) = GetDipWindowSize(window);
+        return ((int)Math.Round(dipW * scaleX), (int)Math.Round(dipH * scaleY));
+    }
+
+    private static int ComputeStackOffsetPx(
+        Window currentWindow,
+        Screen targetScreen,
+        int currentPhysHeight,
+        int gapPx,
+        double targetScaleY,
+        int? explicitStackIndex)
+    {
+        if (explicitStackIndex.HasValue)
+        {
+            return explicitStackIndex.Value * (currentPhysHeight + gapPx);
+        }
+
+        var existing = System.Windows.Application.Current?.Windows
+            .OfType<Window>()
+            .Where(w => w != currentWindow && w.IsVisible && (
+                (w is PromptStackWindow psw && !psw.IsPreview) ||
+                w is AppInfoToast ||
+                w is FirstActivityToast ||
+                w is AutoBlockToast))
+            .ToList();
+
+        if (existing == null || existing.Count == 0) return 0;
+
+        int totalPx = 0;
+        foreach (var w in existing)
+        {
+            var wHwnd = new WindowInteropHelper(w).Handle;
+            if (wHwnd != IntPtr.Zero)
+            {
+                var wScreen = Screen.FromHandle(wHwnd);
+                if (!string.Equals(wScreen.DeviceName, targetScreen.DeviceName, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (GetWindowRect(wHwnd, out var rc) && rc.Bottom > rc.Top)
+                {
+                    totalPx += (rc.Bottom - rc.Top) + gapPx;
+                    continue;
+                }
+            }
+
+            double hDip = w.ActualHeight > 1 ? w.ActualHeight : (w.Height > 0 ? w.Height : 160);
+            totalPx += (int)Math.Round(hDip * targetScaleY) + gapPx;
+        }
+
+        return totalPx;
+    }
+
+    internal static (double ScaleX, double ScaleY) GetMonitorScale(Screen screen)
     {
         try
         {
-            var source = PresentationSource.FromVisual(window);
-            var m = source?.CompositionTarget?.TransformToDevice ?? System.Windows.Media.Matrix.Identity;
-            double scale = horizontal ? m.M11 : m.M22;
-            if (scale <= 0) return dip;
-            return Math.Round(dip * scale) / scale;
+            var area = screen.WorkingArea;
+            var sample = new System.Drawing.Point(area.Left + area.Width / 2, area.Top + area.Height / 2);
+            var hmon = MonitorFromPoint(sample, MONITOR_DEFAULTTONEAREST);
+            if (hmon != IntPtr.Zero &&
+                GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, out uint dpiX, out uint dpiY) == 0 &&
+                dpiX > 0 && dpiY > 0)
+            {
+                return (dpiX / 96.0, dpiY / 96.0);
+            }
         }
-        catch
+        catch { }
+
+        return (1.0, 1.0);
+    }
+
+    private static (double ScaleX, double ScaleY) GetPreShowDpiScale(Window window)
+    {
+        try
         {
-            return dip;
+            var dpi = System.Windows.Media.VisualTreeHelper.GetDpi(window);
+            if (dpi.DpiScaleX > 0 && dpi.DpiScaleY > 0)
+            {
+                return (dpi.DpiScaleX, dpi.DpiScaleY);
+            }
         }
+        catch { }
+
+        var primary = Screen.PrimaryScreen;
+        return primary != null ? GetMonitorScale(primary) : (1.0, 1.0);
     }
 
     public static bool HasOpenPermissionPopup()

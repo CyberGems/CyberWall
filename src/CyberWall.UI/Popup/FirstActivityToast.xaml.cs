@@ -25,12 +25,7 @@ public partial class FirstActivityToast : Window
         Title = Strings.T("WindowFirstActivity");
 
         SourceInitialized += (_, _) => PopupWindowHelper.ApplyNoActivateChrome(this);
-        Loaded += (_, _) =>
-        {
-            var pos = App.Settings.NotificationPosition;
-            var mon = App.Settings.NotificationMonitor;
-            PopupWindowHelper.PositionWindow(this, pos, mon);
-        };
+        Loaded += (_, _) => PositionToast();
 
         TitleLbl.Text = Strings.T("FirstNetworkActivity");
         TimeLbl.Text = Strings.T("Now");
@@ -65,6 +60,7 @@ public partial class FirstActivityToast : Window
         }
 
         EndpointLbl.Text = NetworkEndpoint.FormatPrimary(ev.Protocol, ev.RemoteAddress, ev.RemotePort);
+        PositionToast();
 
         _autoCloseTimer = new DispatcherTimer
         {
@@ -88,6 +84,12 @@ public partial class FirstActivityToast : Window
                 mw.Activate();
             }
         };
+    }
+
+    private void PositionToast()
+    {
+        UpdateLayout();
+        PopupWindowHelper.PositionWindow(this, App.Settings.NotificationPosition, App.Settings.NotificationMonitor);
     }
 
     public static void ShowToast(ConnectionEvent ev)
