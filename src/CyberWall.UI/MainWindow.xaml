@@ -1259,8 +1259,8 @@
                                     <ColumnDefinition Width="Auto"/>
                                     <!-- Center Block: Live Network Wave Graph (Flexible) -->
                                     <ColumnDefinition Width="*"/>
-                                    <!-- Right Block: Live Speeds & Controls (Fixed 170px to lock graph width) -->
-                                    <ColumnDefinition Width="170"/>
+                                    <!-- Right Block: Live Speeds & Controls (Fixed 196px to lock graph width) -->
+                                    <ColumnDefinition Width="196"/>
                                 </Grid.ColumnDefinitions>
 
                                 <!-- LEFT BLOCK: Master Protection Toggle & Mode Dropdown -->
@@ -1360,59 +1360,55 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <!-- Top Row: Real-time Speeds Pill (Fixed width to avoid jitter) -->
+                                    <!-- Top Row: Real-time Speeds Pill (Matches fixed column width to avoid jitter) -->
                                     <Border x:Name="FirewallThroughputPill" Grid.Row="0"
                                             Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                             BorderThickness="1" CornerRadius="6" Padding="6,4" Margin="0,0,0,6"
-                                            Width="170" VerticalAlignment="Center" HorizontalAlignment="Right" Cursor="Hand"
+                                            HorizontalAlignment="Stretch" VerticalAlignment="Center" Cursor="Hand"
                                             MouseLeftButtonUp="FirewallThroughputPill_Click" ToolTipService.InitialShowDelay="200">
                                         <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="62"/>
+                                                <ColumnDefinition Width="68"/>
                                                 <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="62"/>
+                                                <ColumnDefinition Width="68"/>
                                             </Grid.ColumnDefinitions>
-                                            <Path Grid.Column="0" Data="M 3.5 0 H 6.5 V 5.5 H 9.5 L 5 10 L 0.5 5.5 H 3.5 Z" Fill="{DynamicResource AccentBrush}" Width="8" Height="9" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                            <Path Grid.Column="0" Data="M 3.5 0 H 6.5 V 5.5 H 9.5 L 5 10 L 0.5 5.5 H 3.5 Z" Fill="{DynamicResource AccentBrush}" Width="8" Height="9" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                             <TextBlock x:Name="FirewallDownSpeedText" Grid.Column="1" Text="0.0 B/s" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" TextAlignment="Left"/>
-                                            <Path Grid.Column="2" Data="M 5 0 L 9.5 4.5 H 6.5 V 10 H 3.5 V 4.5 H 0.5 Z" Fill="#22C55E" Width="8" Height="9" Stretch="Uniform" VerticalAlignment="Center" Margin="3,0,3,0"/>
+                                            <Path Grid.Column="2" Data="M 5 0 L 9.5 4.5 H 6.5 V 10 H 3.5 V 4.5 H 0.5 Z" Fill="#22C55E" Width="8" Height="9" Stretch="Uniform" VerticalAlignment="Center" Margin="4,0,4,0"/>
                                             <TextBlock x:Name="FirewallUpSpeedText" Grid.Column="3" Text="0.0 B/s" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" TextAlignment="Left"/>
                                         </Grid>
                                     </Border>
 
                                     <!-- Bottom Row: 1m / 5m / 10m Time Segmented Toggle + Pause Button -->
-                                    <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                    <Grid Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Stretch">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
                                         <!-- 1m / 5m / 10m Segmented Toggle -->
-                                        <Border Background="{DynamicResource HeaderBgBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                                BorderThickness="1" CornerRadius="6" Padding="2" VerticalAlignment="Center" Margin="0,0,6,0">
-                                            <StackPanel Orientation="Horizontal">
+                                        <Border Grid.Column="0" Background="{DynamicResource HeaderBgBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                                BorderThickness="1" CornerRadius="6" Padding="2" VerticalAlignment="Center" Margin="0,0,6,0"
+                                                HorizontalAlignment="Stretch">
+                                            <UniformGrid Rows="1">
                                                 <RadioButton x:Name="FirewallTime1mBtn" Content="1 min" Style="{StaticResource ChartSegmentRadioStyle}"
-                                                             IsChecked="True" Click="FirewallTimeWindow_Click" Tag="60" ToolTipService.InitialShowDelay="200"/>
+                                                             Padding="6,3" IsChecked="True" Click="FirewallTimeWindow_Click" Tag="60" ToolTipService.InitialShowDelay="200"/>
                                                 <RadioButton x:Name="FirewallTime5mBtn" Content="5 min" Style="{StaticResource ChartSegmentRadioStyle}"
-                                                             Click="FirewallTimeWindow_Click" Tag="300" ToolTipService.InitialShowDelay="200"/>
+                                                             Padding="6,3" Click="FirewallTimeWindow_Click" Tag="300" ToolTipService.InitialShowDelay="200"/>
                                                 <RadioButton x:Name="FirewallTime10mBtn" Content="10 min" Style="{StaticResource ChartSegmentRadioStyle}"
-                                                             Click="FirewallTimeWindow_Click" Tag="600" ToolTipService.InitialShowDelay="200"/>
-                                            </StackPanel>
+                                                             Padding="6,3" Click="FirewallTimeWindow_Click" Tag="600" ToolTipService.InitialShowDelay="200"/>
+                                            </UniformGrid>
                                         </Border>
 
                                         <!-- Pause / Resume Button -->
-                                        <Button x:Name="FirewallPauseChartBtn" Style="{StaticResource ChartPauseButtonStyle}"
+                                        <Button x:Name="FirewallPauseChartBtn" Grid.Column="1" Style="{StaticResource ChartPauseButtonStyle}"
                                                 Click="FirewallPauseChartBtn_Click" ToolTipService.InitialShowDelay="200">
                                             <Path x:Name="FirewallPauseBtnIcon" Data="M 6 4 H 8 V 16 H 6 Z M 12 4 H 14 V 16 H 12 Z"
                                                   Fill="{DynamicResource SubTextBrush}" Stretch="Uniform" Width="9" Height="10"
                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Button>
-
-                                        <!-- Popout Floating Widget Button -->
-                                        <Button x:Name="FirewallWidgetPopoutBtn" Style="{StaticResource ChartPauseButtonStyle}" Margin="5,0,0,0"
-                                                Click="WidgetBtn_Click" ToolTipService.InitialShowDelay="200">
-                                            <Path x:Name="FirewallWidgetPopoutBtnIcon" Data="M 3 3 H 19 V 15 H 3 Z M 3 6.5 H 19 M 6 12 L 8.5 9 L 11 11.5 L 13.5 8.5 L 16 11"
-                                                  Stroke="{DynamicResource SubTextBrush}"
-                                                  StrokeThickness="1.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                                                  Width="11" Height="10" Stretch="Uniform"
-                                                  HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
-                                        </Button>
-                                    </StackPanel>
+                                    </Grid>
                                 </Grid>
                             </Grid>
                         </Border>

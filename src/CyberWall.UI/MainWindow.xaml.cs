@@ -430,11 +430,6 @@ public partial class MainWindow : Window
             WidgetBtn.ToolTip = Strings.T("FloatingWidgetTooltip");
             AutomationProperties.SetName(WidgetBtn, Strings.T("NetworkWidgetMenu"));
         }
-        if (FirewallWidgetPopoutBtn != null)
-        {
-            FirewallWidgetPopoutBtn.ToolTip = Strings.T("FloatingWidgetTooltip");
-            AutomationProperties.SetName(FirewallWidgetPopoutBtn, Strings.T("NetworkWidgetMenu"));
-        }
         SettingsBtn.ToolTip = Strings.T("NavSettingsTooltip");
         AutomationProperties.SetName(SettingsBtn, Strings.T("Settings"));
         MoreBtn.ToolTip = Strings.T("MoreOptions");
@@ -2237,16 +2232,6 @@ public partial class MainWindow : Window
         if (WidgetBtn != null)
         {
             WidgetBtn.Tag = visible ? "Active" : null;
-        }
-        if (FirewallWidgetPopoutBtn != null)
-        {
-            FirewallWidgetPopoutBtn.Tag = visible ? "Active" : null;
-            if (FirewallWidgetPopoutBtnIcon != null)
-            {
-                FirewallWidgetPopoutBtnIcon.Stroke = visible
-                    ? (System.Windows.Media.Brush)FindResource("AccentBrush")
-                    : (System.Windows.Media.Brush)FindResource("SubTextBrush");
-            }
         }
     }
 
