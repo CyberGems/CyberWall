@@ -25,13 +25,13 @@
             </Grid>
             <ControlTemplate.Triggers>
                 <Trigger Property="IsMouseOver" Value="true">
-                    <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
-                    <Setter TargetName="Border" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                    <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
+                    <Setter TargetName="Border" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
                     <Setter TargetName="Arrow" Property="Fill" Value="{DynamicResource TextBrush}"/>
                 </Trigger>
                 <Trigger Property="IsChecked" Value="true">
-                    <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
-                    <Setter TargetName="Border" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                    <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
+                    <Setter TargetName="Border" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
                     <Setter TargetName="Arrow" Property="Fill" Value="{DynamicResource AccentBrush}"/>
                 </Trigger>
             </ControlTemplate.Triggers>
@@ -115,8 +115,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
@@ -217,8 +217,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>

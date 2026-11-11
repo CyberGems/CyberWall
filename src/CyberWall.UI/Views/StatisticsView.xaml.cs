@@ -93,6 +93,7 @@ public partial class StatisticsView : UserControl
     {
         PeriodLabel.Text = Strings.T("StatsPeriodLabel");
         RefreshBtnText.Text = Strings.T("Refresh");
+        RefreshBtn.ToolTip = Strings.T("StatsRefreshTooltip");
 
         FilterAllRadio.Content = Strings.T("StatsFilterAll");
         FilterBlockedRadio.Content = Strings.T("StatsFilterBlocked");
@@ -114,7 +115,10 @@ public partial class StatisticsView : UserControl
 
         TopCountriesTitle.Text = Strings.T("StatsTopCountries");
         ClearStatsBtnText.Text = Strings.T("StatsResetBtn");
+        ClearStatsBtn.ToolTip = Strings.T("StatsResetTooltip");
         EmptyMsg.Text = Strings.T("StatsNoDataPeriod");
+
+        UpdateSessionVolume();
 
         var curIdx = PeriodCombo.SelectedIndex;
         PopulatePeriods();

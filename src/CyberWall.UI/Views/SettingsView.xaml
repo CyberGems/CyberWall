@@ -26,11 +26,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -64,10 +64,14 @@
             </Border>
             <ControlTemplate.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter TargetName="TemplateRoot" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                    <Setter TargetName="TemplateRoot" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
+                    <Setter TargetName="TemplateRoot" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
+                    <Setter TargetName="Arrow" Property="Fill" Value="{DynamicResource TextBrush}"/>
                 </Trigger>
                 <Trigger Property="IsChecked" Value="True">
-                    <Setter TargetName="TemplateRoot" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                    <Setter TargetName="TemplateRoot" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
+                    <Setter TargetName="TemplateRoot" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
+                    <Setter TargetName="Arrow" Property="Fill" Value="{DynamicResource AccentBrush}"/>
                 </Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate>

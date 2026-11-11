@@ -71,12 +71,12 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BgBd" Property="Background" Value="#2200E5FF"/>
-                                <Setter TargetName="StrokeBd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="BgBd" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
+                                <Setter TargetName="StrokeBd" Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="BgBd" Property="Background" Value="#3800E5FF"/>
+                                <Setter TargetName="BgBd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
                                 <Setter TargetName="Root" Property="RenderTransform">
                                     <Setter.Value>
                                         <ScaleTransform ScaleX="0.96" ScaleY="0.96"/>

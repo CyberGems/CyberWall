@@ -446,6 +446,7 @@ public partial class MainWindow : Window
 
     public void RefreshLanguage()
     {
+        bool isLanguageSwitch = !_loading;
         Title = Strings.T("AppTitle");
         TitleText.Text = "CyberWall";
         WfpBadgeText.Text = Strings.T("WfpEngineBadge");
@@ -531,8 +532,17 @@ public partial class MainWindow : Window
 
         UpdateColumnHeaders();
 
+        if (CountryFilterChip != null && !string.IsNullOrEmpty(_countryFilter))
+        {
+            CountryFilterChip.ToolTip = string.Format(Strings.T("CountryFilterActive"), _countryFilter.ToUpperInvariant()) + " · " + Strings.T("ClearCountryFilterHint");
+        }
+
         InvalidateAllTooltips();
         OnActivityUpdated();
+        if (isLanguageSwitch)
+        {
+            RefreshRules();
+        }
 
         UpdateExpanderHeaders();
         var m = IndexFromMode(_svc.Mode);

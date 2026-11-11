@@ -169,10 +169,11 @@ public partial class StatisticsDialog : Window
         EmptyMsgTitle.Text = Strings.T("StatsNoData");
         EmptyMsgDesc.Text = Strings.T("StatsNoData");
 
+        RefreshBtn.ToolTip = Strings.T("StatsRefreshTooltip");
         ViewLogBtnText.Text = Strings.T("StatsViewLog");
         CopySummaryBtnText.Text = Strings.T("StatsCopySummary");
         ClearStatsBtnText.Text = Strings.T("StatsResetBtn");
-        ClearStatsBtn.ToolTip = Strings.T("StatsResetTitle");
+        ClearStatsBtn.ToolTip = Strings.T("StatsResetTooltip");
         CloseBtn.Content = Strings.T("Close");
 
         UpdateSessionVolume();

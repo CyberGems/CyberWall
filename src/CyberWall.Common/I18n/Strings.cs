@@ -401,6 +401,8 @@ public static class Strings
         ["StatsResetTitle"] = ("Reset Statistics", "Restablecer Estadísticas"),
         ["StatsResetConfirm"] = ("Are you sure you want to reset all traffic statistics and clear the event log? This action cannot be undone.", "¿Estás seguro de que deseas restablecer todas las estadísticas de tráfico y borrar el registro de eventos? Esta acción no se puede deshacer."),
         ["StatsResetBtn"] = ("Reset", "Restablecer"),
+        ["StatsRefreshTooltip"] = ("Refresh data", "Actualizar datos"),
+        ["StatsResetTooltip"] = ("Reset all statistics", "Restablecer todas las estadísticas"),
         ["StatsCountriesCount"] = ("{0} countries", "{0} países"),
         ["StatsScopeDetail"] = ("{0} apps · {1} unique IPs", "{0} apps · {1} IPs únicas"),
         ["Help"] = ("Help", "Ayuda"),

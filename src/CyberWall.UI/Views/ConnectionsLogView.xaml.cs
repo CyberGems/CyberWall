@@ -78,6 +78,11 @@ public partial class ConnectionsLogView : UserControl
             SearchClearBtn.ToolTip = Strings.T("CloseSearchTooltip");
             System.Windows.Automation.AutomationProperties.SetName(SearchClearBtn, Strings.T("CloseSearchTooltip"));
         }
+
+        if (!_isInitializing)
+        {
+            ApplyFilter();
+        }
     }
 
     public void LoadLogs()
