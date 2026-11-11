@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using CyberWall.Common;
 using CyberWall.Common.Geo;
 using CyberWall.Common.I18n;
@@ -71,6 +72,12 @@ public partial class ConnectionsLogView : UserControl
         FilterAllRadio.Content = Strings.T("All");
         FilterBlockedRadio.Content = Strings.T("Block");
         FilterAllowedRadio.Content = Strings.T("Allow");
+
+        if (SearchClearBtn != null)
+        {
+            SearchClearBtn.ToolTip = Strings.T("CloseSearchTooltip");
+            System.Windows.Automation.AutomationProperties.SetName(SearchClearBtn, Strings.T("CloseSearchTooltip"));
+        }
     }
 
     public void LoadLogs()
@@ -135,9 +142,30 @@ public partial class ConnectionsLogView : UserControl
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (_isInitializing) return;
+        var hasText = !string.IsNullOrEmpty(SearchBox?.Text);
         if (SearchPlaceholder != null)
-            SearchPlaceholder.Visibility = string.IsNullOrEmpty(SearchBox?.Text) ? Visibility.Visible : Visibility.Collapsed;
+            SearchPlaceholder.Visibility = hasText ? Visibility.Collapsed : Visibility.Visible;
+        if (SearchClearBtn != null)
+            SearchClearBtn.Visibility = hasText ? Visibility.Visible : Visibility.Collapsed;
         ApplyFilter();
+    }
+
+    private void SearchClearBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (SearchBox != null)
+        {
+            SearchBox.Text = string.Empty;
+            SearchBox.Focus();
+        }
+    }
+
+    private void SearchBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Escape && !string.IsNullOrEmpty(SearchBox?.Text))
+        {
+            SearchBox.Text = string.Empty;
+            e.Handled = true;
+        }
     }
 
     private void Filter_Checked(object sender, RoutedEventArgs e)

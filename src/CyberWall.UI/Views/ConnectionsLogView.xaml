@@ -170,12 +170,33 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="🔍" FontSize="11" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <Grid Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock x:Name="SearchPlaceholder" Text="Filtrar en el registro (app, IP, puerto)..." Foreground="{DynamicResource SubTextBrush}" FontSize="11.5" VerticalAlignment="Center" IsHitTestVisible="False" Opacity="0.55"/>
-                            <TextBox x:Name="SearchBox" Background="Transparent" Foreground="{DynamicResource TextBrush}" CaretBrush="{DynamicResource AccentBrush}" BorderThickness="0" VerticalAlignment="Center" FontSize="11.5" TextChanged="SearchBox_TextChanged" ctrl:TextFieldContextMenu.Enabled="True"/>
+                            <TextBox x:Name="SearchBox" Background="Transparent" Foreground="{DynamicResource TextBrush}" CaretBrush="{DynamicResource AccentBrush}" BorderThickness="0" VerticalAlignment="Center" FontSize="11.5" TextChanged="SearchBox_TextChanged" PreviewKeyDown="SearchBox_PreviewKeyDown" ctrl:TextFieldContextMenu.Enabled="True"/>
                         </Grid>
+                        <Button x:Name="SearchClearBtn" Grid.Column="2" Width="20" Height="20"
+                                Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                Click="SearchClearBtn_Click" Margin="4,0,0,0" ToolTip="Cerrar búsqueda (Esc)"
+                                Visibility="Collapsed">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Bd" Background="Transparent" CornerRadius="10">
+                                        <Path Data="M 1 1 L 7 7 M 7 1 L 1 7" Stroke="{DynamicResource SubTextBrush}"
+                                              StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                              Width="8" Height="8" Stretch="Uniform"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
                     </Grid>
                 </Border>
 
@@ -343,8 +364,17 @@
                     <!-- Empty State -->
                     <Border x:Name="EmptyState" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Center">
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock Text="📋" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                            <TextBlock x:Name="EmptyMsg" Text="No hay registros grabados todavía" Foreground="{DynamicResource SubTextBrush}" FontSize="12.5" HorizontalAlignment="Center"/>
+                            <Border Width="58" Height="58" CornerRadius="29"
+                                    Background="{DynamicResource CardSecondaryBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                    HorizontalAlignment="Center" Margin="0,0,0,12">
+                                <Path Data="M 9 5 H 7 A 2 2 0 0 0 5 7 V 19 A 2 2 0 0 0 7 21 H 17 A 2 2 0 0 0 19 19 V 7 A 2 2 0 0 0 17 5 H 15 M 9 5 A 2 2 0 0 1 11 3 H 13 A 2 2 0 0 1 15 5 A 2 2 0 0 1 13 7 H 11 A 2 2 0 0 1 9 5 Z M 9 12 H 15 M 9 16 H 13"
+                                      Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.5"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      Width="26" Height="26" Stretch="Uniform"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                            </Border>
+                            <TextBlock x:Name="EmptyMsg" Text="No hay registros grabados todavía" Foreground="{DynamicResource SubTextBrush}" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Border>
                 </Grid>
