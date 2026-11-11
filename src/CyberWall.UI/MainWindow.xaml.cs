@@ -14,6 +14,7 @@ using CyberWall.Common.Models;
 using CyberWall.Common.Notifications;
 using CyberWall.Common.Settings;
 using CyberWall.Service.Engine;
+using CyberWall.UI.Controls;
 using CyberWall.UI.Converters;
 using CyberWall.UI.Dialogs;
 using CyberWall.UI.Popup;
@@ -453,27 +454,33 @@ public partial class MainWindow : Window
         SubtitleText.Text = Strings.T("AppSubtitle");
         if (BrandingPanel != null)
         {
-            BrandingPanel.ToolTip = Strings.T("WindowAbout");
+            BrandingPanel.ToolTip = HotkeyToolTipContent.WithShortcut(Strings.T("WindowAbout"), KeyboardShortcuts.About);
             AutomationProperties.SetName(BrandingPanel, Strings.T("WindowAbout"));
+            AutomationProperties.SetAcceleratorKey(BrandingPanel, KeyboardShortcuts.About);
         }
         FooterStatusText.Text = Strings.T("StatusFooter");
-        NotifBtn.ToolTip = Strings.T("Notifications");
+        NotifBtn.ToolTip = HotkeyToolTipContent.WithShortcut(Strings.T("Notifications"), KeyboardShortcuts.Notifications);
         AutomationProperties.SetName(NotifBtn, Strings.T("Notifications"));
+        AutomationProperties.SetAcceleratorKey(NotifBtn, KeyboardShortcuts.Notifications);
         if (WidgetBtn != null)
         {
-            WidgetBtn.ToolTip = Strings.T("FloatingWidgetTooltip");
+            WidgetBtn.ToolTip = HotkeyToolTipContent.WithShortcut(Strings.T("FloatingWidgetTooltip"), KeyboardShortcuts.Widget);
             AutomationProperties.SetName(WidgetBtn, Strings.T("NetworkWidgetMenu"));
+            AutomationProperties.SetAcceleratorKey(WidgetBtn, KeyboardShortcuts.Widget);
         }
-        SettingsBtn.ToolTip = Strings.T("NavSettingsTooltip");
+        SettingsBtn.ToolTip = HotkeyToolTipContent.WithShortcut(Strings.T("NavSettingsTooltip"), KeyboardShortcuts.Settings);
         AutomationProperties.SetName(SettingsBtn, Strings.T("Settings"));
-        MoreBtn.ToolTip = Strings.T("MoreOptions");
+        AutomationProperties.SetAcceleratorKey(SettingsBtn, KeyboardShortcuts.Settings);
+        MoreBtn.ToolTip = HotkeyToolTipContent.WithShortcut(Strings.T("MoreOptions"), KeyboardShortcuts.More);
         AutomationProperties.SetName(MoreBtn, Strings.T("MoreOptions"));
+        AutomationProperties.SetAcceleratorKey(MoreBtn, KeyboardShortcuts.More);
         if (MoreOptionsMenu != null)
         {
             MoreDonateItem.Header = Strings.T("Donate");
             MoreRefreshItem.Header = Strings.T("RefreshRules");
             MoreTrafficHistoryItem.Header = Strings.T("TrafficMonitorMenu");
             MoreWidgetItem.Header = Strings.T("NetworkWidgetMenu");
+            MoreWidgetItem.InputGestureText = KeyboardShortcuts.Widget;
             MoreLogItem.Header = Strings.T("ConnectionLogMenu");
             MoreStatsItem.Header = Strings.T("TrafficStatsMenu");
             MoreSettingsItem.Header = Strings.T("MoreSettings");
@@ -484,19 +491,24 @@ public partial class MainWindow : Window
             MoreWebsiteItem.Header = Strings.T("Website");
             MoreCheckUpdatesItem.Header = Strings.T("CheckForUpdates");
             MoreAboutItem.Header = Strings.T("AboutCyberWall");
+            MoreAboutItem.InputGestureText = KeyboardShortcuts.About;
         }
         TabFirewallText.Text = Strings.T("NavFirewall");
         AutomationProperties.SetName(TabFirewallBtn, TabFirewallText.Text);
-        TabFirewallBtn.ToolTip = Strings.T("NavFirewallTooltip");
+        AutomationProperties.SetAcceleratorKey(TabFirewallBtn, KeyboardShortcuts.Firewall);
+        TabFirewallBtn.ToolTip = HotkeyToolTipContent.WithShortcut(Strings.T("NavFirewallTooltip"), KeyboardShortcuts.Firewall);
         TabTrafficText.Text = Strings.T("NavTraffic");
         AutomationProperties.SetName(TabTrafficBtn, TabTrafficText.Text);
-        TabTrafficBtn.ToolTip = Strings.T("NavTrafficTooltip");
+        AutomationProperties.SetAcceleratorKey(TabTrafficBtn, KeyboardShortcuts.TrafficMonitor);
+        TabTrafficBtn.ToolTip = HotkeyToolTipContent.WithShortcut(Strings.T("NavTrafficTooltip"), KeyboardShortcuts.TrafficMonitor);
         TabConnectionsText.Text = Strings.T("NavConnections");
         AutomationProperties.SetName(TabConnectionsBtn, TabConnectionsText.Text);
-        TabConnectionsBtn.ToolTip = Strings.T("NavConnectionsTooltip");
+        AutomationProperties.SetAcceleratorKey(TabConnectionsBtn, KeyboardShortcuts.ConnectionsLog);
+        TabConnectionsBtn.ToolTip = HotkeyToolTipContent.WithShortcut(Strings.T("NavConnectionsTooltip"), KeyboardShortcuts.ConnectionsLog);
         TabStatsText.Text = Strings.T("NavStats");
         AutomationProperties.SetName(TabStatsBtn, TabStatsText.Text);
-        TabStatsBtn.ToolTip = Strings.T("NavStatsTooltip");
+        AutomationProperties.SetAcceleratorKey(TabStatsBtn, KeyboardShortcuts.Statistics);
+        TabStatsBtn.ToolTip = HotkeyToolTipContent.WithShortcut(Strings.T("NavStatsTooltip"), KeyboardShortcuts.Statistics);
 
         TrafficMonitorTabContent?.RefreshLanguage();
         ConnectionsLogTabContent?.RefreshLanguage();
@@ -562,23 +574,31 @@ public partial class MainWindow : Window
     {
         if (CloseBtn == null) return;
         bool toTray = App.Settings.MinimizeToTrayOnClose;
-        CloseBtn.ToolTip = Strings.T(toTray ? "CloseToTray" : "CloseApp");
-        if (MinimizeBtn != null) MinimizeBtn.ToolTip = Strings.T("Minimize");
+        var closeLabel = Strings.T(toTray ? "CloseToTray" : "CloseApp");
+        CloseBtn.ToolTip = HotkeyToolTipContent.WithShortcut(closeLabel, KeyboardShortcuts.Close);
+        AutomationProperties.SetName(CloseBtn, closeLabel);
+        AutomationProperties.SetAcceleratorKey(CloseBtn, KeyboardShortcuts.Close);
+
+        if (MinimizeBtn != null)
+        {
+            var minLabel = Strings.T("Minimize");
+            MinimizeBtn.ToolTip = HotkeyToolTipContent.WithShortcut(minLabel, KeyboardShortcuts.Minimize);
+            AutomationProperties.SetName(MinimizeBtn, minLabel);
+            AutomationProperties.SetAcceleratorKey(MinimizeBtn, KeyboardShortcuts.Minimize);
+        }
     }
 
     private void UpdateMaximizeButtonIcon()
     {
         if (MaximizeBtn == null || MaximizeIconPath == null) return;
-        if (WorkAreaMaximize.IsFilled(this) || WindowState == WindowState.Maximized)
-        {
-            MaximizeBtn.ToolTip = Strings.T("Restore");
-            MaximizeIconPath.Data = Geometry.Parse("M 6 2 L 6 6 L 2 6 M 6 6 L 2.5 2.5 M 8 12 L 8 8 L 12 8 M 8 8 L 11.5 11.5");
-        }
-        else
-        {
-            MaximizeBtn.ToolTip = Strings.T("Maximize");
-            MaximizeIconPath.Data = Geometry.Parse("M 3 7 L 3 3 L 7 3 M 3 3 L 6.5 6.5 M 11 7 L 11 11 L 7 11 M 11 11 L 7.5 7.5");
-        }
+        bool isMaximized = WorkAreaMaximize.IsFilled(this) || WindowState == WindowState.Maximized;
+        var label = Strings.T(isMaximized ? "Restore" : "Maximize");
+        MaximizeBtn.ToolTip = HotkeyToolTipContent.WithShortcut(label, KeyboardShortcuts.Maximize);
+        AutomationProperties.SetName(MaximizeBtn, label);
+        AutomationProperties.SetAcceleratorKey(MaximizeBtn, KeyboardShortcuts.Maximize);
+        MaximizeIconPath.Data = Geometry.Parse(isMaximized
+            ? "M 6 2 L 6 6 L 2 6 M 6 6 L 2.5 2.5 M 8 12 L 8 8 L 12 8 M 8 8 L 11.5 11.5"
+            : "M 3 7 L 3 3 L 7 3 M 3 3 L 6.5 6.5 M 11 7 L 11 11 L 7 11 M 11 11 L 7.5 7.5");
     }
 
     public void ClearAllRulesFromSettings()
@@ -907,9 +927,12 @@ public partial class MainWindow : Window
                 var n = _notifications.All.FirstOrDefault(x => x.Kind == AppNotificationKind.UpdateAvailable);
                 versionLabel = n?.Detail;
             }
-            UpdateAvailableBtn.ToolTip = !string.IsNullOrEmpty(versionLabel)
+            var announcement = !string.IsNullOrEmpty(versionLabel)
                 ? Strings.T("UpdateAvailable", versionLabel)
                 : Strings.T("UpdateActionTooltip");
+            UpdateAvailableBtn.ToolTip = HotkeyToolTipContent.WithShortcut(announcement, KeyboardShortcuts.Update);
+            AutomationProperties.SetName(UpdateAvailableBtn, announcement);
+            AutomationProperties.SetAcceleratorKey(UpdateAvailableBtn, KeyboardShortcuts.Update);
         }
     }
 
@@ -2989,7 +3012,10 @@ public partial class MainWindow : Window
 
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
-        if ((e.Key == System.Windows.Input.Key.Space || e.Key == System.Windows.Input.Key.P) && Keyboard.Modifiers == ModifierKeys.None)
+        var key = e.Key == System.Windows.Input.Key.System ? e.SystemKey : e.Key;
+        var modifiers = Keyboard.Modifiers;
+
+        if ((key == System.Windows.Input.Key.Space || key == System.Windows.Input.Key.P) && modifiers == ModifierKeys.None)
         {
             if (e.OriginalSource is not System.Windows.Controls.Primitives.TextBoxBase &&
                 e.OriginalSource is not System.Windows.Controls.PasswordBox)
@@ -3009,25 +3035,25 @@ public partial class MainWindow : Window
             }
         }
 
-        if (e.Key == System.Windows.Input.Key.F && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        if (modifiers == ModifierKeys.Control && key == System.Windows.Input.Key.F)
         {
             OpenSearch();
             e.Handled = true;
             return;
         }
 
-        if (e.Key == System.Windows.Input.Key.F5)
+        if (modifiers == ModifierKeys.None && key == System.Windows.Input.Key.F5)
         {
             RefreshRules(SearchBox.Text);
             e.Handled = true;
             return;
         }
 
-        if (e.Key == System.Windows.Input.Key.C && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        if ((modifiers == ModifierKeys.Control || modifiers == (ModifierKeys.Control | ModifierKeys.Shift)) && key == System.Windows.Input.Key.C)
         {
             if (e.OriginalSource is not System.Windows.Controls.Primitives.TextBoxBase)
             {
-                var isShift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
+                var isShift = (modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
                 var r = (AllowedGrid.SelectedItem as AppRuleRow)?.Rule ?? (BlockedGrid.SelectedItem as AppRuleRow)?.Rule;
                 var path = r?.AppPath;
                 if (!string.IsNullOrEmpty(path))
@@ -3045,56 +3071,12 @@ public partial class MainWindow : Window
             }
         }
 
-        if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        var titleBarAction = KeyboardShortcuts.ResolveTitleBarAction(key, modifiers);
+        if (titleBarAction != TitleBarShortcutAction.None)
         {
-            if (e.Key == System.Windows.Input.Key.OemComma || e.Key == System.Windows.Input.Key.D5 || e.Key == System.Windows.Input.Key.NumPad5)
-            {
-                SelectTab(MainTab.Settings);
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == System.Windows.Input.Key.D1 || e.Key == System.Windows.Input.Key.NumPad1)
-            {
-                SelectTab(MainTab.Firewall);
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == System.Windows.Input.Key.D2 || e.Key == System.Windows.Input.Key.NumPad2)
-            {
-                SelectTab(MainTab.TrafficMonitor);
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == System.Windows.Input.Key.D3 || e.Key == System.Windows.Input.Key.NumPad3)
-            {
-                SelectTab(MainTab.ConnectionsLog);
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == System.Windows.Input.Key.D4 || e.Key == System.Windows.Input.Key.NumPad4)
-            {
-                SelectTab(MainTab.Statistics);
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == System.Windows.Input.Key.H)
-            {
-                SelectTab(MainTab.TrafficMonitor);
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == System.Windows.Input.Key.L)
-            {
-                SelectTab(MainTab.ConnectionsLog);
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == System.Windows.Input.Key.I)
-            {
-                SelectTab(MainTab.Statistics);
-                e.Handled = true;
-                return;
-            }
+            ExecuteTitleBarShortcut(titleBarAction);
+            e.Handled = true;
+            return;
         }
 
         if (Keyboard.FocusedElement is System.Windows.Controls.TextBox) return;
@@ -3123,6 +3105,55 @@ public partial class MainWindow : Window
         else if (e.Key == System.Windows.Input.Key.PageUp || e.Key == System.Windows.Input.Key.PageDown)
         {
             DismissOpenToolTips();
+        }
+    }
+
+    private void ExecuteTitleBarShortcut(TitleBarShortcutAction action)
+    {
+        switch (action)
+        {
+            case TitleBarShortcutAction.ToggleAbout:
+                About_Click(this, new RoutedEventArgs());
+                break;
+            case TitleBarShortcutAction.SelectFirewall:
+                SelectTab(MainTab.Firewall);
+                break;
+            case TitleBarShortcutAction.SelectTraffic:
+                SelectTab(MainTab.TrafficMonitor);
+                break;
+            case TitleBarShortcutAction.SelectConnections:
+                SelectTab(MainTab.ConnectionsLog);
+                break;
+            case TitleBarShortcutAction.SelectStatistics:
+                SelectTab(MainTab.Statistics);
+                break;
+            case TitleBarShortcutAction.OpenSettings:
+                SelectTab(MainTab.Settings);
+                break;
+            case TitleBarShortcutAction.CheckOrApplyUpdate:
+                if (UpdateAvailableBtn.Visibility == Visibility.Visible)
+                    UpdateAvailableBtn_Click(UpdateAvailableBtn, new RoutedEventArgs());
+                else
+                    OpenAbout(checkUpdatesNow: true);
+                break;
+            case TitleBarShortcutAction.OpenNotifications:
+                ShowNotifications();
+                break;
+            case TitleBarShortcutAction.ToggleWidget:
+                WidgetBtn_Click(WidgetBtn, new RoutedEventArgs());
+                break;
+            case TitleBarShortcutAction.ToggleMoreMenu:
+                MoreBtn_Click(MoreBtn, new RoutedEventArgs());
+                break;
+            case TitleBarShortcutAction.MinimizeWindow:
+                Minimize_Click(this, new RoutedEventArgs());
+                break;
+            case TitleBarShortcutAction.MaximizeOrRestoreWindow:
+                Maximize_Click(this, new RoutedEventArgs());
+                break;
+            case TitleBarShortcutAction.CloseWindow:
+                Close_Click(this, new RoutedEventArgs());
+                break;
         }
     }
 

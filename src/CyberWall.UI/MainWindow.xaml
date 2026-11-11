@@ -929,7 +929,12 @@
                     <!-- Left: Interactive Brand Title (click -> About, drag -> Move window) -->
                     <Border x:Name="BrandingPanel" Grid.Column="0" CornerRadius="10"
                             Padding="6,4" Margin="-6,-4,0,-4" VerticalAlignment="Center"
-                            Cursor="Hand" ToolTip="Acerca de CyberWall" ToolTipService.InitialShowDelay="250"
+                            Cursor="Hand" ToolTip="Acerca de CyberWall"
+                            ToolTipService.InitialShowDelay="250"
+                            ToolTipService.BetweenShowDelay="0"
+                            ToolTipService.ShowDuration="2500"
+                            ToolTipService.Placement="Bottom"
+                            ToolTipService.VerticalOffset="4"
                             MouseLeftButtonDown="BrandingPanel_MouseLeftButtonDown"
                             MouseMove="BrandingPanel_MouseMove"
                             MouseLeftButtonUp="BrandingPanel_MouseLeftButtonUp"
@@ -1073,7 +1078,7 @@
                                         </MenuItem.Icon>
                                     </MenuItem>
 
-                                    <MenuItem x:Name="MoreWidgetItem" Header="Widget de red..." Style="{StaticResource ModernMenuItem}" Click="MoreWidget_Click">
+                                    <MenuItem x:Name="MoreWidgetItem" Header="Widget de red..." InputGestureText="Ctrl+Shift+W" Style="{StaticResource ModernMenuItem}" Click="MoreWidget_Click">
                                         <MenuItem.Icon>
                                             <Path Data="M 3 3 H 21 V 17 H 3 Z M 3 7 H 21 M 6 14 L 9 10 L 12 13 L 15 9 L 18 12"
                                                   Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
@@ -1157,7 +1162,7 @@
                                         </MenuItem.Icon>
                                     </MenuItem>
 
-                                    <MenuItem x:Name="MoreAboutItem" Header="Acerca de CyberWall..." Style="{StaticResource ModernMenuItem}" Click="About_Click">
+                                    <MenuItem x:Name="MoreAboutItem" Header="Acerca de CyberWall..." InputGestureText="F1" Style="{StaticResource ModernMenuItem}" Click="About_Click">
                                         <MenuItem.Icon>
                                             <Path Data="M 12 22 A 10 10 0 1 0 12 2 A 10 10 0 0 0 12 22 M 12 16 V 12 M 12 8 H 12.01"
                                                   Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
