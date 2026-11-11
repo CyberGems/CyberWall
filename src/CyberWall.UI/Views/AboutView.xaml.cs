@@ -300,3 +300,4 @@ public partial class AboutView : UserControl
         catch { }
     }
 }
+
