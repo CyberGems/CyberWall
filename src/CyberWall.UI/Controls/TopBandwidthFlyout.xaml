@@ -6,13 +6,13 @@
         <conv:PathToIconConverter x:Key="PathToIconConverter"/>
     </UserControl.Resources>
     <Popup x:Name="FlyoutPopup" StaysOpen="False" AllowsTransparency="True"
-           Placement="Bottom" VerticalOffset="6" HorizontalOffset="-140"
+           Placement="Bottom" VerticalOffset="-8" HorizontalOffset="-160"
            PopupAnimation="Fade">
-        <Border Width="400" Background="{DynamicResource CardBrush}"
+        <Border Margin="20,14,20,24" Width="400" Background="{DynamicResource CardBrush}"
                 BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1"
                 CornerRadius="14" Padding="16,14" SnapsToDevicePixels="True">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="22" ShadowDepth="6" Direction="270" Color="#000000" Opacity="0.6"/>
+                <DropShadowEffect BlurRadius="20" ShadowDepth="5" Direction="270" Color="#000000" Opacity="0.52"/>
             </Border.Effect>
             <Grid>
                 <Grid.RowDefinitions>

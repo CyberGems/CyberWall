@@ -19,12 +19,16 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ContextMenu">
-                        <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10" Padding="5" SnapsToDevicePixels="True">
-                            <Border.Effect>
-                                <DropShadowEffect Color="#000000" Opacity="0.5" BlurRadius="16" ShadowDepth="4"/>
-                            </Border.Effect>
-                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
-                        </Border>
+                        <Grid Margin="12,12,16,16">
+                            <Border CornerRadius="10" Background="{DynamicResource CardBrush}" IsHitTestVisible="False">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#000000" Opacity="0.45" BlurRadius="16" ShadowDepth="3"/>
+                                </Border.Effect>
+                            </Border>
+                            <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10" Padding="5" SnapsToDevicePixels="True">
+                                <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                            </Border>
+                        </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>

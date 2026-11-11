@@ -86,24 +86,19 @@ public static class PopupWindowHelper
 
         var phys = screen.WorkingArea;
         var (scaleX, scaleY) = GetMonitorScale(screen);
-        int gapPx = (int)Math.Round(10 * scaleY);
+        // Each notification embeds a 20 DIP transparent shadow buffer, so -14 DIPs between outer HWNDs keeps a 26 DIP visible card gap.
+        int gapPx = (int)Math.Round(-14 * scaleY);
         var hwnd = new WindowInteropHelper(window).Handle;
 
         if (hwnd != IntPtr.Zero)
         {
-            var currentScreen = Screen.FromHandle(hwnd);
-            if (!string.Equals(currentScreen.DeviceName, screen.DeviceName, StringComparison.OrdinalIgnoreCase))
-            {
-                // Move onto the target monitor first so Windows switches DPI context before measuring size.
-                SetWindowPos(hwnd, IntPtr.Zero, phys.X, phys.Y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
-                window.UpdateLayout();
-            }
+            EnsureWindowOnMonitorContext(window, hwnd, screen);
 
             var (physW, physH) = GetPhysicalWindowSize(window, hwnd, scaleX, scaleY);
             int stackOffsetPx = ComputeStackOffsetPx(window, screen, physH, gapPx, scaleY, explicitStackIndex);
             var (leftPx, topPx) = ComputeTargetPhysicalOrigin(phys, physW, physH, scaleX, scaleY, position, stackOffsetPx);
 
-            SetWindowPos(hwnd, IntPtr.Zero, leftPx, topPx, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
+            MoveWindowPhysical(hwnd, leftPx, topPx);
             return;
         }
 
@@ -115,9 +110,7 @@ public static class PopupWindowHelper
         int preStackOffsetPx = ComputeStackOffsetPx(window, screen, prePhysH, gapPx, scaleY, explicitStackIndex);
         var (preLeftPx, preTopPx) = ComputeTargetPhysicalOrigin(phys, prePhysW, prePhysH, scaleX, scaleY, position, preStackOffsetPx);
 
-        var (preScaleX, preScaleY) = GetPreShowDpiScale(window);
-        window.Left = preLeftPx / preScaleX;
-        window.Top = preTopPx / preScaleY;
+        ApplyPreShowLogicalPosition(window, preLeftPx, preTopPx);
     }
 
     internal static (int LeftPx, int TopPx) ComputeTargetPhysicalOrigin(
@@ -132,8 +125,9 @@ public static class PopupWindowHelper
         if (scaleX <= 0) scaleX = 1.0;
         if (scaleY <= 0) scaleY = 1.0;
 
-        int marginX = (int)Math.Round(20 * scaleX);
-        int marginY = (int)Math.Round(20 * scaleY);
+        // Visible card sits inset by a 20 DIP shadow buffer; 8 DIP outer margin places the visible card 28 DIPs from work-area edges.
+        int marginX = (int)Math.Round(8 * scaleX);
+        int marginY = (int)Math.Round(8 * scaleY);
 
         int leftPx;
         int topPx;
@@ -187,24 +181,48 @@ public static class PopupWindowHelper
         return (leftPx, topPx);
     }
 
-    private static (double Width, double Height) GetDipWindowSize(Window window)
+    internal static void EnsureWindowOnMonitorContext(Window window, IntPtr hwnd, Screen screen)
+    {
+        var currentScreen = Screen.FromHandle(hwnd);
+        if (!string.Equals(currentScreen.DeviceName, screen.DeviceName, StringComparison.OrdinalIgnoreCase))
+        {
+            // Move onto the target monitor first so Windows switches DPI context before measuring size.
+            var phys = screen.WorkingArea;
+            SetWindowPos(hwnd, IntPtr.Zero, phys.X, phys.Y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
+            window.UpdateLayout();
+        }
+    }
+
+    internal static void MoveWindowPhysical(IntPtr hwnd, int leftPx, int topPx)
+    {
+        SetWindowPos(hwnd, IntPtr.Zero, leftPx, topPx, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
+    }
+
+    internal static void ApplyPreShowLogicalPosition(Window window, int physLeftPx, int physTopPx)
+    {
+        var (preScaleX, preScaleY) = GetPreShowDpiScale(window);
+        window.Left = physLeftPx / preScaleX;
+        window.Top = physTopPx / preScaleY;
+    }
+
+    internal static (double Width, double Height) GetDipWindowSize(Window window, double defaultHeight = 280)
     {
         double width = window.ActualWidth > 1 ? window.ActualWidth
             : (window.Width > 0 ? window.Width : 516);
         double height = window.ActualHeight > 1 ? window.ActualHeight
             : (window.Height > 0 ? window.Height
-            : (window.DesiredSize.Height > 1 ? window.DesiredSize.Height : 280));
+            : (window.DesiredSize.Height > 1 ? window.DesiredSize.Height : defaultHeight));
         return (width, height);
     }
 
-    private static (int WidthPx, int HeightPx) GetPhysicalWindowSize(Window window, IntPtr hwnd, double scaleX, double scaleY)
+    internal static (int WidthPx, int HeightPx) GetPhysicalWindowSize(Window window, IntPtr hwnd, double scaleX, double scaleY, double defaultHeight = 280)
     {
         if (hwnd != IntPtr.Zero && GetWindowRect(hwnd, out var rc) && rc.Right > rc.Left && rc.Bottom > rc.Top)
         {
             return (rc.Right - rc.Left, rc.Bottom - rc.Top);
         }
 
-        var (dipW, dipH) = GetDipWindowSize(window);
+        var (dipW, dipH) = GetDipWindowSize(window, defaultHeight);
         return ((int)Math.Round(dipW * scaleX), (int)Math.Round(dipH * scaleY));
     }
 
@@ -277,7 +295,7 @@ public static class PopupWindowHelper
         return (1.0, 1.0);
     }
 
-    private static (double ScaleX, double ScaleY) GetPreShowDpiScale(Window window)
+    internal static (double ScaleX, double ScaleY) GetPreShowDpiScale(Window window)
     {
         try
         {

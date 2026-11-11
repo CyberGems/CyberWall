@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -9,8 +8,8 @@ using CyberWall.Common.Models;
 using CyberWall.Service.Engine;
 using CyberWall.UI.Services;
 using DrawingPoint = System.Drawing.Point;
+using DrawingRectangle = System.Drawing.Rectangle;
 using MediaColor = System.Windows.Media.Color;
-using WpfPoint = System.Windows.Point;
 
 namespace CyberWall.UI.Tray;
 
@@ -21,12 +20,6 @@ public partial class TrayContextMenuWindow : Window
     private readonly DrawingPoint _clickPoint;
     private bool _isClosing;
     private bool _updatingUi;
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
-    private const uint SWP_NOSIZE = 0x0001;
-    private const uint SWP_NOACTIVATE = 0x0010;
-    private const uint SWP_NOZORDER = 0x0004;
 
     public TrayContextMenuWindow(MainWindow mainWindow, FirewallService svc, DrawingPoint clickPoint)
     {
@@ -49,94 +42,90 @@ public partial class TrayContextMenuWindow : Window
     {
         try
         {
-            var cursor = _clickPoint;
-            var screen = System.Windows.Forms.Screen.FromPoint(cursor);
+            var screen = System.Windows.Forms.Screen.FromPoint(_clickPoint);
             var physWork = screen.WorkingArea;
             var physBounds = screen.Bounds;
+            var (scaleX, scaleY) = PopupWindowHelper.GetMonitorScale(screen);
+            var hwnd = new WindowInteropHelper(this).Handle;
 
-            // Compute monitor DPI scale factor
-            double scaleX = 1.0;
-            double scaleY = 1.0;
-
-            try
+            if (hwnd != IntPtr.Zero)
             {
-                var dpi = VisualTreeHelper.GetDpi(this);
-                if (dpi.DpiScaleX > 0) scaleX = dpi.DpiScaleX;
-                if (dpi.DpiScaleY > 0) scaleY = dpi.DpiScaleY;
-            }
-            catch { }
-
-            if (scaleX <= 0) scaleX = 1.0;
-            if (scaleY <= 0) scaleY = 1.0;
-
-            double workLeft = physWork.Left / scaleX;
-            double workTop = physWork.Top / scaleY;
-            double workRight = physWork.Right / scaleX;
-            double workBottom = physWork.Bottom / scaleY;
-            double workWidth = physWork.Width / scaleX;
-            double workHeight = physWork.Height / scaleY;
-
-            double screenLeft = physBounds.Left / scaleX;
-            double screenRight = physBounds.Right / scaleX;
-            double screenTop = physBounds.Top / scaleY;
-
-            double cursorX = cursor.X / scaleX;
-            double cursorY = cursor.Y / scaleY;
-
-            double windowWidth = ActualWidth > 0 ? ActualWidth : (Width > 0 ? Width : 280);
-            double windowHeight = ActualHeight > 0 ? ActualHeight : 340;
-
-            const double gap = 10;
-            const double eps = 4;
-
-            bool taskbarLeft = workLeft > screenLeft + eps;
-            bool taskbarRight = workRight < screenRight - eps;
-            bool taskbarTop = workTop > screenTop + eps;
-
-            double left;
-            double top;
-
-            if (taskbarLeft)
-            {
-                // Left taskbar: place menu directly to the right of taskbar
-                left = workLeft + gap;
-                top = cursorY - (windowHeight / 2);
-            }
-            else if (taskbarRight)
-            {
-                // Right taskbar: place menu directly to the left of taskbar
-                left = workRight - windowWidth - gap;
-                top = cursorY - (windowHeight / 2);
-            }
-            else if (taskbarTop)
-            {
-                // Top taskbar: place menu below taskbar
-                left = cursorX - (windowWidth / 2);
-                top = workTop + gap;
-            }
-            else
-            {
-                // Bottom taskbar: place menu above taskbar
-                left = cursorX - (windowWidth / 2);
-                top = workBottom - windowHeight - gap;
+                PopupWindowHelper.EnsureWindowOnMonitorContext(this, hwnd, screen);
+                var (physW, physH) = PopupWindowHelper.GetPhysicalWindowSize(this, hwnd, scaleX, scaleY, defaultHeight: 360);
+                var (leftPx, topPx) = ComputeTargetPhysicalOrigin(physWork, physBounds, _clickPoint, physW, physH, scaleX, scaleY);
+                PopupWindowHelper.MoveWindowPhysical(hwnd, leftPx, topPx);
+                return;
             }
 
-            // Strictly clamp to monitor work area
-            double minLeft = workLeft + gap;
-            double maxLeft = workRight - windowWidth - gap;
-            double minTop = workTop + gap;
-            double maxTop = workBottom - windowHeight - gap;
-
-            if (maxLeft < minLeft) left = workLeft + (workWidth - windowWidth) / 2;
-            else left = Math.Clamp(left, minLeft, maxLeft);
-
-            if (maxTop < minTop) top = workTop + (workHeight - windowHeight) / 2;
-            else top = Math.Clamp(top, minTop, maxTop);
-
-            Left = left;
-            Top = top;
+            var (dipW, dipH) = PopupWindowHelper.GetDipWindowSize(this, defaultHeight: 360);
+            int prePhysW = (int)Math.Round(dipW * scaleX);
+            int prePhysH = (int)Math.Round(dipH * scaleY);
+            var (preLeftPx, preTopPx) = ComputeTargetPhysicalOrigin(physWork, physBounds, _clickPoint, prePhysW, prePhysH, scaleX, scaleY);
+            PopupWindowHelper.ApplyPreShowLogicalPosition(this, preLeftPx, preTopPx);
         }
         catch { }
+    }
+
+    internal static (int LeftPx, int TopPx) ComputeTargetPhysicalOrigin(
+        DrawingRectangle physWorkArea,
+        DrawingRectangle physBounds,
+        DrawingPoint clickPointPx,
+        int windowWidthPx,
+        int windowHeightPx,
+        double scaleX,
+        double scaleY)
+    {
+        if (scaleX <= 0) scaleX = 1.0;
+        if (scaleY <= 0) scaleY = 1.0;
+
+        // The card includes a 20 DIP transparent shadow buffer, so keeping the outer HWND flush
+        // with the taskbar work-area preserves a 20 DIP visual margin without clipping the shadow.
+        const int outerGapPx = 0;
+        int epsX = (int)Math.Round(4 * scaleX);
+        int epsY = (int)Math.Round(4 * scaleY);
+
+        bool taskbarLeft = physWorkArea.Left > physBounds.Left + epsX;
+        bool taskbarRight = physWorkArea.Right < physBounds.Right - epsX;
+        bool taskbarTop = physWorkArea.Top > physBounds.Top + epsY;
+
+        int leftPx;
+        int topPx;
+
+        if (taskbarLeft)
+        {
+            leftPx = physWorkArea.Left + outerGapPx;
+            topPx = clickPointPx.Y - windowHeightPx / 2;
+        }
+        else if (taskbarRight)
+        {
+            leftPx = physWorkArea.Right - windowWidthPx - outerGapPx;
+            topPx = clickPointPx.Y - windowHeightPx / 2;
+        }
+        else if (taskbarTop)
+        {
+            leftPx = clickPointPx.X - windowWidthPx / 2;
+            topPx = physWorkArea.Top + outerGapPx;
+        }
+        else
+        {
+            leftPx = clickPointPx.X - windowWidthPx / 2;
+            topPx = physWorkArea.Bottom - windowHeightPx - outerGapPx;
+        }
+
+        int minLeft = physWorkArea.Left + outerGapPx;
+        int maxLeft = physWorkArea.Right - windowWidthPx - outerGapPx;
+        int minTop = physWorkArea.Top + outerGapPx;
+        int maxTop = physWorkArea.Bottom - windowHeightPx - outerGapPx;
+
+        leftPx = maxLeft < minLeft
+            ? physWorkArea.Left + (physWorkArea.Width - windowWidthPx) / 2
+            : Math.Clamp(leftPx, minLeft, maxLeft);
+
+        topPx = maxTop < minTop
+            ? physWorkArea.Top + (physWorkArea.Height - windowHeightPx) / 2
+            : Math.Clamp(topPx, minTop, maxTop);
+
+        return (leftPx, topPx);
     }
 
     private void LoadLocalizedStrings()
