@@ -37,11 +37,10 @@
 - [🖼️ Screenshots](#️-screenshots)
 - [🛡️ Why CyberWall?](#️-why-cyberwall)
 - [✨ Key Features](#-key-features)
-- [🚀 Installation](#-installation)
+- [⬇️ Installation](#️-installation)
 - [🧭 Using the App](#-using-the-app)
 - [🛠️ Tech Stack & Architecture](#️-tech-stack--architecture)
 - [⌨️ Keyboard Shortcuts](#️-keyboard-shortcuts)
-- [🔍 How It Works](#-how-it-works)
 - [❤️ Donate](#️-donate)
 - [📄 License](#-license)
 - [❓ FAQ](#-faq)
@@ -120,7 +119,7 @@ Here is how CyberWall protects your computer against real-world threats in plain
 
 ---
 
-## 🚀 Installation
+## ⬇️ Installation
 
 ### Install (Recommended)
 
@@ -231,6 +230,14 @@ dotnet test
 
 > **Signing setup**: the SignPath onboarding, artifact configurations and workflow steps for maintainers are documented in [`.github/SIGNING.md`](.github/SIGNING.md). See also the [code signing policy](https://github.com/CyberGems/CyberWall/wiki/Code-signing-policy).
 
+### 🔍 How It Works
+
+1. **Kernel Interception**: When an application without an existing rule attempts to make an outbound or inbound connection, Windows Filtering Platform safely holds the connection at the kernel level.
+2. **Instant Event Capture**: `WfpBlockWatcher` receives the drop event in real-time, resolves the NT kernel device path (e.g. `\device\harddiskvolume3\...`) to a standard Win32 file path (`C:\...`), and debounces duplicate triggers. The audit policy it enables is restored when CyberWall stops.
+3. **Interactive Prompt**: A non-intrusive frameless popup appears in your chosen monitor corner showing the application icon, name, protocol, destination endpoint, and graphic direction badge (`↑ Outbound` / `↓ Inbound`).
+4. **Rule Enforcement**: CyberWall applies the selected decision to the pending process as a Windows Firewall rule. **Allow always** and **Block** save a persistent rule to `rules.json` and update the firewall engine, while **Allow once** keeps the decision for the current session only.
+5. **Policy Recovery**: While protection is on, a scheduled task watches a heartbeat file. If CyberWall dies, the task restores the original firewall policy and removes the rules it left behind, so the machine never stays locked down.
+
 ---
 
 ## ⌨️ Keyboard Shortcuts
@@ -248,16 +255,6 @@ CyberWall is driven by connection prompts and the tray menu; its shortcuts act o
 | `Alt+F4` | Close the window |
 
 Full reference: [Settings](https://github.com/CyberGems/CyberWall/wiki/Settings).
-
----
-
-## 🔍 How It Works
-
-1. **Kernel Interception**: When an application without an existing rule attempts to make an outbound or inbound connection, Windows Filtering Platform safely holds the connection at the kernel level.
-2. **Instant Event Capture**: `WfpBlockWatcher` receives the drop event in real-time, resolves the NT kernel device path (e.g. `\device\harddiskvolume3\...`) to a standard Win32 file path (`C:\...`), and debounces duplicate triggers. The audit policy it enables is restored when CyberWall stops.
-3. **Interactive Prompt**: A non-intrusive frameless popup appears in your chosen monitor corner showing the application icon, name, protocol, destination endpoint, and graphic direction badge (`↑ Outbound` / `↓ Inbound`).
-4. **Rule Enforcement**: CyberWall applies the selected decision to the pending process as a Windows Firewall rule. **Allow always** and **Block** save a persistent rule to `rules.json` and update the firewall engine, while **Allow once** keeps the decision for the current session only.
-5. **Policy Recovery**: While protection is on, a scheduled task watches a heartbeat file. If CyberWall dies, the task restores the original firewall policy and removes the rules it left behind, so the machine never stays locked down.
 
 ---
 

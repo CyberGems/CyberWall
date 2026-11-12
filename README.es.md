@@ -37,11 +37,10 @@
 - [🖼️ Capturas](#️-capturas)
 - [🛡️ ¿Por qué CyberWall?](#️-por-qué-cyberwall)
 - [✨ Funciones principales](#-funciones-principales)
-- [🚀 Instalación](#-instalación)
+- [⬇️ Instalación](#️-instalación)
 - [🧭 Cómo usar la app](#-cómo-usar-la-app)
 - [🛠️ Stack tecnológico y arquitectura](#️-stack-tecnológico-y-arquitectura)
 - [⌨️ Atajos de teclado](#️-atajos-de-teclado)
-- [🔍 Cómo funciona](#-cómo-funciona)
 - [❤️ Donar](#️-donar)
 - [📄 Licencia](#-licencia)
 - [❓ Preguntas frecuentes](#-preguntas-frecuentes)
@@ -118,9 +117,10 @@ Así es como CyberWall protege tu equipo frente a amenazas reales, en términos 
 - **Totalmente bilingüe (EN / ES)**: localización completa de la interfaz en inglés y español con cambio de idioma instantáneo.
 - **Almacenamiento persistente de reglas**: las reglas se guardan de forma persistente en `%ProgramData%\CyberWall\rules.json`, con escritura atómica para que un fallo nunca las trunque.
 - **Bandeja del sistema y demonio en segundo plano**: integración con la bandeja, minimizar a la bandeja y soporte opcional para ejecutarse como Servicio de Windows en segundo plano (SYSTEM). Solo un host es propietario del motor de cortafuegos a la vez: la ventana abierta tiene prioridad y el servicio retoma la protección cuando se cierra.
+
 ---
 
-## 🚀 Instalación
+## ⬇️ Instalación
 
 ### Instalación (recomendada)
 
@@ -231,6 +231,14 @@ dotnet test
 
 > **Configuración de firma**: el alta en SignPath, las configuraciones de artefactos y los pasos del flujo de trabajo para mantenedores están documentados en [`.github/SIGNING.md`](.github/SIGNING.md). Consulta también la [política de firma de código](https://github.com/CyberGems/CyberWall/wiki/Code-signing-policy).
 
+### 🔍 Cómo funciona
+
+1. **Intercepción en el kernel**: cuando una aplicación sin regla existente intenta una conexión entrante o saliente, Windows Filtering Platform retiene la conexión de forma segura a nivel de kernel.
+2. **Captura instantánea de eventos**: `WfpBlockWatcher` recibe el evento de descarte en tiempo real, resuelve la ruta del dispositivo NT del kernel (p. ej. `\device\harddiskvolume3\...`) a una ruta de archivo Win32 estándar (`C:\...`) y elimina los desencadenantes duplicados con debounce. La política de auditoría que habilita se restaura al detener CyberWall.
+3. **Aviso interactivo**: aparece una ventana emergente sin marco e intrusiva en la esquina de pantalla de tu elección mostrando el icono de la aplicación, el nombre, el protocolo, el extremo de destino y la insignia gráfica de dirección (`↑ Saliente` / `↓ Entrante`).
+4. **Aplicación de reglas**: CyberWall aplica la decisión seleccionada al proceso pendiente como una regla del Cortafuegos de Windows. **Permitir siempre** y **Bloquear** guardan una regla persistente en `rules.json` y actualizan el motor del cortafuegos, mientras que **Permitir una vez** mantiene la decisión solo para la sesión actual.
+5. **Recuperación de la política**: mientras la protección está activa, una tarea programada vigila un archivo de latido. Si CyberWall se detiene, la tarea restaura la política original del cortafuegos y elimina las reglas que dejó atrás, de modo que el equipo nunca queda bloqueado.
+
 ---
 
 ## ⌨️ Atajos de teclado
@@ -248,16 +256,6 @@ CyberWall se maneja con avisos de conexión y el menú de la bandeja; sus atajos
 | `Alt+F4` | Cierra la ventana |
 
 Referencia completa: [Settings](https://github.com/CyberGems/CyberWall/wiki/Settings).
-
----
-
-## 🔍 Cómo funciona
-
-1. **Intercepción en el kernel**: cuando una aplicación sin regla existente intenta una conexión entrante o saliente, Windows Filtering Platform retiene la conexión de forma segura a nivel de kernel.
-2. **Captura instantánea de eventos**: `WfpBlockWatcher` recibe el evento de descarte en tiempo real, resuelve la ruta del dispositivo NT del kernel (p. ej. `\device\harddiskvolume3\...`) a una ruta de archivo Win32 estándar (`C:\...`) y elimina los desencadenantes duplicados con debounce. La política de auditoría que habilita se restaura al detener CyberWall.
-3. **Aviso interactivo**: aparece una ventana emergente sin marco e intrusiva en la esquina de pantalla de tu elección mostrando el icono de la aplicación, el nombre, el protocolo, el extremo de destino y la insignia gráfica de dirección (`↑ Saliente` / `↓ Entrante`).
-4. **Aplicación de reglas**: CyberWall aplica la decisión seleccionada al proceso pendiente como una regla del Cortafuegos de Windows. **Permitir siempre** y **Bloquear** guardan una regla persistente en `rules.json` y actualizan el motor del cortafuegos, mientras que **Permitir una vez** mantiene la decisión solo para la sesión actual.
-5. **Recuperación de la política**: mientras la protección está activa, una tarea programada vigila un archivo de latido. Si CyberWall se detiene, la tarea restaura la política original del cortafuegos y elimina las reglas que dejó atrás, de modo que el equipo nunca queda bloqueado.
 
 ---
 
