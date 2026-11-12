@@ -14,7 +14,7 @@
         <Style x:Key="MenuActionButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -30,7 +30,6 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
@@ -45,7 +44,7 @@
         <Style x:Key="MenuDangerButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -61,7 +60,6 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="#25EF4444"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#40EF4444"/>
                                 <Setter Property="Foreground" Value="#FF6B6B"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
@@ -76,8 +74,8 @@
         <!-- Warning Action Button Style (Active Pause Banner Row) -->
         <Style x:Key="MenuWarningButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource BadgeWarnBgBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BadgeWarnFgBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Foreground" Value="{DynamicResource BadgeWarnFgBrush}"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -105,27 +103,27 @@
 
         <!-- Submenu Back Pill Button Style -->
         <Style x:Key="SubMenuBackButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource AccentGlowBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderLightBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="FontSize" Value="11.5"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="9,5"/>
+            <Setter Property="Padding" Value="8,4"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
                             <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
                                 <Setter TargetName="Bd" Property="Opacity" Value="0.82"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -166,7 +164,7 @@
         <Style x:Key="MenuActionToggleStyle" TargetType="CheckBox">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -190,7 +188,6 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>

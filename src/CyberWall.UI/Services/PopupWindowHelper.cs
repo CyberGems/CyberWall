@@ -198,6 +198,11 @@ public static class PopupWindowHelper
         SetWindowPos(hwnd, IntPtr.Zero, leftPx, topPx, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
     }
 
+    internal static void SetWindowPosPhysical(IntPtr hwnd, int leftPx, int topPx, int widthPx, int heightPx)
+    {
+        SetWindowPos(hwnd, IntPtr.Zero, leftPx, topPx, widthPx, heightPx, SWP_NOACTIVATE | SWP_NOZORDER);
+    }
+
     internal static void ApplyPreShowLogicalPosition(Window window, int physLeftPx, int physTopPx)
     {
         var (preScaleX, preScaleY) = GetPreShowDpiScale(window);

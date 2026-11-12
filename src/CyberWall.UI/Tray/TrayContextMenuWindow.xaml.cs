@@ -26,6 +26,12 @@ public partial class TrayContextMenuWindow : Window
     private bool _updatingUi;
     private TrayMenuView _currentView = TrayMenuView.Main;
 
+    private bool _isPositionAnchored;
+    private int _anchorLeftPx;
+    private int _anchorTopPx;
+    private int _anchorBottomPx;
+    private bool _isTaskbarBottom;
+
     public TrayContextMenuWindow(MainWindow mainWindow, FirewallService svc, DrawingPoint clickPoint)
     {
         _mainWindow = mainWindow;
@@ -55,22 +61,83 @@ public partial class TrayContextMenuWindow : Window
             var (scaleX, scaleY) = PopupWindowHelper.GetMonitorScale(screen);
             var hwnd = new WindowInteropHelper(this).Handle;
 
+            var (dipW, dipH) = PopupWindowHelper.GetDipWindowSize(this, defaultHeight: 360);
+            int physW = (int)Math.Round(dipW * scaleX);
+            int physH = (int)Math.Round(dipH * scaleY);
+
+            int epsX = (int)Math.Round(4 * scaleX);
+            int epsY = (int)Math.Round(4 * scaleY);
+            bool taskbarLeft = physWork.Left > physBounds.Left + epsX;
+            bool taskbarRight = physWork.Right < physBounds.Right - epsX;
+            bool taskbarTop = physWork.Top > physBounds.Top + epsY;
+            bool isTaskbarBottom = !taskbarLeft && !taskbarRight && !taskbarTop;
+
             if (hwnd != IntPtr.Zero)
             {
                 PopupWindowHelper.EnsureWindowOnMonitorContext(this, hwnd, screen);
-                var (physW, physH) = PopupWindowHelper.GetPhysicalWindowSize(this, hwnd, scaleX, scaleY, defaultHeight: 360);
-                var (leftPx, topPx) = ComputeTargetPhysicalOrigin(physWork, physBounds, _clickPoint, physW, physH, scaleX, scaleY);
-                PopupWindowHelper.MoveWindowPhysical(hwnd, leftPx, topPx);
+
+                int leftPx;
+                int topPx;
+
+                if (!_isPositionAnchored)
+                {
+                    var (originLeft, originTop) = ComputeTargetPhysicalOrigin(physWork, physBounds, _clickPoint, physW, physH, scaleX, scaleY);
+                    _anchorLeftPx = originLeft;
+                    _anchorTopPx = originTop;
+                    _anchorBottomPx = originTop + physH;
+                    _isTaskbarBottom = isTaskbarBottom;
+
+                    if (ActualHeight > 1)
+                    {
+                        _isPositionAnchored = true;
+                    }
+
+                    leftPx = originLeft;
+                    topPx = originTop;
+                }
+                else
+                {
+                    (leftPx, topPx) = ComputeAnchoredOrigin(physWork, _anchorLeftPx, _anchorTopPx, _anchorBottomPx, physW, physH, _isTaskbarBottom);
+                }
+
+                PopupWindowHelper.SetWindowPosPhysical(hwnd, leftPx, topPx, physW, physH);
                 return;
             }
 
-            var (dipW, dipH) = PopupWindowHelper.GetDipWindowSize(this, defaultHeight: 360);
-            int prePhysW = (int)Math.Round(dipW * scaleX);
-            int prePhysH = (int)Math.Round(dipH * scaleY);
-            var (preLeftPx, preTopPx) = ComputeTargetPhysicalOrigin(physWork, physBounds, _clickPoint, prePhysW, prePhysH, scaleX, scaleY);
+            var (preLeftPx, preTopPx) = ComputeTargetPhysicalOrigin(physWork, physBounds, _clickPoint, physW, physH, scaleX, scaleY);
             PopupWindowHelper.ApplyPreShowLogicalPosition(this, preLeftPx, preTopPx);
         }
         catch { }
+    }
+
+    internal static (int LeftPx, int TopPx) ComputeAnchoredOrigin(
+        DrawingRectangle physWorkArea,
+        int anchorLeftPx,
+        int anchorTopPx,
+        int anchorBottomPx,
+        int windowWidthPx,
+        int windowHeightPx,
+        bool isTaskbarBottom)
+    {
+        int leftPx = anchorLeftPx;
+        int topPx = isTaskbarBottom
+            ? anchorBottomPx - windowHeightPx
+            : anchorTopPx;
+
+        int minLeft = physWorkArea.Left;
+        int maxLeft = Math.Max(minLeft, physWorkArea.Right - windowWidthPx);
+        int minTop = physWorkArea.Top;
+        int maxTop = Math.Max(minTop, physWorkArea.Bottom - windowHeightPx);
+
+        leftPx = maxLeft < minLeft
+            ? physWorkArea.Left + (physWorkArea.Width - windowWidthPx) / 2
+            : Math.Clamp(leftPx, minLeft, maxLeft);
+
+        topPx = maxTop < minTop
+            ? physWorkArea.Top + (physWorkArea.Height - windowHeightPx) / 2
+            : Math.Clamp(topPx, minTop, maxTop);
+
+        return (leftPx, topPx);
     }
 
     internal static (int LeftPx, int TopPx) ComputeTargetPhysicalOrigin(
@@ -186,6 +253,8 @@ public partial class TrayContextMenuWindow : Window
         MainViewPanel.Visibility = view == TrayMenuView.Main ? Visibility.Visible : Visibility.Collapsed;
         PauseAlertsViewPanel.Visibility = view == TrayMenuView.PauseAlerts ? Visibility.Visible : Visibility.Collapsed;
         HelpViewPanel.Visibility = view == TrayMenuView.Help ? Visibility.Visible : Visibility.Collapsed;
+        UpdateLayout();
+        PositionWindow();
     }
 
     private void UpdateProtectionState()
@@ -217,6 +286,7 @@ public partial class TrayContextMenuWindow : Window
     {
         try
         {
+            UpdateLayout();
             PositionWindow();
             Activate();
             Focus();

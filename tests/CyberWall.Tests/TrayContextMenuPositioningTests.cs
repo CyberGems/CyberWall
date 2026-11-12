@@ -60,5 +60,86 @@ public class TrayContextMenuPositioningTests
         Assert.Equal(-25, leftPx);
         Assert.Equal(-70, topPx);
     }
+
+    [Fact]
+    public void AnchoredOriginPreventsJumpingAndClippingOnVerticalTaskbar()
+    {
+        var bounds = new Rectangle(0, 0, 1920, 1080);
+        var leftWork = new Rectangle(80, 0, 1840, 1080); // left taskbar
+        var click = new Point(40, 950); // tray icon near bottom of taskbar
+
+        const int physW = 375;
+        const int mainPhysH = 550;
+        const int subPhysH = 300;
+
+        // 1. Initial open with Main View
+        var (initLeft, initTop) = TrayContextMenuWindow.ComputeTargetPhysicalOrigin(
+            leftWork, bounds, click, physW, mainPhysH, scaleX: 1.25, scaleY: 1.25);
+
+        int anchorLeft = initLeft;
+        int anchorTop = initTop;
+        int anchorBottom = initTop + mainPhysH;
+
+        // On left taskbar, bottom must not exceed 1080
+        Assert.True(initTop + mainPhysH <= 1080);
+        Assert.Equal(80, initLeft);
+
+        // 2. Switch to shorter submenu (Pause alerts or Help)
+        var (subLeft, subTop) = TrayContextMenuWindow.ComputeAnchoredOrigin(
+            leftWork, anchorLeft, anchorTop, anchorBottom, physW, subPhysH, isTaskbarBottom: false);
+
+        // Top position stays stable so header/< Back does not jump away from cursor
+        Assert.Equal(anchorTop, subTop);
+        Assert.Equal(anchorLeft, subLeft);
+        Assert.True(subTop + subPhysH <= 1080);
+
+        // 3. Switch back to Main view
+        var (returnLeft, returnTop) = TrayContextMenuWindow.ComputeAnchoredOrigin(
+            leftWork, anchorLeft, anchorTop, anchorBottom, physW, mainPhysH, isTaskbarBottom: false);
+
+        // Top position must be identical to the initial open (zero jump, zero off-screen clip)
+        Assert.Equal(initTop, returnTop);
+        Assert.Equal(initLeft, returnLeft);
+        Assert.True(returnTop + mainPhysH <= 1080);
+    }
+
+    [Fact]
+    public void AnchoredOriginKeepsBottomFlushOnBottomTaskbar()
+    {
+        var bounds = new Rectangle(0, 0, 1920, 1080);
+        var bottomWork = new Rectangle(0, 0, 1920, 1040); // bottom taskbar
+        var click = new Point(1750, 1060);
+
+        const int physW = 375;
+        const int mainPhysH = 550;
+        const int subPhysH = 300;
+
+        // 1. Initial open with Main View
+        var (initLeft, initTop) = TrayContextMenuWindow.ComputeTargetPhysicalOrigin(
+            bottomWork, bounds, click, physW, mainPhysH, scaleX: 1.25, scaleY: 1.25);
+
+        int anchorLeft = initLeft;
+        int anchorTop = initTop;
+        int anchorBottom = initTop + mainPhysH;
+
+        Assert.Equal(1040, anchorBottom);
+        Assert.Equal(1040 - mainPhysH, initTop);
+
+        // 2. Switch to shorter submenu
+        var (subLeft, subTop) = TrayContextMenuWindow.ComputeAnchoredOrigin(
+            bottomWork, anchorLeft, anchorTop, anchorBottom, physW, subPhysH, isTaskbarBottom: true);
+
+        // Bottom remains flush with taskbar
+        Assert.Equal(1040 - subPhysH, subTop);
+        Assert.Equal(1040, subTop + subPhysH);
+        Assert.Equal(initLeft, subLeft);
+
+        // 3. Switch back to Main view
+        var (returnLeft, returnTop) = TrayContextMenuWindow.ComputeAnchoredOrigin(
+            bottomWork, anchorLeft, anchorTop, anchorBottom, physW, mainPhysH, isTaskbarBottom: true);
+
+        Assert.Equal(initTop, returnTop);
+        Assert.Equal(1040, returnTop + mainPhysH);
+    }
 }
 
