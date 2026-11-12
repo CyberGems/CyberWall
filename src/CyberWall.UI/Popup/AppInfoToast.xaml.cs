@@ -667,13 +667,18 @@ public partial class AppInfoToast : Window
         iconHost.Children.Add(vectorIcon);
     }
 
-    public static void ShowToast(string title, string message, string? appPath = null, ToastBadgeType badgeType = ToastBadgeType.Info, string? badgeText = null)
+    public static void ShowToast(string title, string message, string? appPath = null, ToastBadgeType badgeType = ToastBadgeType.Info, string? badgeText = null, bool bypassPause = false)
     {
+        if (Common.Settings.AppSettings.ShouldSuppressRegularFloatingAlert(App.Settings, bypassPause))
+            return;
+
         var app = System.Windows.Application.Current;
         if (app == null) return;
 
         app.Dispatcher.BeginInvoke(() =>
         {
+            if (Common.Settings.AppSettings.ShouldSuppressRegularFloatingAlert(App.Settings, bypassPause))
+                return;
             if (_activeWindow == null || !_activeWindow.IsLoaded)
             {
                 _activeWindow = new AppInfoToast();

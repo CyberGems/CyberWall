@@ -26,6 +26,7 @@ public partial class SettingsView : UserControl
 {
     private readonly AppSettings _s;
     private bool _loading;
+    private bool _pauseSubscribed;
 
     public SettingsView()
     {
@@ -35,11 +36,34 @@ public partial class SettingsView : UserControl
 
         Loaded += (_, _) =>
         {
+            if (!_pauseSubscribed)
+            {
+                FloatingAlertsController.PauseStateChanged += OnPauseStateChanged;
+                _pauseSubscribed = true;
+            }
             if (_loading)
             {
                 LoadCurrentSettings();
             }
+            else
+            {
+                UpdatePauseUiState();
+            }
         };
+
+        Unloaded += (_, _) =>
+        {
+            if (_pauseSubscribed)
+            {
+                FloatingAlertsController.PauseStateChanged -= OnPauseStateChanged;
+                _pauseSubscribed = false;
+            }
+        };
+    }
+
+    private void OnPauseStateChanged()
+    {
+        Dispatcher.BeginInvoke(UpdatePauseUiState);
     }
 
     public void Activate()
@@ -86,7 +110,30 @@ public partial class SettingsView : UserControl
         UpdateAutoBlockUiState();
         PopulateTrafficAnim();
         UpdateTexts();
+        UpdatePauseUiState();
         _loading = false;
+    }
+
+    private void UpdatePauseUiState()
+    {
+        var desc = FloatingAlertsController.GetPausedBannerDescription(_s);
+        bool paused = !string.IsNullOrEmpty(desc);
+
+        ToastPausedBanner.Visibility = paused ? Visibility.Visible : Visibility.Collapsed;
+        if (paused)
+        {
+            ToastPausedTitleLbl.Text = Strings.T("FloatingAlertsPausedBannerTitle");
+            ToastPausedDescLbl.Text = desc;
+            ResumeToastBtn.Content = Strings.T("ResumeNow");
+        }
+
+        ToastTogglesPanel.IsEnabled = !paused;
+        ToastTogglesPanel.Opacity = paused ? 0.5 : 1.0;
+    }
+
+    private void ResumeToastBtn_Click(object sender, RoutedEventArgs e)
+    {
+        FloatingAlertsController.Resume();
     }
 
     public void RefreshLanguage()
@@ -200,6 +247,9 @@ public partial class SettingsView : UserControl
 
         InstantChangeLbl.Text = es ? "Se aplica al instante sin necesidad de reiniciar la aplicación." : "Applied instantly without needing to restart the app.";
         SecLocationLbl.Text = es ? "Ubicación y Alertas" : "Location & Alerts";
+        LocationSharedHdrLbl.Text = Strings.T("SettingsLocationSharedHdr");
+        PermPromptsHdrLbl.Text = Strings.T("SettingsPermissionPromptsHdr");
+        PermPromptsNoteLbl.Text = Strings.T("SettingsPermissionPromptsNote");
         PosTitleLbl.Text = Strings.T("NotificationPosition");
         PosDescLbl.Text = Strings.T("PosDesc");
         MonTitleLbl.Text = Strings.T("NotificationMonitor");
@@ -212,6 +262,7 @@ public partial class SettingsView : UserControl
         TestTitleLbl.Text = Strings.T("TestNotification");
         TestDescLbl.Text = Strings.T("TestNotifDesc");
         ToastHdrLbl.Text = Strings.T("ToastNotificationsHdr");
+        ToastNoteLbl.Text = Strings.T("ToastNotificationsNote");
         ToastAppInfoTitleLbl.Text = Strings.T("ToastAppInfoTitle");
         ToastAppInfoDescLbl.Text = Strings.T("ToastAppInfoDesc");
         ToastInternetTitleLbl.Text = Strings.T("ToastInternetTitle");
@@ -243,6 +294,7 @@ public partial class SettingsView : UserControl
         PopulateMonitors();
         PopulateAutoBlockWait();
         PopulateTrafficAnim();
+        UpdatePauseUiState();
     }
 
     private void UpdateSoundUiState()

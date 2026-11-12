@@ -207,6 +207,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
@@ -246,7 +247,27 @@
                 </StackPanel>
             </Border>
 
-            <Grid Grid.Row="2" Margin="14,10,14,8">
+            <!-- Active Pause Banner -->
+            <Border x:Name="PausedBanner" Grid.Row="2" Visibility="Collapsed" Margin="14,10,14,0" CornerRadius="9"
+                    Background="{DynamicResource BadgeWarnBgBrush}" BorderBrush="{DynamicResource BadgeWarnFgBrush}" BorderThickness="1" Padding="12,9">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Path Data="M 6,8 C 6,4.7 8.7,2 12,2 C 15.3,2 18,4.7 18,8 L 18,13 L 21,17 L 3,17 L 6,13 Z M 10.2,20 C 10.6,21.2 11.2,22 12,22 C 12.8,22 13.4,21.2 13.8,20 M 3,3 L 21,21"
+                          Stroke="{DynamicResource BadgeWarnFgBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                          Width="15" Height="15" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,10,0" Fill="Transparent"/>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
+                        <TextBlock x:Name="PausedBannerTitle" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                        <TextBlock x:Name="PausedBannerDesc" FontSize="11" Foreground="{DynamicResource SubTextBrush}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                    </StackPanel>
+                    <Button x:Name="PausedResumeBtn" Grid.Column="2" Style="{StaticResource SecondaryButtonStyle}" Padding="10,5" VerticalAlignment="Center" Click="PausedResume_Click"/>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="3" Margin="14,10,14,8">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <ItemsControl x:Name="NotifList">
                         <ItemsControl.ItemTemplate>
@@ -342,7 +363,7 @@
                 <TextBlock x:Name="EmptyMsg" Text="No notifications yet." Foreground="{DynamicResource SubTextBrush}" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
             </Grid>
 
-            <Border Grid.Row="3" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,11,11" Padding="18,10">
+            <Border Grid.Row="4" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,11,11" Padding="18,10">
                 <Button x:Name="CloseBtn" Content="Close" Width="95" Height="32" HorizontalAlignment="Right" Style="{StaticResource PrimaryButtonStyle}" Click="Close_Click"/>
             </Border>
         </Grid>

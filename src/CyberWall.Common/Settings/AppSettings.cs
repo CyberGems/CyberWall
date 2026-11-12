@@ -52,6 +52,72 @@ public sealed class AppSettings
     public bool ToastInternetEventsEnabled { get; set; } = true;
     public bool ToastProtectionEventsEnabled { get; set; } = true;
     public bool ToastAutoBlockEnabled { get; set; } = true;
+    public bool FloatingAlertsPausedPermanent { get; set; } = false;
+    public DateTime? FloatingAlertsPausedUntilUtc { get; set; } = null;
+
+    /// <summary>
+    /// Normalizes the stored pause expiry timestamp to UTC.
+    /// </summary>
+    public DateTime? GetFloatingAlertsPauseExpiryUtc()
+    {
+        if (FloatingAlertsPausedUntilUtc is not DateTime until) return null;
+        return until.Kind switch
+        {
+            DateTimeKind.Utc => until,
+            DateTimeKind.Unspecified => DateTime.SpecifyKind(until, DateTimeKind.Utc),
+            _ => until.ToUniversalTime()
+        };
+    }
+
+    /// <summary>
+    /// True while regular floating toast alerts are silenced from the tray menu, either
+    /// permanently or until the stored UTC expiry timestamp. Interactive permission
+    /// prompts and the Notifications panel are never paused.
+    /// </summary>
+    public bool IsFloatingAlertsPaused(DateTime? nowUtc = null)
+    {
+        if (FloatingAlertsPausedPermanent) return true;
+        var expiry = GetFloatingAlertsPauseExpiryUtc();
+        return expiry is DateTime untilUtc && untilUtc > (nowUtc ?? DateTime.UtcNow);
+    }
+
+    /// <summary>
+    /// Applies a timed or permanent pause for regular floating alerts without altering
+    /// the user's granular per-category toast preferences.
+    /// </summary>
+    public void SetFloatingAlertsPause(TimeSpan? duration, DateTime? nowUtc = null)
+    {
+        if (duration is { } span && span > TimeSpan.Zero)
+        {
+            FloatingAlertsPausedUntilUtc = (nowUtc ?? DateTime.UtcNow) + span;
+            FloatingAlertsPausedPermanent = false;
+        }
+        else
+        {
+            FloatingAlertsPausedUntilUtc = null;
+            FloatingAlertsPausedPermanent = true;
+        }
+    }
+
+    /// <summary>
+    /// Clears any active or stale pause for regular floating alerts.
+    /// </summary>
+    public bool ClearFloatingAlertsPause()
+    {
+        if (!FloatingAlertsPausedPermanent && FloatingAlertsPausedUntilUtc == null)
+            return false;
+
+        FloatingAlertsPausedPermanent = false;
+        FloatingAlertsPausedUntilUtc = null;
+        return true;
+    }
+
+    /// <summary>
+    /// Central gate used by regular floating toasts and tray balloons. Critical safety
+    /// alerts pass <paramref name="bypassPause"/> as true so they are never suppressed.
+    /// </summary>
+    public static bool ShouldSuppressRegularFloatingAlert(AppSettings? settings, bool bypassPause = false, DateTime? nowUtc = null)
+        => !bypassPause && settings?.IsFloatingAlertsPaused(nowUtc) == true;
     public bool AllowedRulesExpanded { get; set; } = true;
     public bool BlockedRulesExpanded { get; set; } = true;
     public List<string> RecentSearches { get; set; } = new();

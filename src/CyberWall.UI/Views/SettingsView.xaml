@@ -234,6 +234,9 @@
                 <TextBlock x:Name="SecLocationLbl" Text="Ubicación y Alertas" FontWeight="Bold" FontSize="15.5" Foreground="{DynamicResource AccentBrush}" Margin="0,8,0,10"/>
                 <Border CornerRadius="12" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="18,14" Margin="0,0,0,16">
                     <StackPanel>
+                        <!-- Subsection 2A: Shared On-Screen Location -->
+                        <TextBlock x:Name="LocationSharedHdrLbl" Text="Ubicación en pantalla (compartida)" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource TextBrush}" Margin="0,2,0,10"/>
+
                         <!-- Row 1: Notification Position Grid Picker -->
                         <Grid Margin="0,4,0,14">
                             <Grid.ColumnDefinitions>
@@ -325,7 +328,33 @@
 
                         <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,4,0,12"/>
 
-                        <!-- Row 3: Sound Alert Toggle -->
+                        <!-- Row 3: Test Preview Prompt (Tests Shared Screen Location) -->
+                        <Grid Margin="0,4,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Width="34" Height="34" CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                                <Path Data="M 2 3 L 18 10 L 11 12 L 8 18 Z" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.3" Fill="Transparent" Width="14" Height="14" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock x:Name="TestTitleLbl" Text="Probar notificación" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextBrush}"/>
+                                <TextBlock x:Name="TestDescLbl" Text="Envía un aviso para comprobar la posición y aspecto en pantalla." FontSize="12.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <Button x:Name="PreviewBtn" Grid.Column="2" Content="Vista previa" Height="34" Padding="18,6" FontSize="12.5" Style="{StaticResource SecondaryButtonStyle}" Click="PreviewBtn_Click"/>
+                        </Grid>
+
+                        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,6,0,14"/>
+
+                        <!-- Subsection 2B: Connection Permission Prompts -->
+                        <TextBlock x:Name="PermPromptsHdrLbl" Text="Solicitudes de permiso de conexión" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource TextBrush}" Margin="0,2,0,4"/>
+                        <TextBlock x:Name="PermPromptsNoteLbl" Text="Los avisos interactivos de permisos siempre se muestran y nunca se pausan." FontSize="12" Foreground="{DynamicResource SubTextBrush}" Margin="0,0,0,10" TextWrapping="Wrap"/>
+
+                        <!-- Sound Alert Toggle -->
                         <Grid Margin="0,4,0,6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -345,7 +374,7 @@
                             <CheckBox x:Name="SoundToggle" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}" VerticalAlignment="Center" Click="SoundToggle_Click"/>
                         </Grid>
 
-                        <!-- Row 3.1: Custom Sound File Selector & Preview -->
+                        <!-- Custom Sound File Selector & Preview -->
                         <Grid x:Name="CustomSoundRow" Margin="48,0,0,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -365,32 +394,34 @@
                             </Button>
                         </Grid>
 
-                        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,4,0,12"/>
+                        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,6,0,14"/>
 
-                        <!-- Row 4: Test Preview Prompt -->
-                        <Grid Margin="0,4,0,14">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                        <!-- Subsection 2C: Regular Floating Toast Notifications -->
+                        <TextBlock x:Name="ToastHdrLbl" Text="Avisos flotantes regulares (Toast)" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource TextBrush}" Margin="0,2,0,4"/>
+                        <TextBlock x:Name="ToastNoteLbl" Text="Se controlan por separado de los permisos. Aunque estén en pausa o desactivados, todos los eventos se guardan en el panel de Notificaciones." FontSize="12" Foreground="{DynamicResource SubTextBrush}" Margin="0,0,0,12" TextWrapping="Wrap"/>
 
-                            <Border Width="34" Height="34" CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,14,0">
-                                <Path Data="M 2 3 L 18 10 L 11 12 L 8 18 Z" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.3" Fill="Transparent" Width="14" Height="14" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
+                        <!-- Active Tray Pause Banner -->
+                        <Border x:Name="ToastPausedBanner" Visibility="Collapsed" CornerRadius="10"
+                                Background="{DynamicResource BadgeWarnBgBrush}" BorderBrush="{DynamicResource BadgeWarnFgBrush}"
+                                BorderThickness="1" Padding="14,10" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Path Data="M 6,8 C 6,4.7 8.7,2 12,2 C 15.3,2 18,4.7 18,8 L 18,13 L 21,17 L 3,17 L 6,13 Z M 10.2,20 C 10.6,21.2 11.2,22 12,22 C 12.8,22 13.4,21.2 13.8,20 M 3,3 L 21,21"
+                                      Stroke="{DynamicResource BadgeWarnFgBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,12,0" Fill="Transparent"/>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                                    <TextBlock x:Name="ToastPausedTitleLbl" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                                    <TextBlock x:Name="ToastPausedDescLbl" FontSize="12" Foreground="{DynamicResource SubTextBrush}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <Button x:Name="ResumeToastBtn" Grid.Column="2" Height="32" Padding="14,5" FontSize="12" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" Click="ResumeToastBtn_Click"/>
+                            </Grid>
+                        </Border>
 
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
-                                <TextBlock x:Name="TestTitleLbl" Text="Probar notificación" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextBrush}"/>
-                                <TextBlock x:Name="TestDescLbl" Text="Envía un aviso para comprobar la posición y aspecto en pantalla." FontSize="12.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,3,0,0" TextWrapping="Wrap"/>
-                            </StackPanel>
-
-                            <Button x:Name="PreviewBtn" Grid.Column="2" Content="Vista previa" Height="34" Padding="18,6" FontSize="12.5" Style="{StaticResource SecondaryButtonStyle}" Click="PreviewBtn_Click"/>
-                        </Grid>
-
-                        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,10,0,14"/>
-
-                        <!-- Toast Notifications Subtitle -->
-                        <TextBlock x:Name="ToastHdrLbl" Text="Avisos en pantalla (Toast)" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource TextBrush}" Margin="0,4,0,12"/>
+                        <StackPanel x:Name="ToastTogglesPanel">
 
                         <!-- Toast 1: App Info -->
                         <Grid Margin="0,4,0,10">
@@ -459,6 +490,7 @@
                             </StackPanel>
                             <CheckBox x:Name="ToastAutoBlockToggle" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}" VerticalAlignment="Center" Click="ToastToggle_Click"/>
                         </Grid>
+                        </StackPanel>
 
                         <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,4,0,12"/>
 

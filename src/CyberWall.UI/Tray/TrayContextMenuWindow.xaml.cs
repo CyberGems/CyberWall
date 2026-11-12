@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Automation;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using CyberWall.Common.I18n;
@@ -16,11 +17,14 @@ namespace CyberWall.UI.Tray;
 
 public partial class TrayContextMenuWindow : Window
 {
+    private enum TrayMenuView { Main, PauseAlerts, Help }
+
     private readonly MainWindow _mainWindow;
     private readonly FirewallService _svc;
     private readonly DrawingPoint _clickPoint;
     private bool _isClosing;
     private bool _updatingUi;
+    private TrayMenuView _currentView = TrayMenuView.Main;
 
     public TrayContextMenuWindow(MainWindow mainWindow, FirewallService svc, DrawingPoint clickPoint)
     {
@@ -34,6 +38,7 @@ public partial class TrayContextMenuWindow : Window
         LoadLocalizedStrings();
         UpdateProtectionState();
         UpdateWidgetState();
+        UpdatePauseAlertsState();
 
         WindowStartupLocation = WindowStartupLocation.Manual;
         SizeChanged += (_, _) => PositionWindow();
@@ -134,6 +139,16 @@ public partial class TrayContextMenuWindow : Window
     {
         OpenAppText.Text = Strings.T("OpenCyberWall");
         NotifMenuText.Text = Strings.T("Notifications");
+        PauseAlertsText.Text = Strings.T("PauseFloatingAlerts");
+        ResumeAlertsText.Text = Strings.T("ResumeFloatingAlerts");
+        PauseBackText.Text = Strings.T("TrayBack");
+        PauseSubTitleText.Text = Strings.T("PauseFloatingAlerts");
+        Pause1hText.Text = Strings.T("PauseAlerts1h");
+        Pause6hText.Text = Strings.T("PauseAlerts6h");
+        Pause12hText.Text = Strings.T("PauseAlerts12h");
+        Pause24hText.Text = Strings.T("PauseAlerts24h");
+        Pause24hSubText.Text = Strings.T("PauseAlertsSuggested");
+        PausePermanentText.Text = Strings.T("PauseAlertsPermanent");
         SettingsText.Text = Strings.T("Settings");
         LogText.Text = Strings.T("OpenLog");
         StatsText.Text = Strings.T("StatsMenu");
@@ -141,6 +156,8 @@ public partial class TrayContextMenuWindow : Window
         WidgetText.Text = widgetLabel;
         AutomationProperties.SetName(WidgetSwitch, widgetLabel);
         HelpText.Text = Strings.T("Help");
+        HelpBackText.Text = Strings.T("TrayBack");
+        HelpSubTitleText.Text = Strings.T("Help");
         SubHelpText.Text = Strings.T("Help");
         SubFaqText.Text = Strings.T("Faq");
         SubChangelogText.Text = Strings.T("Changelog");
@@ -149,6 +166,26 @@ public partial class TrayContextMenuWindow : Window
         SubAboutText.Text = $"{Strings.T("About")}...";
         SubCheckUpdateText.Text = Strings.T("CheckForUpdates");
         ExitText.Text = Strings.T("ExitApp");
+    }
+
+    private void UpdatePauseAlertsState()
+    {
+        var pausedStatus = FloatingAlertsController.GetPausedStatusLabel(App.Settings);
+        bool paused = !string.IsNullOrEmpty(pausedStatus);
+        PauseAlertsBtn.Visibility = paused ? Visibility.Collapsed : Visibility.Visible;
+        ResumeAlertsBtn.Visibility = paused ? Visibility.Visible : Visibility.Collapsed;
+        if (paused)
+        {
+            ResumeAlertsSubText.Text = pausedStatus;
+        }
+    }
+
+    private void ShowView(TrayMenuView view)
+    {
+        _currentView = view;
+        MainViewPanel.Visibility = view == TrayMenuView.Main ? Visibility.Visible : Visibility.Collapsed;
+        PauseAlertsViewPanel.Visibility = view == TrayMenuView.PauseAlerts ? Visibility.Visible : Visibility.Collapsed;
+        HelpViewPanel.Visibility = view == TrayMenuView.Help ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void UpdateProtectionState()
@@ -292,9 +329,44 @@ public partial class TrayContextMenuWindow : Window
 
     private void Help_Click(object sender, RoutedEventArgs e)
     {
-        bool isExpanded = HelpSubPanel.Visibility == Visibility.Visible;
-        HelpSubPanel.Visibility = isExpanded ? Visibility.Collapsed : Visibility.Visible;
-        HelpChevronRotate.Angle = isExpanded ? 0 : 180;
+        ShowView(TrayMenuView.Help);
+    }
+
+    private void PauseAlertsMenu_Click(object sender, RoutedEventArgs e)
+    {
+        ShowView(TrayMenuView.PauseAlerts);
+    }
+
+    private void ResumeAlerts_Click(object sender, RoutedEventArgs e)
+    {
+        FloatingAlertsController.Resume();
+        CloseMenu();
+    }
+
+    private void PauseDuration_Click(object sender, RoutedEventArgs e)
+    {
+        TimeSpan? duration = sender is FrameworkElement { Tag: string raw }
+            && int.TryParse(raw, out int minutes)
+            && minutes > 0
+            ? TimeSpan.FromMinutes(minutes)
+            : null;
+        FloatingAlertsController.Pause(duration);
+        CloseMenu();
+    }
+
+    private void SubMenuBack_Click(object sender, RoutedEventArgs e)
+    {
+        ShowView(TrayMenuView.Main);
+    }
+
+    private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key != Key.Escape) return;
+        e.Handled = true;
+        if (_currentView != TrayMenuView.Main)
+            ShowView(TrayMenuView.Main);
+        else
+            CloseMenu();
     }
 
     private void SubHelp_Click(object sender, RoutedEventArgs e)

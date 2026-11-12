@@ -48,9 +48,40 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
         CyberWallWindowChrome.Apply(this, 12);
         Title = Strings.T("WindowNotifications");
         RefreshLanguage();
+        UpdatePausedBanner();
         BindList();
         _store.Changed += OnStoreChanged;
-        Closed += (_, _) => _store.Changed -= OnStoreChanged;
+        FloatingAlertsController.PauseStateChanged += OnPauseStateChanged;
+        Closed += (_, _) =>
+        {
+            _store.Changed -= OnStoreChanged;
+            FloatingAlertsController.PauseStateChanged -= OnPauseStateChanged;
+        };
+    }
+
+    private void OnPauseStateChanged()
+    {
+        Dispatcher.BeginInvoke(UpdatePausedBanner);
+    }
+
+    private void UpdatePausedBanner()
+    {
+        var desc = FloatingAlertsController.GetPausedBannerDescription(App.Settings);
+        if (string.IsNullOrEmpty(desc))
+        {
+            PausedBanner.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        PausedBannerTitle.Text = Strings.T("FloatingAlertsPausedBannerTitle");
+        PausedBannerDesc.Text = desc;
+        PausedResumeBtn.Content = Strings.T("ResumeNow");
+        PausedBanner.Visibility = Visibility.Visible;
+    }
+
+    private void PausedResume_Click(object sender, RoutedEventArgs e)
+    {
+        FloatingAlertsController.Resume();
     }
 
     private void OnStoreChanged()

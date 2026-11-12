@@ -105,6 +105,9 @@ public sealed class TrayService : IDisposable
 
     public void NotifyAutoBlock(string appName)
     {
+        if (Common.Settings.AppSettings.ShouldSuppressRegularFloatingAlert(App.Settings))
+            return;
+
         try
         {
             _icon.BalloonTipTitle = Strings.T("AutoBlockedTitle");
@@ -281,7 +284,8 @@ public sealed class TrayService : IDisposable
                 AppInfoToast.ShowToast(
                     Strings.T("TrayUnavailableTitle"),
                     Strings.T("TrayUnavailableDesc"),
-                    badgeType: ToastBadgeType.Warning);
+                    badgeType: ToastBadgeType.Warning,
+                    bypassPause: true);
                 return;
             }
 

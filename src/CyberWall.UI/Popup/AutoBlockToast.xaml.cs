@@ -64,8 +64,13 @@ public partial class AutoBlockToast : Window
 
     public static void ShowToast(ConnectionEvent ev, Action? onUndo = null)
     {
+        if (Common.Settings.AppSettings.ShouldSuppressRegularFloatingAlert(App.Settings))
+            return;
+
         System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
         {
+            if (Common.Settings.AppSettings.ShouldSuppressRegularFloatingAlert(App.Settings))
+                return;
             if (PopupWindowHelper.HasOpenPermissionPopup()) return;
             var toast = new AutoBlockToast(ev, onUndo);
             _active.Add(toast);

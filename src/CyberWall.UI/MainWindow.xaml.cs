@@ -157,6 +157,7 @@ public partial class MainWindow : Window
     private int _firewallTimeWindowSeconds = 60;
     private bool _isFirewallChartPaused;
     private bool _rulesColumnSyncQueued;
+    private DispatcherTimer? _alertsPauseExpiryTimer;
 
     static MainWindow()
     {
@@ -231,10 +232,14 @@ public partial class MainWindow : Window
         AppInfoMonitorService.Instance.Start(_notifications, _svc);
         PathToIconConverter.IconChanged += OnAppIconChanged;
         UpdateService.UpdateAvailabilityChanged += OnUpdateAvailabilityChanged;
+        FloatingAlertsController.PauseStateChanged += OnFloatingAlertsPauseStateChanged;
         _activeUpdateResult = UpdateService.LastCheckResult;
         UpdateAvailableButtonState();
+        UpdateNotifPauseIndicator();
         Closed += (_, _) =>
         {
+            _alertsPauseExpiryTimer?.Stop();
+            FloatingAlertsController.PauseStateChanged -= OnFloatingAlertsPauseStateChanged;
             TopBandwidthFlyout.Close();
             UpdateService.UpdateAvailabilityChanged -= OnUpdateAvailabilityChanged;
             PathToIconConverter.IconChanged -= OnAppIconChanged;
@@ -459,7 +464,7 @@ public partial class MainWindow : Window
             AutomationProperties.SetAcceleratorKey(BrandingPanel, KeyboardShortcuts.About);
         }
         FooterStatusText.Text = Strings.T("StatusFooter");
-        NotifBtn.ToolTip = HotkeyToolTipContent.WithShortcut(Strings.T("Notifications"), KeyboardShortcuts.Notifications);
+        UpdateNotifPauseIndicator();
         AutomationProperties.SetName(NotifBtn, Strings.T("Notifications"));
         AutomationProperties.SetAcceleratorKey(NotifBtn, KeyboardShortcuts.Notifications);
         if (WidgetBtn != null)
@@ -770,6 +775,56 @@ public partial class MainWindow : Window
     internal void ClearPendingDecision(string appPath)
     {
         _notifications.RemoveRelated(AppNotificationKind.PendingDecision, appPath);
+    }
+
+    private void OnFloatingAlertsPauseStateChanged()
+    {
+        Dispatcher.BeginInvoke(UpdateNotifPauseIndicator);
+    }
+
+    private void UpdateNotifPauseIndicator()
+    {
+        var pauseLabel = FloatingAlertsController.GetPausedStatusLabel(App.Settings);
+        bool isPaused = !string.IsNullOrEmpty(pauseLabel);
+
+        if (NotifPausedDot != null)
+            NotifPausedDot.Visibility = isPaused ? Visibility.Visible : Visibility.Collapsed;
+
+        if (NotifBtn != null)
+        {
+            var baseLabel = Strings.T("Notifications");
+            var tipText = isPaused ? $"{baseLabel} ({pauseLabel})" : baseLabel;
+            NotifBtn.ToolTip = HotkeyToolTipContent.WithShortcut(tipText, KeyboardShortcuts.Notifications);
+        }
+
+        if (isPaused && !App.Settings.FloatingAlertsPausedPermanent)
+        {
+            if (_alertsPauseExpiryTimer == null)
+            {
+                _alertsPauseExpiryTimer = new DispatcherTimer(DispatcherPriority.Background)
+                {
+                    Interval = TimeSpan.FromSeconds(15)
+                };
+                _alertsPauseExpiryTimer.Tick += (_, _) =>
+                {
+                    if (!App.Settings.IsFloatingAlertsPaused())
+                    {
+                        _alertsPauseExpiryTimer.Stop();
+                        FloatingAlertsController.Resume();
+                    }
+                    else
+                    {
+                        UpdateNotifPauseIndicator();
+                    }
+                };
+            }
+            if (!_alertsPauseExpiryTimer.IsEnabled)
+                _alertsPauseExpiryTimer.Start();
+        }
+        else
+        {
+            _alertsPauseExpiryTimer?.Stop();
+        }
     }
 
     private int _lastNotifCount;
@@ -1884,7 +1939,8 @@ public partial class MainWindow : Window
                 Strings.T("ProtectionRestoreFailedTitle"),
                 Strings.T("ProtectionRestoreFailedDesc"),
                 appPath: null,
-                ToastBadgeType.Danger);
+                ToastBadgeType.Danger,
+                bypassPause: true);
         }
         _notifications.Add(AppNotificationKind.ProtectionOff);
         if (App.Settings.ToastProtectionEventsEnabled)
