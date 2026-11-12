@@ -13,6 +13,8 @@ public sealed class RuleStore
     private readonly object _lock = new();
     private DateTime _lastWriteUtc = DateTime.MinValue;
 
+    public event Action? Changed;
+
     public RuleStore(string? path = null)
     {
         _path = path ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "CyberWall", "rules.json");
@@ -66,6 +68,20 @@ public sealed class RuleStore
     public void Remove(string appPath)
     {
         lock (_lock) _rules.Remove(AppRule.Normalize(appPath));
+        Save();
+    }
+
+    public void ReplaceAll(IEnumerable<AppRule> rules)
+    {
+        lock (_lock)
+        {
+            _rules.Clear();
+            foreach (var r in rules)
+            {
+                if (r == null || string.IsNullOrWhiteSpace(r.AppPath)) continue;
+                _rules[AppRule.Normalize(r.AppPath)] = r;
+            }
+        }
         Save();
     }
 
@@ -124,6 +140,8 @@ public sealed class RuleStore
             lock (_lock) snap = _rules.Values.ToList();
             var json = JsonSerializer.Serialize(snap, new JsonSerializerOptions { WriteIndented = true });
             AtomicFile.WriteAllText(_path, json);
+            try { _lastWriteUtc = new FileInfo(_path).LastWriteTimeUtc; } catch { }
+            Changed?.Invoke();
         }
         catch (Exception ex)
         {

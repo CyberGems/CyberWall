@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using CyberWall.Common.Backups;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Common.Settings;
@@ -19,6 +21,8 @@ using Button = System.Windows.Controls.Button;
 using ComboBox = System.Windows.Controls.ComboBox;
 using ComboBoxItem = System.Windows.Controls.ComboBoxItem;
 using CheckBox = System.Windows.Controls.CheckBox;
+using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using OpenFolderDialog = Microsoft.Win32.OpenFolderDialog;
 
 namespace CyberWall.UI.Views;
 
@@ -109,9 +113,21 @@ public partial class SettingsView : UserControl
         PopulateAutoBlockWait();
         UpdateAutoBlockUiState();
         PopulateTrafficAnim();
+        AutoBackupToggle.IsChecked = _s.AutoBackupEnabled;
+        PopulateBackupFrequency();
+        PopulateBackupRetention();
+        BackupFolderBox.Text = BackupService.GetEffectiveDirectory(_s);
+        BackupFolderErrorLbl.Visibility = Visibility.Collapsed;
+        BackupFeedbackLbl.Visibility = Visibility.Collapsed;
         UpdateTexts();
         UpdatePauseUiState();
+        UpdateBackupUiState();
         _loading = false;
+    }
+
+    public void NotifyBackupStatusChanged()
+    {
+        Dispatcher.BeginInvoke(UpdateBackupUiState);
     }
 
     private void UpdatePauseUiState()
@@ -287,6 +303,22 @@ public partial class SettingsView : UserControl
         ClearAllDescLbl.Text = Strings.T("ClearAllRulesDesc");
         ClearAllBtn.Content = Strings.T("ClearAllRulesShort");
         PreviewBtn.Content = Strings.T("PreviewPopup");
+
+        SecBackupsLbl.Text = Strings.T("SecBackups");
+        AutoBackupTitleLbl.Text = Strings.T("AutoBackupEnabled");
+        AutoBackupDescLbl.Text = Strings.T("AutoBackupEnabledDesc");
+        BackupFreqLbl.Text = Strings.T("AutoBackupFreq");
+        BackupFreqDescLbl.Text = Strings.T("AutoBackupFreqDesc");
+        BackupRetentionLbl.Text = Strings.T("BackupRetentionCount");
+        BackupRetentionDescLbl.Text = Strings.T("BackupRetentionCountDesc");
+        BackupFolderTitleLbl.Text = Strings.T("BackupFolder");
+        BackupFolderDescLbl.Text = Strings.T("BackupFolderDesc");
+        BackupFolderBrowseBtn.Content = Strings.T("BackupFolderBrowse");
+        BackupFolderOpenBtn.Content = Strings.T("BackupFolderOpen");
+        BackupFolderResetBtn.Content = Strings.T("BackupFolderReset");
+        BackupNowBtn.Content = Strings.T("BackupNowBtn");
+        BackupRestoreBtn.Content = Strings.T("BackupRestoreBtn");
+
         FooterVerText.Text = $"CyberWall {UpdateService.GetCurrentVersionLabel()}";
 
         UpdateSoundUiState();
@@ -294,7 +326,10 @@ public partial class SettingsView : UserControl
         PopulateMonitors();
         PopulateAutoBlockWait();
         PopulateTrafficAnim();
+        PopulateBackupFrequency();
+        PopulateBackupRetention();
         UpdatePauseUiState();
+        UpdateBackupUiState();
     }
 
     private void UpdateSoundUiState()
@@ -543,6 +578,239 @@ public partial class SettingsView : UserControl
         {
             _s.TrafficAnimation = mode;
             _s.Save();
+        }
+    }
+
+    private void PopulateBackupFrequency()
+    {
+        var wasLoading = _loading;
+        _loading = true;
+        BackupFreqBox.Items.Clear();
+        BackupFreqBox.Items.Add(new ComboBoxItem { Content = Strings.T("BackupFreqDaily"), Tag = BackupFrequency.Daily });
+        BackupFreqBox.Items.Add(new ComboBoxItem { Content = Strings.T("BackupFreqWeekly"), Tag = BackupFrequency.Weekly });
+        BackupFreqBox.Items.Add(new ComboBoxItem { Content = Strings.T("BackupFreqOnChange"), Tag = BackupFrequency.OnChange });
+
+        BackupFreqBox.SelectedIndex = _s.AutoBackupFrequency switch
+        {
+            BackupFrequency.Weekly => 1,
+            BackupFrequency.OnChange => 2,
+            _ => 0
+        };
+        _loading = wasLoading;
+    }
+
+    private void PopulateBackupRetention()
+    {
+        var wasLoading = _loading;
+        _loading = true;
+        BackupRetentionBox.Items.Clear();
+
+        int current = Math.Clamp(_s.BackupRetentionCount, AppSettings.MinBackupRetention, AppSettings.MaxBackupRetention);
+        int selectedIdx = 0;
+
+        for (int i = AppSettings.MinBackupRetention; i <= AppSettings.MaxBackupRetention; i++)
+        {
+            string label = i == 1
+                ? Strings.T("BackupRetentionCopyOne")
+                : i == AppSettings.DefaultBackupRetention
+                    ? string.Format(Strings.T("BackupRetentionDefaultFmt"), i)
+                    : string.Format(Strings.T("BackupRetentionCopiesFmt"), i);
+
+            BackupRetentionBox.Items.Add(new ComboBoxItem { Content = label, Tag = i });
+            if (i == current)
+            {
+                selectedIdx = BackupRetentionBox.Items.Count - 1;
+            }
+        }
+
+        BackupRetentionBox.SelectedIndex = selectedIdx;
+        _loading = wasLoading;
+    }
+
+    private void UpdateBackupUiState()
+    {
+        bool autoEnabled = AutoBackupToggle.IsChecked == true;
+        AutoBackupOptionsPanel.IsEnabled = autoEnabled;
+        AutoBackupOptionsPanel.Opacity = autoEnabled ? 1.0 : 0.5;
+
+        var effectiveDir = BackupService.GetEffectiveDirectory(_s);
+        var defaultDir = Path.GetFullPath(BackupService.DefaultBackupDirectory);
+        BackupFolderResetBtn.IsEnabled = !string.Equals(effectiveDir, defaultDir, StringComparison.OrdinalIgnoreCase);
+
+        DateTime? latestUtc = _s.LastAutoBackupUtc;
+        try
+        {
+            var newestEntry = BackupService.ListBackups(_s).FirstOrDefault(b => b.IsValid);
+            if (newestEntry != null && (latestUtc == null || newestEntry.CreatedUtc > latestUtc.Value))
+            {
+                latestUtc = newestEntry.CreatedUtc;
+            }
+        }
+        catch { }
+
+        BackupLastStatusLbl.Text = latestUtc is DateTime utc
+            ? string.Format(Strings.T("BackupLastFmt"), utc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"))
+            : Strings.T("BackupNever");
+    }
+
+    private void AutoBackupToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        _s.AutoBackupEnabled = AutoBackupToggle.IsChecked == true;
+        _s.Save();
+        UpdateBackupUiState();
+
+        if (_s.AutoBackupEnabled && Window.GetWindow(this) is MainWindow mw)
+        {
+            mw.TriggerAutoBackupSoon();
+        }
+    }
+
+    private void BackupFreqBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loading) return;
+        if (BackupFreqBox.SelectedItem is ComboBoxItem { Tag: BackupFrequency freq })
+        {
+            _s.AutoBackupFrequency = freq;
+            _s.Save();
+            if (_s.AutoBackupEnabled && Window.GetWindow(this) is MainWindow mw)
+            {
+                mw.TriggerAutoBackupSoon();
+            }
+        }
+    }
+
+    private void BackupRetentionBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loading) return;
+        if (BackupRetentionBox.SelectedItem is ComboBoxItem { Tag: int count })
+        {
+            _s.BackupRetentionCount = count;
+            _s.Save();
+        }
+    }
+
+    private void ApplyBackupFolder(string candidatePath)
+    {
+        if (!BackupService.ValidateWritableDirectory(candidatePath, out var err))
+        {
+            BackupFolderErrorLbl.Text = string.Format(Strings.T("BackupFolderInvalid"), err ?? "");
+            BackupFolderErrorLbl.Visibility = Visibility.Visible;
+            BackupFolderBox.Text = BackupService.GetEffectiveDirectory(_s);
+            return;
+        }
+
+        BackupFolderErrorLbl.Visibility = Visibility.Collapsed;
+        var full = Path.GetFullPath(candidatePath.Trim());
+        var defaultFull = Path.GetFullPath(BackupService.DefaultBackupDirectory);
+        _s.BackupDirectory = string.Equals(full, defaultFull, StringComparison.OrdinalIgnoreCase) ? "" : full;
+        _s.Save();
+        BackupFolderBox.Text = BackupService.GetEffectiveDirectory(_s);
+        UpdateBackupUiState();
+
+        if (_s.AutoBackupEnabled && Window.GetWindow(this) is MainWindow mw)
+        {
+            mw.TriggerAutoBackupSoon();
+        }
+    }
+
+    private void BackupFolderBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        var current = BackupService.GetEffectiveDirectory(_s);
+        var entered = BackupFolderBox.Text?.Trim() ?? "";
+        if (!string.Equals(entered, current, StringComparison.OrdinalIgnoreCase))
+        {
+            ApplyBackupFolder(entered);
+        }
+    }
+
+    private void BackupFolderBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            ApplyBackupFolder(BackupFolderBox.Text ?? "");
+            Keyboard.ClearFocus();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            BackupFolderErrorLbl.Visibility = Visibility.Collapsed;
+            BackupFolderBox.Text = BackupService.GetEffectiveDirectory(_s);
+            Keyboard.ClearFocus();
+            e.Handled = true;
+        }
+    }
+
+    private void BackupFolderBrowseBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var current = BackupService.GetEffectiveDirectory(_s);
+        var dlg = new OpenFolderDialog
+        {
+            Title = Strings.T("BackupBrowseFolderTitle"),
+            InitialDirectory = Directory.Exists(current)
+                ? current
+                : Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)
+        };
+
+        if (dlg.ShowDialog(Window.GetWindow(this)) == true && !string.IsNullOrWhiteSpace(dlg.FolderName))
+        {
+            ApplyBackupFolder(dlg.FolderName);
+        }
+    }
+
+    private void BackupFolderOpenBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var dir = BackupService.GetEffectiveDirectory(_s);
+        try
+        {
+            Directory.CreateDirectory(dir);
+            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{dir}\"") { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            BackupFolderErrorLbl.Text = string.Format(Strings.T("BackupFolderInvalid"), ex.Message);
+            BackupFolderErrorLbl.Visibility = Visibility.Visible;
+        }
+    }
+
+    private void BackupFolderResetBtn_Click(object sender, RoutedEventArgs e)
+    {
+        ApplyBackupFolder(BackupService.DefaultBackupDirectory);
+    }
+
+    private void BackupNowBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (Window.GetWindow(this) is not MainWindow mw) return;
+
+        var result = mw.CreateManualBackupFromSettings();
+        if (result.Success && !string.IsNullOrWhiteSpace(result.FilePath))
+        {
+            BackupFeedbackLbl.Foreground = (WpfBrush)FindResource("BadgeAllowFgBrush");
+            BackupFeedbackLbl.Text = string.Format(Strings.T("BackupCreatedMsg"), Path.GetFileName(result.FilePath));
+        }
+        else
+        {
+            BackupFeedbackLbl.Foreground = (WpfBrush)FindResource("BadgeWarnFgBrush");
+            BackupFeedbackLbl.Text = string.Format(Strings.T("BackupCreateFailedMsg"), result.ErrorMessage ?? "");
+        }
+
+        BackupFeedbackLbl.Visibility = Visibility.Visible;
+        UpdateBackupUiState();
+    }
+
+    private void BackupRestoreBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (Window.GetWindow(this) is not MainWindow mw) return;
+
+        var dlg = new BackupRestoreDialog(_s) { Owner = mw };
+        if (dlg.ShowDialog() == true && dlg.SelectedDocument != null)
+        {
+            mw.RestoreFromBackup(dlg.SelectedDocument, dlg.RestoreRules, dlg.RestoreSettings);
+            LoadCurrentSettings();
+            BackupFeedbackLbl.Foreground = (WpfBrush)FindResource("BadgeAllowFgBrush");
+            BackupFeedbackLbl.Text = Strings.T("BackupRestoredSuccess");
+            BackupFeedbackLbl.Visibility = Visibility.Visible;
         }
     }
 }

@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using CyberWall.Common;
+using CyberWall.Common.Backups;
 using CyberWall.Common.Geo;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
@@ -158,6 +159,7 @@ public partial class MainWindow : Window
     private bool _isFirewallChartPaused;
     private bool _rulesColumnSyncQueued;
     private DispatcherTimer? _alertsPauseExpiryTimer;
+    private BackupCoordinator? _backupCoordinator;
 
     static MainWindow()
     {
@@ -220,6 +222,8 @@ public partial class MainWindow : Window
             WindowLayoutPersistence.Save(this, App.Settings);
         };
         _tray = new TrayService(this, _svc);
+        _backupCoordinator = new BackupCoordinator(_svc, App.Settings);
+        _backupCoordinator.BackupCompleted += _ => SettingsTabContent?.NotifyBackupStatusChanged();
         GeoCountry.Updated += OnGeoUpdated;
         GeoCountry.Warm();
         ProcessTrafficTracker.Instance.ActivityUpdated += OnActivityUpdated;
@@ -238,6 +242,7 @@ public partial class MainWindow : Window
         UpdateNotifPauseIndicator();
         Closed += (_, _) =>
         {
+            _backupCoordinator?.Dispose();
             _alertsPauseExpiryTimer?.Stop();
             FloatingAlertsController.PauseStateChanged -= OnFloatingAlertsPauseStateChanged;
             TopBandwidthFlyout.Close();
@@ -608,8 +613,67 @@ public partial class MainWindow : Window
 
     public void ClearAllRulesFromSettings()
     {
+        _backupCoordinator?.CreateSafetyBackup(BackupReason.PreClear);
         _svc.ClearAllRules();
         RefreshRules(SearchBox.Text);
+    }
+
+    public BackupCreateResult CreateManualBackupFromSettings()
+    {
+        return _backupCoordinator?.CreateManualBackup()
+            ?? BackupService.CreateBackup(_svc.Store.All, App.Settings, BackupReason.Manual, UpdateService.GetCurrentVersionLabel());
+    }
+
+    public void TriggerAutoBackupSoon()
+    {
+        _backupCoordinator?.TriggerAutoCheckSoon();
+    }
+
+    public void RestoreFromBackup(BackupDocument doc, bool restoreRules, bool restoreSettings)
+    {
+        if (doc == null) return;
+
+        // Always snapshot the live state before applying any backup.
+        _backupCoordinator?.CreateSafetyBackup(BackupReason.PreRestore);
+
+        if (restoreRules && doc.Payload.Rules != null)
+        {
+            _svc.ReplaceAllRules(doc.Payload.Rules);
+        }
+
+        if (restoreSettings && doc.Payload.Settings != null)
+        {
+            App.Settings.ApplyRestoredPreferences(doc.Payload.Settings);
+            App.Settings.Save();
+
+            Strings.Current = App.Settings.Language;
+            ThemeManager.Apply(App.Settings.Theme);
+            StartupHelper.SetStartupEnabled(App.Settings.RunAtStartup, App.Settings.StartMinimized);
+            AllowedExpander.IsExpanded = App.Settings.AllowedRulesExpanded;
+            BlockedExpander.IsExpanded = App.Settings.BlockedRulesExpanded;
+            UpdateExpanderRowHeights();
+
+            if (!_svc.OwnedByAnotherHost)
+            {
+                if (App.Settings.FirewallEnabled)
+                {
+                    if (!_svc.IsMasterOn)
+                        _svc.Enable(App.Settings.FirewallMode);
+                    else if (_svc.Mode != App.Settings.FirewallMode)
+                        _svc.SetMode(App.Settings.FirewallMode);
+                }
+                else if (_svc.IsMasterOn)
+                {
+                    _svc.Disable();
+                }
+            }
+        }
+
+        RefreshRules(SearchBox.Text);
+        RefreshLanguage();
+        UpdateStatus();
+        UpdateCloseButtonTooltip();
+        UpdateNotifPauseIndicator();
     }
 
     public void RefreshStatusFromExternal()

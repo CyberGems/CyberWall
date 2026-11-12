@@ -22,6 +22,7 @@ public sealed class FirewallService : IDisposable
     private readonly Dictionary<string, (Verdict Verdict, int Pid, DateTime ExpiresUtc)> _sessions = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _sessionLock = new();
     private readonly HashSet<string> _reappliedAllows = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _syncedRuleKeys = new(StringComparer.OrdinalIgnoreCase);
     private static readonly TimeSpan SessionTtl = TimeSpan.FromMinutes(10);
     private Timer? _heartbeat;
     private bool _ownsEngine;
@@ -49,7 +50,15 @@ public sealed class FirewallService : IDisposable
         _ownsEngine = true;
 
         Mode = mode == FirewallMode.Disabled ? FirewallMode.Ask : mode;
-        lock (_sessionLock) _reappliedAllows.Clear();
+        lock (_sessionLock)
+        {
+            _reappliedAllows.Clear();
+            _syncedRuleKeys.Clear();
+            foreach (var r in Store.All)
+            {
+                _syncedRuleKeys.Add(SafeKey(r.AppPath));
+            }
+        }
         BlockedLog.TryDeleteTempFile();
 
         // The watchdog is armed before the policy switch: a crash at any point of the
@@ -139,23 +148,62 @@ public sealed class FirewallService : IDisposable
     public bool IsMasterOn => IsEnabled;
 
     /// <summary>
-    /// Reapplies the allow rules of the store to Windows Firewall. Used by the Windows
-    /// service to pick up the decisions taken in the desktop application.
+    /// Reconciles the current in-memory rule store against Windows Firewall, removing any
+    /// filters for deleted apps and applying updated Allow/Block verdicts in place.
     /// </summary>
-    public void ReapplyAllowRules()
+    public void SyncStoreToWfp()
     {
-        if (!_ownsEngine) return;
-        foreach (var rule in Store.All)
+        var current = Store.All.ToList();
+        var currentMap = new Dictionary<string, AppRule>(StringComparer.OrdinalIgnoreCase);
+        foreach (var rule in current)
         {
-            if (rule.EffectiveOutboundVerdict != Verdict.Allow && rule.EffectiveInboundVerdict != Verdict.Allow)
-                continue;
-            try
+            currentMap[SafeKey(rule.AppPath)] = rule;
+        }
+
+        List<string> removedKeys;
+        lock (_sessionLock)
+        {
+            removedKeys = _syncedRuleKeys.Where(k => !currentMap.ContainsKey(k)).ToList();
+            _reappliedAllows.Clear();
+            _syncedRuleKeys.Clear();
+            foreach (var (key, rule) in currentMap)
             {
-                Wfp.ApplyAppRule(rule.AppPath, rule.EffectiveInboundVerdict, rule.EffectiveOutboundVerdict);
+                _syncedRuleKeys.Add(key);
+                if (Mode != FirewallMode.Killswitch &&
+                    (rule.EffectiveOutboundVerdict == Verdict.Allow || rule.EffectiveInboundVerdict == Verdict.Allow))
+                {
+                    _reappliedAllows.Add(key);
+                }
             }
+        }
+
+        if (!_ownsEngine || Mode == FirewallMode.Killswitch) return;
+
+        // Apply Allow rules before Blocks and removals so surviving allowed apps never drop connections.
+        foreach (var rule in current.Where(r => r.EffectiveOutboundVerdict == Verdict.Allow || r.EffectiveInboundVerdict == Verdict.Allow))
+        {
+            try { Wfp.ApplyAppRule(rule.AppPath, rule.EffectiveInboundVerdict, rule.EffectiveOutboundVerdict); }
+            catch { }
+        }
+
+        foreach (var rule in current.Where(r => r.EffectiveOutboundVerdict != Verdict.Allow && r.EffectiveInboundVerdict != Verdict.Allow))
+        {
+            try { Wfp.ApplyAppRule(rule.AppPath, rule.EffectiveInboundVerdict, rule.EffectiveOutboundVerdict); }
+            catch { }
+        }
+
+        foreach (var oldKey in removedKeys)
+        {
+            try { Wfp.RemoveApp(oldKey); }
             catch { }
         }
     }
+
+    /// <summary>
+    /// Reapplies the stored rules to Windows Firewall. Used by the Windows
+    /// service to pick up the decisions taken in the desktop application.
+    /// </summary>
+    public void ReapplyAllowRules() => SyncStoreToWfp();
 
     /// <summary>
     /// Keeps the recovery watchdog informed that an engine is alive, and keeps the
@@ -316,7 +364,11 @@ public sealed class FirewallService : IDisposable
                 _sessions[key] = (verdict, pid, DateTime.UtcNow.Add(SessionTtl));
             return;
         }
-        lock (_sessionLock) _sessions.Remove(key);
+        lock (_sessionLock)
+        {
+            _sessions.Remove(key);
+            _syncedRuleKeys.Add(key);
+        }
         ProcessIdentity.TryGetPackageFamilyName(pid, appPath, out var pfn);
         Store.Upsert(new AppRule
         {
@@ -333,15 +385,14 @@ public sealed class FirewallService : IDisposable
     {
         var key = SafeKey(appPath);
         lock (_pendingLock) _pendingHolds.Remove(key);
-        lock (_sessionLock) _sessions.Remove(key);
-
-        if (inVerdict == Verdict.Allow || outVerdict == Verdict.Allow)
+        lock (_sessionLock)
         {
-            lock (_sessionLock) _reappliedAllows.Add(key);
-        }
-        else
-        {
-            lock (_sessionLock) _reappliedAllows.Remove(key);
+            _sessions.Remove(key);
+            _syncedRuleKeys.Add(key);
+            if (inVerdict == Verdict.Allow || outVerdict == Verdict.Allow)
+                _reappliedAllows.Add(key);
+            else
+                _reappliedAllows.Remove(key);
         }
 
         Wfp.ApplyAppRule(appPath, inVerdict, outVerdict, pid);
@@ -367,9 +418,31 @@ public sealed class FirewallService : IDisposable
     {
         var key = SafeKey(appPath);
         lock (_pendingLock) _pendingHolds.Remove(key);
-        lock (_sessionLock) _sessions.Remove(key);
+        lock (_sessionLock)
+        {
+            _sessions.Remove(key);
+            _reappliedAllows.Remove(key);
+            _syncedRuleKeys.Remove(key);
+        }
         Store.Remove(appPath);
         Wfp.RemoveApp(appPath);
+    }
+
+    public void ReplaceAllRules(IEnumerable<AppRule> rules)
+    {
+        var previous = Store.All.ToList();
+        lock (_pendingLock) _pendingHolds.Clear();
+        lock (_sessionLock)
+        {
+            _sessions.Clear();
+            _reappliedAllows.Clear();
+            foreach (var r in previous)
+            {
+                _syncedRuleKeys.Add(SafeKey(r.AppPath));
+            }
+        }
+        Store.ReplaceAll(rules);
+        SyncStoreToWfp();
     }
 
     public void ClearAllRules()

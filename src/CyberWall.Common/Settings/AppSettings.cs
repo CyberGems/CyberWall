@@ -23,6 +23,8 @@ public enum PopupPosition
 
 public enum TrafficAnimationMode { FluidStream, PulseGlow, Disabled }
 
+public enum BackupFrequency { OnChange, Daily, Weekly }
+
 public sealed class AppSettings
 {
     public Lang Language { get; set; } = Lang.Es;
@@ -164,7 +166,79 @@ public sealed class AppSettings
     /// </summary>
     public bool PolicyRestoreFailed { get; set; }
 
+    // Automated & manual backups (retention strictly clamped between 1 and 7, default 3).
+    public const int MinBackupRetention = 1;
+    public const int MaxBackupRetention = 7;
+    public const int DefaultBackupRetention = 3;
+
+    private int _backupRetentionCount = DefaultBackupRetention;
+
+    public bool AutoBackupEnabled { get; set; } = true;
+    public BackupFrequency AutoBackupFrequency { get; set; } = BackupFrequency.Daily;
+
+    public int BackupRetentionCount
+    {
+        get => _backupRetentionCount;
+        set => _backupRetentionCount = Math.Clamp(value, MinBackupRetention, MaxBackupRetention);
+    }
+
+    public string BackupDirectory { get; set; } = "";
+    public DateTime? LastAutoBackupUtc { get; set; } = null;
+    public string? LastAutoBackupHash { get; set; } = null;
+
+    public static event Action? Saved;
+
     private static string Path => System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "CyberWall", "settings.json");
+
+    /// <summary>
+    /// Copies user preferences from a restored settings snapshot onto this live instance,
+    /// preserving transient runtime/session geometry and clamping backup retention bounds.
+    /// </summary>
+    public void ApplyRestoredPreferences(AppSettings restored)
+    {
+        Language = restored.Language;
+        Theme = restored.Theme;
+        TrafficAnimation = restored.TrafficAnimation;
+        FirewallEnabled = restored.FirewallEnabled;
+        FirewallMode = restored.FirewallMode;
+        NotificationPosition = restored.NotificationPosition;
+        NotificationMonitor = restored.NotificationMonitor;
+        AutoCheckForUpdates = restored.AutoCheckForUpdates;
+        RunAtStartup = restored.RunAtStartup;
+        StartMinimized = restored.StartMinimized;
+        MinimizeToTrayOnClose = restored.MinimizeToTrayOnClose;
+        PlaySoundOnPrompt = restored.PlaySoundOnPrompt;
+        CustomSoundPath = restored.CustomSoundPath;
+        PopupAutoBlockEnabled = restored.PopupAutoBlockEnabled;
+        PopupAutoBlockSeconds = Math.Clamp(restored.PopupAutoBlockSeconds, 10, 3600);
+        ToastAppInfoEnabled = restored.ToastAppInfoEnabled;
+        ToastInternetEventsEnabled = restored.ToastInternetEventsEnabled;
+        ToastProtectionEventsEnabled = restored.ToastProtectionEventsEnabled;
+        ToastAutoBlockEnabled = restored.ToastAutoBlockEnabled;
+        AllowedRulesExpanded = restored.AllowedRulesExpanded;
+        BlockedRulesExpanded = restored.BlockedRulesExpanded;
+        TrafficWidgetAlwaysOnTop = restored.TrafficWidgetAlwaysOnTop;
+        TrafficWidgetCompactMode = restored.TrafficWidgetCompactMode;
+        TrafficWidgetShowGraph = restored.TrafficWidgetShowGraph;
+        TrafficWidgetShowSession = restored.TrafficWidgetShowSession;
+        AutoBackupEnabled = restored.AutoBackupEnabled;
+        AutoBackupFrequency = restored.AutoBackupFrequency;
+        BackupRetentionCount = restored.BackupRetentionCount;
+
+        // Keep existing custom backup folder if the restored one points to a missing drive/root.
+        if (!string.IsNullOrWhiteSpace(restored.BackupDirectory))
+        {
+            var root = System.IO.Path.GetPathRoot(restored.BackupDirectory.Trim());
+            if (!string.IsNullOrEmpty(root) && Directory.Exists(root))
+            {
+                BackupDirectory = restored.BackupDirectory.Trim();
+            }
+        }
+        else
+        {
+            BackupDirectory = "";
+        }
+    }
 
     public static AppSettings Load()
     {
@@ -204,6 +278,7 @@ public sealed class AppSettings
         try
         {
             AtomicFile.WriteAllText(Path, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
+            Saved?.Invoke();
         }
         catch (Exception ex)
         {

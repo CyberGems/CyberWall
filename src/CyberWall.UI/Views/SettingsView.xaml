@@ -627,6 +627,113 @@
                     </StackPanel>
                 </Border>
 
+                <!-- SECTION 4: BACKUPS -->
+                <TextBlock x:Name="SecBackupsLbl" Text="Respaldos" FontWeight="Bold" FontSize="15.5" Foreground="{DynamicResource AccentBrush}" Margin="0,8,0,10"/>
+                <Border CornerRadius="12" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="18,14" Margin="0,0,0,16">
+                    <StackPanel>
+                        <!-- Auto Backup Toggle -->
+                        <Grid MinHeight="44">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Width="34" Height="34" CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                                <Path Data="M 12 3 A 9 9 0 1 0 21 12 M 12 7 V 12 L 15 14 M 21 3 V 8 H 16" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="15" Height="15" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock x:Name="AutoBackupTitleLbl" Text="Respaldos automáticos" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextBrush}"/>
+                                <TextBlock x:Name="AutoBackupDescLbl" Text="Guardar respaldos automáticos de tus reglas del firewall y ajustes" FontSize="12.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <CheckBox x:Name="AutoBackupToggle" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}" VerticalAlignment="Center" Click="AutoBackupToggle_Click"/>
+                        </Grid>
+
+                        <!-- Sub-options: Frequency & Retention (1..7, default 3) -->
+                        <StackPanel x:Name="AutoBackupOptionsPanel" Margin="48,12,0,0">
+                            <Grid MinHeight="38" Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock x:Name="BackupFreqLbl" Text="Frecuencia de respaldo" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                                    <TextBlock x:Name="BackupFreqDescLbl" Text="Elige cada cuánto se crean respaldos automáticos cuando hay cambios" FontSize="12" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <ComboBox x:Name="BackupFreqBox" Grid.Column="1" Width="210" Height="34" Style="{StaticResource ModernComboBox}" SelectionChanged="BackupFreqBox_SelectionChanged"/>
+                            </Grid>
+
+                            <Grid MinHeight="38">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock x:Name="BackupRetentionLbl" Text="Copias a conservar" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                                    <TextBlock x:Name="BackupRetentionDescLbl" Text="Conserva entre 1 y 7 respaldos automáticos" FontSize="12" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <ComboBox x:Name="BackupRetentionBox" Grid.Column="1" Width="210" Height="34" Style="{StaticResource ModernComboBox}" SelectionChanged="BackupRetentionBox_SelectionChanged"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,14"/>
+
+                        <!-- Backup Destination Folder -->
+                        <StackPanel>
+                            <TextBlock x:Name="BackupFolderTitleLbl" Text="Carpeta de respaldos" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextBrush}"/>
+                            <TextBlock x:Name="BackupFolderDescLbl" Text="Carpeta donde se guardan los respaldos .cwbackup automáticos y manuales" FontSize="12.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,3,0,10" TextWrapping="Wrap"/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Border Grid.Column="0" Background="{DynamicResource InputBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="10,0" Height="34" VerticalAlignment="Center" Margin="0,0,8,0">
+                                    <TextBox x:Name="BackupFolderBox"
+                                             Background="Transparent" BorderThickness="0"
+                                             VerticalContentAlignment="Center" FontSize="12.5"
+                                             Foreground="{DynamicResource TextBrush}"
+                                             CaretBrush="{DynamicResource AccentBrush}"
+                                             controls:TextFieldContextMenu.Enabled="True"
+                                             LostFocus="BackupFolderBox_LostFocus"
+                                             KeyDown="BackupFolderBox_KeyDown"/>
+                                </Border>
+
+                                <Button x:Name="BackupFolderBrowseBtn" Grid.Column="1" Content="Examinar..." Height="34" Padding="14,6" Margin="0,0,8,0" Style="{StaticResource SecondaryButtonStyle}" Click="BackupFolderBrowseBtn_Click"/>
+                                <Button x:Name="BackupFolderOpenBtn" Grid.Column="2" Content="Abrir" Height="34" Padding="14,6" Margin="0,0,8,0" Style="{StaticResource SecondaryButtonStyle}" Click="BackupFolderOpenBtn_Click"/>
+                                <Button x:Name="BackupFolderResetBtn" Grid.Column="3" Content="Restablecer" Height="34" Padding="14,6" Style="{StaticResource SecondaryButtonStyle}" Click="BackupFolderResetBtn_Click"/>
+                            </Grid>
+
+                            <TextBlock x:Name="BackupFolderErrorLbl" FontSize="11.5" Foreground="{DynamicResource BadgeWarnFgBrush}" Margin="0,6,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+                        </StackPanel>
+
+                        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,14"/>
+
+                        <!-- Backup Actions & Status -->
+                        <Grid MinHeight="40">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock x:Name="BackupLastStatusLbl" Text="Último respaldo: Nunca" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                                <TextBlock x:Name="BackupFeedbackLbl" FontSize="12" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button x:Name="BackupNowBtn" Content="Respaldar ahora" Height="34" Padding="16,6" Margin="0,0,8,0" Style="{StaticResource SecondaryButtonStyle}" Click="BackupNowBtn_Click"/>
+                                <Button x:Name="BackupRestoreBtn" Content="Restaurar..." Height="34" Padding="16,6" Style="{StaticResource SecondaryButtonStyle}" Click="BackupRestoreBtn_Click"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
                 <!-- Footer / Version Card -->
                 <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="16,12" Margin="0,0,0,16">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
