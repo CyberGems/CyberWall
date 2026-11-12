@@ -35,13 +35,15 @@
 
 - [👋 Introduction](#-introduction)
 - [🖼️ Screenshots](#️-screenshots)
-- [🛡️ Why CyberWall? Real-World Threat Protection](#️-why-cyberwall-real-world-threat-protection)
+- [🛡️ Why CyberWall?](#️-why-cyberwall)
 - [✨ Key Features](#-key-features)
-- [🚀 Getting Started](#-getting-started)
+- [🚀 Installation](#-installation)
+- [🧭 Using the App](#-using-the-app)
 - [🛠️ Tech Stack & Architecture](#️-tech-stack--architecture)
+- [⌨️ Keyboard Shortcuts](#️-keyboard-shortcuts)
 - [🔍 How It Works](#-how-it-works)
 - [❤️ Donate](#️-donate)
-- [License](#license)
+- [📄 License](#-license)
 - [❓ FAQ](#-faq)
 - [🔗 See also](#-see-also)
 
@@ -73,7 +75,7 @@ Every program on your PC can reach the internet the moment it runs, and most fir
 
 ---
 
-## 🛡️ Why CyberWall? Real-World Threat Protection
+## 🛡️ Why CyberWall?
 
 Most traditional firewalls either let everything out silently or bombard you with complex IP/port questions. CyberWall takes a simpler, much more effective approach: **nothing accesses the internet unless you explicitly allow that specific program.**
 
@@ -118,7 +120,7 @@ Here is how CyberWall protects your computer against real-world threats in plain
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Installation
 
 ### Install (Recommended)
 
@@ -173,6 +175,20 @@ Releases published before the project is approved are unsigned and are identifie
 
 ---
 
+## 🧭 Using the App
+
+CyberWall runs in the tray and asks before an unknown program reaches the internet; real filtering requires Administrator privileges.
+
+1. Keep the default **Ask to Connect** mode and approve the elevation prompt.
+2. When a connection prompt appears, check the app name, path and destination.
+3. Choose **Allow always** for apps you trust, **Block** for the rest, or **Allow once** to test for about ten minutes.
+
+Decisions become Windows Firewall rules stored in `%ProgramData%\CyberWall\rules.json`. A scheduled task restores the original policy if CyberWall stops unexpectedly, so the machine never stays locked down.
+
+See [How Do You Use CyberWall?](https://github.com/CyberGems/CyberWall/wiki/How-Do-You-Use) for everyday examples and the full guides.
+
+---
+
 ## 🛠️ Tech Stack & Architecture
 
 - **Platform**: Windows 10 / 11 (x64)
@@ -214,6 +230,24 @@ dotnet test
 > **Note**: Real kernel-level network filtering and firewall rule enforcement require Administrator privileges.
 
 > **Signing setup**: the SignPath onboarding, artifact configurations and workflow steps for maintainers are documented in [`.github/SIGNING.md`](.github/SIGNING.md). See also the [code signing policy](https://github.com/CyberGems/CyberWall/wiki/Code-signing-policy).
+
+---
+
+## ⌨️ Keyboard Shortcuts
+
+CyberWall is driven by connection prompts and the tray menu; its shortcuts act on the main window's title bar.
+
+| Shortcut | Action |
+|---|---|
+| `F1` | Toggle About |
+| `Alt+M` / `Alt+N` | Open the More menu / notifications |
+| `Ctrl+Shift+U` / `Ctrl+Shift+W` | Check or apply an update / toggle the floating traffic widget |
+| `Ctrl+1` ... `Ctrl+4` | Switch to Firewall, Traffic, Connections or Statistics |
+| `Ctrl+5` or `Ctrl+,` | Open Settings |
+| `Ctrl+Alt+Down` / `Ctrl+Alt+Up` | Minimize / maximize or restore |
+| `Alt+F4` | Close the window |
+
+Full reference: [Settings](https://github.com/CyberGems/CyberWall/wiki/Settings).
 
 ---
 
@@ -264,7 +298,7 @@ dotnet test
 
 ---
 
-## License
+## 📄 License
 
 CyberWall is distributed under the terms of the GNU General Public License v3.0. See [LICENSE](LICENSE) for the full license text.
 

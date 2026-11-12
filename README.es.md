@@ -35,13 +35,15 @@
 
 - [👋 Introducción](#-introducción)
 - [🖼️ Capturas](#️-capturas)
-- [🛡️ ¿Por qué CyberWall? Protección frente a amenazas reales](#️-por-qué-cyberwall-protección-frente-a-amenazas-reales)
+- [🛡️ ¿Por qué CyberWall?](#️-por-qué-cyberwall)
 - [✨ Funciones principales](#-funciones-principales)
-- [🚀 Primeros pasos](#-primeros-pasos)
+- [🚀 Instalación](#-instalación)
+- [🧭 Cómo usar la app](#-cómo-usar-la-app)
 - [🛠️ Stack tecnológico y arquitectura](#️-stack-tecnológico-y-arquitectura)
+- [⌨️ Atajos de teclado](#️-atajos-de-teclado)
 - [🔍 Cómo funciona](#-cómo-funciona)
 - [❤️ Donar](#️-donar)
-- [Licencia](#licencia)
+- [📄 Licencia](#-licencia)
 - [❓ Preguntas frecuentes](#-preguntas-frecuentes)
 - [🔗 Ver también](#-ver-también)
 
@@ -73,7 +75,7 @@ Cualquier programa de tu PC puede salir a internet en cuanto se ejecuta, y la ma
 
 ---
 
-## 🛡️ ¿Por qué CyberWall? Protección frente a amenazas reales
+## 🛡️ ¿Por qué CyberWall?
 
 La mayoría de los firewalls tradicionales dejan salir todo en silencio o te bombardean con complejas preguntas de IP/puerto. CyberWall adopta un enfoque más sencillo y mucho más efectivo: **nada accede a Internet a menos que tú permitas explícitamente ese programa concreto.**
 
@@ -118,7 +120,7 @@ Así es como CyberWall protege tu equipo frente a amenazas reales, en términos 
 - **Bandeja del sistema y demonio en segundo plano**: integración con la bandeja, minimizar a la bandeja y soporte opcional para ejecutarse como Servicio de Windows en segundo plano (SYSTEM). Solo un host es propietario del motor de cortafuegos a la vez: la ventana abierta tiene prioridad y el servicio retoma la protección cuando se cierra.
 ---
 
-## 🚀 Primeros pasos
+## 🚀 Instalación
 
 ### Instalación (recomendada)
 
@@ -173,6 +175,20 @@ Los releases publicados antes de la aprobación del proyecto no están firmados 
 
 ---
 
+## 🧭 Cómo usar la app
+
+CyberWall vive en la bandeja y pregunta antes de que un programa desconocido salga a internet; el filtrado real requiere privilegios de Administrador.
+
+1. Mantén el modo predeterminado, que pregunta antes de cada conexión, y acepta la elevación cuando se solicite.
+2. Cuando aparezca un aviso de conexión, revisa el nombre de la app, su ruta y el destino.
+3. Elige **Permitir siempre** para las apps de confianza, **Bloquear** para el resto o **Permitir una vez** para probar durante unos diez minutos.
+
+Las decisiones se convierten en reglas del Cortafuegos de Windows guardadas en `%ProgramData%\CyberWall\rules.json`. Una tarea programada restaura la política original si CyberWall se detiene de forma inesperada, para que el equipo nunca quede bloqueado.
+
+Consulta [¿Cómo se usa CyberWall?](https://github.com/CyberGems/CyberWall/wiki/How-Do-You-Use) para ver ejemplos cotidianos y las guías completas de la wiki (en inglés).
+
+---
+
 ## 🛠️ Stack tecnológico y arquitectura
 
 - **Plataforma**: Windows 10 / 11 (x64)
@@ -214,6 +230,24 @@ dotnet test
 > **Nota**: El filtrado de red real a nivel de kernel y la aplicación de las reglas del cortafuegos requieren privilegios de Administrador.
 
 > **Configuración de firma**: el alta en SignPath, las configuraciones de artefactos y los pasos del flujo de trabajo para mantenedores están documentados en [`.github/SIGNING.md`](.github/SIGNING.md). Consulta también la [política de firma de código](https://github.com/CyberGems/CyberWall/wiki/Code-signing-policy).
+
+---
+
+## ⌨️ Atajos de teclado
+
+CyberWall se maneja con avisos de conexión y el menú de la bandeja; sus atajos actúan sobre la barra de título de la ventana principal.
+
+| Atajo | Acción |
+|---|---|
+| `F1` | Muestra u oculta Acerca de |
+| `Alt+M` / `Alt+N` | Abre el menú Más / las notificaciones |
+| `Ctrl+Shift+U` / `Ctrl+Shift+W` | Busca o aplica una actualización / muestra u oculta el widget de tráfico |
+| `Ctrl+1` ... `Ctrl+4` | Cambia a Cortafuegos, Tráfico, Conexiones o Estadísticas |
+| `Ctrl+5` o `Ctrl+,` | Abre Configuración |
+| `Ctrl+Alt+Abajo` / `Ctrl+Alt+Arriba` | Minimiza / maximiza o restaura |
+| `Alt+F4` | Cierra la ventana |
+
+Referencia completa: [Settings](https://github.com/CyberGems/CyberWall/wiki/Settings).
 
 ---
 
@@ -264,7 +298,7 @@ dotnet test
 
 ---
 
-## Licencia
+## 📄 Licencia
 
 CyberWall se distribuye bajo los términos de la Licencia Pública General GNU v3.0. Consulta [LICENSE](LICENSE) para el texto completo de la licencia.
 
