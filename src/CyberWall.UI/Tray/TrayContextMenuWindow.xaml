@@ -206,7 +206,7 @@
             </Border.Effect>
         </Border>
         <Border Margin="20" CornerRadius="14" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1.5" SnapsToDevicePixels="True">
-        <Grid Margin="12,12,12,10">
+        <Grid Margin="12,12,12,10" ClipToBounds="True">
             <!-- VIEW 1: MAIN TRAY MENU -->
             <StackPanel x:Name="MainViewPanel">
                 <!-- 1. Header: Brand Logo, App Name, Status Badge, Close '✕' -->
@@ -254,11 +254,11 @@
 
                 <!-- 3. Action Items -->
                 <StackPanel>
-                    <!-- Open CyberWall -->
+                    <!-- Show / Hide CyberWall -->
                     <Button x:Name="OpenAppBtn" Style="{StaticResource MenuActionButtonStyle}" Click="OpenApp_Click">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="M 3 3 L 15 3 L 15 13 L 3 13 Z M 3 6 L 15 6" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.3" Width="14" Height="14" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="OpenAppText" Text="Abrir CyberWall" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <Path Data="M 3 3 L 15 3 L 15 13 L 3 13 Z M 3 6 L 15 6" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="OpenAppText" Text="Mostrar CyberWall" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
@@ -340,10 +340,16 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Path Data="M 12 22 A 10 10 0 1 0 12 2 A 10 10 0 0 0 12 22 M 9 9 A 3 3 0 0 1 12 6 A 3 3 0 0 1 15 9 C 15 11 12 11.5 12 14 M 12 18 H 12.01" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" Width="13" Height="14" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center" Fill="Transparent"/>
+                                <Viewbox Width="13" Height="13" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center">
+                                    <Canvas Width="24" Height="24">
+                                        <Ellipse Canvas.Left="1.5" Canvas.Top="1.5" Width="21" Height="21" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" Fill="Transparent"/>
+                                        <Path Data="M 9.1 9.3 A 3 3 0 0 1 14.9 9.9 C 14.9 11.8 12 12.2 12 14.2" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                                        <Ellipse Canvas.Left="10.8" Canvas.Top="16.6" Width="2.4" Height="2.4" Fill="{DynamicResource SubTextBrush}"/>
+                                    </Canvas>
+                                </Viewbox>
                                 <TextBlock x:Name="HelpText" Text="Ayuda" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
-                            <Path Grid.Column="1" Data="M 9 6 L 15 12 L 9 18" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" Width="8" Height="9" Stretch="Uniform" VerticalAlignment="Center"/>
+                            <Path Grid.Column="1" Data="M 9 6 L 15 12 L 9 18" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="8" Height="9" Stretch="Uniform" VerticalAlignment="Center"/>
                         </Grid>
                     </Button>
                 </StackPanel>
@@ -436,7 +442,13 @@
                         </StackPanel>
                     </Button>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <Path Data="M 12 22 A 10 10 0 1 0 12 2 A 10 10 0 0 0 12 22 M 9 9 A 3 3 0 0 1 12 6 A 3 3 0 0 1 15 9 C 15 11 12 11.5 12 14 M 12 18 H 12.01" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.3" Width="13" Height="13" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center" Fill="Transparent"/>
+                        <Viewbox Width="13" Height="13" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center">
+                            <Canvas Width="24" Height="24">
+                                <Ellipse Canvas.Left="1.5" Canvas.Top="1.5" Width="21" Height="21" Stroke="{DynamicResource AccentBrush}" StrokeThickness="2.3" Fill="Transparent"/>
+                                <Path Data="M 9.1 9.3 A 3 3 0 0 1 14.9 9.9 C 14.9 11.8 12 12.2 12 14.2" Stroke="{DynamicResource AccentBrush}" StrokeThickness="2.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                                <Ellipse Canvas.Left="10.8" Canvas.Top="16.6" Width="2.4" Height="2.4" Fill="{DynamicResource AccentBrush}"/>
+                            </Canvas>
+                        </Viewbox>
                         <TextBlock x:Name="HelpSubTitleText" Text="Ayuda" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Grid>
@@ -446,7 +458,13 @@
                 <!-- 1. Help (Wiki) -->
                 <Button x:Name="SubHelpBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,6" Click="SubHelp_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 12 22 A 10 10 0 1 0 12 2 A 10 10 0 0 0 12 22 M 9 9 A 3 3 0 0 1 12 6 A 3 3 0 0 1 15 9 C 15 11 12 11.5 12 14 M 12 18 H 12.01" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.2" Width="12" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center" Fill="Transparent"/>
+                        <Viewbox Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center">
+                            <Canvas Width="24" Height="24">
+                                <Ellipse Canvas.Left="1.5" Canvas.Top="1.5" Width="21" Height="21" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" Fill="Transparent"/>
+                                <Path Data="M 9.1 9.3 A 3 3 0 0 1 14.9 9.9 C 14.9 11.8 12 12.2 12 14.2" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                                <Ellipse Canvas.Left="10.8" Canvas.Top="16.6" Width="2.4" Height="2.4" Fill="{DynamicResource SubTextBrush}"/>
+                            </Canvas>
+                        </Viewbox>
                         <TextBlock x:Name="SubHelpText" Text="Ayuda" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -454,7 +472,7 @@
                 <!-- 2. FAQ -->
                 <Button x:Name="SubFaqBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,6" Click="SubFaq_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 21 15 A 2 2 0 0 1 19 17 H 7 L 3 21 V 5 A 2 2 0 0 1 5 3 H 19 A 2 2 0 0 1 21 5 Z" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.2" Width="12" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center" Fill="Transparent"/>
+                        <Path Data="M 21 15 A 2 2 0 0 1 19 17 H 7 L 3 21 V 5 A 2 2 0 0 1 5 3 H 19 A 2 2 0 0 1 21 5 Z" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.25" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center" Fill="Transparent"/>
                         <TextBlock x:Name="SubFaqText" Text="Preguntas Frecuentes" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -462,7 +480,7 @@
                 <!-- 3. Changelog -->
                 <Button x:Name="SubChangelogBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,6" Click="SubChangelog_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 9 6 H 20 M 9 12 H 20 M 9 18 H 20 M 4 6 H 5 M 4 12 H 5 M 4 18 H 5" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.2" Width="12" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <Path Data="M 9 6 H 20 M 9 12 H 20 M 9 18 H 20 M 4 6 H 5 M 4 12 H 5 M 4 18 H 5" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.25" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center"/>
                         <TextBlock x:Name="SubChangelogText" Text="Historial de cambios" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -470,7 +488,7 @@
                 <!-- 4. Website -->
                 <Button x:Name="SubWebsiteBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,6" Click="SubWebsite_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 12 2 A 10 10 0 1 0 12 22 A 10 10 0 0 0 12 2 M 2 12 H 22 M 12 2 A 15 15 0 0 0 12 22 A 15 15 0 0 0 12 2" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.2" Width="12" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center" Fill="Transparent"/>
+                        <Path Data="M 12 2 A 10 10 0 1 0 12 22 A 10 10 0 0 0 12 2 M 2 12 H 22 M 12 2 A 15 15 0 0 0 12 22 A 15 15 0 0 0 12 2" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.25" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center" Fill="Transparent"/>
                         <TextBlock x:Name="SubWebsiteText" Text="Sitio web" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -478,7 +496,7 @@
                 <!-- 5. Donate -->
                 <Button x:Name="SubDonateBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,6" Click="SubDonate_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 12 21.35 L 10.55 20.03 C 5.4 15.36 2 12.28 2 8.5 C 2 5.42 4.42 3 7.5 3 C 9.24 3 10.91 3.81 12 5.09 C 13.09 3.81 14.76 3 16.5 3 C 19.58 3 22 5.42 22 8.5 C 22 12.28 18.6 15.36 13.45 20.04 L 12 21.35 Z" Fill="#F43F5E" Width="12" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <Path Data="M 12 21.35 L 10.55 20.03 C 5.4 15.36 2 12.28 2 8.5 C 2 5.42 4.42 3 7.5 3 C 9.24 3 10.91 3.81 12 5.09 C 13.09 3.81 14.76 3 16.5 3 C 19.58 3 22 5.42 22 8.5 C 22 12.28 18.6 15.36 13.45 20.04 L 12 21.35 Z" Fill="#F43F5E" Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center"/>
                         <TextBlock x:Name="SubDonateText" Text="Donar" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -488,7 +506,13 @@
                 <!-- 6. About CyberWall -->
                 <Button x:Name="SubAboutBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,6" Click="SubAbout_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 12 22 A 10 10 0 1 0 12 2 A 10 10 0 0 0 12 22 M 12 16 V 12 M 12 8 H 12.01" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.2" Width="12" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center" Fill="Transparent"/>
+                        <Viewbox Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center">
+                            <Canvas Width="24" Height="24">
+                                <Ellipse Canvas.Left="1.5" Canvas.Top="1.5" Width="21" Height="21" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" Fill="Transparent"/>
+                                <Ellipse Canvas.Left="10.75" Canvas.Top="6.8" Width="2.5" Height="2.5" Fill="{DynamicResource SubTextBrush}"/>
+                                <Path Data="M 12 12 V 16.8" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                            </Canvas>
+                        </Viewbox>
                         <TextBlock x:Name="SubAboutText" Text="Acerca de CyberWall..." FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -496,7 +520,7 @@
                 <!-- 7. Check for Updates -->
                 <Button x:Name="SubCheckUpdateBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,6" Click="SubCheckUpdate_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 12 4 V 15 M 7 10 L 12 15 L 17 10 M 5 20 H 19" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="12" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center" Fill="Transparent"/>
+                        <Path Data="M 12 4 V 15 M 7 10 L 12 15 L 17 10 M 5 20 H 19" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center" Fill="Transparent"/>
                         <TextBlock x:Name="SubCheckUpdateText" Text="Buscar actualizaciones..." FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>

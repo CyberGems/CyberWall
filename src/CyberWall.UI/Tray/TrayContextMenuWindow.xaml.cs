@@ -5,6 +5,7 @@ using System.Windows.Automation;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Service.Engine;
@@ -204,7 +205,7 @@ public partial class TrayContextMenuWindow : Window
 
     private void LoadLocalizedStrings()
     {
-        OpenAppText.Text = Strings.T("OpenCyberWall");
+        UpdateOpenAppState();
         NotifMenuText.Text = Strings.T("Notifications");
         PauseAlertsText.Text = Strings.T("PauseFloatingAlerts");
         ResumeAlertsText.Text = Strings.T("ResumeFloatingAlerts");
@@ -247,14 +248,55 @@ public partial class TrayContextMenuWindow : Window
         }
     }
 
+    private bool IsMainWindowCurrentlyVisible()
+        => _mainWindow.IsVisible && _mainWindow.WindowState != WindowState.Minimized;
+
+    private void UpdateOpenAppState()
+    {
+        OpenAppText.Text = Strings.T(IsMainWindowCurrentlyVisible() ? "HideCyberWall" : "ShowCyberWall");
+    }
+
     private void ShowView(TrayMenuView view)
     {
+        if (view == _currentView) return;
+
+        bool goingBack = view == TrayMenuView.Main;
         _currentView = view;
+
+        MainViewPanel.BeginAnimation(OpacityProperty, null);
+        PauseAlertsViewPanel.BeginAnimation(OpacityProperty, null);
+        HelpViewPanel.BeginAnimation(OpacityProperty, null);
+
         MainViewPanel.Visibility = view == TrayMenuView.Main ? Visibility.Visible : Visibility.Collapsed;
         PauseAlertsViewPanel.Visibility = view == TrayMenuView.PauseAlerts ? Visibility.Visible : Visibility.Collapsed;
         HelpViewPanel.Visibility = view == TrayMenuView.Help ? Visibility.Visible : Visibility.Collapsed;
+
+        FrameworkElement incoming = view switch
+        {
+            TrayMenuView.PauseAlerts => PauseAlertsViewPanel,
+            TrayMenuView.Help => HelpViewPanel,
+            _ => MainViewPanel
+        };
+
+        if (incoming.RenderTransform is not TranslateTransform translate)
+        {
+            translate = new TranslateTransform();
+            incoming.RenderTransform = translate;
+        }
+
+        translate.BeginAnimation(TranslateTransform.XProperty, null);
+        double offsetX = goingBack ? -12 : 12;
+        translate.X = offsetX;
+        incoming.Opacity = 0;
+
         UpdateLayout();
         PositionWindow();
+
+        var duration = TimeSpan.FromMilliseconds(120);
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+
+        incoming.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, duration) { EasingFunction = ease });
+        translate.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(offsetX, 0, duration) { EasingFunction = ease });
     }
 
     private void UpdateProtectionState()
@@ -348,9 +390,16 @@ public partial class TrayContextMenuWindow : Window
         CloseMenu();
         _mainWindow.Dispatcher.Invoke(() =>
         {
-            _mainWindow.Show();
-            _mainWindow.WindowState = WindowState.Normal;
-            _mainWindow.Activate();
+            if (IsMainWindowCurrentlyVisible())
+            {
+                _mainWindow.Hide();
+            }
+            else
+            {
+                _mainWindow.Show();
+                _mainWindow.WindowState = WindowState.Normal;
+                _mainWindow.Activate();
+            }
         });
     }
 
