@@ -40,37 +40,6 @@
             </Setter>
         </Style>
 
-        <!-- Danger Action Button Style (Exit) -->
-        <Style x:Key="MenuDangerButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="Margin" Value="0,2"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#25EF4444"/>
-                                <Setter Property="Foreground" Value="#FF6B6B"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#40EF4444"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <!-- Warning Action Button Style (Active Pause Banner Row) -->
         <Style x:Key="MenuWarningButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource BadgeWarnBgBrush}"/>
@@ -358,9 +327,13 @@
                 <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="4,4,4,4"/>
 
                 <!-- 5. Exit App -->
-                <Button x:Name="ExitBtn" Style="{StaticResource MenuDangerButtonStyle}" Click="Exit_Click">
+                <Button x:Name="ExitBtn" Style="{StaticResource MenuActionButtonStyle}" Click="Exit_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 10 2 L 10 10 M 4.93 4.93 C 2.5 7.36 2.5 11.28 4.93 13.71 C 7.36 16.14 11.28 16.14 13.71 13.71 C 16.14 11.28 16.14 7.36 13.71 4.93" Stroke="#EF4444" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center"/>
+                        <Viewbox Width="13" Height="13" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center">
+                            <Canvas Width="24" Height="24">
+                                <Path Data="M 12 2.5 V 11 M 17.6 5.6 A 8.5 8.5 0 1 1 6.4 5.6" Stroke="#EF4444" StrokeThickness="2.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                            </Canvas>
+                        </Viewbox>
                         <TextBlock x:Name="ExitText" Text="Salir de CyberWall" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
