@@ -11,24 +11,63 @@
         <conv:PathToIconConverter x:Key="PathToIconConverter"/>
 
         <!-- ContextMenu -->
-        <ContextMenu x:Key="TrafficItemContextMenu" Style="{StaticResource ModernContextMenu}"
+        <ContextMenu x:Key="TrafficItemContextMenu" Style="{DynamicResource ModernContextMenu}"
                      Opened="ContextMenu_Opened" Closed="ContextMenu_Closed">
-            <MenuItem Header="Buscar en línea" Style="{StaticResource ModernMenuItem}" Click="ContextSearch_Click">
+            <MenuItem Header="Buscar en línea" Style="{DynamicResource ModernMenuItem}" Click="ContextSearch_Click">
                 <MenuItem.Icon>
                     <Path Fill="{DynamicResource SubTextBrush}" Stretch="Uniform" Width="12" Height="12" Data="M6,1.2 C3.4,1.2 1.2,3.4 1.2,6 C1.2,8.6 3.4,10.8 6,10.8 C7.1,10.8 8.1,10.4 8.9,9.8 L11.1,12 L12,11.1 L9.8,8.9 C10.4,8.1 10.8,7.1 10.8,6 C10.8,3.4 8.6,1.2 6,1.2 Z"/>
                 </MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="Copiar ruta al portapapeles" Style="{StaticResource ModernMenuItem}" Click="ContextCopyPath_Click">
+            <MenuItem Header="Copiar ruta al portapapeles" Style="{DynamicResource ModernMenuItem}" Click="ContextCopyPath_Click">
                 <MenuItem.Icon>
                     <Path Fill="{DynamicResource SubTextBrush}" Stretch="Uniform" Width="12" Height="12" Data="M4.2,3.4 H9.6 V9.2 H4.2 Z M6.2,1.6 H11.6 V7.4 H10.2 V3 H6.2 Z"/>
                 </MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="Abrir carpeta del ejecutable" Style="{StaticResource ModernMenuItem}" Click="ContextFolder_Click">
+            <MenuItem Header="Abrir carpeta del ejecutable" Style="{DynamicResource ModernMenuItem}" Click="ContextFolder_Click">
                 <MenuItem.Icon>
                     <Path Fill="{DynamicResource SubTextBrush}" Stretch="Uniform" Width="12" Height="12" Data="M1,3 L1,10 L11,10 L11,5 L6.2,5 L5.2,3 Z"/>
                 </MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
+
+        <Style x:Key="AdapterSwitchPillStyle" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
+            <Setter Property="Padding" Value="7,2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding ContextMenu.IsOpen, RelativeSource={RelativeSource Self}}" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -107,14 +146,49 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0" Orientation="Horizontal">
-                        <Path x:Name="AdapterIconPath"
-                              Data="M 15 20 L 18 17 H 20 C 21.1 17 22 16.1 22 15 V 6 C 22 4.9 21.1 4 20 4 H 4 C 2.9 4 2 4.9 2 6 V 15 C 2 16.1 2.9 17 4 17 H 6 L 9 20 Z M 6 8 V 10 M 10 8 V 10 M 14 8 V 10 M 18 8 V 10"
-                              Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.3"
-                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                              Width="12" Height="12" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center" Fill="Transparent"/>
-                        <TextBlock x:Name="AdapterHeaderLbl" Text="Adaptador Activo" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
-                    </StackPanel>
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Path x:Name="AdapterIconPath"
+                                  Data="M 15 20 L 18 17 H 20 C 21.1 17 22 16.1 22 15 V 6 C 22 4.9 21.1 4 20 4 H 4 C 2.9 4 2 4.9 2 6 V 15 C 2 16.1 2.9 17 4 17 H 6 L 9 20 Z M 6 8 V 10 M 10 8 V 10 M 14 8 V 10 M 18 8 V 10"
+                                  Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.3"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                  Width="12" Height="12" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center" Fill="Transparent"/>
+                            <TextBlock x:Name="AdapterHeaderLbl" Text="Adaptador Activo" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Button x:Name="AdapterSwitchBtn" Grid.Column="1"
+                                Style="{StaticResource AdapterSwitchPillStyle}"
+                                Click="AdapterSwitchBtn_Click"
+                                VerticalAlignment="Center"
+                                Margin="6,0,0,0">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock x:Name="AdapterModeBadgeText"
+                                           Text="Automático"
+                                           FontSize="10"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center"/>
+                                <Path Data="M 1 1.5 L 4 4.5 L 7 1.5"
+                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                      StrokeThickness="1.3"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      StrokeLineJoin="Round"
+                                      Width="7" Height="4.5"
+                                      Stretch="Uniform"
+                                      Margin="5,1,0,0"
+                                      VerticalAlignment="Center"
+                                      Fill="Transparent"/>
+                            </StackPanel>
+                            <Button.ContextMenu>
+                                <ContextMenu x:Name="AdapterSwitchMenu"
+                                             Style="{DynamicResource ModernContextMenu}"
+                                             Opened="AdapterSwitchMenu_Opened"/>
+                            </Button.ContextMenu>
+                        </Button>
+                    </Grid>
                     <TextBlock x:Name="AdapterValueLbl" Grid.Row="1" Text="Conectado" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" Margin="0,6,0,2" TextTrimming="CharacterEllipsis"/>
                     <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,2,0,0">
                         <TextBlock x:Name="AppsActiveLbl" Text="Transmitiendo: " FontSize="10.5" Foreground="{DynamicResource SubTextBrush}"/>
@@ -175,14 +249,14 @@
                         <!-- 1m / 5m / 10m Time Window Segmented Toggle -->
                         <Border Background="{DynamicResource HeaderBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="2" Margin="0,0,8,0" VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal">
-                                <RadioButton x:Name="Time1mBtn" Content="1 min" Style="{StaticResource ChartSegmentRadioStyle}" IsChecked="True" Click="TimeWindow_Click" Tag="60" ToolTipService.InitialShowDelay="200"/>
-                                <RadioButton x:Name="Time5mBtn" Content="5 min" Style="{StaticResource ChartSegmentRadioStyle}" Click="TimeWindow_Click" Tag="300" ToolTipService.InitialShowDelay="200"/>
-                                <RadioButton x:Name="Time10mBtn" Content="10 min" Style="{StaticResource ChartSegmentRadioStyle}" Click="TimeWindow_Click" Tag="600" ToolTipService.InitialShowDelay="200"/>
+                                <RadioButton x:Name="Time1mBtn" Content="1 min" Style="{DynamicResource ChartSegmentRadioStyle}" IsChecked="True" Click="TimeWindow_Click" Tag="60" ToolTipService.InitialShowDelay="200"/>
+                                <RadioButton x:Name="Time5mBtn" Content="5 min" Style="{DynamicResource ChartSegmentRadioStyle}" Click="TimeWindow_Click" Tag="300" ToolTipService.InitialShowDelay="200"/>
+                                <RadioButton x:Name="Time10mBtn" Content="10 min" Style="{DynamicResource ChartSegmentRadioStyle}" Click="TimeWindow_Click" Tag="600" ToolTipService.InitialShowDelay="200"/>
                             </StackPanel>
                         </Border>
 
                         <!-- Pause / Resume Button -->
-                        <Button x:Name="PauseChartBtn" Style="{StaticResource ChartPauseButtonStyle}" Click="PauseChartBtn_Click" Margin="0,0,10,0" ToolTipService.InitialShowDelay="200">
+                        <Button x:Name="PauseChartBtn" Style="{DynamicResource ChartPauseButtonStyle}" Click="PauseChartBtn_Click" Margin="0,0,10,0" ToolTipService.InitialShowDelay="200">
                             <Path x:Name="PauseBtnIcon" Data="M 6 4 H 8 V 16 H 6 Z M 12 4 H 14 V 16 H 12 Z" Fill="{DynamicResource SubTextBrush}" Stretch="Uniform" Width="9" Height="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
 

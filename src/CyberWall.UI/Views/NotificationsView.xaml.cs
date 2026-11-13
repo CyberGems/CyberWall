@@ -7,6 +7,7 @@ using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Common.Notifications;
 using CyberWall.Common.Settings;
+using CyberWall.UI.Controls;
 using CyberWall.UI.Dialogs;
 using CyberWall.UI.Services;
 using UserControl = System.Windows.Controls.UserControl;
@@ -15,8 +16,6 @@ namespace CyberWall.UI.Views;
 
 public partial class NotificationsView : UserControl
 {
-    private static readonly TimeSpan SortMenuReopenGuard = TimeSpan.FromMilliseconds(350);
-
     private NotificationStore? _store;
     private Func<string, Task>? _onAllow;
     private Func<string, Task>? _onBlock;
@@ -28,7 +27,6 @@ public partial class NotificationsView : UserControl
     private HashSet<Guid> _openedUnread = new();
     private bool _busy;
     private bool _subscribed;
-    private DateTime _sortMenuDismissedAtUtc = DateTime.MinValue;
     private NotificationSortBy _sortOrder = App.Settings?.NotificationsSortBy ?? NotificationSortBy.Date;
 
     public event EventHandler? BackRequested;
@@ -36,6 +34,7 @@ public partial class NotificationsView : UserControl
     public NotificationsView()
     {
         InitializeComponent();
+        MenuToggleHelper.Attach(SortBtn, SortMenu, beforeOpen: UpdateSortUi);
         Unloaded += (_, _) => Unsubscribe();
     }
 
@@ -420,39 +419,14 @@ public partial class NotificationsView : UserControl
         SortAppsItem.IsChecked = current == NotificationSortBy.Apps;
     }
 
-    private void SortBtn_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (SortMenu.IsOpen)
-        {
-            _sortMenuDismissedAtUtc = DateTime.UtcNow;
-            SortMenu.IsOpen = false;
-            e.Handled = true;
-        }
-    }
-
     private void SortBtn_Click(object sender, RoutedEventArgs e)
     {
-        if (SortMenu.IsOpen || (DateTime.UtcNow - _sortMenuDismissedAtUtc) < SortMenuReopenGuard)
-        {
-            _sortMenuDismissedAtUtc = DateTime.MinValue;
-            SortMenu.IsOpen = false;
-            return;
-        }
-
-        SortMenu.PlacementTarget = SortBtn;
-        SortMenu.Placement = PlacementMode.Bottom;
-        SortMenu.IsOpen = true;
+        MenuToggleHelper.Toggle(SortBtn);
     }
 
     private void SortMenu_Opened(object sender, RoutedEventArgs e)
     {
-        _sortMenuDismissedAtUtc = DateTime.MinValue;
         UpdateSortUi();
-    }
-
-    private void SortMenu_Closed(object sender, RoutedEventArgs e)
-    {
-        _sortMenuDismissedAtUtc = DateTime.UtcNow;
     }
 
     private void SortOption_Click(object sender, RoutedEventArgs e)

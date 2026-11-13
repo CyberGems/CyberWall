@@ -9,6 +9,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
+using CyberWall.UI.Controls;
 using CyberWall.UI.Services;
 using MediaColor = System.Windows.Media.Color;
 using WPoint = System.Windows.Point;
@@ -47,8 +48,6 @@ public partial class FloatingTrafficWidget : Window
     private bool _online = true;
     private bool _compactMode;
     private long _lastCompactToggleTime;
-    private DateTime _widgetMenuDismissedAtUtc = DateTime.MinValue;
-    private static readonly TimeSpan WidgetMenuReopenGuard = TimeSpan.FromMilliseconds(500);
     private double _currentDown;
     private double _currentUp;
     private double _peakDown;
@@ -84,6 +83,7 @@ public partial class FloatingTrafficWidget : Window
         ApplySectionVisibility();
         RefreshLanguage();
         MoreButton.ContextMenu = WidgetMenu;
+        MenuToggleHelper.Attach(MoreButton, WidgetMenu, beforeOpen: PopulateAdapterMenu);
 
         _timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(1) };
         _timer.Tick += (_, _) => RefreshData();
@@ -487,19 +487,8 @@ public partial class FloatingTrafficWidget : Window
         return false;
     }
 
-    private void MoreButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (WidgetMenu.IsOpen)
-        {
-            _widgetMenuDismissedAtUtc = DateTime.UtcNow;
-            WidgetMenu.IsOpen = false;
-            e.Handled = true;
-        }
-    }
-
     private void WidgetMenu_Opened(object sender, RoutedEventArgs e)
     {
-        _widgetMenuDismissedAtUtc = DateTime.MinValue;
         PopulateAdapterMenu();
     }
 
@@ -582,23 +571,9 @@ public partial class FloatingTrafficWidget : Window
         RefreshData();
     }
 
-    private void WidgetMenu_Closed(object sender, RoutedEventArgs e)
-    {
-        _widgetMenuDismissedAtUtc = DateTime.UtcNow;
-    }
-
     private void MoreButton_Click(object sender, RoutedEventArgs e)
     {
-        if (WidgetMenu.IsOpen || (DateTime.UtcNow - _widgetMenuDismissedAtUtc) < WidgetMenuReopenGuard)
-        {
-            _widgetMenuDismissedAtUtc = DateTime.MinValue;
-            WidgetMenu.IsOpen = false;
-            return;
-        }
-
-        WidgetMenu.PlacementTarget = MoreButton;
-        WidgetMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
-        WidgetMenu.IsOpen = true;
+        MenuToggleHelper.Toggle(MoreButton);
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => CloseRequested?.Invoke();

@@ -1,10 +1,13 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using CyberWall.Common.I18n;
+using CyberWall.Common.Settings;
+using CyberWall.UI.Controls;
 using CyberWall.UI.Services;
 using WPoint = System.Windows.Point;
 using UserControl = System.Windows.Controls.UserControl;
@@ -35,6 +38,7 @@ public partial class TrafficMonitorView : UserControl
     }
 
     private readonly DispatcherTimer _refreshTimer;
+    private readonly AppSettings? _overrideSettings;
     private bool _isActive;
     private int _timeWindowSeconds = 60;
     private bool _isChartPaused;
@@ -42,9 +46,15 @@ public partial class TrafficMonitorView : UserControl
     private string? _activeMenuAppPath;
     private ContextMenu? _activeContextMenu;
 
-    public TrafficMonitorView()
+    private AppSettings? CurrentSettings => _overrideSettings ?? App.Settings;
+
+    public TrafficMonitorView() : this(null) { }
+
+    internal TrafficMonitorView(AppSettings? settings)
     {
+        _overrideSettings = settings;
         InitializeComponent();
+        MenuToggleHelper.Attach(AdapterSwitchBtn, AdapterSwitchMenu, beforeOpen: PopulateAdapterSwitchMenu);
         RefreshLanguage();
 
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1000) };
@@ -57,6 +67,7 @@ public partial class TrafficMonitorView : UserControl
         {
             RenderStabilityManager.Instance.RenderPausedChanged -= OnRenderPausedChanged;
             RenderStabilityManager.Instance.RenderPausedChanged += OnRenderPausedChanged;
+            UpdateAdapterModeBadge();
             if (_isActive && !RenderStabilityManager.Instance.IsRenderPaused) UpdateData();
         };
         Unloaded += (_, _) =>
@@ -85,6 +96,8 @@ public partial class TrafficMonitorView : UserControl
         if (_isActive) return;
         _isActive = true;
         NetworkSpeedService.Instance.SpeedUpdated += OnSpeedUpdated;
+        NetworkSpeedService.Instance.PreferredAdapterChanged += OnPreferredAdapterChanged;
+        UpdateAdapterModeBadge();
         if (!RenderStabilityManager.Instance.IsRenderPaused)
         {
             _refreshTimer.Start();
@@ -97,7 +110,19 @@ public partial class TrafficMonitorView : UserControl
         if (!_isActive) return;
         _isActive = false;
         NetworkSpeedService.Instance.SpeedUpdated -= OnSpeedUpdated;
+        NetworkSpeedService.Instance.PreferredAdapterChanged -= OnPreferredAdapterChanged;
         _refreshTimer.Stop();
+    }
+
+    private void OnPreferredAdapterChanged(string _)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(UpdateAdapterModeBadge);
+            return;
+        }
+
+        UpdateAdapterModeBadge();
     }
 
     private void OnSpeedUpdated(NetworkSpeedSnapshot snapshot)
@@ -156,6 +181,7 @@ public partial class TrafficMonitorView : UserControl
 
         LiveTrafficGraph?.RefreshLanguage();
         UpdateScaleText();
+        UpdateAdapterModeBadge();
 
         try
         {
@@ -399,5 +425,117 @@ public partial class TrafficMonitorView : UserControl
             _activeRowBorder.ClearValue(Border.BackgroundProperty);
             _activeRowBorder = null;
         }
+    }
+
+    internal void UpdateAdapterModeBadge()
+    {
+        bool isPinned = !string.IsNullOrEmpty(CurrentSettings?.PreferredNetworkAdapterId);
+        AdapterModeBadgeText.Text = Strings.T(isPinned ? "NetworkAdapterPinnedShort" : "NetworkAdapterAutoShort");
+        AdapterModeBadgeText.SetResourceReference(TextBlock.ForegroundProperty, isPinned ? "AccentBrush" : "SubTextBrush");
+        AdapterSwitchBtn.ToolTip = Strings.T("NetworkAdapterSwitchTooltip");
+        AutomationProperties.SetName(
+            AdapterSwitchBtn,
+            $"{Strings.T("TrafficActiveAdapter").Replace(":", "")}: {AdapterModeBadgeText.Text}");
+    }
+
+    private void AdapterSwitchBtn_Click(object sender, RoutedEventArgs e)
+    {
+        MenuToggleHelper.Toggle(AdapterSwitchBtn);
+    }
+
+    private void AdapterSwitchMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        PopulateAdapterSwitchMenu();
+    }
+
+    private void PopulateAdapterSwitchMenu()
+    {
+        AdapterSwitchMenu.Items.Clear();
+
+        var itemStyle = TryFindResource("ModernMenuItem") as Style;
+        var sepStyle = TryFindResource("ModernMenuSeparator") as Style;
+        var currentId = CurrentSettings?.PreferredNetworkAdapterId ?? string.Empty;
+
+        AdapterSwitchMenu.Items.Add(CreateAdapterMenuItem(
+            Strings.T("NetworkAdapterAuto"),
+            string.Empty,
+            string.Empty,
+            string.IsNullOrEmpty(currentId),
+            itemStyle));
+
+        var adapters = NetworkSpeedService.Instance.GetSelectableAdapters();
+        if (adapters.Count > 0 || !string.IsNullOrEmpty(currentId))
+        {
+            AdapterSwitchMenu.Items.Add(sepStyle != null ? new Separator { Style = sepStyle } : new Separator());
+        }
+
+        bool foundSaved = false;
+        foreach (var adapter in adapters)
+        {
+            bool selected = !string.IsNullOrEmpty(currentId) &&
+                            string.Equals(adapter.Id, currentId, StringComparison.OrdinalIgnoreCase);
+            if (selected) foundSaved = true;
+
+            var label = adapter.IsUp
+                ? adapter.DisplayName
+                : Strings.T("NetworkAdapterDisconnected", adapter.DisplayName);
+            AdapterSwitchMenu.Items.Add(CreateAdapterMenuItem(label, adapter.Id, adapter.DisplayName, selected, itemStyle));
+        }
+
+        if (!string.IsNullOrEmpty(currentId) && !foundSaved)
+        {
+            var fallbackName = string.IsNullOrWhiteSpace(CurrentSettings?.PreferredNetworkAdapterName)
+                ? currentId
+                : CurrentSettings!.PreferredNetworkAdapterName;
+            AdapterSwitchMenu.Items.Add(CreateAdapterMenuItem(
+                Strings.T("NetworkAdapterDisconnected", fallbackName),
+                currentId,
+                fallbackName,
+                isSelected: true,
+                itemStyle));
+        }
+    }
+
+    private MenuItem CreateAdapterMenuItem(
+        string header,
+        string adapterId,
+        string adapterName,
+        bool isSelected,
+        Style? style)
+    {
+        var item = new MenuItem
+        {
+            Header = header,
+            IsCheckable = true,
+            IsChecked = isSelected,
+            Tag = (Id: adapterId, Name: adapterName)
+        };
+        if (style != null) item.Style = style;
+        item.Click += AdapterMenuItem_Click;
+        return item;
+    }
+
+    private void AdapterMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem { Tag: ValueTuple<string, string> selection })
+            return;
+
+        if (CurrentSettings != null)
+        {
+            CurrentSettings.PreferredNetworkAdapterId = selection.Item1;
+            CurrentSettings.PreferredNetworkAdapterName = selection.Item2;
+            if (_overrideSettings == null)
+            {
+                CurrentSettings.Save();
+            }
+        }
+
+        if (_overrideSettings == null)
+        {
+            NetworkSpeedService.Instance.SetPreferredAdapter(selection.Item1, selection.Item2);
+        }
+
+        UpdateAdapterModeBadge();
+        UpdateData();
     }
 }

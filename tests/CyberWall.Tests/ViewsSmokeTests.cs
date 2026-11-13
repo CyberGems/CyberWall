@@ -1,10 +1,12 @@
 using System.IO;
 using System.Runtime.ExceptionServices;
 using System.Windows;
+using System.Windows.Controls;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Common.Notifications;
 using CyberWall.Common.Settings;
+using CyberWall.UI.Controls;
 using CyberWall.UI.Dialogs;
 using CyberWall.UI.Services;
 using CyberWall.UI.Views;
@@ -214,6 +216,63 @@ public class ViewsSmokeTests
             Assert.Equal(Visibility.Collapsed, view.UpdateDownloadBtn.Visibility);
             Assert.Equal("Network offline", view.UpdateStatusDetail.Text);
             Assert.NotEqual(enUpToDate, view.UpdateStatusTitle.Text);
+        });
+    }
+
+    [Fact]
+    public void TrafficMonitorView_AdapterModeBadge_ReflectsSettingAndLanguage()
+    {
+        RunOnSta(() =>
+        {
+            Strings.Current = Lang.En;
+            var settings = new AppSettings();
+            var view = new TrafficMonitorView(settings);
+
+            Assert.Equal(Strings.T("NetworkAdapterAutoShort"), view.AdapterModeBadgeText.Text);
+
+            settings.PreferredNetworkAdapterId = "{adapter-guid}";
+            view.UpdateAdapterModeBadge();
+            var pinnedEn = view.AdapterModeBadgeText.Text;
+            Assert.Equal(Strings.T("NetworkAdapterPinnedShort"), pinnedEn);
+
+            Strings.Current = Lang.Es;
+            view.RefreshLanguage();
+            Assert.Equal(Strings.T("NetworkAdapterPinnedShort"), view.AdapterModeBadgeText.Text);
+            Assert.NotEqual(pinnedEn, view.AdapterModeBadgeText.Text);
+
+            settings.PreferredNetworkAdapterId = string.Empty;
+            view.UpdateAdapterModeBadge();
+            Assert.Equal(Strings.T("NetworkAdapterAutoShort"), view.AdapterModeBadgeText.Text);
+        });
+    }
+
+    [Fact]
+    public void MenuToggleHelper_TogglesAttachedContextMenuCleanly()
+    {
+        RunOnSta(() =>
+        {
+            var button = new System.Windows.Controls.Button();
+            var menu = new System.Windows.Controls.ContextMenu();
+            menu.Items.Add(new System.Windows.Controls.MenuItem { Header = "Item 1" });
+
+            int beforeOpenCalls = 0;
+            MenuToggleHelper.Attach(button, menu, beforeOpen: () => beforeOpenCalls++);
+
+            Assert.False(menu.IsOpen);
+
+            MenuToggleHelper.Toggle(button);
+            Assert.True(menu.IsOpen);
+            Assert.Equal(1, beforeOpenCalls);
+
+            MenuToggleHelper.Toggle(button);
+            Assert.False(menu.IsOpen);
+            Assert.Equal(1, beforeOpenCalls);
+
+            MenuToggleHelper.Toggle(button);
+            Assert.True(menu.IsOpen);
+            Assert.Equal(2, beforeOpenCalls);
+
+            menu.IsOpen = false;
         });
     }
 }

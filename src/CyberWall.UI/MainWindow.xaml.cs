@@ -279,6 +279,9 @@ public partial class MainWindow : Window
         _activeUpdateResult = UpdateService.LastCheckResult;
         UpdateAvailableButtonState();
         UpdateNotifPauseIndicator();
+        MenuToggleHelper.Attach(MoreBtn, MoreOptionsMenu);
+        if (SearchIconBtn != null && RecentSearchesMenu != null)
+            MenuToggleHelper.Attach(SearchIconBtn, RecentSearchesMenu, beforeOpen: () => PopulateRecentSearchesMenu(RecentSearchesMenu));
         Closed += (_, _) =>
         {
             _backupCoordinator?.Dispose();
@@ -466,19 +469,7 @@ public partial class MainWindow : Window
                     UpdateAvailableButtonState();
                     _notifications.PurgeObsoleteUpdateNotifications(UpdateService.GetCurrentVersion());
                     _notifications.Add(AppNotificationKind.UpdateAvailable, detail: result.LatestVersionLabel);
-                    var choice = ConfirmDialog.Show(
-                        this,
-                        Strings.T("UpdateAvailable", result.LatestVersionLabel),
-                        $"{Strings.T("Current")} {UpdateService.GetCurrentVersionLabel()}\n{Strings.T("Latest")} {result.LatestVersionLabel}\n\n{Strings.T("UpdatePrompt")}",
-                        Strings.T("Download"),
-                        Strings.T("Later"));
-
-                    if (choice)
-                    {
-                        _notifications.MarkRelatedRead(AppNotificationKind.UpdateAvailable, null);
-                        OpenAbout(checkUpdatesNow: false);
-                        _ = AboutTabContent.StartUpdateDownloadAsync(result);
-                    }
+                    AboutTabContent?.ApplyCheckResult(result, addNotification: false);
                 });
             }
             else
@@ -1132,19 +1123,9 @@ public partial class MainWindow : Window
             }
 
             _activeUpdateResult = result;
-            var choice = ConfirmDialog.Show(
-                this,
-                Strings.T("UpdateAvailable", result.LatestVersionLabel),
-                $"{Strings.T("Current")} {UpdateService.GetCurrentVersionLabel()}\n{Strings.T("Latest")} {result.LatestVersionLabel}\n\n{Strings.T("UpdatePrompt")}",
-                Strings.T("Download"),
-                Strings.T("Later"));
-
-            if (choice)
-            {
-                _notifications.MarkRelatedRead(AppNotificationKind.UpdateAvailable, null);
-                OpenAbout(checkUpdatesNow: false);
-                _ = AboutTabContent.StartUpdateDownloadAsync(result);
-            }
+            _notifications.MarkRelatedRead(AppNotificationKind.UpdateAvailable, null);
+            OpenAbout(checkUpdatesNow: false);
+            AboutTabContent?.ApplyCheckResult(result, addNotification: false);
         }
         catch { }
     }
@@ -2393,43 +2374,9 @@ public partial class MainWindow : Window
         OpenSettings();
     }
 
-    private DateTime _moreMenuDismissedAtUtc = DateTime.MinValue;
-    private static readonly TimeSpan MoreMenuReopenGuard = TimeSpan.FromMilliseconds(500);
-
-    private void MoreOptionsMenu_Opened(object sender, RoutedEventArgs e)
-    {
-        _moreMenuDismissedAtUtc = DateTime.MinValue;
-    }
-
-    private void MoreOptionsMenu_Closed(object sender, RoutedEventArgs e)
-    {
-        _moreMenuDismissedAtUtc = DateTime.UtcNow;
-    }
-
-    private void MoreBtn_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (MoreBtn.ContextMenu is { IsOpen: true } menu)
-        {
-            _moreMenuDismissedAtUtc = DateTime.UtcNow;
-            menu.IsOpen = false;
-            e.Handled = true;
-        }
-    }
-
     private void MoreBtn_Click(object sender, RoutedEventArgs e)
     {
-        if (MoreBtn.ContextMenu is not { } menu) return;
-
-        if (menu.IsOpen || (DateTime.UtcNow - _moreMenuDismissedAtUtc) < MoreMenuReopenGuard)
-        {
-            _moreMenuDismissedAtUtc = DateTime.MinValue;
-            menu.IsOpen = false;
-            return;
-        }
-
-        menu.PlacementTarget = MoreBtn;
-        menu.Placement = PlacementMode.Bottom;
-        menu.IsOpen = true;
+        MenuToggleHelper.Toggle(MoreBtn);
     }
 
     private static void OpenExternalUrl(string url)
@@ -2784,7 +2731,7 @@ public partial class MainWindow : Window
 
     private void SearchIconBtn_Click(object sender, RoutedEventArgs e)
     {
-        ShowRecentSearchesMenu(SearchIconBtn);
+        MenuToggleHelper.Toggle(SearchIconBtn);
     }
 
     private void CountryFlag_Click(object sender, MouseButtonEventArgs e)

@@ -206,11 +206,10 @@
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button x:Name="SortBtn" Style="{StaticResource SortButtonStyle}" Margin="0,0,8,0"
-                            PreviewMouseLeftButtonDown="SortBtn_PreviewMouseLeftButtonDown"
                             Click="SortBtn_Click">
                         <Button.ContextMenu>
                             <ContextMenu x:Name="SortMenu" Style="{DynamicResource ModernContextMenu}"
-                                         Opened="SortMenu_Opened" Closed="SortMenu_Closed">
+                                         Opened="SortMenu_Opened">
                                 <MenuItem x:Name="SortHeaderItem" Header="Ordenar por" Style="{StaticResource SortHeaderMenuItem}"/>
                                 <MenuItem x:Name="SortDateItem" Header="Fecha" IsCheckable="True" Tag="Date" Style="{DynamicResource ModernMenuItem}" Click="SortOption_Click"/>
                                 <MenuItem x:Name="SortTypeItem" Header="Tipo" IsCheckable="True" Tag="Type" Style="{DynamicResource ModernMenuItem}" Click="SortOption_Click"/>

@@ -31,6 +31,8 @@ public sealed class TrayService : IDisposable
     private int _repairAttempts;
     private bool _exit;
     private bool _warnedAboutTray;
+    private TrayContextMenuWindow? _activeMenu;
+    private DateTime _activeMenuClosedAtUtc = DateTime.MinValue;
 
     public TrayService(MainWindow win, FirewallService svc)
     {
@@ -134,8 +136,30 @@ public sealed class TrayService : IDisposable
 
     private void ShowContextMenu()
     {
+        if (_activeMenu is { IsVisible: true } openMenu)
+        {
+            _activeMenuClosedAtUtc = DateTime.MinValue;
+            try { openMenu.Close(); } catch { }
+            return;
+        }
+
+        if ((DateTime.UtcNow - _activeMenuClosedAtUtc) < TimeSpan.FromMilliseconds(350))
+        {
+            _activeMenuClosedAtUtc = DateTime.MinValue;
+            return;
+        }
+
         var pt = WF.Cursor.Position;
         var menu = new TrayContextMenuWindow(_win, _svc, pt);
+        _activeMenu = menu;
+        menu.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_activeMenu, menu))
+            {
+                _activeMenu = null;
+                _activeMenuClosedAtUtc = DateTime.UtcNow;
+            }
+        };
         menu.Show();
     }
 
