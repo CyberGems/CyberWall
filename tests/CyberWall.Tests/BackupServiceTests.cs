@@ -235,5 +235,32 @@ public sealed class BackupServiceTests : IDisposable
         Assert.Equal(1333, live.MainWindowWidth);
         Assert.Equal(888, live.MainWindowHeight);
     }
+
+    [Fact]
+    public void BackupRestoreDialog_InitializesWithoutNullReference_WithPopulatedBackups()
+    {
+        var settings = new AppSettings { BackupDirectory = _tempDir };
+        var res = BackupService.CreateBackup(SampleRules(2), settings, BackupReason.Manual, "2.4.0");
+        Assert.True(res.Success);
+
+        Exception? captured = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var dlg = new CyberWall.UI.Dialogs.BackupRestoreDialog(settings);
+                dlg.Close();
+            }
+            catch (Exception ex)
+            {
+                captured = ex;
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+
+        Assert.Null(captured);
+    }
 }
 

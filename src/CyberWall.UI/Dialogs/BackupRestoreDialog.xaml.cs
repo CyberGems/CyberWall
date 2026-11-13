@@ -168,8 +168,8 @@ public partial class BackupRestoreDialog : Window
             Entry = entry,
             IsExternal = isExternal,
             CachedDocument = cachedDoc,
-            BadgeBackground = (WpfBrush)FindResource(bgKey),
-            BadgeForeground = (WpfBrush)FindResource(fgKey)
+            BadgeBackground = (TryFindResource(bgKey) as WpfBrush) ?? System.Windows.Media.Brushes.Transparent,
+            BadgeForeground = (TryFindResource(fgKey) as WpfBrush) ?? System.Windows.Media.Brushes.Gray
         };
     }
 
@@ -196,6 +196,17 @@ public partial class BackupRestoreDialog : Window
 
     private void UpdateActionStates()
     {
+        if (!IsInitialized
+            || BackupListBox == null
+            || DeleteBtn == null
+            || RestoreRulesChk == null
+            || RestoreSettingsChk == null
+            || RestoreBtn == null
+            || KillswitchWarnBanner == null)
+        {
+            return;
+        }
+
         var selected = BackupListBox.SelectedItem as BackupItemViewModel;
         DeleteBtn.IsEnabled = selected != null && !selected.IsExternal;
 
