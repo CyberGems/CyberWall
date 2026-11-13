@@ -114,7 +114,7 @@ Here is how CyberWall protects your computer against real-world threats in plain
 - **Built-in Auto-Update System**: One-click GitHub Releases update checker with live download progress tracking, SHA256 verification of the downloaded installer, and silent installer execution.
 - **Dedicated About Modal**: Interactive product overview with a rotating strip of the other CyberGems apps, update manager, and direct access to CyberGems community channels.
 - **Fully Bilingual (EN / ES)**: Complete UI localization in English and Spanish with instant language switching.
-- **Persistent Rule Store**: Rules are stored persistently in `%ProgramData%\CyberWall\rules.json`, written atomically so a crash never truncates them.
+- **Persistent Rule Store & Verified Backups**: Rules are stored atomically in `%ProgramData%\CyberWall\rules.json`. Built-in automatic and manual `.cwbackup` snapshots (with SHA-256 integrity checks) back up both rules and preferences on a Daily, Weekly, or On-change schedule, keep between 1 and 7 automatic copies (default 3) in a customizable folder, and create pre-clear / pre-restore safety copies before restoring.
 - **System Tray & Background Daemon**: System tray integration, minimize-to-tray, and optional support for running as a background Windows Service (SYSTEM). Only one host owns the firewall engine at a time: the open window takes precedence and the service resumes protection when it closes.
 
 ---
@@ -182,7 +182,7 @@ CyberWall runs in the tray and asks before an unknown program reaches the intern
 2. When a connection prompt appears, check the app name, path and destination.
 3. Choose **Allow always** for apps you trust, **Block** for the rest, or **Allow once** to test for about ten minutes.
 
-Decisions become Windows Firewall rules stored in `%ProgramData%\CyberWall\rules.json`. A scheduled task restores the original policy if CyberWall stops unexpectedly, so the machine never stays locked down.
+Decisions become Windows Firewall rules stored in `%ProgramData%\CyberWall\rules.json`. A scheduled task restores the original policy if CyberWall stops unexpectedly, so the machine never stays locked down. You can also configure automatic `.cwbackup` snapshots (1 to 7 copies, custom destination folder) or restore rules and preferences from **Settings → Backups**.
 
 See [How Do You Use CyberWall?](https://github.com/CyberGems/CyberWall/wiki/How-Do-You-Use) for everyday examples and the full guides.
 

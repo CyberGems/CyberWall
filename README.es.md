@@ -115,7 +115,7 @@ Así es como CyberWall protege tu equipo frente a amenazas reales, en términos 
 - **Sistema de actualización automática integrado**: comprobador de actualizaciones de GitHub Releases con un clic, seguimiento de progreso de descarga en vivo e instalador silencioso.
 - **Ventana Acerca de dedicada**: resumen interactivo del producto con una tira rotativa de las demás aplicaciones de CyberGems, gestor de actualizaciones y acceso directo a los canales de la comunidad CyberGems.
 - **Totalmente bilingüe (EN / ES)**: localización completa de la interfaz en inglés y español con cambio de idioma instantáneo.
-- **Almacenamiento persistente de reglas**: las reglas se guardan de forma persistente en `%ProgramData%\CyberWall\rules.json`, con escritura atómica para que un fallo nunca las trunque.
+- **Almacenamiento persistente de reglas y respaldos verificados**: las reglas se guardan de forma atómica en `%ProgramData%\CyberWall\rules.json`. Los respaldos automáticos y manuales en formato `.cwbackup` (con verificación de integridad SHA-256) guardan reglas y preferencias con frecuencia diaria, semanal o al detectar cambios, conservan entre 1 y 7 copias automáticas (3 por defecto) en una carpeta personalizable y crean copias de seguridad automáticas antes de limpiar reglas o restaurar.
 - **Bandeja del sistema y demonio en segundo plano**: integración con la bandeja, minimizar a la bandeja y soporte opcional para ejecutarse como Servicio de Windows en segundo plano (SYSTEM). Solo un host es propietario del motor de cortafuegos a la vez: la ventana abierta tiene prioridad y el servicio retoma la protección cuando se cierra.
 
 ---
@@ -183,7 +183,7 @@ CyberWall vive en la bandeja y pregunta antes de que un programa desconocido sal
 2. Cuando aparezca un aviso de conexión, revisa el nombre de la app, su ruta y el destino.
 3. Elige **Permitir siempre** para las apps de confianza, **Bloquear** para el resto o **Permitir una vez** para probar durante unos diez minutos.
 
-Las decisiones se convierten en reglas del Cortafuegos de Windows guardadas en `%ProgramData%\CyberWall\rules.json`. Una tarea programada restaura la política original si CyberWall se detiene de forma inesperada, para que el equipo nunca quede bloqueado.
+Las decisiones se convierten en reglas del Cortafuegos de Windows guardadas en `%ProgramData%\CyberWall\rules.json`. Una tarea programada restaura la política original si CyberWall se detiene de forma inesperada, para que el equipo nunca quede bloqueado. También puedes configurar respaldos automáticos `.cwbackup` (de 1 a 7 copias, carpeta personalizable) o restaurar reglas y ajustes desde **Configuración → Respaldos**.
 
 Consulta [¿Cómo se usa CyberWall?](https://github.com/CyberGems/CyberWall/wiki/How-Do-You-Use) para ver ejemplos cotidianos y las guías completas de la wiki (en inglés).
 

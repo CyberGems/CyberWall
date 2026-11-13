@@ -4,6 +4,13 @@ All notable changes to CyberWall are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Published builds and their download links live on the [Releases](https://github.com/CyberGems/CyberWall/releases) page.
 
+## [Unreleased]
+
+### Added
+
+- Automatic and manual `.cwbackup` snapshots for firewall rules and settings (`BackupService`, `BackupCoordinator`) with canonical SHA-256 integrity verification, deduplication of transient UI state, customizable destination folder, and bounded retention between 1 and 7 automatic copies (default 3).
+- Selective restore modal (`BackupRestoreDialog`) supporting rules and/or preferences, external `.cwbackup` file browsing, pre-clear and pre-restore safety snapshots, and Block All / Killswitch warnings.
+
 ## 2.4.0 - 2026-11-10
 
 ### Added
