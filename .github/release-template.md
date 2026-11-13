@@ -7,7 +7,7 @@
 ### 🚀 What's new in this release
 
 <!-- changelog-summary:start -->
-Introduces a floating traffic companion widget with real-time spline graphs, an executive hero dashboard uniting the master switch and live bandwidth wave, instant country filtering chips, animated search with keyword highlighting, and responsive layout scaling.
+Adds automatic and manual .cwbackup snapshots with selective restore, network adapter selection across live graphs, embedded Notifications and About tabs, a CyberGems tray suite menu, timed alert pauses, sleep-resume rendering protection, mixed-DPI positioning fixes, and refreshed navigation icons.
 <!-- changelog-summary:end -->
 
 > **New to CyberWall?** A real-time Windows firewall for viewing per-app traffic and allowing or blocking connections with one click.
@@ -16,56 +16,54 @@ Introduces a floating traffic companion widget with real-time spline graphs, an 
 
 ### ✨ Key Features & Highlights
 
-- 🪟 **Floating Network Companion Widget**:
-  - A lightweight desktop companion window displaying real-time upload/download spline graphs and session totals.
-  - Features compact and expanded view modes, Always on Top pinning, and instant navigation to the Traffic Monitor.
+- 💾 **Automatic & Manual Backups (`.cwbackup`)**:
+  - Automatic and on-demand snapshots for firewall rules and preferences with SHA-256 integrity checks, customizable storage folder, and retention between 1 and 7 automatic backups.
+  - Selective restore dialog (`BackupRestoreDialog`) with external file browsing and automatic safety snapshots before clearing or restoring.
 
-- 📊 **Unified Executive Hero Dashboard**:
-  - Sleek single-row layout integrating the master firewall toggle, mode selector, live traffic wave, dynamic scale indicator, and throughput pills.
-  - Added selectable 1m, 5m, and 10m time window ranges with keyboard shortcuts (`Space` / `P`) to pause and resume sampling.
+- 🌐 **Network Adapter Selection & Live Graph Sync**:
+  - Choose **Automatic** or pin a specific network interface across Settings, Traffic Monitor, and the Floating Traffic Widget.
+  - Switching adapters immediately resets live telemetry series and header graphs.
 
-- 🌍 **Instant Country Filtering & Visual Badges**:
-  - Click any country flag in the rules list to filter connections by destination country instantly.
-  - Active filter chip in the search bar with one-click clear, accompanied by country count badges (`+N`).
+- 🔔 **Embedded Notifications & About Tabs**:
+  - Notifications and About now live cleanly as integrated main-window tabs instead of standalone dialogs.
+  - Sort notifications by Date, Type, or App, dismiss individual cards on hover, and check for updates directly inline in About alongside the refreshed CyberGems suite footer.
 
-- 🔍 **Animated Search & Themed Context Menus**:
-  - Smooth expandable search bar with real-time text matching, hit counts, and recent search history.
-  - Fully themed text context menus (Undo, Redo, Cut, Copy, Paste, Select All, Delete) and "Copy executable name" command.
+- 🧭 **Refined Menus, Tray Suite View & Navigation Icons**:
+  - Redesigned vector tab icons, neutral-idle More menu items with a grouped Help & Documentation submenu, reliable second-click menu dismissal, and calmer dropdown highlights.
+  - Upgraded system tray menu with timed floating-alert pauses, Floating Traffic Widget toggle, and a **More from CyberGems** suite sub-view.
 
-- ⚡ **Performance & Display Polish**:
-  - Window transparency disabled to unlock full GPU hardware acceleration on modern Windows.
-  - DataGrid row virtualization for smooth scrolling with large rule catalogs, non-blocking startup initialization, and a "Reset window size" option in the title bar menu.
+- 🛡️ **Rendering & Multi-DPI Stability**:
+  - Added `RenderStabilityManager` protection against `UCEERR_RENDERTHREADFAILURE` on sleep/resume, plus hardened mixed-DPI popup positioning, keyboard shortcuts, and higher-contrast unknown country map flags.
 
 <details>
 <summary><b>🌐 Ver notas de la versión en Español</b></summary>
 
 ### 🚀 Novedades de esta versión
 
-Introduce un widget flotante de tráfico con gráficos spline en tiempo real, un panel ejecutivo que unifica el interruptor principal y la onda de ancho de banda en vivo, filtros rápidos por país, búsqueda animada con resaltado de coincidencias y escalado responsivo.
+Incorpora copias de seguridad automáticas y manuales `.cwbackup` con restauración selectiva, selección de adaptador de red en gráficos en vivo, pestañas integradas de Notificaciones y Acerca de, menú de la suite CyberGems en la bandeja, pausas temporizadas de alertas, protección tras suspensión y mejoras multi-DPI.
 
 ---
 
 ### ✨ Novedades destacadas
 
-- 🪟 **Widget de red flotante**:
-  - Ventana flotante ligera de escritorio que muestra gráficos spline en tiempo real de subida/bajada y totales de sesión.
-  - Ofrece modos compacto y extendido, fijación siempre encima y acceso directo al Monitor de tráfico.
+- 💾 **Copias de seguridad automáticas y manuales (`.cwbackup`)**:
+  - Instantáneas automáticas y bajo demanda para reglas y preferencias con verificación de integridad SHA-256, carpeta personalizable y retención entre 1 y 7 copias automáticas.
+  - Diálogo de restauración selectiva con exploración de archivos externos y copias preventivas antes de limpiar o restaurar.
 
-- 📊 **Panel ejecutivo de protección unificado**:
-  - Diseño elegante en una sola fila que integra el interruptor maestro, selector de modo, onda de tráfico en vivo, indicador de escala dinámica y píldoras de velocidad.
-  - Rangos de tiempo seleccionables (1 min, 5 min y 10 min) con atajos de teclado (`Espacio` / `P`) para pausar y reanudar la telemetría.
+- 🌐 **Selección de adaptador de red y sincronización de gráficos**:
+  - Elige **Automático** o fija un adaptador de red específico desde Configuración, Monitor de tráfico o el Widget flotante.
+  - Al cambiar de adaptador, los gráficos en vivo y el encabezado reinician su escala de forma inmediata.
 
-- 🌍 **Filtro rápido por país y badges visuales**:
-  - Haz clic en cualquier bandera de país para filtrar al instante las reglas por país de destino.
-  - Chip de filtro activo en la barra de búsqueda con eliminación en un clic e indicadores de recuento de países (`+N`).
+- 🔔 **Pestañas integradas de Notificaciones y Acerca de**:
+  - Notificaciones y Acerca de pasan a estar integradas dentro de la ventana principal en lugar de ventanas modales independientes.
+  - Ordena notificaciones por Fecha, Tipo o Aplicación, descarta tarjetas individuales al pasar el cursor y consulta actualizaciones en línea dentro de la pestaña Acerca de.
 
-- 🔍 **Búsqueda animada y menús contextuales temáticos**:
-  - Barra de búsqueda expandible con animación fluida, resaltado de texto coincidente en tiempo real, contador de coincidencias e historial de búsquedas recientes.
-  - Menús contextuales propios del tema de la aplicación (Deshacer, Rehacer, Cortar, Copiar, Pegar, Seleccionar todo, Eliminar) y comando para "Copiar nombre del ejecutable".
+- 🧭 **Menús refinados, vista de la suite en bandeja e iconos renovados**:
+  - Nuevos iconos vectoriales de pestañas, iconos neutros en el menú Más opciones con submenú de Ayuda y documentación, cierre fiable al segundo clic y desplegables menos estridentes.
+  - Menú contextual de bandeja mejorado con pausas temporizadas de alertas flotantes, interruptor del Widget flotante y subvista **Más de CyberGems**.
 
-- ⚡ **Rendimiento y refinamiento visual**:
-  - Renderizado directo por GPU desbloqueado al prescindir de transparencia en la ventana principal.
-  - Virtualización de filas en DataGrid para desplazamiento ultrarrápido con catálogos grandes de reglas, inicialización en segundo plano sin bloqueos y opción de "Restablecer tamaño de ventana" en el menú superior.
+- 🛡️ **Estabilidad gráfica y soporte multi-DPI**:
+  - Protección frente a fallos `UCEERR_RENDERTHREADFAILURE` al reanudar desde suspensión, posicionamiento corregido de popups y bandeja en monitores con distinto DPI, atajos de teclado y mayor contraste en banderas de país no identificado.
 
 </details>
 

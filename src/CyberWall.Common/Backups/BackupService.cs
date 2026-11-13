@@ -487,7 +487,7 @@ public static partial class BackupService
     private static string GetDefaultAppVersion()
     {
         var v = Assembly.GetEntryAssembly()?.GetName().Version;
-        return v != null ? $"{v.Major}.{v.Minor}.{Math.Max(0, v.Build)}" : "2.4.0";
+        return v != null ? $"{v.Major}.{v.Minor}.{Math.Max(0, v.Build)}" : "2.5.0";
     }
 }
 

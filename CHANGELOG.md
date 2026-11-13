@@ -4,12 +4,30 @@ All notable changes to CyberWall are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Published builds and their download links live on the [Releases](https://github.com/CyberGems/CyberWall/releases) page.
 
-## [Unreleased]
+## 2.5.0 - 2026-11-13
 
 ### Added
 
 - Automatic and manual `.cwbackup` snapshots for firewall rules and settings (`BackupService`, `BackupCoordinator`) with canonical SHA-256 integrity verification, deduplication of transient UI state, customizable destination folder, and bounded retention between 1 and 7 automatic copies (default 3).
 - Selective restore modal (`BackupRestoreDialog`) supporting rules and/or preferences, external `.cwbackup` file browsing, pre-clear and pre-restore safety snapshots, and Block All / Killswitch warnings.
+- Network adapter selector (`NetworkSpeedService`, `NetworkAdapterMenuHelper`) with an Automatic default and per-adapter selection persisted across Settings, Traffic Monitor, and the Floating Traffic Widget, resetting live and header graphs immediately on adapter switch.
+- Embedded `NotificationsView` and `AboutView` tabs inside the main window, including notification sorting (Date, Type, Apps), hover dismiss buttons on notification cards, inline update status in About, and a suite-aligned CyberGems footer.
+- Timed floating-alert pauses (15m, 1h, Until Restart), direct Floating Traffic Widget toggles, title bar keyboard shortcuts with keycap tooltips, and a "More from CyberGems" suite sub-view with animated hover icons in the tray menu.
+- Grouped "Help & Documentation" submenu and an "Exit CyberWall" action in the title bar More menu.
+
+### Changed
+
+- Unified `ContextMenu` and `MenuItem` styles into shared `App.xaml` resources, softened ComboBox selection highlights, and redesigned the navigation tab and More menu vector icons.
+- Improved contrast of the unidentified country world-map flag mark (`CountryFlagMark`).
+- Restored the Floating Traffic Widget automatically when starting minimized to the tray if previously pinned open.
+
+### Fixed
+
+- Prevented `UCEERR_RENDERTHREADFAILURE` crashes on sleep/resume (`RenderStabilityManager`) and decoupled animated shadows for visual stability.
+- Fixed toast, popup, and tray context menu positioning across mixed-DPI multi-monitor setups and eliminated clipped menu drop shadows.
+- Fixed second-click toggle dismissal on title bar menus (`MenuToggleHelper`), eliminated tray submenu size jumps, and fixed tray Exit icon geometry and red hover styling.
+- Resolved pending prompt cards cleanly when `PromptStackWindow` closes externally and guarded `BackupRestoreDialog` state updates during XAML initialization.
+- Added null checks in `ThemeManager` during startup resource application.
 
 ## 2.4.0 - 2026-11-10
 
