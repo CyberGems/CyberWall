@@ -227,6 +227,7 @@ public partial class TrayContextMenuWindow : Window
         AutomationProperties.SetName(WidgetSwitch, widgetLabel);
         HelpText.Text = Strings.T("Help");
         SuiteMenuText.Text = Strings.T("MoreFromCyberGems");
+        SuiteBtn.Visibility = App.Settings.ShowAppRecommendations ? Visibility.Visible : Visibility.Collapsed;
         HelpBackText.Text = Strings.T("TrayBack");
         HelpSubTitleText.Text = Strings.T("Help");
         SubHelpText.Text = Strings.T("Help");

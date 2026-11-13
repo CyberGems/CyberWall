@@ -117,10 +117,10 @@ public partial class SettingsView : UserControl
         StartupToggle.IsChecked = StartupHelper.IsStartupEnabled();
         StartMinimizedToggle.IsChecked = _s.StartMinimized;
         MinimizeToTrayToggle.IsChecked = _s.MinimizeToTrayOnClose;
+        ShowRecommendationsToggle.IsChecked = _s.ShowAppRecommendations;
         AutoBlockToggle.IsChecked = _s.PopupAutoBlockEnabled;
         PopulateAutoBlockWait();
         UpdateAutoBlockUiState();
-        PopulateTrafficAnim();
         AutoBackupToggle.IsChecked = _s.AutoBackupEnabled;
         PopulateBackupFrequency();
         PopulateBackupRetention();
@@ -295,8 +295,6 @@ public partial class SettingsView : UserControl
         ToastProtectionDescLbl.Text = Strings.T("ToastProtectionDesc");
         ToastAutoBlockTitleLbl.Text = Strings.T("ToastAutoBlockTitle");
         ToastAutoBlockDescLbl.Text = Strings.T("ToastAutoBlockDesc");
-        TrafficAnimTitleLbl.Text = Strings.T("TrafficAnimationHdr");
-        TrafficAnimDescLbl.Text = Strings.T("TrafficAnimationDesc");
         NetworkAdapterTitleLbl.Text = Strings.T("NetworkAdapter");
         NetworkAdapterDescLbl.Text = Strings.T("NetworkAdapterDesc");
         SecSystemLbl.Text = Strings.T("SystemHeader");
@@ -306,6 +304,8 @@ public partial class SettingsView : UserControl
         StartMinimizedDescLbl.Text = Strings.T("StartMinimizedDesc");
         MinimizeToTrayTitleLbl.Text = Strings.T("MinimizeToTrayOnClose");
         MinimizeToTrayDescLbl.Text = Strings.T("MinimizeToTrayOnCloseDesc");
+        ShowRecommendationsTitleLbl.Text = Strings.T("ShowAppRecommendations");
+        ShowRecommendationsDescLbl.Text = Strings.T("ShowAppRecommendationsDesc");
         AutoBlockTitleLbl.Text = Strings.T("PopupAutoBlock");
         AutoBlockDescLbl.Text = Strings.T("PopupAutoBlockDesc");
         AutoBlockWaitLbl.Text = Strings.T("PopupAutoBlockWait");
@@ -335,7 +335,6 @@ public partial class SettingsView : UserControl
         UpdateStartupTogglesState();
         PopulateMonitors();
         PopulateAutoBlockWait();
-        PopulateTrafficAnim();
         PopulateNetworkAdapters();
         PopulateBackupFrequency();
         PopulateBackupRetention();
@@ -455,6 +454,13 @@ public partial class SettingsView : UserControl
         }
     }
 
+    private void ShowRecommendationsToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        _s.ShowAppRecommendations = ShowRecommendationsToggle.IsChecked == true;
+        _s.Save();
+    }
+
     private static readonly (int Seconds, string Key)[] AutoBlockWaitOptions =
     {
         (30, "PopupAutoBlock30s"),
@@ -561,34 +567,6 @@ public partial class SettingsView : UserControl
             _s.NotificationMonitor = mon;
             _s.Save();
             TriggerPreviewPopup();
-        }
-    }
-
-    private void PopulateTrafficAnim()
-    {
-        var wasLoading = _loading;
-        _loading = true;
-        TrafficAnimBox.Items.Clear();
-        TrafficAnimBox.Items.Add(new ComboBoxItem { Content = Strings.T("TrafficAnimFluid"), Tag = Common.Settings.TrafficAnimationMode.FluidStream });
-        TrafficAnimBox.Items.Add(new ComboBoxItem { Content = Strings.T("TrafficAnimPulse"), Tag = Common.Settings.TrafficAnimationMode.PulseGlow });
-        TrafficAnimBox.Items.Add(new ComboBoxItem { Content = Strings.T("TrafficAnimDisabled"), Tag = Common.Settings.TrafficAnimationMode.Disabled });
-
-        TrafficAnimBox.SelectedIndex = _s.TrafficAnimation switch
-        {
-            Common.Settings.TrafficAnimationMode.PulseGlow => 1,
-            Common.Settings.TrafficAnimationMode.Disabled => 2,
-            _ => 0
-        };
-        _loading = wasLoading;
-    }
-
-    private void TrafficAnimBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (_loading) return;
-        if (TrafficAnimBox.SelectedItem is ComboBoxItem { Tag: Common.Settings.TrafficAnimationMode mode })
-        {
-            _s.TrafficAnimation = mode;
-            _s.Save();
         }
     }
 

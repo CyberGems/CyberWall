@@ -21,8 +21,6 @@ public enum PopupPosition
     BottomRight
 }
 
-public enum TrafficAnimationMode { FluidStream, PulseGlow, Disabled }
-
 public enum BackupFrequency { OnChange, Daily, Weekly }
 
 public enum NotificationSortBy { Date, Type, Apps }
@@ -31,7 +29,6 @@ public sealed class AppSettings
 {
     public Lang Language { get; set; } = Lang.Es;
     public AppTheme Theme { get; set; } = AppTheme.CyberWall;
-    public TrafficAnimationMode TrafficAnimation { get; set; } = TrafficAnimationMode.FluidStream;
     public bool FirewallEnabled { get; set; } = true;
 
     [JsonConverter(typeof(FirewallModeConverter))]
@@ -195,6 +192,7 @@ public sealed class AppSettings
     public string PreferredNetworkAdapterId { get; set; } = "";
     public string PreferredNetworkAdapterName { get; set; } = "";
     public NotificationSortBy NotificationsSortBy { get; set; } = NotificationSortBy.Date;
+    public bool ShowAppRecommendations { get; set; } = true;
 
     public static event Action? Saved;
 
@@ -208,7 +206,6 @@ public sealed class AppSettings
     {
         Language = restored.Language;
         Theme = restored.Theme;
-        TrafficAnimation = restored.TrafficAnimation;
         FirewallEnabled = restored.FirewallEnabled;
         FirewallMode = restored.FirewallMode;
         NotificationPosition = restored.NotificationPosition;
@@ -237,6 +234,7 @@ public sealed class AppSettings
         PreferredNetworkAdapterId = restored.PreferredNetworkAdapterId ?? "";
         PreferredNetworkAdapterName = restored.PreferredNetworkAdapterName ?? "";
         NotificationsSortBy = restored.NotificationsSortBy;
+        ShowAppRecommendations = restored.ShowAppRecommendations;
 
         // Keep existing custom backup folder if the restored one points to a missing drive/root.
         if (!string.IsNullOrWhiteSpace(restored.BackupDirectory))

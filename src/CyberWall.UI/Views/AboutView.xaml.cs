@@ -10,7 +10,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Settings;
-using CyberWall.UI.Dialogs;
 using CyberWall.UI.Services;
 using UserControl = System.Windows.Controls.UserControl;
 using WpfApplication = System.Windows.Application;
@@ -19,6 +18,17 @@ namespace CyberWall.UI.Views;
 
 public partial class AboutView : UserControl
 {
+    private enum InlineUpdateState
+    {
+        None,
+        Checking,
+        UpToDate,
+        UpdateAvailable,
+        CheckError,
+        DownloadComplete,
+        DownloadError
+    }
+
     private const string RepoUrl = "https://github.com/CyberGems/CyberWall";
     private const string WebsiteUrl = "https://cybergems.org";
     private const string WikiUrl = "https://github.com/CyberGems/CyberWall/wiki";
@@ -28,14 +38,22 @@ public partial class AboutView : UserControl
     private readonly IReadOnlyList<SuiteApp> _suiteApps = SuiteCatalog.Pick(5);
     private bool _isChecking;
     private bool _isDownloading;
+    private InlineUpdateState _inlineState;
+    private UpdateCheckResult? _lastResult;
+    private string? _lastDownloadError;
     private DispatcherTimer? _diagTipTimer;
 
     public event EventHandler? BackRequested;
 
     public AboutView()
+        : this(App.Settings ?? new AppSettings())
+    {
+    }
+
+    internal AboutView(AppSettings settings)
     {
         InitializeComponent();
-        _settings = App.Settings;
+        _settings = settings;
 
         Loaded += (_, _) => LoadContent();
     }
@@ -57,6 +75,11 @@ public partial class AboutView : UserControl
     private void LoadContent()
     {
         AutoCheckUpdateCheck.IsChecked = _settings.AutoCheckForUpdates;
+        SuiteSection.Visibility = _settings.ShowAppRecommendations ? Visibility.Visible : Visibility.Collapsed;
+        if (!_isChecking && !_isDownloading && _inlineState == InlineUpdateState.None && UpdateService.LastCheckResult is { } cached)
+        {
+            ApplyCheckResult(cached, addNotification: false);
+        }
         RefreshLanguage();
     }
 
@@ -84,6 +107,11 @@ public partial class AboutView : UserControl
         {
             UpdateBtn.Content = Strings.T("CheckNow");
         }
+        else if (_isChecking)
+        {
+            UpdateBtn.Content = Strings.T("CheckingUpdates");
+        }
+        RenderInlineUpdateState();
 
         AboutFooterCopyright.ToolTip = Strings.T("VisitWebsite");
         AboutFooterWebsiteBtn.ToolTip = Strings.T("VisitWebsite");
@@ -165,6 +193,9 @@ public partial class AboutView : UserControl
         _isChecking = true;
         UpdateBtn.IsEnabled = false;
         UpdateBtn.Content = Strings.T("CheckingUpdates");
+        _inlineState = InlineUpdateState.Checking;
+        _lastDownloadError = null;
+        RenderInlineUpdateState();
 
         try
         {
@@ -172,58 +203,163 @@ public partial class AboutView : UserControl
             _isChecking = false;
             UpdateBtn.IsEnabled = true;
             UpdateBtn.Content = Strings.T("CheckNow");
-
-            var owner = OwnerWindow;
-            if (result.IsUpdateAvailable)
-            {
-                new CyberWall.Common.Notifications.NotificationStore().Add(CyberWall.Common.Models.AppNotificationKind.UpdateAvailable, detail: result.LatestVersionLabel);
-                var currentLabel = Strings.T("Current");
-                var latestLabel = Strings.T("Latest");
-                var promptMessage = Strings.T("UpdatePrompt");
-                var currentVerLabel = UpdateService.GetCurrentVersionLabel();
-                var msg = $"{currentLabel} {currentVerLabel}\n{latestLabel} {result.LatestVersionLabel}\n\n{promptMessage}";
-
-                var choice = ConfirmDialog.Show(
-                    owner,
-                    Strings.T("UpdateAvailable", result.LatestVersionLabel),
-                    msg,
-                    Strings.T("Download"),
-                    Strings.T("Later"));
-
-                if (choice)
-                {
-                    await StartUpdateDownloadAsync(result);
-                }
-            }
-            else
-            {
-                ConfirmDialog.Show(
-                    owner,
-                    Strings.T("CheckUpdates"),
-                    result.StatusMessage,
-                    Strings.T("Ok"),
-                    string.Empty,
-                    ConfirmIconType.Check);
-            }
+            ApplyCheckResult(result, addNotification: true);
         }
         catch (Exception ex)
         {
             _isChecking = false;
             UpdateBtn.IsEnabled = true;
             UpdateBtn.Content = Strings.T("CheckNow");
-            ConfirmDialog.Show(
-                OwnerWindow,
-                Strings.T("CheckUpdates"),
-                ex.Message,
-                Strings.T("Ok"),
-                string.Empty);
+            _lastResult = new UpdateCheckResult(
+                UpdateService.GetCurrentVersion(), null, UpdateService.GetCurrentVersionLabel(),
+                string.Empty, null, null, null, null, false, ex.Message);
+            _inlineState = InlineUpdateState.CheckError;
+            RenderInlineUpdateState();
         }
+    }
+
+    internal void ApplyCheckResult(UpdateCheckResult result, bool addNotification)
+    {
+        _lastResult = result;
+        _lastDownloadError = null;
+
+        if (result.IsUpdateAvailable)
+        {
+            if (addNotification)
+            {
+                new CyberWall.Common.Notifications.NotificationStore()
+                    .Add(CyberWall.Common.Models.AppNotificationKind.UpdateAvailable, detail: result.LatestVersionLabel);
+            }
+            _inlineState = InlineUpdateState.UpdateAvailable;
+        }
+        else if (result.IsCheckError)
+        {
+            _inlineState = InlineUpdateState.CheckError;
+        }
+        else
+        {
+            _inlineState = InlineUpdateState.UpToDate;
+        }
+
+        RenderInlineUpdateState();
+    }
+
+    private void RenderInlineUpdateState()
+    {
+        if (_inlineState == InlineUpdateState.None)
+        {
+            UpdateStatusBanner.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        UpdateStatusBanner.Visibility = Visibility.Visible;
+        UpdateDownloadBtn.Visibility = Visibility.Collapsed;
+        UpdateOpenReleaseBtn.Visibility = Visibility.Collapsed;
+
+        switch (_inlineState)
+        {
+            case InlineUpdateState.Checking:
+                SetBannerStyle("CardSecondaryBrush", "BorderBrush", "SelectionBgBrush", "BorderBrush", "AccentBrush", "TextBrush",
+                    "M 4 4 V 9 H 9 M 20 20 V 15 H 15 M 20 9 A 9 9 0 0 0 5.64 5.64 L 4 9 M 4 15 A 9 9 0 0 0 18.36 18.36 L 20 15");
+                UpdateStatusTitle.Text = Strings.T("CheckingUpdates");
+                UpdateStatusDetail.Text = Strings.T("UpdateCheckingDetail", UpdateService.GetCurrentVersionLabel());
+                break;
+
+            case InlineUpdateState.UpToDate:
+                SetBannerStyle("BadgeAllowBgBrush", "BadgeAllowFgBrush", "CardBrush", "BadgeAllowFgBrush", "BadgeAllowFgBrush", "BadgeAllowFgBrush",
+                    "M 5 13 L 10 18 L 19 7");
+                UpdateStatusTitle.Text = Strings.T("UpToDateHeadline");
+                UpdateStatusDetail.Text = Strings.T("UpToDate", UpdateService.GetCurrentVersionLabel());
+                break;
+
+            case InlineUpdateState.UpdateAvailable:
+                SetBannerStyle("SelectionBgBrush", "AccentBrush", "CardBrush", "AccentBrush", "AccentBrush", "AccentBrush",
+                    "M 12 4 V 15 M 7 10 L 12 15 L 17 10 M 5 20 H 19");
+                var verLabel = _lastResult?.LatestVersionLabel ?? "";
+                UpdateStatusTitle.Text = Strings.T("UpdateAvailable", verLabel);
+                var currentPart = $"{Strings.T("Current")} {UpdateService.GetCurrentVersionLabel()}";
+                var latestPart = $"{Strings.T("Latest")} {verLabel}";
+                UpdateStatusDetail.Text = _lastResult?.PublishedAt is { } pub
+                    ? Strings.T("UpdatePublishedFmt", currentPart, latestPart, pub.ToLocalTime().ToString("d"))
+                    : $"{currentPart}  ·  {latestPart}";
+                if (!_isDownloading)
+                {
+                    UpdateDownloadBtn.Content = Strings.T("Download");
+                    UpdateDownloadBtn.Visibility = Visibility.Visible;
+                }
+                break;
+
+            case InlineUpdateState.CheckError:
+                SetBannerStyle("BadgeWarnBgBrush", "BadgeWarnFgBrush", "CardBrush", "BadgeWarnFgBrush", "BadgeWarnFgBrush", "BadgeWarnFgBrush",
+                    "M 12 3 L 22 20 H 2 Z M 12 10 V 14 M 12 17 V 17.5");
+                UpdateStatusTitle.Text = Strings.T("UpdateCheckErrorTitle");
+                UpdateStatusDetail.Text = _lastResult?.StatusMessage ?? "";
+                break;
+
+            case InlineUpdateState.DownloadComplete:
+                SetBannerStyle("BadgeAllowBgBrush", "BadgeAllowFgBrush", "CardBrush", "BadgeAllowFgBrush", "BadgeAllowFgBrush", "BadgeAllowFgBrush",
+                    "M 5 13 L 10 18 L 19 7");
+                UpdateStatusTitle.Text = Strings.T("DownloadComplete");
+                UpdateStatusDetail.Text = Strings.T("DownloadCompleteDesc");
+                break;
+
+            case InlineUpdateState.DownloadError:
+                SetBannerStyle("BadgeBlockBgBrush", "BadgeBlockFgBrush", "CardBrush", "BadgeBlockFgBrush", "BadgeBlockFgBrush", "BadgeBlockFgBrush",
+                    "M 12 3 L 22 20 H 2 Z M 12 10 V 14 M 12 17 V 17.5");
+                UpdateStatusTitle.Text = Strings.T("DownloadFailed");
+                UpdateStatusDetail.Text = _lastDownloadError ?? "";
+                if (_lastResult != null)
+                {
+                    UpdateDownloadBtn.Content = Strings.T("Retry");
+                    UpdateDownloadBtn.Visibility = Visibility.Visible;
+                }
+                if (!string.IsNullOrEmpty(_lastResult?.ReleaseUrl))
+                {
+                    UpdateOpenReleaseBtn.Content = Strings.T("OpenReleasePage");
+                    UpdateOpenReleaseBtn.Visibility = Visibility.Visible;
+                }
+                break;
+        }
+    }
+
+    private void SetBannerStyle(
+        string bannerBgKey,
+        string bannerBorderKey,
+        string iconBoxBgKey,
+        string iconBoxBorderKey,
+        string iconStrokeKey,
+        string titleFgKey,
+        string pathData)
+    {
+        UpdateStatusBanner.SetResourceReference(BackgroundProperty, bannerBgKey);
+        UpdateStatusBanner.SetResourceReference(BorderBrushProperty, bannerBorderKey);
+        UpdateStatusIconBox.SetResourceReference(BackgroundProperty, iconBoxBgKey);
+        UpdateStatusIconBox.SetResourceReference(BorderBrushProperty, iconBoxBorderKey);
+        UpdateStatusIconPath.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, iconStrokeKey);
+        UpdateStatusTitle.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, titleFgKey);
+        UpdateStatusIconPath.Data = Geometry.Parse(pathData);
+    }
+
+    private async void UpdateDownloadBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (_lastResult != null)
+            await StartUpdateDownloadAsync(_lastResult);
+    }
+
+    private void UpdateOpenReleaseBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrEmpty(_lastResult?.ReleaseUrl))
+            OpenUrl(_lastResult.ReleaseUrl);
     }
 
     public async Task StartUpdateDownloadAsync(UpdateCheckResult result)
     {
         if (_isDownloading) return;
         _isDownloading = true;
+        _lastResult = result;
+        _lastDownloadError = null;
+        _inlineState = InlineUpdateState.UpdateAvailable;
+        RenderInlineUpdateState();
         UpdateProgressPanel.Visibility = Visibility.Visible;
         UpdateBtn.IsEnabled = false;
 
@@ -249,14 +385,8 @@ public partial class AboutView : UserControl
             await UpdateService.DownloadVerifiedAsync(result.DownloadUrl, installerPath, result.AssetSha256, progress);
 
             UpdateProgressText.Text = Strings.T("DownloadCompleted");
-
-            ConfirmDialog.Show(
-                OwnerWindow,
-                Strings.T("DownloadComplete"),
-                Strings.T("DownloadCompleteDesc"),
-                Strings.T("Ok"),
-                string.Empty,
-                ConfirmIconType.Check);
+            _inlineState = InlineUpdateState.DownloadComplete;
+            RenderInlineUpdateState();
 
             UpdateService.LaunchInstallerAndExit(installerPath);
         }
@@ -264,22 +394,14 @@ public partial class AboutView : UserControl
         {
             UpdateProgressPanel.Visibility = Visibility.Collapsed;
             UpdateBtn.IsEnabled = true;
-
-            var errorChoice = ConfirmDialog.Show(
-                OwnerWindow,
-                Strings.T("DownloadFailed"),
-                $"{ex.Message}\n\n{(Strings.Current == Lang.Es ? "¿Deseas abrir la página de descargas de GitHub en el navegador?" : "Would you like to open the GitHub release page instead?")}",
-                Strings.Current == Lang.Es ? "Abrir navegador" : "Open Browser",
-                Strings.T("Cancel"));
-
-            if (errorChoice && !string.IsNullOrEmpty(result.ReleaseUrl))
-            {
-                OpenUrl(result.ReleaseUrl);
-            }
+            _lastDownloadError = ex.Message;
+            _inlineState = InlineUpdateState.DownloadError;
+            RenderInlineUpdateState();
         }
         finally
         {
             _isDownloading = false;
+            RenderInlineUpdateState();
         }
     }
 

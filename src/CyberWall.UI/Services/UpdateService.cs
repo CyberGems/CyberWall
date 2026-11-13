@@ -20,7 +20,10 @@ public sealed record UpdateCheckResult(
     string? AssetSha256,
     DateTimeOffset? PublishedAt,
     bool IsUpdateAvailable,
-    string StatusMessage);
+    string StatusMessage)
+{
+    public bool IsCheckError => !IsUpdateAvailable && LatestVersion is null && string.IsNullOrEmpty(ReleaseUrl);
+}
 
 public static class UpdateService
 {

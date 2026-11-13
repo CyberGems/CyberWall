@@ -86,4 +86,18 @@ public class AppSettingsTests
         Assert.False(AppSettings.ApplyManualBlockDefault(settings!));
         Assert.True(settings!.PopupAutoBlockEnabled);
     }
+
+    [Fact]
+    public void ShowAppRecommendationsDefaultsTrueAndRestoresPreference()
+    {
+        var live = new AppSettings();
+        Assert.True(live.ShowAppRecommendations);
+
+        var snapshot = JsonSerializer.Deserialize<AppSettings>("""{"ShowAppRecommendations":false,"TrafficAnimation":1}""");
+        Assert.NotNull(snapshot);
+        Assert.False(snapshot!.ShowAppRecommendations);
+
+        live.ApplyRestoredPreferences(snapshot);
+        Assert.False(live.ShowAppRecommendations);
+    }
 }

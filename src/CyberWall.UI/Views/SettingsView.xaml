@@ -494,26 +494,7 @@
 
                         <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,4,0,12"/>
 
-                        <!-- Row 5: Traffic Flow Animation Mode Selector -->
-                        <Grid Margin="0,4,0,4">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Width="34" Height="34" CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,14,0">
-                                <Path Data="M 3 15 L 8 9 L 12 13 L 17 6" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="14" Height="14" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
-                                <TextBlock x:Name="TrafficAnimTitleLbl" Text="Animación de flujo de tráfico" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextBrush}"/>
-                                <TextBlock x:Name="TrafficAnimDescLbl" Text="Estilo visual del flujo de telemetría en tiempo real en la cabecera." FontSize="12.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,3,0,0" TextWrapping="Wrap"/>
-                            </StackPanel>
-                            <ComboBox x:Name="TrafficAnimBox" Grid.Column="2" Width="220" Height="35" Style="{StaticResource ModernComboBox}" SelectionChanged="TrafficAnimBox_SelectionChanged"/>
-                        </Grid>
-
-                        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,10,0,10"/>
-
-                        <!-- Row 6: Preferred Network Adapter Selector -->
+                        <!-- Row 5: Preferred Network Adapter Selector -->
                         <Grid Margin="0,4,0,4">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -591,6 +572,30 @@
                             </StackPanel>
 
                             <CheckBox x:Name="MinimizeToTrayToggle" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}" VerticalAlignment="Center" Click="MinimizeToTrayToggle_Click"/>
+                        </Grid>
+
+                        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,14"/>
+
+                        <!-- Show CyberGems app recommendations -->
+                        <Grid MinHeight="44">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Width="34" Height="34" CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                                <Path Data="M 6 3 H 18 L 22 9 L 12 21 L 2 9 Z M 2 9 H 22 M 9 3 L 7 9 L 12 21 L 17 9 L 15 3"
+                                      Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      Width="14" Height="14" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock x:Name="ShowRecommendationsTitleLbl" Text="Mostrar recomendaciones de CyberGems" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextBrush}"/>
+                                <TextBlock x:Name="ShowRecommendationsDescLbl" Text="Muestra el catálogo de aplicaciones de CyberGems en el menú de la bandeja y en Acerca de." FontSize="12.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <CheckBox x:Name="ShowRecommendationsToggle" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}" VerticalAlignment="Center" Click="ShowRecommendationsToggle_Click"/>
                         </Grid>
 
                         <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,14"/>

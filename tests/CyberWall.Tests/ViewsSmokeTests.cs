@@ -6,6 +6,7 @@ using CyberWall.Common.Models;
 using CyberWall.Common.Notifications;
 using CyberWall.Common.Settings;
 using CyberWall.UI.Dialogs;
+using CyberWall.UI.Services;
 using CyberWall.UI.Views;
 
 namespace CyberWall.Tests;
@@ -163,6 +164,57 @@ public class ViewsSmokeTests
         Assert.Equal("Alpha", byApps[0].AppName);
         Assert.Equal("Zeta", byApps[1].AppName);
         Assert.Null(byApps[2].AppName);
+    }
+
+    [Fact]
+    public void AboutView_InlineUpdateBannerAndRecommendationsVisibilityWorkOnSta()
+    {
+        RunOnSta(() =>
+        {
+            var settings = new AppSettings();
+            Strings.Current = Lang.En;
+            var view = new AboutView(settings);
+            view.Activate();
+
+            Assert.Equal(Visibility.Visible, view.SuiteSection.Visibility);
+            Assert.Equal(Visibility.Collapsed, view.UpdateStatusBanner.Visibility);
+
+            settings.ShowAppRecommendations = false;
+            view.Activate();
+            Assert.Equal(Visibility.Collapsed, view.SuiteSection.Visibility);
+
+            var current = UpdateService.GetCurrentVersion();
+            view.ApplyCheckResult(new UpdateCheckResult(
+                current, current, UpdateService.GetCurrentVersionLabel(),
+                "https://github.com/CyberGems/CyberWall/releases/tag/v2.4.0",
+                null, null, null, null, false, "Up to date"), addNotification: false);
+            Assert.Equal(Visibility.Visible, view.UpdateStatusBanner.Visibility);
+            Assert.Equal(Visibility.Collapsed, view.UpdateDownloadBtn.Visibility);
+            var enUpToDate = view.UpdateStatusTitle.Text;
+
+            var newer = new Version(current.Major + 1, 0, 0);
+            view.ApplyCheckResult(new UpdateCheckResult(
+                current, newer, $"v{newer}",
+                "https://github.com/CyberGems/CyberWall/releases/tag/v99.0.0",
+                "https://example.invalid/setup.exe", "setup.exe", "abc",
+                new DateTimeOffset(2026, 11, 13, 12, 0, 0, TimeSpan.Zero),
+                true, "Update available"), addNotification: false);
+            Assert.Equal(Visibility.Visible, view.UpdateStatusBanner.Visibility);
+            Assert.Equal(Visibility.Visible, view.UpdateDownloadBtn.Visibility);
+            var enAvail = view.UpdateStatusTitle.Text;
+
+            Strings.Current = Lang.Es;
+            view.RefreshLanguage();
+            Assert.NotEqual(enAvail, view.UpdateStatusTitle.Text);
+
+            view.ApplyCheckResult(new UpdateCheckResult(
+                current, null, UpdateService.GetCurrentVersionLabel(),
+                string.Empty, null, null, null, null, false, "Network offline"), addNotification: false);
+            Assert.Equal(Visibility.Visible, view.UpdateStatusBanner.Visibility);
+            Assert.Equal(Visibility.Collapsed, view.UpdateDownloadBtn.Visibility);
+            Assert.Equal("Network offline", view.UpdateStatusDetail.Text);
+            Assert.NotEqual(enUpToDate, view.UpdateStatusTitle.Text);
+        });
     }
 }
 
