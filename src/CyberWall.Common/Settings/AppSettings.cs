@@ -25,6 +25,8 @@ public enum TrafficAnimationMode { FluidStream, PulseGlow, Disabled }
 
 public enum BackupFrequency { OnChange, Daily, Weekly }
 
+public enum NotificationSortBy { Date, Type, Apps }
+
 public sealed class AppSettings
 {
     public Lang Language { get; set; } = Lang.Es;
@@ -192,6 +194,7 @@ public sealed class AppSettings
     /// </summary>
     public string PreferredNetworkAdapterId { get; set; } = "";
     public string PreferredNetworkAdapterName { get; set; } = "";
+    public NotificationSortBy NotificationsSortBy { get; set; } = NotificationSortBy.Date;
 
     public static event Action? Saved;
 
@@ -233,6 +236,7 @@ public sealed class AppSettings
         BackupRetentionCount = restored.BackupRetentionCount;
         PreferredNetworkAdapterId = restored.PreferredNetworkAdapterId ?? "";
         PreferredNetworkAdapterName = restored.PreferredNetworkAdapterName ?? "";
+        NotificationsSortBy = restored.NotificationsSortBy;
 
         // Keep existing custom backup folder if the restored one points to a missing drive/root.
         if (!string.IsNullOrWhiteSpace(restored.BackupDirectory))

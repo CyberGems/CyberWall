@@ -4,6 +4,7 @@ using System.Windows;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Common.Notifications;
+using CyberWall.Common.Settings;
 using CyberWall.UI.Dialogs;
 using CyberWall.UI.Views;
 
@@ -81,12 +82,14 @@ public class ViewsSmokeTests
                     _ => Task.CompletedTask,
                     () => { },
                     () => { },
-                    () => { },
                     isProtectionOn: () => false,
                     isOnline: () => true);
 
                 Strings.Current = Lang.En;
                 view.Activate();
+                Assert.Null(view.FindName("SettingsBtn"));
+                Assert.False(string.IsNullOrWhiteSpace(view.SortBtnText.Text));
+                var enSortLabel = view.SortBtnText.Text;
 
                 var items = Assert.IsAssignableFrom<IReadOnlyList<NotificationItemVm>>(view.NotifList.ItemsSource);
                 Assert.Equal(3, items.Count);
@@ -99,6 +102,7 @@ public class ViewsSmokeTests
                 var enTooltip = items[0].DismissToolTip;
                 Strings.Current = Lang.Es;
                 view.RefreshLanguage();
+                Assert.NotEqual(enSortLabel, view.SortBtnText.Text);
                 var esItems = Assert.IsAssignableFrom<IReadOnlyList<NotificationItemVm>>(view.NotifList.ItemsSource);
                 Assert.NotEqual(enTooltip, esItems[0].DismissToolTip);
 
@@ -115,6 +119,50 @@ public class ViewsSmokeTests
         {
             if (File.Exists(tempPath)) File.Delete(tempPath);
         }
+    }
+
+    [Fact]
+    public void NotificationsView_SortNotificationsOrdersByDateTypeAndApps()
+    {
+        var t0 = new DateTime(2026, 11, 13, 10, 0, 0, DateTimeKind.Utc);
+        var items = new[]
+        {
+            new AppNotification
+            {
+                Kind = AppNotificationKind.AutoBlocked,
+                AppPath = @"C:\Apps\Zeta.exe",
+                AppName = "Zeta",
+                Timestamp = t0.AddMinutes(3),
+                Read = true
+            },
+            new AppNotification
+            {
+                Kind = AppNotificationKind.ProtectionOff,
+                Timestamp = t0.AddMinutes(2)
+            },
+            new AppNotification
+            {
+                Kind = AppNotificationKind.PendingDecision,
+                AppPath = @"C:\Apps\Alpha.exe",
+                AppName = "Alpha",
+                Detail = "1.1.1.1:443",
+                Timestamp = t0.AddMinutes(1)
+            }
+        };
+
+        var byDate = NotificationsView.SortNotifications(items, NotificationSortBy.Date);
+        Assert.Equal([AppNotificationKind.AutoBlocked, AppNotificationKind.ProtectionOff, AppNotificationKind.PendingDecision],
+            byDate.Select(n => n.Kind).ToArray());
+
+        var byType = NotificationsView.SortNotifications(items, NotificationSortBy.Type);
+        Assert.Equal([AppNotificationKind.PendingDecision, AppNotificationKind.ProtectionOff, AppNotificationKind.AutoBlocked],
+            byType.Select(n => n.Kind).ToArray());
+
+        var byApps = NotificationsView.SortNotifications(items, NotificationSortBy.Apps);
+        Assert.Equal(3, byApps.Count);
+        Assert.Equal("Alpha", byApps[0].AppName);
+        Assert.Equal("Zeta", byApps[1].AppName);
+        Assert.Null(byApps[2].AppName);
     }
 }
 

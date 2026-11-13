@@ -120,6 +120,52 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style x:Key="SortHeaderMenuItem" TargetType="MenuItem">
+            <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border Padding="34,0,12,2" Background="Transparent">
+                            <ContentPresenter ContentSource="Header" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SortButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="6,0,4,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding ContextMenu.IsOpen, RelativeSource={RelativeSource Self}}" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <Grid Margin="0,4,0,0">
@@ -159,15 +205,37 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="SortBtn" Style="{StaticResource SortButtonStyle}" Margin="0,0,8,0"
+                            PreviewMouseLeftButtonDown="SortBtn_PreviewMouseLeftButtonDown"
+                            Click="SortBtn_Click">
+                        <Button.ContextMenu>
+                            <ContextMenu x:Name="SortMenu" Style="{DynamicResource ModernContextMenu}"
+                                         Opened="SortMenu_Opened" Closed="SortMenu_Closed">
+                                <MenuItem x:Name="SortHeaderItem" Header="Ordenar por" Style="{StaticResource SortHeaderMenuItem}"/>
+                                <MenuItem x:Name="SortDateItem" Header="Fecha" IsCheckable="True" Tag="Date" Style="{DynamicResource ModernMenuItem}" Click="SortOption_Click"/>
+                                <MenuItem x:Name="SortTypeItem" Header="Tipo" IsCheckable="True" Tag="Type" Style="{DynamicResource ModernMenuItem}" Click="SortOption_Click"/>
+                                <MenuItem x:Name="SortAppsItem" Header="Aplicaciones" IsCheckable="True" Tag="Apps" Style="{DynamicResource ModernMenuItem}" Click="SortOption_Click"/>
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock x:Name="SortBtnText" Text="Ordenar por Fecha" FontSize="12" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <Border Width="28" Height="24" CornerRadius="12" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                                <Viewbox Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Canvas Width="24" Height="24">
+                                        <Line X1="4" Y1="8" X2="20" Y2="8" Stroke="{DynamicResource AccentBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        <Ellipse Canvas.Left="7" Canvas.Top="5.5" Width="5" Height="5" Fill="{DynamicResource AccentBrush}"/>
+                                        <Line X1="4" Y1="16" X2="20" Y2="16" Stroke="{DynamicResource AccentBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        <Ellipse Canvas.Left="12" Canvas.Top="13.5" Width="5" Height="5" Fill="{DynamicResource AccentBrush}"/>
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                        </StackPanel>
+                    </Button>
                     <Button x:Name="MarkReadBtn" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" Click="MarkAllRead_Click">
                         <TextBlock x:Name="MarkReadBtnText" Text="Marcar como leídas"/>
                     </Button>
                     <Button x:Name="ClearBtn" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" Click="Clear_Click">
                         <TextBlock x:Name="ClearBtnText" Text="Vaciar"/>
-                    </Button>
-                    <Button x:Name="SettingsBtn" Style="{StaticResource SecondaryButtonStyle}" Width="34" Padding="0" Margin="0,0,8,0" Click="Settings_Click">
-                        <Path Data="M 12 15 C 10.3 15 9 13.7 9 12 C 9 10.3 10.3 9 12 9 C 13.7 9 15 10.3 15 12 C 15 13.7 13.7 15 12 15 Z M 19.4 13 C 19.5 12.7 19.5 12.3 19.5 12 C 19.5 11.7 19.5 11.3 19.4 11 L 21.5 9.4 C 21.7 9.2 21.8 8.9 21.6 8.7 L 19.6 5.2 C 19.5 5 19.2 4.9 19 5 L 16.5 6 C 16 5.6 15.4 5.3 14.8 5.1 L 14.4 2.4 C 14.4 2.2 14.2 2 13.9 2 L 10.1 2 C 9.8 2 9.6 2.2 9.6 2.4 L 9.2 5.1 C 8.6 5.3 8 5.6 7.5 6 L 5 5 C 4.8 4.9 4.5 5 4.4 5.2 L 2.4 8.7 C 2.2 8.9 2.3 9.2 2.5 9.4 L 4.6 11 C 4.5 11.3 4.5 11.7 4.5 12 C 4.5 12.3 4.5 12.7 4.6 13 L 2.5 14.6 C 2.3 14.8 2.2 15.1 2.4 15.3 L 4.4 18.8 C 4.5 19 4.8 19.1 5 19 L 7.5 18 C 8 18.4 8.6 18.7 9.2 18.9 L 9.6 21.6 C 9.6 21.8 9.8 22 10.1 22 L 13.9 22 C 14.2 22 14.4 21.8 14.4 21.6 L 14.8 18.9 C 15.4 18.7 16 18.4 16.5 18 L 19 19 C 19.2 19.1 19.5 19 19.6 18.8 L 21.6 15.3 C 21.8 15.1 21.7 14.8 21.5 14.6 L 19.4 13 Z"
-                              Fill="{DynamicResource AccentBrush}" Width="14" Height="14" Stretch="Uniform"/>
                     </Button>
                     <Button x:Name="BackBtn" Style="{StaticResource SecondaryButtonStyle}" Click="BackBtn_Click">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">

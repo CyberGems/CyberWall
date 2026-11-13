@@ -2,10 +2,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Automation;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Service.Engine;
@@ -18,7 +20,7 @@ namespace CyberWall.UI.Tray;
 
 public partial class TrayContextMenuWindow : Window
 {
-    private enum TrayMenuView { Main, PauseAlerts, Help }
+    private enum TrayMenuView { Main, PauseAlerts, Help, Suite }
 
     private readonly MainWindow _mainWindow;
     private readonly FirewallService _svc;
@@ -224,6 +226,7 @@ public partial class TrayContextMenuWindow : Window
         WidgetText.Text = widgetLabel;
         AutomationProperties.SetName(WidgetSwitch, widgetLabel);
         HelpText.Text = Strings.T("Help");
+        SuiteMenuText.Text = Strings.T("MoreFromCyberGems");
         HelpBackText.Text = Strings.T("TrayBack");
         HelpSubTitleText.Text = Strings.T("Help");
         SubHelpText.Text = Strings.T("Help");
@@ -233,6 +236,9 @@ public partial class TrayContextMenuWindow : Window
         SubDonateText.Text = Strings.T("Donate");
         SubAboutText.Text = $"{Strings.T("About")}...";
         SubCheckUpdateText.Text = Strings.T("CheckForUpdates");
+        SuiteBackText.Text = Strings.T("TrayBack");
+        SuiteMoreText.Text = Strings.T("TraySuiteMoreDetails");
+        PopulateSuiteApps();
         ExitText.Text = Strings.T("ExitApp");
     }
 
@@ -266,15 +272,18 @@ public partial class TrayContextMenuWindow : Window
         MainViewPanel.BeginAnimation(OpacityProperty, null);
         PauseAlertsViewPanel.BeginAnimation(OpacityProperty, null);
         HelpViewPanel.BeginAnimation(OpacityProperty, null);
+        SuiteViewPanel.BeginAnimation(OpacityProperty, null);
 
         MainViewPanel.Visibility = view == TrayMenuView.Main ? Visibility.Visible : Visibility.Collapsed;
         PauseAlertsViewPanel.Visibility = view == TrayMenuView.PauseAlerts ? Visibility.Visible : Visibility.Collapsed;
         HelpViewPanel.Visibility = view == TrayMenuView.Help ? Visibility.Visible : Visibility.Collapsed;
+        SuiteViewPanel.Visibility = view == TrayMenuView.Suite ? Visibility.Visible : Visibility.Collapsed;
 
         FrameworkElement incoming = view switch
         {
             TrayMenuView.PauseAlerts => PauseAlertsViewPanel,
             TrayMenuView.Help => HelpViewPanel,
+            TrayMenuView.Suite => SuiteViewPanel,
             _ => MainViewPanel
         };
 
@@ -449,6 +458,88 @@ public partial class TrayContextMenuWindow : Window
     private void Help_Click(object sender, RoutedEventArgs e)
     {
         ShowView(TrayMenuView.Help);
+    }
+
+    private void Suite_Click(object sender, RoutedEventArgs e)
+    {
+        ShowView(TrayMenuView.Suite);
+    }
+
+    private void SuiteMore_Click(object sender, RoutedEventArgs e)
+    {
+        CloseMenu();
+        OpenUrl("https://cybergems.org/#apps");
+    }
+
+    private void PopulateSuiteApps()
+    {
+        SuiteAppsPanel.Children.Clear();
+        var rowStyle = TryFindResource("MenuCompactRowButtonStyle") as Style;
+        var iconStyle = TryFindResource("MenuRowIcon") as Style;
+        var textBrush = TryFindResource("TextBrush") as System.Windows.Media.Brush;
+        var subTextBrush = TryFindResource("SubTextBrush") as System.Windows.Media.Brush;
+
+        foreach (var app in SuiteCatalog.Others)
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri($"pack://application:,,,/CyberWall;component/Assets/Suite/{app.Slug}.png", UriKind.Absolute);
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.DecodePixelWidth = 64;
+            bitmap.EndInit();
+            bitmap.Freeze();
+
+            var image = new System.Windows.Controls.Image
+            {
+                Width = 15,
+                Height = 15,
+                Source = bitmap,
+                Stretch = Stretch.Uniform
+            };
+            RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
+
+            var iconHost = new ContentControl { Content = image };
+            if (iconStyle != null) iconHost.Style = iconStyle;
+
+            var nameBlock = new TextBlock
+            {
+                Text = app.Name,
+                FontSize = 11.5,
+                FontWeight = FontWeights.SemiBold,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            if (textBrush != null) nameBlock.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+
+            var descBlock = new TextBlock
+            {
+                Text = Strings.T(app.PitchKey),
+                FontSize = 9.8,
+                Margin = new Thickness(0, 1, 0, 0),
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            if (subTextBrush != null) descBlock.SetResourceReference(TextBlock.ForegroundProperty, "SubTextBrush");
+
+            var textStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            textStack.Children.Add(nameBlock);
+            textStack.Children.Add(descBlock);
+
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            Grid.SetColumn(iconHost, 0);
+            Grid.SetColumn(textStack, 1);
+            grid.Children.Add(iconHost);
+            grid.Children.Add(textStack);
+
+            var btn = new System.Windows.Controls.Button { Content = grid };
+            if (rowStyle != null) btn.Style = rowStyle;
+            btn.Click += (_, _) =>
+            {
+                CloseMenu();
+                OpenUrl(app.Site);
+            };
+            SuiteAppsPanel.Children.Add(btn);
+        }
     }
 
     private void PauseAlertsMenu_Click(object sender, RoutedEventArgs e)

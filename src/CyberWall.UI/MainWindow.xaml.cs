@@ -210,7 +210,6 @@ public partial class MainWindow : Window
                     _notifications.PurgeObsoleteProtectionOffNotifications();
             },
             OpenUpdateFromNotification,
-            OpenSettings,
             onBeforeActivate: CleanPendingDecisionNotifications,
             isProtectionOn: () => _svc.IsMasterOn,
             isOnline: () => ConnectivityService.Instance.IsOnline);

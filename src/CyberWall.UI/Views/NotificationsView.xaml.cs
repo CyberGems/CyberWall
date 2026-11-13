@@ -1,8 +1,12 @@
 using System.Windows;
 using System.Windows.Automation;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Common.Notifications;
+using CyberWall.Common.Settings;
 using CyberWall.UI.Dialogs;
 using CyberWall.UI.Services;
 using UserControl = System.Windows.Controls.UserControl;
@@ -11,18 +15,21 @@ namespace CyberWall.UI.Views;
 
 public partial class NotificationsView : UserControl
 {
+    private static readonly TimeSpan SortMenuReopenGuard = TimeSpan.FromMilliseconds(350);
+
     private NotificationStore? _store;
     private Func<string, Task>? _onAllow;
     private Func<string, Task>? _onBlock;
     private Action? _onEnableProtection;
     private Action? _onDownloadUpdate;
-    private Action? _onOpenSettings;
     private Action? _onBeforeActivate;
     private Func<bool>? _isProtectionOn;
     private Func<bool>? _isOnline;
     private HashSet<Guid> _openedUnread = new();
     private bool _busy;
     private bool _subscribed;
+    private DateTime _sortMenuDismissedAtUtc = DateTime.MinValue;
+    private NotificationSortBy _sortOrder = App.Settings?.NotificationsSortBy ?? NotificationSortBy.Date;
 
     public event EventHandler? BackRequested;
 
@@ -38,7 +45,6 @@ public partial class NotificationsView : UserControl
         Func<string, Task> onBlock,
         Action onEnableProtection,
         Action onDownloadUpdate,
-        Action onOpenSettings,
         Action? onBeforeActivate = null,
         Func<bool>? isProtectionOn = null,
         Func<bool>? isOnline = null)
@@ -48,7 +54,6 @@ public partial class NotificationsView : UserControl
         _onBlock = onBlock ?? throw new ArgumentNullException(nameof(onBlock));
         _onEnableProtection = onEnableProtection ?? throw new ArgumentNullException(nameof(onEnableProtection));
         _onDownloadUpdate = onDownloadUpdate ?? throw new ArgumentNullException(nameof(onDownloadUpdate));
-        _onOpenSettings = onOpenSettings ?? throw new ArgumentNullException(nameof(onOpenSettings));
         _onBeforeActivate = onBeforeActivate;
         _isProtectionOn = isProtectionOn;
         _isOnline = isOnline;
@@ -89,8 +94,11 @@ public partial class NotificationsView : UserControl
         BackBtnText.Text = Strings.T("Back");
         AutomationProperties.SetName(BackBtn, Strings.T("Back"));
         EmptyMsg.Text = Strings.T("NotificationsEmpty");
-        SettingsBtn.ToolTip = Strings.T("Settings");
-        AutomationProperties.SetName(SettingsBtn, Strings.T("Settings"));
+        SortHeaderItem.Header = Strings.T("NotifSortByHeader");
+        SortDateItem.Header = Strings.T("NotifSortDate");
+        SortTypeItem.Header = Strings.T("NotifSortType");
+        SortAppsItem.Header = Strings.T("NotifSortApps");
+        UpdateSortUi();
 
         UpdatePausedBanner();
         if (_store != null)
@@ -152,7 +160,8 @@ public partial class NotificationsView : UserControl
 
         bool isProt = _isProtectionOn?.Invoke() ?? false;
         bool isOnline = _isOnline?.Invoke() ?? ConnectivityService.Instance.IsOnline;
-        var items = _store.All
+        var sorted = SortNotifications(_store.All, CurrentSortOrder);
+        var items = sorted
             .Select(n => NotificationItemVm.From(n, _openedUnread.Contains(n.Id), isProt, isOnline))
             .ToList();
 
@@ -350,7 +359,120 @@ public partial class NotificationsView : UserControl
         BindList();
     }
 
-    private void Settings_Click(object sender, RoutedEventArgs e) => _onOpenSettings?.Invoke();
+    internal static IReadOnlyList<AppNotification> SortNotifications(IEnumerable<AppNotification> items, NotificationSortBy sortBy)
+    {
+        return sortBy switch
+        {
+            NotificationSortBy.Type => items
+                .OrderBy(GetKindSortRank)
+                .ThenByDescending(n => n.Timestamp)
+                .ToList(),
+            NotificationSortBy.Apps => items
+                .OrderBy(n => string.IsNullOrWhiteSpace(ResolveAppSortName(n)) ? 1 : 0)
+                .ThenBy(ResolveAppSortName, StringComparer.CurrentCultureIgnoreCase)
+                .ThenByDescending(n => n.Timestamp)
+                .ToList(),
+            _ => items
+                .OrderByDescending(n => n.Timestamp)
+                .ToList()
+        };
+    }
+
+    private static int GetKindSortRank(AppNotification n) => n.Kind switch
+    {
+        AppNotificationKind.PendingDecision => 0,
+        AppNotificationKind.ProtectionOff => 1,
+        AppNotificationKind.UpdateAvailable => 2,
+        AppNotificationKind.InternetLost => 3,
+        AppNotificationKind.AutoBlocked => 4,
+        AppNotificationKind.SilentBlock => 5,
+        AppNotificationKind.AppExecutableChanged => 6,
+        AppNotificationKind.AppVersionChanged => 7,
+        AppNotificationKind.InternetRestored => 8,
+        _ => 9
+    };
+
+    private static string ResolveAppSortName(AppNotification n)
+    {
+        if (!string.IsNullOrWhiteSpace(n.AppName)) return n.AppName;
+        if (!string.IsNullOrWhiteSpace(n.AppPath)) return System.IO.Path.GetFileNameWithoutExtension(n.AppPath);
+        return string.Empty;
+    }
+
+    private NotificationSortBy CurrentSortOrder =>
+        App.Settings?.NotificationsSortBy ?? _sortOrder;
+
+    private void UpdateSortUi()
+    {
+        var current = CurrentSortOrder;
+        var activeName = current switch
+        {
+            NotificationSortBy.Type => Strings.T("NotifSortType"),
+            NotificationSortBy.Apps => Strings.T("NotifSortApps"),
+            _ => Strings.T("NotifSortDate")
+        };
+        var label = Strings.T("NotifSortByFormat", activeName);
+        SortBtnText.Text = label;
+        AutomationProperties.SetName(SortBtn, label);
+
+        SortDateItem.IsChecked = current == NotificationSortBy.Date;
+        SortTypeItem.IsChecked = current == NotificationSortBy.Type;
+        SortAppsItem.IsChecked = current == NotificationSortBy.Apps;
+    }
+
+    private void SortBtn_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (SortMenu.IsOpen)
+        {
+            _sortMenuDismissedAtUtc = DateTime.UtcNow;
+            SortMenu.IsOpen = false;
+            e.Handled = true;
+        }
+    }
+
+    private void SortBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (SortMenu.IsOpen || (DateTime.UtcNow - _sortMenuDismissedAtUtc) < SortMenuReopenGuard)
+        {
+            _sortMenuDismissedAtUtc = DateTime.MinValue;
+            SortMenu.IsOpen = false;
+            return;
+        }
+
+        SortMenu.PlacementTarget = SortBtn;
+        SortMenu.Placement = PlacementMode.Bottom;
+        SortMenu.IsOpen = true;
+    }
+
+    private void SortMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        _sortMenuDismissedAtUtc = DateTime.MinValue;
+        UpdateSortUi();
+    }
+
+    private void SortMenu_Closed(object sender, RoutedEventArgs e)
+    {
+        _sortMenuDismissedAtUtc = DateTime.UtcNow;
+    }
+
+    private void SortOption_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.MenuItem { Tag: string raw } ||
+            !Enum.TryParse<NotificationSortBy>(raw, out var selected))
+        {
+            return;
+        }
+
+        _sortOrder = selected;
+        if (App.Settings != null && App.Settings.NotificationsSortBy != selected)
+        {
+            App.Settings.NotificationsSortBy = selected;
+            App.Settings.Save();
+        }
+
+        UpdateSortUi();
+        BindList();
+    }
 
     private void BackBtn_Click(object sender, RoutedEventArgs e) => BackRequested?.Invoke(this, EventArgs.Empty);
 }

@@ -10,6 +10,119 @@
         PreviewKeyDown="Window_PreviewKeyDown">
 
     <Window.Resources>
+        <!-- Subtle Hover Zoom Icon Container (Mirrors CyberPaste tray row icons) -->
+        <Style x:Key="MenuRowIcon" TargetType="ContentControl">
+            <Setter Property="Width" Value="15"/>
+            <Setter Property="Height" Value="15"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContentControl">
+                        <Grid RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <ScaleTransform x:Name="IconScale" ScaleX="1" ScaleY="1"/>
+                            </Grid.RenderTransform>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ButtonBase}}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="IconScale" Storyboard.TargetProperty="ScaleX" To="1.15" Duration="0:0:0.15">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="IconScale" Storyboard.TargetProperty="ScaleY" To="1.15" Duration="0:0:0.15">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="IconScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.15">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="IconScale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.15">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Submenu Right Chevron with subtle leftward nudge + accent tint on hover -->
+        <Style x:Key="MenuNavChevron" TargetType="Control">
+            <Setter Property="Width" Value="9"/>
+            <Setter Property="Height" Value="10"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Control">
+                        <Path x:Name="ChevronPath"
+                              Data="M 9 6 L 15 12 L 9 18"
+                              Stroke="{TemplateBinding Foreground}"
+                              StrokeThickness="1.4"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round"
+                              StrokeLineJoin="Round"
+                              Stretch="Uniform">
+                            <Path.RenderTransform>
+                                <TranslateTransform x:Name="ChevronSlide" X="0"/>
+                            </Path.RenderTransform>
+                        </Path>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ButtonBase}}" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ChevronSlide" Storyboard.TargetProperty="X" To="-2" Duration="0:0:0.15">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ChevronSlide" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.15">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Menu Action Button Style -->
         <Style x:Key="MenuActionButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
@@ -21,6 +134,56 @@
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="Margin" Value="0,2"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter x:Name="ContentHost" VerticalAlignment="Center">
+                                <ContentPresenter.RenderTransform>
+                                    <TranslateTransform x:Name="RowSlide" X="0"/>
+                                </ContentPresenter.RenderTransform>
+                            </ContentPresenter>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="RowSlide" Storyboard.TargetProperty="X" To="1.5" Duration="0:0:0.15">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="RowSlide" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.15">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Compact Sub-View Row Style (no horizontal row shift for dense lists like Suite apps) -->
+        <Style x:Key="MenuCompactRowButtonStyle" TargetType="Button" BasedOn="{StaticResource MenuActionButtonStyle}">
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Margin" Value="0,1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -226,7 +389,9 @@
                     <!-- Show / Hide CyberWall -->
                     <Button x:Name="OpenAppBtn" Style="{StaticResource MenuActionButtonStyle}" Click="OpenApp_Click">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="M 3 3 L 15 3 L 15 13 L 3 13 Z M 3 6 L 15 6" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center"/>
+                            <ContentControl Style="{StaticResource MenuRowIcon}">
+                                <Path Data="M 3 3 L 15 3 L 15 13 L 3 13 Z M 3 6 L 15 6" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="13" Height="13" Stretch="Uniform"/>
+                            </ContentControl>
                             <TextBlock x:Name="OpenAppText" Text="Mostrar CyberWall" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -234,7 +399,9 @@
                     <!-- Notifications -->
                     <Button x:Name="NotifMenuBtn" Style="{StaticResource MenuActionButtonStyle}" Click="Notifications_Click">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="M 6,8 C 6,4.7 8.7,2 12,2 C 15.3,2 18,4.7 18,8 L 18,13 L 21,17 L 3,17 L 6,13 Z M 10.2,20 C 10.6,21.2 11.2,22 12,22 C 12.8,22 13.4,21.2 13.8,20" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" Width="13" Height="14" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center" Fill="Transparent"/>
+                            <ContentControl Style="{StaticResource MenuRowIcon}">
+                                <Path Data="M 6,8 C 6,4.7 8.7,2 12,2 C 15.3,2 18,4.7 18,8 L 18,13 L 21,17 L 3,17 L 6,13 Z M 10.2,20 C 10.6,21.2 11.2,22 12,22 C 12.8,22 13.4,21.2 13.8,20" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" Width="13" Height="14" Stretch="Uniform" Fill="Transparent"/>
+                            </ContentControl>
                             <TextBlock x:Name="NotifMenuText" Text="Notificaciones" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -247,10 +414,12 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Path Data="M 6,8 C 6,4.7 8.7,2 12,2 C 15.3,2 18,4.7 18,8 L 18,13 L 21,17 L 3,17 L 6,13 Z M 10.2,20 C 10.6,21.2 11.2,22 12,22 C 12.8,22 13.4,21.2 13.8,20 M 3,3 L 21,21" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="14" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center" Fill="Transparent"/>
+                                <ContentControl Style="{StaticResource MenuRowIcon}">
+                                    <Path Data="M 6,8 C 6,4.7 8.7,2 12,2 C 15.3,2 18,4.7 18,8 L 18,13 L 21,17 L 3,17 L 6,13 Z M 10.2,20 C 10.6,21.2 11.2,22 12,22 C 12.8,22 13.4,21.2 13.8,20 M 3,3 L 21,21" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="14" Stretch="Uniform" Fill="Transparent"/>
+                                </ContentControl>
                                 <TextBlock x:Name="PauseAlertsText" Text="Pausar avisos flotantes" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
-                            <Path Grid.Column="1" Data="M 9 6 L 15 12 L 9 18" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" Width="8" Height="9" Stretch="Uniform" VerticalAlignment="Center"/>
+                            <Control Grid.Column="1" Style="{StaticResource MenuNavChevron}"/>
                         </Grid>
                     </Button>
 
@@ -261,7 +430,9 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <Path Data="M 6,8 C 6,4.7 8.7,2 12,2 C 15.3,2 18,4.7 18,8 L 18,13 L 21,17 L 3,17 L 6,13 Z M 10.2,20 C 10.6,21.2 11.2,22 12,22 C 12.8,22 13.4,21.2 13.8,20 M 3,3 L 21,21" Stroke="{DynamicResource BadgeWarnFgBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="14" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center" Fill="Transparent"/>
+                            <ContentControl Style="{StaticResource MenuRowIcon}">
+                                <Path Data="M 6,8 C 6,4.7 8.7,2 12,2 C 15.3,2 18,4.7 18,8 L 18,13 L 21,17 L 3,17 L 6,13 Z M 10.2,20 C 10.6,21.2 11.2,22 12,22 C 12.8,22 13.4,21.2 13.8,20 M 3,3 L 21,21" Stroke="{DynamicResource BadgeWarnFgBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="14" Stretch="Uniform" Fill="Transparent"/>
+                            </ContentControl>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock x:Name="ResumeAlertsText" Text="Reanudar avisos flotantes" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource BadgeWarnFgBrush}" TextTrimming="CharacterEllipsis"/>
                                 <TextBlock x:Name="ResumeAlertsSubText" Text="" FontSize="10" Foreground="{DynamicResource SubTextBrush}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0"/>
@@ -272,7 +443,9 @@
                     <!-- Settings -->
                     <Button x:Name="SettingsBtn" Style="{StaticResource MenuActionButtonStyle}" Click="Settings_Click">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="M 12 15 C 10.3 15 9 13.7 9 12 C 9 10.3 10.3 9 12 9 C 13.7 9 15 10.3 15 12 C 15 13.7 13.7 15 12 15 Z M 19.4 13 C 19.5 12.7 19.5 12.3 19.5 12 C 19.5 11.7 19.5 11.3 19.4 11 L 21.5 9.4 C 21.7 9.2 21.8 8.9 21.6 8.7 L 19.6 5.2 C 19.5 5 19.2 4.9 19 5 L 16.5 6 C 16 5.6 15.4 5.3 14.8 5.1 L 14.4 2.4 C 14.4 2.2 14.2 2 13.9 2 L 10.1 2 C 9.8 2 9.6 2.2 9.6 2.4 L 9.2 5.1 C 8.6 5.3 8 5.6 7.5 6 L 5 5 C 4.8 4.9 4.5 5 4.4 5.2 L 2.4 8.7 C 2.2 8.9 2.3 9.2 2.5 9.4 L 4.6 11 C 4.5 11.3 4.5 11.7 4.5 12 C 4.5 12.3 4.5 12.7 4.6 13 L 2.5 14.6 C 2.3 14.8 2.2 15.1 2.4 15.3 L 4.4 18.8 C 4.5 19 4.8 19.1 5 19 L 7.5 18 C 8 18.4 8.6 18.7 9.2 18.9 L 9.6 21.6 C 9.6 21.8 9.8 22 10.1 22 L 13.9 22 C 14.2 22 14.4 21.8 14.4 21.6 L 14.8 18.9 C 15.4 18.7 16 18.4 16.5 18 L 19 19 C 19.2 19.1 19.5 19 19.6 18.8 L 21.6 15.3 C 21.8 15.1 21.7 14.8 21.5 14.6 L 19.4 13 Z" Fill="{DynamicResource SubTextBrush}" Width="13" Height="13" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center"/>
+                            <ContentControl Style="{StaticResource MenuRowIcon}">
+                                <Path Data="M 12 15 C 10.3 15 9 13.7 9 12 C 9 10.3 10.3 9 12 9 C 13.7 9 15 10.3 15 12 C 15 13.7 13.7 15 12 15 Z M 19.4 13 C 19.5 12.7 19.5 12.3 19.5 12 C 19.5 11.7 19.5 11.3 19.4 11 L 21.5 9.4 C 21.7 9.2 21.8 8.9 21.6 8.7 L 19.6 5.2 C 19.5 5 19.2 4.9 19 5 L 16.5 6 C 16 5.6 15.4 5.3 14.8 5.1 L 14.4 2.4 C 14.4 2.2 14.2 2 13.9 2 L 10.1 2 C 9.8 2 9.6 2.2 9.6 2.4 L 9.2 5.1 C 8.6 5.3 8 5.6 7.5 6 L 5 5 C 4.8 4.9 4.5 5 4.4 5.2 L 2.4 8.7 C 2.2 8.9 2.3 9.2 2.5 9.4 L 4.6 11 C 4.5 11.3 4.5 11.7 4.5 12 C 4.5 12.3 4.5 12.7 4.6 13 L 2.5 14.6 C 2.3 14.8 2.2 15.1 2.4 15.3 L 4.4 18.8 C 4.5 19 4.8 19.1 5 19 L 7.5 18 C 8 18.4 8.6 18.7 9.2 18.9 L 9.6 21.6 C 9.6 21.8 9.8 22 10.1 22 L 13.9 22 C 14.2 22 14.4 21.8 14.4 21.6 L 14.8 18.9 C 15.4 18.7 16 18.4 16.5 18 L 19 19 C 19.2 19.1 19.5 19 19.6 18.8 L 21.6 15.3 C 21.8 15.1 21.7 14.8 21.5 14.6 L 19.4 13 Z" Fill="{DynamicResource SubTextBrush}" Width="13" Height="13" Stretch="Uniform"/>
+                            </ContentControl>
                             <TextBlock x:Name="SettingsText" Text="Configuración" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -280,7 +453,9 @@
                     <!-- Blocked Log -->
                     <Button x:Name="LogBtn" Style="{StaticResource MenuActionButtonStyle}" Click="Log_Click">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="M 4 2 L 14 2 L 18 6 L 18 20 L 4 20 Z M 13 2 L 13 7 L 18 7 M 7 11 L 15 11 M 7 14 L 15 14 M 7 17 L 12 17" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" Width="13" Height="14" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center"/>
+                            <ContentControl Style="{StaticResource MenuRowIcon}">
+                                <Path Data="M 4 2 L 14 2 L 18 6 L 18 20 L 4 20 Z M 13 2 L 13 7 L 18 7 M 7 11 L 15 11 M 7 14 L 15 14 M 7 17 L 12 17" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" Width="13" Height="14" Stretch="Uniform"/>
+                            </ContentControl>
                             <TextBlock x:Name="LogText" Text="Registro de bloqueos" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -288,7 +463,9 @@
                     <!-- Statistics -->
                     <Button x:Name="StatsBtn" Style="{StaticResource MenuActionButtonStyle}" Click="Stats_Click">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="M 3 13 L 7 13 L 7 3 L 3 3 Z M 9 13 L 13 13 L 13 7 L 9 7 Z M 15 13 L 19 13 L 19 10 L 15 10 Z M 2 15 L 20 15" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" Width="13" Height="14" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center"/>
+                            <ContentControl Style="{StaticResource MenuRowIcon}">
+                                <Path Data="M 3 13 L 7 13 L 7 3 L 3 3 Z M 9 13 L 13 13 L 13 7 L 9 7 Z M 15 13 L 19 13 L 19 10 L 15 10 Z M 2 15 L 20 15" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" Width="13" Height="14" Stretch="Uniform"/>
+                            </ContentControl>
                             <TextBlock x:Name="StatsText" Text="Estadísticas de tráfico" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -296,10 +473,14 @@
                     <!-- Floating Traffic Widget Toggle -->
                     <CheckBox x:Name="WidgetSwitch" Style="{StaticResource MenuActionToggleStyle}" Checked="WidgetSwitch_Changed" Unchecked="WidgetSwitch_Changed">
                         <StackPanel Orientation="Horizontal">
-                            <Path x:Name="WidgetIcon" Data="M 3 4 H 21 V 18 H 3 Z M 3 8 H 21 M 6 15 L 9 11 L 12 14 L 15 10 L 18 13" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="13" Height="14" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center" Fill="Transparent"/>
+                            <ContentControl Style="{StaticResource MenuRowIcon}">
+                                <Path x:Name="WidgetIcon" Data="M 3 4 H 21 V 18 H 3 Z M 3 8 H 21 M 6 15 L 9 11 L 12 14 L 15 10 L 18 13" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="13" Height="14" Stretch="Uniform" Fill="Transparent"/>
+                            </ContentControl>
                             <TextBlock x:Name="WidgetText" Text="Widget flotante" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </CheckBox>
+
+                    <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="4,4,4,4" Opacity="0.75"/>
 
                     <!-- Help (opens Help sub-view matching CyberPaste) -->
                     <Button x:Name="HelpBtn" Style="{StaticResource MenuActionButtonStyle}" HorizontalContentAlignment="Stretch" Click="Help_Click">
@@ -309,16 +490,38 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Viewbox Width="13" Height="13" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center">
-                                    <Canvas Width="24" Height="24">
-                                        <Ellipse Canvas.Left="1.5" Canvas.Top="1.5" Width="21" Height="21" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" Fill="Transparent"/>
-                                        <Path Data="M 9.1 9.3 A 3 3 0 0 1 14.9 9.9 C 14.9 11.8 12 12.2 12 14.2" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
-                                        <Ellipse Canvas.Left="10.8" Canvas.Top="16.6" Width="2.4" Height="2.4" Fill="{DynamicResource SubTextBrush}"/>
-                                    </Canvas>
-                                </Viewbox>
+                                <ContentControl Style="{StaticResource MenuRowIcon}">
+                                    <Viewbox Width="13" Height="13" Stretch="Uniform">
+                                        <Canvas Width="24" Height="24">
+                                            <Ellipse Canvas.Left="1.5" Canvas.Top="1.5" Width="21" Height="21" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" Fill="Transparent"/>
+                                            <Path Data="M 9.1 9.3 A 3 3 0 0 1 14.9 9.9 C 14.9 11.8 12 12.2 12 14.2" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                                            <Ellipse Canvas.Left="10.8" Canvas.Top="16.6" Width="2.4" Height="2.4" Fill="{DynamicResource SubTextBrush}"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </ContentControl>
                                 <TextBlock x:Name="HelpText" Text="Ayuda" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
-                            <Path Grid.Column="1" Data="M 9 6 L 15 12 L 9 18" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="8" Height="9" Stretch="Uniform" VerticalAlignment="Center"/>
+                            <Control Grid.Column="1" Style="{StaticResource MenuNavChevron}"/>
+                        </Grid>
+                    </Button>
+
+                    <!-- More from CyberGems (opens Suite sub-view matching CyberPaste) -->
+                    <Button x:Name="SuiteBtn" Style="{StaticResource MenuActionButtonStyle}" HorizontalContentAlignment="Stretch" Click="Suite_Click">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <ContentControl Style="{StaticResource MenuRowIcon}">
+                                    <Path Data="M 6 3 H 18 L 22 9 L 12 21 L 2 9 Z M 2 9 H 22 M 9 3 L 7 9 L 12 21 L 17 9 L 15 3"
+                                          Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.4"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                          Width="14" Height="14" Stretch="Uniform" Fill="Transparent"/>
+                                </ContentControl>
+                                <TextBlock x:Name="SuiteMenuText" Text="Más de CyberGems" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Control Grid.Column="1" Style="{StaticResource MenuNavChevron}"/>
                         </Grid>
                     </Button>
                 </StackPanel>
@@ -329,11 +532,13 @@
                 <!-- 5. Exit App -->
                 <Button x:Name="ExitBtn" Style="{StaticResource MenuActionButtonStyle}" Click="Exit_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Viewbox Width="13" Height="13" Stretch="Uniform" Margin="0,0,11,0" VerticalAlignment="Center">
-                            <Canvas Width="24" Height="24">
-                                <Path Data="M 12 2.5 V 11 M 17.6 5.6 A 8.5 8.5 0 1 1 6.4 5.6" Stroke="#EF4444" StrokeThickness="2.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
-                            </Canvas>
-                        </Viewbox>
+                        <ContentControl Style="{StaticResource MenuRowIcon}">
+                            <Viewbox Width="13" Height="13" Stretch="Uniform">
+                                <Canvas Width="24" Height="24">
+                                    <Path Data="M 12 2.5 V 11 M 17.6 5.6 A 8.5 8.5 0 1 1 6.4 5.6" Stroke="#EF4444" StrokeThickness="2.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                                </Canvas>
+                            </Viewbox>
+                        </ContentControl>
                         <TextBlock x:Name="ExitText" Text="Salir de CyberWall" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -362,28 +567,36 @@
 
                 <Button x:Name="Pause1hBtn" Style="{StaticResource MenuActionButtonStyle}" Tag="60" Click="PauseDuration_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 12 3 A 9 9 0 1 1 3 12 A 9 9 0 0 1 12 3 M 12 7 V 12 L 15 14" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center" Fill="Transparent"/>
+                        <ContentControl Style="{StaticResource MenuRowIcon}">
+                            <Path Data="M 12 3 A 9 9 0 1 1 3 12 A 9 9 0 0 1 12 3 M 12 7 V 12 L 15 14" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform" Fill="Transparent"/>
+                        </ContentControl>
                         <TextBlock x:Name="Pause1hText" Text="Por 1 hora" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
 
                 <Button x:Name="Pause6hBtn" Style="{StaticResource MenuActionButtonStyle}" Tag="360" Click="PauseDuration_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 12 3 A 9 9 0 1 1 3 12 A 9 9 0 0 1 12 3 M 12 7 V 12 L 15 14" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center" Fill="Transparent"/>
+                        <ContentControl Style="{StaticResource MenuRowIcon}">
+                            <Path Data="M 12 3 A 9 9 0 1 1 3 12 A 9 9 0 0 1 12 3 M 12 7 V 12 L 15 14" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform" Fill="Transparent"/>
+                        </ContentControl>
                         <TextBlock x:Name="Pause6hText" Text="Por 6 horas" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
 
                 <Button x:Name="Pause12hBtn" Style="{StaticResource MenuActionButtonStyle}" Tag="720" Click="PauseDuration_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 12 3 A 9 9 0 1 1 3 12 A 9 9 0 0 1 12 3 M 12 7 V 12 L 15 14" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center" Fill="Transparent"/>
+                        <ContentControl Style="{StaticResource MenuRowIcon}">
+                            <Path Data="M 12 3 A 9 9 0 1 1 3 12 A 9 9 0 0 1 12 3 M 12 7 V 12 L 15 14" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform" Fill="Transparent"/>
+                        </ContentControl>
                         <TextBlock x:Name="Pause12hText" Text="Por 12 horas" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
 
                 <Button x:Name="Pause24hBtn" Style="{StaticResource MenuActionButtonStyle}" Tag="1440" Click="PauseDuration_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 12 3 A 9 9 0 1 1 3 12 A 9 9 0 0 1 12 3 M 12 7 V 12 L 15 14" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center" Fill="Transparent"/>
+                        <ContentControl Style="{StaticResource MenuRowIcon}">
+                            <Path Data="M 12 3 A 9 9 0 1 1 3 12 A 9 9 0 0 1 12 3 M 12 7 V 12 L 15 14" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform" Fill="Transparent"/>
+                        </ContentControl>
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock x:Name="Pause24hText" Text="Por 24 horas" FontSize="12" FontWeight="SemiBold"/>
                             <TextBlock x:Name="Pause24hSubText" Text="Sugerido" FontSize="10" Foreground="{DynamicResource SubTextBrush}" Margin="0,1,0,0"/>
@@ -395,7 +608,9 @@
 
                 <Button x:Name="PausePermanentBtn" Style="{StaticResource MenuActionButtonStyle}" Tag="0" Click="PauseDuration_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 18.178 8 C 19.58 8 21 9.5 21 12 C 21 14.5 19.58 16 18.178 16 C 15.8 16 14 12 12 12 C 10 12 8.2 16 5.822 16 C 4.42 16 3 14.5 3 12 C 3 9.5 4.42 8 5.822 8 C 8.2 8 10 12 12 12 C 14 12 15.8 8 18.178 8 Z" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="14" Height="13" Stretch="Uniform" Margin="0,0,9,0" VerticalAlignment="Center" Fill="Transparent"/>
+                        <ContentControl Style="{StaticResource MenuRowIcon}">
+                            <Path Data="M 18.178 8 C 19.58 8 21 9.5 21 12 C 21 14.5 19.58 16 18.178 16 C 15.8 16 14 12 12 12 C 10 12 8.2 16 5.822 16 C 4.42 16 3 14.5 3 12 C 3 9.5 4.42 8 5.822 8 C 8.2 8 10 12 12 12 C 14 12 15.8 8 18.178 8 Z" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="14" Height="13" Stretch="Uniform" Fill="Transparent"/>
+                        </ContentControl>
                         <TextBlock x:Name="PausePermanentText" Text="Hasta que los reactive" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -431,13 +646,15 @@
                 <!-- 1. Help (Wiki) -->
                 <Button x:Name="SubHelpBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,6" Click="SubHelp_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Viewbox Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center">
-                            <Canvas Width="24" Height="24">
-                                <Ellipse Canvas.Left="1.5" Canvas.Top="1.5" Width="21" Height="21" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" Fill="Transparent"/>
-                                <Path Data="M 9.1 9.3 A 3 3 0 0 1 14.9 9.9 C 14.9 11.8 12 12.2 12 14.2" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
-                                <Ellipse Canvas.Left="10.8" Canvas.Top="16.6" Width="2.4" Height="2.4" Fill="{DynamicResource SubTextBrush}"/>
-                            </Canvas>
-                        </Viewbox>
+                        <ContentControl Style="{StaticResource MenuRowIcon}">
+                            <Viewbox Width="13" Height="13" Stretch="Uniform">
+                                <Canvas Width="24" Height="24">
+                                    <Ellipse Canvas.Left="1.5" Canvas.Top="1.5" Width="21" Height="21" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" Fill="Transparent"/>
+                                    <Path Data="M 9.1 9.3 A 3 3 0 0 1 14.9 9.9 C 14.9 11.8 12 12.2 12 14.2" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                                    <Ellipse Canvas.Left="10.8" Canvas.Top="16.6" Width="2.4" Height="2.4" Fill="{DynamicResource SubTextBrush}"/>
+                                </Canvas>
+                            </Viewbox>
+                        </ContentControl>
                         <TextBlock x:Name="SubHelpText" Text="Ayuda" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -445,7 +662,9 @@
                 <!-- 2. FAQ -->
                 <Button x:Name="SubFaqBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,6" Click="SubFaq_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 21 15 A 2 2 0 0 1 19 17 H 7 L 3 21 V 5 A 2 2 0 0 1 5 3 H 19 A 2 2 0 0 1 21 5 Z" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.25" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center" Fill="Transparent"/>
+                        <ContentControl Style="{StaticResource MenuRowIcon}">
+                            <Path Data="M 21 15 A 2 2 0 0 1 19 17 H 7 L 3 21 V 5 A 2 2 0 0 1 5 3 H 19 A 2 2 0 0 1 21 5 Z" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.25" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="13" Height="13" Stretch="Uniform" Fill="Transparent"/>
+                        </ContentControl>
                         <TextBlock x:Name="SubFaqText" Text="Preguntas Frecuentes" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -453,7 +672,9 @@
                 <!-- 3. Changelog -->
                 <Button x:Name="SubChangelogBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,6" Click="SubChangelog_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 9 6 H 20 M 9 12 H 20 M 9 18 H 20 M 4 6 H 5 M 4 12 H 5 M 4 18 H 5" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.25" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <ContentControl Style="{StaticResource MenuRowIcon}">
+                            <Path Data="M 9 6 H 20 M 9 12 H 20 M 9 18 H 20 M 4 6 H 5 M 4 12 H 5 M 4 18 H 5" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.25" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform"/>
+                        </ContentControl>
                         <TextBlock x:Name="SubChangelogText" Text="Historial de cambios" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -461,7 +682,9 @@
                 <!-- 4. Website -->
                 <Button x:Name="SubWebsiteBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,6" Click="SubWebsite_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 12 2 A 10 10 0 1 0 12 22 A 10 10 0 0 0 12 2 M 2 12 H 22 M 12 2 A 15 15 0 0 0 12 22 A 15 15 0 0 0 12 2" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.25" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center" Fill="Transparent"/>
+                        <ContentControl Style="{StaticResource MenuRowIcon}">
+                            <Path Data="M 12 2 A 10 10 0 1 0 12 22 A 10 10 0 0 0 12 2 M 2 12 H 22 M 12 2 A 15 15 0 0 0 12 22 A 15 15 0 0 0 12 2" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.25" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform" Fill="Transparent"/>
+                        </ContentControl>
                         <TextBlock x:Name="SubWebsiteText" Text="Sitio web" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -469,7 +692,9 @@
                 <!-- 5. Donate -->
                 <Button x:Name="SubDonateBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,6" Click="SubDonate_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 12 21.35 L 10.55 20.03 C 5.4 15.36 2 12.28 2 8.5 C 2 5.42 4.42 3 7.5 3 C 9.24 3 10.91 3.81 12 5.09 C 13.09 3.81 14.76 3 16.5 3 C 19.58 3 22 5.42 22 8.5 C 22 12.28 18.6 15.36 13.45 20.04 L 12 21.35 Z" Fill="#F43F5E" Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <ContentControl Style="{StaticResource MenuRowIcon}">
+                            <Path Data="M 12 21.35 L 10.55 20.03 C 5.4 15.36 2 12.28 2 8.5 C 2 5.42 4.42 3 7.5 3 C 9.24 3 10.91 3.81 12 5.09 C 13.09 3.81 14.76 3 16.5 3 C 19.58 3 22 5.42 22 8.5 C 22 12.28 18.6 15.36 13.45 20.04 L 12 21.35 Z" Fill="#F43F5E" Width="13" Height="13" Stretch="Uniform"/>
+                        </ContentControl>
                         <TextBlock x:Name="SubDonateText" Text="Donar" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -479,13 +704,15 @@
                 <!-- 6. About CyberWall -->
                 <Button x:Name="SubAboutBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,6" Click="SubAbout_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Viewbox Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center">
-                            <Canvas Width="24" Height="24">
-                                <Ellipse Canvas.Left="1.5" Canvas.Top="1.5" Width="21" Height="21" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" Fill="Transparent"/>
-                                <Ellipse Canvas.Left="10.75" Canvas.Top="6.8" Width="2.5" Height="2.5" Fill="{DynamicResource SubTextBrush}"/>
-                                <Path Data="M 12 12 V 16.8" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
-                            </Canvas>
-                        </Viewbox>
+                        <ContentControl Style="{StaticResource MenuRowIcon}">
+                            <Viewbox Width="13" Height="13" Stretch="Uniform">
+                                <Canvas Width="24" Height="24">
+                                    <Ellipse Canvas.Left="1.5" Canvas.Top="1.5" Width="21" Height="21" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" Fill="Transparent"/>
+                                    <Ellipse Canvas.Left="10.75" Canvas.Top="6.8" Width="2.5" Height="2.5" Fill="{DynamicResource SubTextBrush}"/>
+                                    <Path Data="M 12 12 V 16.8" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="2.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                                </Canvas>
+                            </Viewbox>
+                        </ContentControl>
                         <TextBlock x:Name="SubAboutText" Text="Acerca de CyberWall..." FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -493,8 +720,57 @@
                 <!-- 7. Check for Updates -->
                 <Button x:Name="SubCheckUpdateBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,6" Click="SubCheckUpdate_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="M 12 4 V 15 M 7 10 L 12 15 L 17 10 M 5 20 H 19" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="13" Height="13" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center" Fill="Transparent"/>
+                        <ContentControl Style="{StaticResource MenuRowIcon}">
+                            <Path Data="M 12 4 V 15 M 7 10 L 12 15 L 17 10 M 5 20 H 19" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="13" Height="13" Stretch="Uniform" Fill="Transparent"/>
+                        </ContentControl>
                         <TextBlock x:Name="SubCheckUpdateText" Text="Buscar actualizaciones..." FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- VIEW 4: CYBERGEMS SUITE SUB-VIEW -->
+            <StackPanel x:Name="SuiteViewPanel" Visibility="Collapsed">
+                <Grid Margin="0,0,2,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="SuiteBackBtn" Style="{StaticResource SubMenuBackButtonStyle}" Click="SubMenuBack_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="M 15 18 L 9 12 L 15 6" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="8" Height="10" Stretch="Uniform" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="SuiteBackText" Text="Volver" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Grid.Column="1" HorizontalAlignment="Right" Background="Transparent" BorderThickness="0" Padding="4,2" Cursor="Hand" FocusVisualStyle="{x:Null}" Click="SubWebsite_Click">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <ContentControl Style="{StaticResource MenuRowIcon}" Width="14" Height="14" Margin="0,0,6,0">
+                                <Path Data="M 6 3 H 18 L 22 9 L 12 21 L 2 9 Z M 2 9 H 22 M 9 3 L 7 9 L 12 21 L 17 9 L 15 3"
+                                      Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.6"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      Width="14" Height="14" Stretch="Uniform" Fill="Transparent"/>
+                            </ContentControl>
+                            <TextBlock Text="CyberGems" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,0,0,6"/>
+
+                <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="SuiteAppsPanel"/>
+                </ScrollViewer>
+
+                <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="4,6,4,6"/>
+
+                <Button x:Name="SuiteMoreBtn" Style="{StaticResource MenuActionButtonStyle}"
+                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                        Background="{DynamicResource CardSecondaryBrush}"
+                        HorizontalContentAlignment="Center" Padding="10,7" Click="SuiteMore_Click">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <ContentControl Style="{StaticResource MenuRowIcon}" Width="13" Height="13" Margin="0,0,7,0">
+                            <Path Data="M 5 12 H 19 M 13 6 L 19 12 L 13 18" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.7" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="12" Height="12" Stretch="Uniform"/>
+                        </ContentControl>
+                        <TextBlock x:Name="SuiteMoreText" Text="Más detalles en línea..." FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
             </StackPanel>
