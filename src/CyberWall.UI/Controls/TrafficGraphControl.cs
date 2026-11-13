@@ -243,6 +243,12 @@ public class TrafficGraphControl : AnimatedHistoryGraph
     }
 
     /// <summary>
+    /// Clears cached telemetry series and smooth scale state immediately (e.g. when switching active adapters).
+    /// </summary>
+    public void Reset(NetworkSpeedSnapshot snapshot) =>
+        SwitchTimeframe(MaxSamples, Array.Empty<TrafficHistoryPoint>(), snapshot);
+
+    /// <summary>
     /// Switches the time window (e.g. 60s vs 300s) instantaneously, immediately recalculating the series,
     /// scale ceiling, and baseline state so there is zero freeze or delay.
     /// </summary>

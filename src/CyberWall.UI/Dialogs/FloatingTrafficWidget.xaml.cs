@@ -90,6 +90,7 @@ public partial class FloatingTrafficWidget : Window
 
         ConnectivityService.Instance.ConnectivityChanged += OnConnectivityChanged;
         RenderStabilityManager.Instance.RenderPausedChanged += OnRenderPausedChanged;
+        NetworkSpeedService.Instance.PreferredAdapterChanged += OnPreferredAdapterChanged;
 
         Loaded += (_, _) => ApplyInitialPosition();
         IsVisibleChanged += Widget_IsVisibleChanged;
@@ -426,6 +427,7 @@ public partial class FloatingTrafficWidget : Window
         _timer.Stop();
         ConnectivityService.Instance.ConnectivityChanged -= OnConnectivityChanged;
         RenderStabilityManager.Instance.RenderPausedChanged -= OnRenderPausedChanged;
+        NetworkSpeedService.Instance.PreferredAdapterChanged -= OnPreferredAdapterChanged;
         RenderStabilityManager.Instance.UnregisterWindow(_windowHandle);
         _windowHandle = IntPtr.Zero;
         if (!_positionApplied) return;
@@ -494,80 +496,33 @@ public partial class FloatingTrafficWidget : Window
 
     private void PopulateAdapterMenu()
     {
-        WidgetAdapterMenu.Items.Clear();
-
-        var itemStyle = TryFindResource("ModernMenuItem") as Style;
-        var sepStyle = TryFindResource("ModernMenuSeparator") as Style;
-        var currentId = App.Settings.PreferredNetworkAdapterId ?? string.Empty;
-
-        WidgetAdapterMenu.Items.Add(CreateAdapterMenuItem(
-            Strings.T("NetworkAdapterAuto"),
-            string.Empty,
-            string.Empty,
-            string.IsNullOrEmpty(currentId),
-            itemStyle));
-
-        var adapters = NetworkSpeedService.Instance.GetSelectableAdapters();
-        if (adapters.Count > 0 || !string.IsNullOrEmpty(currentId))
-        {
-            WidgetAdapterMenu.Items.Add(sepStyle != null ? new Separator { Style = sepStyle } : new Separator());
-        }
-
-        bool foundSaved = false;
-        foreach (var adapter in adapters)
-        {
-            bool selected = !string.IsNullOrEmpty(currentId) &&
-                            string.Equals(adapter.Id, currentId, StringComparison.OrdinalIgnoreCase);
-            if (selected) foundSaved = true;
-
-            var label = adapter.IsUp
-                ? adapter.DisplayName
-                : Strings.T("NetworkAdapterDisconnected", adapter.DisplayName);
-            WidgetAdapterMenu.Items.Add(CreateAdapterMenuItem(label, adapter.Id, adapter.DisplayName, selected, itemStyle));
-        }
-
-        if (!string.IsNullOrEmpty(currentId) && !foundSaved)
-        {
-            var fallbackName = string.IsNullOrWhiteSpace(App.Settings.PreferredNetworkAdapterName)
-                ? currentId
-                : App.Settings.PreferredNetworkAdapterName;
-            WidgetAdapterMenu.Items.Add(CreateAdapterMenuItem(
-                Strings.T("NetworkAdapterDisconnected", fallbackName),
-                currentId,
-                fallbackName,
-                isSelected: true,
-                itemStyle));
-        }
+        NetworkAdapterMenuHelper.Populate(
+            this,
+            WidgetAdapterMenu.Items,
+            App.Settings,
+            onSelected: ResetGraphsAndRefresh);
     }
 
-    private System.Windows.Controls.MenuItem CreateAdapterMenuItem(
-        string header,
-        string adapterId,
-        string adapterName,
-        bool isSelected,
-        Style? style)
+    private void OnPreferredAdapterChanged(string _)
     {
-        var item = new System.Windows.Controls.MenuItem
+        if (!Dispatcher.CheckAccess())
         {
-            Header = header,
-            IsCheckable = true,
-            IsChecked = isSelected,
-            Tag = (Id: adapterId, Name: adapterName)
-        };
-        if (style != null) item.Style = style;
-        item.Click += WidgetAdapterItem_Click;
-        return item;
-    }
-
-    private void WidgetAdapterItem_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not System.Windows.Controls.MenuItem { Tag: ValueTuple<string, string> selection })
+            Dispatcher.BeginInvoke(() => OnPreferredAdapterChanged(_));
             return;
+        }
 
-        App.Settings.PreferredNetworkAdapterId = selection.Item1;
-        App.Settings.PreferredNetworkAdapterName = selection.Item2;
-        App.Settings.Save();
-        NetworkSpeedService.Instance.SetPreferredAdapter(selection.Item1, selection.Item2);
+        ResetGraphsAndRefresh();
+    }
+
+    private void ResetGraphsAndRefresh()
+    {
+        var snapshot = NetworkSpeedService.Instance.CurrentSnapshot;
+        var effectiveSnapshot = IsMuted
+            ? new NetworkSpeedSnapshot(0, 0, snapshot.TotalBytesReceived, snapshot.TotalBytesSent, snapshot.AdapterName, snapshot.IsConnected)
+            : snapshot;
+        DownGraph.Reset(effectiveSnapshot);
+        UpGraph.Reset(effectiveSnapshot);
+        WidgetTrafficGraph.Reset(effectiveSnapshot);
         RefreshData();
     }
 

@@ -275,5 +275,70 @@ public class ViewsSmokeTests
             menu.IsOpen = false;
         });
     }
+
+    [Fact]
+    public void MenuToggleHelper_ArmedExternalDismiss_PreventsImmediateReopen()
+    {
+        RunOnSta(() =>
+        {
+            var button = new System.Windows.Controls.Button();
+            var menu = new System.Windows.Controls.ContextMenu();
+            menu.Items.Add(new System.Windows.Controls.MenuItem { Header = "Item 1" });
+
+            MenuToggleHelper.Attach(button, menu);
+
+            Assert.True(MenuToggleHelper.Toggle(button));
+            Assert.True(menu.IsOpen);
+
+            // Simulate WPF MenuBase auto-dismissing the ContextMenu on MouseDown over trigger button
+            menu.IsOpen = false;
+            MenuToggleHelper.ArmExternalDismissForTest(button);
+
+            // Subsequent MouseUp -> Button.Click must consume suppression and stay closed
+            Assert.False(MenuToggleHelper.Toggle(button));
+            Assert.False(menu.IsOpen);
+
+            // Next click must reopen cleanly
+            Assert.True(MenuToggleHelper.Toggle(button));
+            Assert.True(menu.IsOpen);
+
+            menu.IsOpen = false;
+        });
+    }
+
+    [Fact]
+    public void NetworkAdapterMenuHelper_PopulatesAutoAndPreservesSavedSelection()
+    {
+        RunOnSta(() =>
+        {
+            Strings.Current = Lang.En;
+            var host = new System.Windows.Controls.Grid();
+            var menu = new System.Windows.Controls.ContextMenu();
+            var settings = new AppSettings
+            {
+                PreferredNetworkAdapterId = "{missing-test-adapter}",
+                PreferredNetworkAdapterName = "Offline Adapter"
+            };
+
+            int callbacks = 0;
+            NetworkAdapterMenuHelper.Populate(
+                host,
+                menu.Items,
+                settings,
+                onSelected: () => callbacks++,
+                persistChanges: false);
+
+            var autoItem = Assert.IsType<System.Windows.Controls.MenuItem>(menu.Items[0]);
+            Assert.Equal(Strings.T("NetworkAdapterAuto"), autoItem.Header);
+            Assert.False(autoItem.IsChecked);
+
+            var savedFallback = menu.Items.OfType<System.Windows.Controls.MenuItem>().Last();
+            Assert.True(savedFallback.IsChecked);
+
+            autoItem.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.MenuItem.ClickEvent));
+            Assert.Equal(1, callbacks);
+            Assert.Equal(string.Empty, settings.PreferredNetworkAdapterId);
+        });
+    }
 }
 

@@ -12,9 +12,10 @@ using WF = System.Windows.Forms;
 namespace CyberWall.UI.Controls;
 
 /// <summary>
-/// Coordinates click-to-toggle behavior between a button and its ContextMenu so that a
-/// second click on the trigger button closes an open menu instead of closing and immediately
-/// reopening it regardless of click hold duration.
+/// Coordinates click-to-toggle behavior between a trigger button and its ContextMenu so that
+/// a second click on the trigger button closes an open menu instead of letting WPF's outside-click
+/// auto-dismiss close it on mouse-down and Button.Click immediately reopen it on mouse-up,
+/// regardless of how long the mouse button is held down.
 /// </summary>
 public static class MenuToggleHelper
 {
@@ -60,17 +61,29 @@ public static class MenuToggleHelper
         return true;
     }
 
+    internal static void ArmExternalDismissForTest(ButtonBase button)
+    {
+        if (Controllers.TryGetValue(button, out var controller))
+        {
+            controller.ArmSuppression();
+        }
+    }
+
     private sealed class ToggleController
     {
-        private const long FallbackGuardMs = 250;
+        private const long ClickThroughWindowMs = 60;
 
         private readonly ButtonBase _button;
+        private readonly MouseButtonEventHandler _windowMouseUpHandler;
         private ContextMenu _menu;
         private Action? _beforeOpen;
         private PlacementMode _placement;
         private Window? _hookedWindow;
-        private bool _suppressUntilRelease;
-        private long _dismissedOverButtonTick;
+
+        private bool _isOpen;
+        private bool _closingFromSelf;
+        private bool _suppressCurrentPress;
+        private long _armedAtTick;
 
         public ToggleController(ButtonBase button, ContextMenu menu, Action? beforeOpen, PlacementMode placement)
         {
@@ -78,8 +91,10 @@ public static class MenuToggleHelper
             _menu = menu;
             _beforeOpen = beforeOpen;
             _placement = placement;
+            _windowMouseUpHandler = OnWindowPreviewMouseLeftButtonUp;
 
             _button.PreviewMouseLeftButtonDown += OnButtonPreviewMouseLeftButtonDown;
+            _button.MouseEnter += OnButtonMouseEnter;
             HookMenu(_menu);
         }
 
@@ -100,56 +115,89 @@ public static class MenuToggleHelper
         {
             menu.Opened += OnMenuOpened;
             menu.Closed += OnMenuClosed;
-            Mouse.AddPreviewMouseDownOutsideCapturedElementHandler(menu, OnOutsideMouseDown);
         }
 
         private void UnhookMenu(ContextMenu menu)
         {
             menu.Opened -= OnMenuOpened;
             menu.Closed -= OnMenuClosed;
-            Mouse.RemovePreviewMouseDownOutsideCapturedElementHandler(menu, OnOutsideMouseDown);
         }
 
         private void OnMenuOpened(object sender, RoutedEventArgs e)
         {
-            _suppressUntilRelease = false;
-            _dismissedOverButtonTick = 0;
+            _isOpen = true;
+            _closingFromSelf = false;
+            _suppressCurrentPress = false;
+            _armedAtTick = 0;
+            UnhookWindowMouseUp();
         }
 
         private void OnMenuClosed(object sender, RoutedEventArgs e)
         {
-            UnhookWindowMouseUp();
+            bool wasOpen = _isOpen;
+            _isOpen = false;
+            bool selfClose = _closingFromSelf;
+            _closingFromSelf = false;
+
+            if (selfClose)
+                return;
+
+            // WPF's MenuBase class handler closes the ContextMenu synchronously inside WM_LBUTTONDOWN
+            // before instance handlers or Button.PreviewMouseLeftButtonDown run. Detect that press
+            // right here using the physical cursor and primary button state (both immune to capture).
+            if (wasOpen && IsLeftButtonDown() && IsCursorOverButton(_button))
+            {
+                ArmSuppression();
+            }
+            else
+            {
+                _suppressCurrentPress = false;
+                _armedAtTick = 0;
+                UnhookWindowMouseUp();
+            }
         }
 
-        private void OnOutsideMouseDown(object sender, MouseButtonEventArgs e)
+        internal void ArmSuppression()
         {
-            if (e.ChangedButton != MouseButton.Left || !_menu.IsOpen)
-                return;
-
-            if (!IsCursorOverButton(_button))
-                return;
-
-            _suppressUntilRelease = true;
-            _dismissedOverButtonTick = Environment.TickCount64;
+            _suppressCurrentPress = true;
+            _armedAtTick = Environment.TickCount64;
             HookWindowMouseUp();
-            _menu.IsOpen = false;
         }
 
         private void OnButtonPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (_menu.IsOpen)
+            if (_isOpen || _menu.IsOpen)
             {
-                _suppressUntilRelease = true;
-                _dismissedOverButtonTick = Environment.TickCount64;
-                HookWindowMouseUp();
+                _closingFromSelf = true;
+                ArmSuppression();
                 _menu.IsOpen = false;
                 e.Handled = true;
                 return;
             }
 
-            // A fresh mouse press when the menu is already closed should open cleanly.
-            _suppressUntilRelease = false;
-            _dismissedOverButtonTick = 0;
+            if (_suppressCurrentPress)
+            {
+                bool sameClickThroughPress = _hookedWindow != null &&
+                    (Environment.TickCount64 - _armedAtTick) <= ClickThroughWindowMs;
+                if (sameClickThroughPress)
+                {
+                    // Swallow the pass-through MouseDown from the press that just dismissed the menu
+                    // so ButtonBase never captures, animates IsPressed, or raises Click on MouseUp.
+                    e.Handled = true;
+                    return;
+                }
+
+                // Previous press was released outside the window; allow this new click to open.
+                ClearSuppression();
+            }
+        }
+
+        private void OnButtonMouseEnter(object sender, MouseEventArgs e)
+        {
+            if (_suppressCurrentPress && !IsLeftButtonDown())
+            {
+                ClearSuppression();
+            }
         }
 
         private void HookWindowMouseUp()
@@ -160,13 +208,13 @@ public static class MenuToggleHelper
 
             UnhookWindowMouseUp();
             _hookedWindow = window;
-            _hookedWindow.AddHandler(UIElement.PreviewMouseLeftButtonUpEvent, new MouseButtonEventHandler(OnWindowPreviewMouseLeftButtonUp), handledEventsToo: true);
+            _hookedWindow.AddHandler(UIElement.PreviewMouseLeftButtonUpEvent, _windowMouseUpHandler, handledEventsToo: true);
         }
 
         private void UnhookWindowMouseUp()
         {
             if (_hookedWindow == null) return;
-            _hookedWindow.RemoveHandler(UIElement.PreviewMouseLeftButtonUpEvent, new MouseButtonEventHandler(OnWindowPreviewMouseLeftButtonUp));
+            _hookedWindow.RemoveHandler(UIElement.PreviewMouseLeftButtonUpEvent, _windowMouseUpHandler);
             _hookedWindow = null;
         }
 
@@ -174,24 +222,29 @@ public static class MenuToggleHelper
         {
             UnhookWindowMouseUp();
             // Clear suppression after the current MouseLeftButtonUp + Button.Click dispatch completes.
-            _button.Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
-            {
-                _suppressUntilRelease = false;
-            });
+            _button.Dispatcher.BeginInvoke(DispatcherPriority.Input, ClearSuppression);
+        }
+
+        private void ClearSuppression()
+        {
+            _suppressCurrentPress = false;
+            _armedAtTick = 0;
+            UnhookWindowMouseUp();
         }
 
         public bool Toggle()
         {
-            var elapsedMs = _dismissedOverButtonTick > 0
-                ? Environment.TickCount64 - _dismissedOverButtonTick
-                : long.MaxValue;
-
-            if (_menu.IsOpen || _suppressUntilRelease || elapsedMs < FallbackGuardMs)
+            if (_isOpen || _menu.IsOpen)
             {
-                _suppressUntilRelease = false;
-                _dismissedOverButtonTick = 0;
-                UnhookWindowMouseUp();
+                _closingFromSelf = true;
+                ClearSuppression();
                 _menu.IsOpen = false;
+                return false;
+            }
+
+            if (_suppressCurrentPress)
+            {
+                ClearSuppression();
                 return false;
             }
 
@@ -202,16 +255,28 @@ public static class MenuToggleHelper
             return true;
         }
 
+        private static bool IsLeftButtonDown() =>
+            Mouse.LeftButton == MouseButtonState.Pressed ||
+            (WF.Control.MouseButtons & WF.MouseButtons.Left) != 0;
+
         private static bool IsCursorOverButton(ButtonBase button)
         {
-            if (!button.IsVisible) return false;
-            if (PresentationSource.FromVisual(button) == null) return false;
+            if (!button.IsVisible || button.ActualWidth <= 0 || button.ActualHeight <= 0)
+                return false;
+            if (PresentationSource.FromVisual(button) == null)
+                return false;
 
             try
             {
-                var screen = WF.Control.MousePosition;
-                var local = button.PointFromScreen(new System.Windows.Point(screen.X, screen.Y));
-                return local.X >= 0 && local.Y >= 0 && local.X <= button.ActualWidth && local.Y <= button.ActualHeight;
+                var cursor = WF.Control.MousePosition;
+                var topLeft = button.PointToScreen(new System.Windows.Point(0, 0));
+                var bottomRight = button.PointToScreen(new System.Windows.Point(button.ActualWidth, button.ActualHeight));
+                var minX = Math.Min(topLeft.X, bottomRight.X);
+                var maxX = Math.Max(topLeft.X, bottomRight.X);
+                var minY = Math.Min(topLeft.Y, bottomRight.Y);
+                var maxY = Math.Max(topLeft.Y, bottomRight.Y);
+                return cursor.X >= minX && cursor.X <= maxX
+                    && cursor.Y >= minY && cursor.Y <= maxY;
             }
             catch
             {
@@ -220,4 +285,3 @@ public static class MenuToggleHelper
         }
     }
 }
-

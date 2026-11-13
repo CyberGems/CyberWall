@@ -118,11 +118,13 @@ public partial class TrafficMonitorView : UserControl
     {
         if (!Dispatcher.CheckAccess())
         {
-            Dispatcher.BeginInvoke(UpdateAdapterModeBadge);
+            Dispatcher.BeginInvoke(() => OnPreferredAdapterChanged(_));
             return;
         }
 
         UpdateAdapterModeBadge();
+        LiveTrafficGraph?.Reset(NetworkSpeedService.Instance.CurrentSnapshot);
+        UpdateData();
     }
 
     private void OnSpeedUpdated(NetworkSpeedSnapshot snapshot)
@@ -450,92 +452,19 @@ public partial class TrafficMonitorView : UserControl
 
     private void PopulateAdapterSwitchMenu()
     {
-        AdapterSwitchMenu.Items.Clear();
-
-        var itemStyle = TryFindResource("ModernMenuItem") as Style;
-        var sepStyle = TryFindResource("ModernMenuSeparator") as Style;
-        var currentId = CurrentSettings?.PreferredNetworkAdapterId ?? string.Empty;
-
-        AdapterSwitchMenu.Items.Add(CreateAdapterMenuItem(
-            Strings.T("NetworkAdapterAuto"),
-            string.Empty,
-            string.Empty,
-            string.IsNullOrEmpty(currentId),
-            itemStyle));
-
-        var adapters = NetworkSpeedService.Instance.GetSelectableAdapters();
-        if (adapters.Count > 0 || !string.IsNullOrEmpty(currentId))
-        {
-            AdapterSwitchMenu.Items.Add(sepStyle != null ? new Separator { Style = sepStyle } : new Separator());
-        }
-
-        bool foundSaved = false;
-        foreach (var adapter in adapters)
-        {
-            bool selected = !string.IsNullOrEmpty(currentId) &&
-                            string.Equals(adapter.Id, currentId, StringComparison.OrdinalIgnoreCase);
-            if (selected) foundSaved = true;
-
-            var label = adapter.IsUp
-                ? adapter.DisplayName
-                : Strings.T("NetworkAdapterDisconnected", adapter.DisplayName);
-            AdapterSwitchMenu.Items.Add(CreateAdapterMenuItem(label, adapter.Id, adapter.DisplayName, selected, itemStyle));
-        }
-
-        if (!string.IsNullOrEmpty(currentId) && !foundSaved)
-        {
-            var fallbackName = string.IsNullOrWhiteSpace(CurrentSettings?.PreferredNetworkAdapterName)
-                ? currentId
-                : CurrentSettings!.PreferredNetworkAdapterName;
-            AdapterSwitchMenu.Items.Add(CreateAdapterMenuItem(
-                Strings.T("NetworkAdapterDisconnected", fallbackName),
-                currentId,
-                fallbackName,
-                isSelected: true,
-                itemStyle));
-        }
-    }
-
-    private MenuItem CreateAdapterMenuItem(
-        string header,
-        string adapterId,
-        string adapterName,
-        bool isSelected,
-        Style? style)
-    {
-        var item = new MenuItem
-        {
-            Header = header,
-            IsCheckable = true,
-            IsChecked = isSelected,
-            Tag = (Id: adapterId, Name: adapterName)
-        };
-        if (style != null) item.Style = style;
-        item.Click += AdapterMenuItem_Click;
-        return item;
-    }
-
-    private void AdapterMenuItem_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not MenuItem { Tag: ValueTuple<string, string> selection })
-            return;
-
-        if (CurrentSettings != null)
-        {
-            CurrentSettings.PreferredNetworkAdapterId = selection.Item1;
-            CurrentSettings.PreferredNetworkAdapterName = selection.Item2;
-            if (_overrideSettings == null)
+        NetworkAdapterMenuHelper.Populate(
+            this,
+            AdapterSwitchMenu.Items,
+            CurrentSettings,
+            onSelected: () =>
             {
-                CurrentSettings.Save();
-            }
-        }
-
-        if (_overrideSettings == null)
-        {
-            NetworkSpeedService.Instance.SetPreferredAdapter(selection.Item1, selection.Item2);
-        }
-
-        UpdateAdapterModeBadge();
-        UpdateData();
+                UpdateAdapterModeBadge();
+                if (_overrideSettings == null)
+                {
+                    LiveTrafficGraph?.Reset(NetworkSpeedService.Instance.CurrentSnapshot);
+                }
+                UpdateData();
+            },
+            persistChanges: _overrideSettings == null);
     }
 }

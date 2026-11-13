@@ -33,6 +33,7 @@ public sealed class TrayService : IDisposable
     private bool _warnedAboutTray;
     private TrayContextMenuWindow? _activeMenu;
     private DateTime _activeMenuClosedAtUtc = DateTime.MinValue;
+    private bool _suppressNextRightMenuClick;
 
     public TrayService(MainWindow win, FirewallService svc)
     {
@@ -44,6 +45,21 @@ public sealed class TrayService : IDisposable
             Text = SafeTrayText(Strings.T("TrayTooltip")),
             Icon = AppIconHelper.CreateShieldIcon(32),
             ContextMenuStrip = null // Using custom premium WPF menu
+        };
+
+        _icon.MouseDown += (_, e) =>
+        {
+            if (e.Button != WF.MouseButtons.Right)
+            {
+                _suppressNextRightMenuClick = false;
+                return;
+            }
+
+            if (_activeMenu is { IsVisible: true } ||
+                (DateTime.UtcNow - _activeMenuClosedAtUtc) < TimeSpan.FromMilliseconds(250))
+            {
+                _suppressNextRightMenuClick = true;
+            }
         };
 
         _icon.MouseClick += (s, e) =>
@@ -136,6 +152,9 @@ public sealed class TrayService : IDisposable
 
     private void ShowContextMenu()
     {
+        bool suppressReopen = _suppressNextRightMenuClick;
+        _suppressNextRightMenuClick = false;
+
         if (_activeMenu is { IsVisible: true } openMenu)
         {
             _activeMenuClosedAtUtc = DateTime.MinValue;
@@ -143,7 +162,7 @@ public sealed class TrayService : IDisposable
             return;
         }
 
-        if ((DateTime.UtcNow - _activeMenuClosedAtUtc) < TimeSpan.FromMilliseconds(350))
+        if (suppressReopen || (DateTime.UtcNow - _activeMenuClosedAtUtc) < TimeSpan.FromMilliseconds(350))
         {
             _activeMenuClosedAtUtc = DateTime.MinValue;
             return;
