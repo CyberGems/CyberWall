@@ -1,10 +1,13 @@
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Settings;
 using CyberWall.UI.Dialogs;
@@ -25,6 +28,7 @@ public partial class AboutView : UserControl
     private readonly IReadOnlyList<SuiteApp> _suiteApps = SuiteCatalog.Pick(5);
     private bool _isChecking;
     private bool _isDownloading;
+    private DispatcherTimer? _diagTipTimer;
 
     public event EventHandler? BackRequested;
 
@@ -43,6 +47,11 @@ public partial class AboutView : UserControl
 
     public void Deactivate()
     {
+        _diagTipTimer?.Stop();
+        if (AboutFooterDiagBtn != null)
+        {
+            AboutFooterDiagBtn.ToolTip = Strings.T("CopyDiagInfo");
+        }
     }
 
     private void LoadContent()
@@ -85,6 +94,8 @@ public partial class AboutView : UserControl
         AutomationProperties.SetName(AboutFooterGithubBtn, Strings.T("ViewGitHub"));
         AboutFooterIssuesBtn.ToolTip = Strings.T("ReportIssue");
         AutomationProperties.SetName(AboutFooterIssuesBtn, Strings.T("ReportIssue"));
+        AboutFooterDiagBtn.ToolTip = Strings.T("CopyDiagInfo");
+        AutomationProperties.SetName(AboutFooterDiagBtn, Strings.T("CopyDiagInfo"));
         AboutFooterReleasesBtn.ToolTip = Strings.T("ViewReleases");
         AutomationProperties.SetName(AboutFooterReleasesBtn, Strings.T("ViewReleases"));
         AboutFooterDonateBtn.ToolTip = Strings.T("DonateToProject");
@@ -285,6 +296,63 @@ public partial class AboutView : UserControl
     private void AboutFooterGithub_Click(object sender, RoutedEventArgs e) => OpenUrl(RepoUrl);
 
     private void AboutFooterIssues_Click(object sender, RoutedEventArgs e) => OpenUrl($"{RepoUrl}/issues");
+
+    private void AboutFooterDiag_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            System.Windows.Clipboard.SetText(BuildDiagnosticReport());
+        }
+        catch
+        {
+            return;
+        }
+
+        AboutFooterDiagBtn.ToolTip = Strings.T("DiagInfoCopied");
+        _diagTipTimer?.Stop();
+        _diagTipTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2.2) };
+        _diagTipTimer.Tick += (_, _) =>
+        {
+            _diagTipTimer?.Stop();
+            AboutFooterDiagBtn.ToolTip = Strings.T("CopyDiagInfo");
+        };
+        _diagTipTimer.Start();
+    }
+
+    private string BuildDiagnosticReport()
+    {
+        var win = OwnerWindow;
+        var displayLine = "Unknown";
+        try
+        {
+            if (win != null)
+            {
+                var hwnd = new WindowInteropHelper(win).Handle;
+                if (hwnd != IntPtr.Zero)
+                {
+                    var screen = System.Windows.Forms.Screen.FromHandle(hwnd);
+                    var dpi = VisualTreeHelper.GetDpi(win);
+                    displayLine = $"{screen.Bounds.Width}x{screen.Bounds.Height} at ({screen.Bounds.X}, {screen.Bounds.Y}), DPI {dpi.PixelsPerInchX:0} ({dpi.DpiScaleX * 100:0}%)";
+                }
+            }
+        }
+        catch { }
+
+        return string.Join(Environment.NewLine,
+            "CyberWall diagnostic report",
+            "",
+            $"- Version: {UpdateService.GetCurrentVersionLabel()}",
+            $"- OS: {RuntimeInformation.OSDescription}",
+            $"- Display: {displayLine}",
+            $"- Language: {_settings.Language} (resolved {Strings.Current})",
+            $"- Theme: {_settings.Theme}",
+            $"- Firewall enabled: {(_settings.FirewallEnabled ? "On" : "Off")} ({_settings.FirewallMode})",
+            $"- Run at startup: {(_settings.RunAtStartup ? "On" : "Off")} (minimized: {(_settings.StartMinimized ? "On" : "Off")})",
+            $"- Auto-backups: {(_settings.AutoBackupEnabled ? "On" : "Off")} ({_settings.AutoBackupFrequency}, keep {_settings.BackupRetentionCount})",
+            $"- Check for updates on startup: {(_settings.AutoCheckForUpdates ? "On" : "Off")}",
+            $"- Runtime: {RuntimeInformation.FrameworkDescription}",
+            $"- Local time: {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss zzz} ({TimeZoneInfo.Local.DisplayName})");
+    }
 
     private void AboutFooterReleases_Click(object sender, RoutedEventArgs e) => OpenUrl($"{RepoUrl}/releases");
 

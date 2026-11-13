@@ -6,10 +6,10 @@
              FontFamily="Segoe UI Variable Text, Segoe UI, -apple-system, BlinkMacSystemFont, Roboto, sans-serif">
 
     <UserControl.Resources>
-        <!-- Subtle Icon Action Button for Footer Links -->
+        <!-- Subtle Icon Action Button for Footer Links (matches CyberSnap pattern) -->
         <Style x:Key="AboutFooterIconButton" TargetType="Button">
-            <Setter Property="Width" Value="32"/>
-            <Setter Property="Height" Value="32"/>
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -19,16 +19,17 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" SnapsToDevicePixels="True">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="6" SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentGlowBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentGlowBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -296,21 +297,32 @@
                 </Grid.ColumnDefinitions>
 
                 <TextBlock x:Name="AboutFooterCopyright" Grid.Column="0" Text="© CyberGems • 2026"
-                           FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource SubTextBrush}"
+                           FontSize="11.5" FontWeight="SemiBold"
                            VerticalAlignment="Center" HorizontalAlignment="Left" Cursor="Hand"
-                           MouseLeftButtonUp="AboutFooterWebsite_Click"/>
+                           MouseLeftButtonUp="AboutFooterWebsite_Click">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <!-- Website -->
+                    <!-- Website (Diamond, matching CyberGems suite) -->
                     <Button x:Name="AboutFooterWebsiteBtn" Style="{StaticResource AboutFooterIconButton}" Click="AboutFooterWebsiteBtn_Click">
                         <Viewbox Width="15" Height="15" Stretch="Uniform">
                             <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   StrokeThickness="1.5" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"
-                                  Data="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M2 12h20 M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                                  Data="M6 3h12l4 6-10 12L2 9z M2 9h20 M10 3l-2 6 4 12 4-12-2-6"/>
                         </Viewbox>
                     </Button>
 
-                    <!-- Online Documentation -->
+                    <!-- Online Documentation (Open book) -->
                     <Button x:Name="AboutFooterDocsBtn" Style="{StaticResource AboutFooterIconButton}" Margin="4,0,0,0" Click="AboutFooterDocs_Click">
                         <Viewbox Width="15" Height="15" Stretch="Uniform">
                             <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
@@ -327,7 +339,7 @@
                         </Viewbox>
                     </Button>
 
-                    <!-- Issues -->
+                    <!-- Issues (Bug) -->
                     <Button x:Name="AboutFooterIssuesBtn" Style="{StaticResource AboutFooterIconButton}" Margin="4,0,0,0" Click="AboutFooterIssues_Click">
                         <Viewbox Width="15" Height="15" Stretch="Uniform">
                             <Canvas Width="24" Height="24">
@@ -345,7 +357,23 @@
                         </Viewbox>
                     </Button>
 
-                    <!-- Releases -->
+                    <!-- Copy Diagnostic Information (Clipboard) -->
+                    <Button x:Name="AboutFooterDiagBtn" Style="{StaticResource AboutFooterIconButton}" Margin="4,0,0,0" Click="AboutFooterDiag_Click">
+                        <Viewbox Width="15" Height="15" Stretch="Uniform">
+                            <Canvas Width="24" Height="24">
+                                <Rectangle Canvas.Left="5" Canvas.Top="4" Width="14" Height="17" RadiusX="2" RadiusY="2"
+                                           Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" Fill="Transparent"/>
+                                <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6"
+                                      StrokeLineJoin="Round" Fill="Transparent"
+                                      Data="M9 2h6v3H9z"/>
+                                <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      Data="M9 10h6 M9 14h4"/>
+                            </Canvas>
+                        </Viewbox>
+                    </Button>
+
+                    <!-- Releases (Tag) -->
                     <Button x:Name="AboutFooterReleasesBtn" Style="{StaticResource AboutFooterIconButton}" Margin="4,0,0,0" Click="AboutFooterReleases_Click">
                         <Viewbox Width="15" Height="15" Stretch="Uniform">
                             <Canvas Width="24" Height="24">
@@ -355,7 +383,7 @@
                         </Viewbox>
                     </Button>
 
-                    <!-- Donate -->
+                    <!-- Donate (Heart) -->
                     <Button x:Name="AboutFooterDonateBtn" Style="{StaticResource AboutFooterIconButton}" Margin="4,0,0,0" Click="AboutFooterDonate_Click">
                         <Viewbox Width="15" Height="15" Stretch="Uniform">
                             <Path Fill="#F43F5E"

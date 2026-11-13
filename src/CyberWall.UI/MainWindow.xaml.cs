@@ -38,6 +38,7 @@ public enum MainTab
     Statistics,
     Settings,
     About,
+    Notifications,
     Dashboard
 }
 
@@ -60,6 +61,7 @@ public partial class MainWindow : Window
         StatisticsTabContent.Visibility = tab == MainTab.Statistics ? Visibility.Visible : Visibility.Collapsed;
         SettingsTabContent.Visibility = tab == MainTab.Settings ? Visibility.Visible : Visibility.Collapsed;
         AboutTabContent.Visibility = tab == MainTab.About ? Visibility.Visible : Visibility.Collapsed;
+        NotificationsTabContent.Visibility = tab == MainTab.Notifications ? Visibility.Visible : Visibility.Collapsed;
 
         // Update Tab Icon highlights
         var accentBrush = (System.Windows.Media.Brush)FindResource("AccentBrush");
@@ -76,7 +78,10 @@ public partial class MainWindow : Window
         if (BrandingPanel != null)
             BrandingPanel.Tag = tab == MainTab.About ? "Active" : null;
 
-        if (tab != MainTab.Settings && tab != MainTab.About)
+        if (NotifBtn != null)
+            NotifBtn.Tag = tab == MainTab.Notifications ? "Active" : null;
+
+        if (tab != MainTab.Settings && tab != MainTab.About && tab != MainTab.Notifications)
             _previousTab = tab;
 
         // Lifecycle hooks
@@ -107,6 +112,16 @@ public partial class MainWindow : Window
             AboutTabContent.Activate();
         else
             AboutTabContent.Deactivate();
+
+        if (tab == MainTab.Notifications)
+        {
+            NotificationsTabContent.Activate();
+            UpdateNotifBadge();
+        }
+        else
+        {
+            NotificationsTabContent.Deactivate();
+        }
     }
 
     public void Tab_Click(object sender, RoutedEventArgs e)
@@ -139,7 +154,6 @@ public partial class MainWindow : Window
     private bool _loading;
     private bool _isEnabling;
     private bool _updatingStatus;
-    private bool _notifOpen;
     private bool _layoutRestored;
     private readonly Dictionary<string, string> _lastRemoteByApp = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, List<string>> _recentCountriesByApp = new(StringComparer.OrdinalIgnoreCase);
@@ -175,6 +189,31 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         AboutTabContent.BackRequested += (_, _) => SelectTab(_previousTab);
+        NotificationsTabContent.BackRequested += (_, _) => SelectTab(_previousTab);
+        NotificationsTabContent.Initialize(
+            _notifications,
+            async path =>
+            {
+                await Task.Run(() => _svc.SetVerdict(path, Verdict.Allow, true));
+                RefreshRules(SearchBox.Text);
+            },
+            async path =>
+            {
+                await Task.Run(() => _svc.SetVerdict(path, Verdict.Block, true));
+                RefreshRules(SearchBox.Text);
+            },
+            () =>
+            {
+                if (MasterToggle.IsChecked != true)
+                    MasterToggle.IsChecked = true;
+                else
+                    _notifications.PurgeObsoleteProtectionOffNotifications();
+            },
+            OpenUpdateFromNotification,
+            OpenSettings,
+            onBeforeActivate: CleanPendingDecisionNotifications,
+            isProtectionOn: () => _svc.IsMasterOn,
+            isOnline: () => ConnectivityService.Instance.IsOnline);
         CyberWallWindowChrome.Apply(this, 12);
         Icon = AppIconHelper.CreateShieldImageSource(64);
         _loading = true;
@@ -525,6 +564,7 @@ public partial class MainWindow : Window
         StatisticsTabContent?.RefreshLanguage();
         SettingsTabContent?.RefreshLanguage();
         AboutTabContent?.RefreshLanguage();
+        NotificationsTabContent?.RefreshLanguage();
         ModeLbl.Text = Strings.T("Mode");
         SearchPlaceholder.Text = Strings.T("SearchPlaceholder");
         var rangeLabel = _firewallTimeWindowSeconds switch
@@ -958,58 +998,21 @@ public partial class MainWindow : Window
         }
     }
 
+    private void CleanPendingDecisionNotifications()
+    {
+        // Pending items are only meaningful while the app still has no verdict.
+        foreach (var pending in _notifications.All.Where(n => n.Kind == AppNotificationKind.PendingDecision).ToList())
+        {
+            if (string.IsNullOrWhiteSpace(pending.AppPath)) continue;
+            if (_svc.Store.TryGet(pending.AppPath, out _) || _svc.TryGetSession(pending.AppPath, 0, out _))
+                _notifications.Remove(pending.Id);
+        }
+    }
+
     public void ShowNotifications()
     {
-        Show();
-        if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
-        Activate();
-        if (_notifOpen) return;
-        _notifOpen = true;
-        try
-        {
-            if (_svc.IsMasterOn)
-                _notifications.PurgeObsoleteProtectionOffNotifications();
-
-            // Pending items are only meaningful while the app still has no verdict.
-            foreach (var pending in _notifications.All.Where(n => n.Kind == AppNotificationKind.PendingDecision).ToList())
-            {
-                if (string.IsNullOrWhiteSpace(pending.AppPath)) continue;
-                if (_svc.Store.TryGet(pending.AppPath, out _) || _svc.TryGetSession(pending.AppPath, 0, out _))
-                    _notifications.Remove(pending.Id);
-            }
-
-            var dlg = new NotificationsDialog(
-                _notifications,
-                async path =>
-                {
-                    await Task.Run(() => _svc.SetVerdict(path, Verdict.Allow, true));
-                    RefreshRules(SearchBox.Text);
-                },
-                async path =>
-                {
-                    await Task.Run(() => _svc.SetVerdict(path, Verdict.Block, true));
-                    RefreshRules(SearchBox.Text);
-                },
-                () =>
-                {
-                    if (MasterToggle.IsChecked != true)
-                        MasterToggle.IsChecked = true;
-                    else
-                        _notifications.PurgeObsoleteProtectionOffNotifications();
-                },
-                OpenUpdateFromNotification,
-                isProtectionOn: () => _svc.IsMasterOn,
-                isOnline: () => ConnectivityService.Instance.IsOnline)
-            { Owner = this };
-            dlg.ShowDialog();
-            if (dlg.OpenSettingsAfterClose)
-                OpenSettings();
-        }
-        finally
-        {
-            _notifOpen = false;
-            UpdateNotifBadge();
-        }
+        ShowMainWindow();
+        SelectTab(MainTab.Notifications);
     }
 
     private async void OpenUpdateFromNotification()
@@ -1025,7 +1028,15 @@ public partial class MainWindow : Window
         catch { }
     }
 
-    private void Notifications_Click(object sender, RoutedEventArgs e) => ShowNotifications();
+    private void Notifications_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender == NotifBtn && CurrentTab == MainTab.Notifications)
+        {
+            SelectTab(_previousTab);
+            return;
+        }
+        ShowNotifications();
+    }
 
     private void UpdateAvailableButtonState()
     {

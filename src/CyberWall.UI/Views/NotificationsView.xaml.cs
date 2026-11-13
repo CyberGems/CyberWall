@@ -1,62 +1,118 @@
 using System.Windows;
-using System.Windows.Input;
+using System.Windows.Automation;
 using CyberWall.Common.I18n;
 using CyberWall.Common.Models;
 using CyberWall.Common.Notifications;
+using CyberWall.UI.Dialogs;
 using CyberWall.UI.Services;
+using UserControl = System.Windows.Controls.UserControl;
 
-namespace CyberWall.UI.Dialogs;
+namespace CyberWall.UI.Views;
 
-public partial class NotificationsDialog : Window, IModalAttentionWindow
+public partial class NotificationsView : UserControl
 {
-    private readonly NotificationStore _store;
-    private readonly HashSet<Guid> _openedUnread;
-    private readonly Func<string, Task> _onAllow;
-    private readonly Func<string, Task> _onBlock;
-    private readonly Action _onEnableProtection;
-    private readonly Action _onDownloadUpdate;
-    private readonly Func<bool>? _isProtectionOn;
-    private readonly Func<bool>? _isOnline;
+    private NotificationStore? _store;
+    private Func<string, Task>? _onAllow;
+    private Func<string, Task>? _onBlock;
+    private Action? _onEnableProtection;
+    private Action? _onDownloadUpdate;
+    private Action? _onOpenSettings;
+    private Action? _onBeforeActivate;
+    private Func<bool>? _isProtectionOn;
+    private Func<bool>? _isOnline;
+    private HashSet<Guid> _openedUnread = new();
     private bool _busy;
-    private DateTime _lastAttentionTime = DateTime.MinValue;
-    public bool OpenSettingsAfterClose { get; private set; }
+    private bool _subscribed;
 
-    public void TriggerAttention()
+    public event EventHandler? BackRequested;
+
+    public NotificationsView()
     {
-        ModalAttentionHelper.Trigger(this, OuterBorder, WindowScale, WindowGlow, ref _lastAttentionTime);
+        InitializeComponent();
+        Unloaded += (_, _) => Unsubscribe();
     }
 
-    public NotificationsDialog(NotificationStore store, Func<string, Task> onAllow, Func<string, Task> onBlock, Action onEnableProtection, Action onDownloadUpdate, Func<bool>? isProtectionOn = null, Func<bool>? isOnline = null)
+    public void Initialize(
+        NotificationStore store,
+        Func<string, Task> onAllow,
+        Func<string, Task> onBlock,
+        Action onEnableProtection,
+        Action onDownloadUpdate,
+        Action onOpenSettings,
+        Action? onBeforeActivate = null,
+        Func<bool>? isProtectionOn = null,
+        Func<bool>? isOnline = null)
     {
-        _store = store;
-        _onAllow = onAllow;
-        _onBlock = onBlock;
-        _onEnableProtection = onEnableProtection;
-        _onDownloadUpdate = onDownloadUpdate;
+        _store = store ?? throw new ArgumentNullException(nameof(store));
+        _onAllow = onAllow ?? throw new ArgumentNullException(nameof(onAllow));
+        _onBlock = onBlock ?? throw new ArgumentNullException(nameof(onBlock));
+        _onEnableProtection = onEnableProtection ?? throw new ArgumentNullException(nameof(onEnableProtection));
+        _onDownloadUpdate = onDownloadUpdate ?? throw new ArgumentNullException(nameof(onDownloadUpdate));
+        _onOpenSettings = onOpenSettings ?? throw new ArgumentNullException(nameof(onOpenSettings));
+        _onBeforeActivate = onBeforeActivate;
         _isProtectionOn = isProtectionOn;
         _isOnline = isOnline;
-        store.PurgeObsoleteUpdateNotifications(UpdateService.GetCurrentVersion());
+    }
+
+    public void Activate()
+    {
+        if (_store == null) return;
+
+        _onBeforeActivate?.Invoke();
+        _store.PurgeObsoleteUpdateNotifications(UpdateService.GetCurrentVersion());
         if (_isProtectionOn?.Invoke() == true)
         {
-            store.PurgeObsoleteProtectionOffNotifications();
+            _store.PurgeObsoleteProtectionOffNotifications();
         }
-        _openedUnread = store.All.Where(n => !n.Read).Select(n => n.Id).ToHashSet();
-        store.MarkAllRead();
 
-        InitializeComponent();
-        Icon = AppIconHelper.CreateShieldImageSource(64);
-        CyberWallWindowChrome.Apply(this, 12);
-        Title = Strings.T("WindowNotifications");
+        _openedUnread = _store.All.Where(n => !n.Read).Select(n => n.Id).ToHashSet();
+        _store.MarkAllRead();
+
+        Subscribe();
         RefreshLanguage();
         UpdatePausedBanner();
         BindList();
+    }
+
+    public void Deactivate()
+    {
+        Unsubscribe();
+        _openedUnread.Clear();
+    }
+
+    public void RefreshLanguage()
+    {
+        TitleLbl.Text = Strings.T("Notifications");
+        SubtitleLbl.Text = Strings.T("NotificationsSubtitle");
+        MarkReadBtnText.Text = Strings.T("MarkAllRead");
+        ClearBtnText.Text = Strings.T("ClearNotifications");
+        BackBtnText.Text = Strings.T("Back");
+        AutomationProperties.SetName(BackBtn, Strings.T("Back"));
+        EmptyMsg.Text = Strings.T("NotificationsEmpty");
+        SettingsBtn.ToolTip = Strings.T("Settings");
+        AutomationProperties.SetName(SettingsBtn, Strings.T("Settings"));
+
+        UpdatePausedBanner();
+        if (_store != null)
+        {
+            BindList();
+        }
+    }
+
+    private void Subscribe()
+    {
+        if (_subscribed || _store == null) return;
         _store.Changed += OnStoreChanged;
         FloatingAlertsController.PauseStateChanged += OnPauseStateChanged;
-        Closed += (_, _) =>
-        {
-            _store.Changed -= OnStoreChanged;
-            FloatingAlertsController.PauseStateChanged -= OnPauseStateChanged;
-        };
+        _subscribed = true;
+    }
+
+    private void Unsubscribe()
+    {
+        if (!_subscribed || _store == null) return;
+        _store.Changed -= OnStoreChanged;
+        FloatingAlertsController.PauseStateChanged -= OnPauseStateChanged;
+        _subscribed = false;
     }
 
     private void OnPauseStateChanged()
@@ -90,27 +146,25 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
         Dispatcher.BeginInvoke(BindList);
     }
 
-    private void RefreshLanguage()
-    {
-        TitleLbl.Text = Strings.T("Notifications");
-        MarkReadBtnText.Text = Strings.T("MarkAllRead");
-        ClearBtnText.Text = Strings.T("ClearNotifications");
-        CloseBtn.Content = Strings.T("Close");
-        EmptyMsg.Text = Strings.T("NotificationsEmpty");
-        SettingsTitleBtn.ToolTip = Strings.T("Settings");
-    }
-
     private void BindList()
     {
+        if (_store == null) return;
+
         bool isProt = _isProtectionOn?.Invoke() ?? false;
         bool isOnline = _isOnline?.Invoke() ?? ConnectivityService.Instance.IsOnline;
-        var items = _store.All.Select(n => NotificationItemVm.From(n, _openedUnread.Contains(n.Id), isProt, isOnline)).ToList();
+        var items = _store.All
+            .Select(n => NotificationItemVm.From(n, _openedUnread.Contains(n.Id), isProt, isOnline))
+            .ToList();
+
         NotifList.ItemsSource = items;
         CountBadge.Text = _openedUnread.Count > 0
             ? Strings.T("NotifUnread", _openedUnread.Count)
             : Strings.T("NotifCount", items.Count);
-        EmptyMsg.Visibility = items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        EmptyStateCard.Visibility = items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         NotifList.Visibility = items.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+        ClearBtn.IsEnabled = items.Count > 0;
+        MarkReadBtn.IsEnabled = _openedUnread.Count > 0;
     }
 
     private async void Action_Click(object sender, RoutedEventArgs e)
@@ -129,8 +183,7 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
                 await EnableAsync(vm);
                 break;
             case AppNotificationKind.UpdateAvailable:
-                Close();
-                _onDownloadUpdate();
+                _onDownloadUpdate?.Invoke();
                 break;
             case AppNotificationKind.InternetLost:
                 await CheckInternetAsync(vm);
@@ -140,7 +193,7 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
 
     private async Task AllowAsync(NotificationItemVm vm)
     {
-        if (string.IsNullOrWhiteSpace(vm.AppPath)) return;
+        if (_store == null || _onAllow == null || string.IsNullOrWhiteSpace(vm.AppPath)) return;
         _busy = true;
         var originalLabel = vm.ActionLabel;
         vm.MarkBusy(Strings.T("NotifAllowing"));
@@ -179,7 +232,7 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
 
     private async Task BlockAsync(NotificationItemVm vm)
     {
-        if (string.IsNullOrWhiteSpace(vm.AppPath)) return;
+        if (_store == null || _onBlock == null || string.IsNullOrWhiteSpace(vm.AppPath)) return;
         _busy = true;
         vm.IsBusy = true;
         await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Render);
@@ -209,6 +262,7 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
 
     private async Task EnableAsync(NotificationItemVm vm)
     {
+        if (_store == null || _onEnableProtection == null) return;
         _busy = true;
         vm.MarkBusy(Strings.T("NotifAllowing"));
         await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Render);
@@ -229,6 +283,7 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
 
     private async Task CheckInternetAsync(NotificationItemVm vm)
     {
+        if (_store == null) return;
         _busy = true;
         vm.MarkBusy(Strings.T("NotifInternetChecking"));
         await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Render);
@@ -260,6 +315,7 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
 
     private void MarkAllRead_Click(object sender, RoutedEventArgs e)
     {
+        if (_store == null) return;
         _openedUnread.Clear();
         _store.MarkAllRead();
         BindList();
@@ -267,23 +323,18 @@ public partial class NotificationsDialog : Window, IModalAttentionWindow
 
     private void Clear_Click(object sender, RoutedEventArgs e)
     {
-        if (!ConfirmDialog.Show(this, Strings.T("ClearNotifications"), Strings.T("ClearNotificationsConfirm"), Strings.T("Ok"), Strings.T("Cancel")))
+        if (_store == null) return;
+        var owner = Window.GetWindow(this);
+        if (!ConfirmDialog.Show(owner, Strings.T("ClearNotifications"), Strings.T("ClearNotificationsConfirm"), Strings.T("Ok"), Strings.T("Cancel")))
             return;
+
         _openedUnread.Clear();
         _store.Clear();
         BindList();
     }
 
-    private void Settings_Click(object sender, RoutedEventArgs e)
-    {
-        OpenSettingsAfterClose = true;
-        Close();
-    }
+    private void Settings_Click(object sender, RoutedEventArgs e) => _onOpenSettings?.Invoke();
 
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ButtonState == MouseButtonState.Pressed) DragMove();
-    }
-
-    private void Close_Click(object sender, RoutedEventArgs e) => Close();
+    private void BackBtn_Click(object sender, RoutedEventArgs e) => BackRequested?.Invoke(this, EventArgs.Empty);
 }
+

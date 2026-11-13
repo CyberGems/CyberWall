@@ -2134,6 +2134,9 @@
 
             <!-- Tab 6: About (App Info, Updates & CyberGems Suite) -->
             <views:AboutView x:Name="AboutTabContent" Visibility="Collapsed"/>
+
+            <!-- Tab 7: Notifications (Alerts, Pending Decisions & Updates) -->
+            <views:NotificationsView x:Name="NotificationsTabContent" Visibility="Collapsed"/>
         </Grid>
 
         <!-- Footer / Status Bar -->
