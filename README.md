@@ -110,9 +110,9 @@ Here is how CyberWall protects your computer against real-world threats in plain
   - **CyberWall**: Deep obsidian/navy with electric neon cyan and emerald accents.
   - **Dark**: Refined charcoal and neutral slate with vibrant indigo accents.
   - **Light**: Crisp slate and pure white with royal blue accents.
-- **Native Windows 11 Chrome**: Pure DWM-rounded corners with subpixel anti-aliasing buffers, custom title bar, and multi-monitor positioning grid.
-- **Built-in Auto-Update System**: One-click GitHub Releases update checker with live download progress tracking, SHA256 verification of the downloaded installer, and silent installer execution.
-- **Dedicated About Modal**: Interactive product overview with a rotating strip of the other CyberGems apps, update manager, and direct access to CyberGems community channels.
+- **Network Adapter Selection**: Monitor **Automatic** active traffic or pin a specific network interface across Settings, the Firewall header graph, Traffic Monitor, and the Floating Traffic Widget.
+- **Native Windows 11 Chrome**: Pure DWM-rounded corners with subpixel anti-aliasing buffers, custom title bar, redesigned navigation icons, and multi-monitor positioning grid.
+- **Embedded Notifications & About Tabs**: Integrated Notification Center with Date/Type/App sorting, hover card dismiss, and timed alert pauses (`15m`, `1h`, or until restart), alongside an integrated About tab with inline GitHub Releases updates, SHA256 verification, and the CyberGems suite bar.
 - **Fully Bilingual (EN / ES)**: Complete UI localization in English and Spanish with instant language switching.
 - **Persistent Rule Store & Verified Backups**: Rules are stored atomically in `%ProgramData%\CyberWall\rules.json`. Built-in automatic and manual `.cwbackup` snapshots (with SHA-256 integrity checks) back up both rules and preferences on a Daily, Weekly, or On-change schedule, keep between 1 and 7 automatic copies (default 3) in a customizable folder, and create pre-clear / pre-restore safety copies before restoring.
 - **System Tray & Background Daemon**: System tray integration, minimize-to-tray, and optional support for running as a background Windows Service (SYSTEM). Only one host owns the firewall engine at a time: the open window takes precedence and the service resumes protection when it closes.
