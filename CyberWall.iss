@@ -5,6 +5,7 @@
 #define AppName "CyberWall"
 #define AppPublisher "CyberGems"
 #define AppURL "https://cybergems.org"
+#define AppDescription "Choose which apps can connect, review new connections and keep the rules that work."
 #define AppExeName "CyberWall.exe"
 
 [Setup]
@@ -15,6 +16,7 @@ AppPublisher={#AppPublisher}
 AppPublisherURL={#AppURL}
 AppSupportURL={#AppURL}
 AppUpdatesURL={#AppURL}
+AppComments={#AppDescription}
 DefaultDirName={autopf}\{#AppName}
 DisableProgramGroupPage=yes
 OutputDir=.
