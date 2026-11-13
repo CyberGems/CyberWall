@@ -1203,7 +1203,7 @@
                                             <MenuItem.Icon>
                                                 <Viewbox Width="13" Height="13" Stretch="Uniform">
                                                     <Canvas Width="24" Height="24">
-                                                        <Path Data="M 12 2 A 10 10 0 1 0 12 22 A 10 10 0 0 0 12 2 M 2 12 H 22 M 12 2 A 15 15 0 0 0 12 22 A 15 15 0 0 0 12 2"
+                                                        <Path Data="M 6 3 H 18 L 22 9 L 12 21 L 2 9 Z M 2 9 H 22 M 9 3 L 7 9 L 12 21 L 17 9 L 15 3"
                                                               Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent"/>
                                                     </Canvas>
                                                 </Viewbox>
