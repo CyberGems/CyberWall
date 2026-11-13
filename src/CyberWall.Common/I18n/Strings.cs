@@ -431,6 +431,7 @@ public static class Strings
         ["StatsCountriesCount"] = ("{0} countries", "{0} países"),
         ["StatsScopeDetail"] = ("{0} apps · {1} unique IPs", "{0} apps · {1} IPs únicas"),
         ["Help"] = ("Help", "Ayuda"),
+        ["HelpDocumentation"] = ("Help & Documentation", "Ayuda y documentación"),
         ["Faq"] = ("Frequently Asked Questions", "Preguntas Frecuentes"),
         ["Changelog"] = ("Changelog", "Historial de cambios"),
         ["Website"] = ("Website", "Sitio web"),

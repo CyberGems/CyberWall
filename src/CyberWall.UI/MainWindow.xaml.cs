@@ -268,6 +268,7 @@ public partial class MainWindow : Window
         ProcessTrafficTracker.Instance.Start();
         NetworkSpeedService.Instance.SetPreferredAdapter(App.Settings.PreferredNetworkAdapterId, App.Settings.PreferredNetworkAdapterName);
         NetworkSpeedService.Instance.SpeedUpdated += OnNetworkSpeedUpdated;
+        NetworkSpeedService.Instance.PreferredAdapterChanged += OnPreferredAdapterChanged;
         NetworkSpeedService.Instance.Start();
         RenderStabilityManager.Instance.RenderPausedChanged += OnRenderPausedChanged;
         RenderStabilityManager.Instance.SoftwareFallbackActivated += OnSoftwareFallbackActivated;
@@ -295,6 +296,7 @@ public partial class MainWindow : Window
             ProcessTrafficTracker.Instance.ActivityUpdated -= OnActivityUpdated;
             ProcessTrafficTracker.Instance.Stop();
             NetworkSpeedService.Instance.SpeedUpdated -= OnNetworkSpeedUpdated;
+            NetworkSpeedService.Instance.PreferredAdapterChanged -= OnPreferredAdapterChanged;
             RenderStabilityManager.Instance.RenderPausedChanged -= OnRenderPausedChanged;
             RenderStabilityManager.Instance.SoftwareFallbackActivated -= OnSoftwareFallbackActivated;
             RenderStabilityManager.Instance.UnregisterWindow(_windowHandle);
@@ -525,6 +527,7 @@ public partial class MainWindow : Window
             MoreStatsItem.Header = Strings.T("TrafficStatsMenu");
             MoreSettingsItem.Header = Strings.T("MoreSettings");
             MoreResetWindowSizeItem.Header = Strings.T("ResetWindowSize");
+            MoreHelpItem.Header = Strings.T("HelpDocumentation");
             MoreDocsItem.Header = Strings.T("DocumentationWiki");
             MoreFaqItem.Header = Strings.T("Faq");
             MoreChangelogItem.Header = Strings.T("Changelog");
@@ -532,6 +535,7 @@ public partial class MainWindow : Window
             MoreCheckUpdatesItem.Header = Strings.T("CheckForUpdates");
             MoreAboutItem.Header = Strings.T("AboutCyberWall");
             MoreAboutItem.InputGestureText = KeyboardShortcuts.About;
+            MoreExitItem.Header = Strings.T("ExitApp");
         }
         TabFirewallText.Text = Strings.T("NavFirewall");
         AutomationProperties.SetName(TabFirewallBtn, TabFirewallText.Text);
@@ -1900,6 +1904,19 @@ public partial class MainWindow : Window
         UpdateStatusDotAnimation(snapshot);
     }
 
+    private void OnPreferredAdapterChanged(string _)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(() => OnPreferredAdapterChanged(_));
+            return;
+        }
+
+        var snapshot = NetworkSpeedService.Instance.CurrentSnapshot;
+        FirewallTrafficGraph?.Reset(snapshot);
+        UpdateFirewallTelemetry(snapshot);
+    }
+
     private void UpdateFirewallScaleText()
     {
         double scale = FirewallTrafficGraph?.CurrentMaxScale ?? 0;
@@ -2421,6 +2438,8 @@ public partial class MainWindow : Window
         else
             OpenAbout(checkUpdatesNow: false);
     }
+
+    private void MoreExit_Click(object sender, RoutedEventArgs e) => ExitApplication();
     
     private void OpenLog_Click(object sender, RoutedEventArgs e) => SelectTab(MainTab.ConnectionsLog);
 
@@ -2635,10 +2654,10 @@ public partial class MainWindow : Window
         TabStatsBtn.Padding = padding;
 
         var iconMargin = compact ? new Thickness(0) : new Thickness(0, 0, 7, 0);
-        TabFirewallIcon.Margin = iconMargin;
-        TabTrafficIcon.Margin = iconMargin;
-        TabConnectionsIcon.Margin = iconMargin;
-        TabStatsIcon.Margin = iconMargin;
+        TabFirewallIconWrap.Margin = iconMargin;
+        TabTrafficIconWrap.Margin = iconMargin;
+        TabConnectionsIconWrap.Margin = iconMargin;
+        TabStatsIconWrap.Margin = iconMargin;
     }
 
     private bool _isSearchClosing;
