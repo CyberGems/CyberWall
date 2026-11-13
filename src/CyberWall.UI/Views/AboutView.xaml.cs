@@ -109,7 +109,7 @@ public partial class AboutView : UserControl
         {
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
-            bitmap.UriSource = new Uri($"pack://application:,,,/Assets/Suite/{app.Slug}.png", UriKind.Absolute);
+            bitmap.UriSource = new Uri($"pack://application:,,,/CyberWall;component/Assets/Suite/{app.Slug}.png", UriKind.Absolute);
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.DecodePixelWidth = 96;
             bitmap.EndInit();

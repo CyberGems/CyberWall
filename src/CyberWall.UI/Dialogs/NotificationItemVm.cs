@@ -85,6 +85,7 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
             {
                 OnPropertyChanged(nameof(CanAct));
                 OnPropertyChanged(nameof(CanBlock));
+                OnPropertyChanged(nameof(CanDismiss));
             }
         }
     }
@@ -107,6 +108,8 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
 
     public bool CanAct => ShowAction && !IsBusy && !IsResolved;
     public bool CanBlock => ShowBlockAction && !IsBusy && !IsResolved;
+    public bool CanDismiss => !IsBusy;
+    public string DismissToolTip => Strings.T("DismissNotification");
 
     public void MarkBusy(string label)
     {

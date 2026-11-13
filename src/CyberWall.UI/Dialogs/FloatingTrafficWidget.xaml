@@ -129,6 +129,16 @@
                           Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
                 </MenuItem.Icon>
             </MenuItem>
+
+            <Separator Style="{StaticResource ModernMenuSeparator}"/>
+
+            <MenuItem x:Name="WidgetAdapterMenu" Header="Network adapter" Style="{StaticResource ModernMenuItem}">
+                <MenuItem.Icon>
+                    <Path Data="M 15 20 L 18 17 H 20 C 21.1 17 22 16.1 22 15 V 6 C 22 4.9 21.1 4 20 4 H 4 C 2.9 4 2 4.9 2 6 V 15 C 2 16.1 2.9 17 4 17 H 6 L 9 20 Z M 6 8 V 10 M 10 8 V 10 M 14 8 V 10 M 18 8 V 10"
+                          Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                          Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                </MenuItem.Icon>
+            </MenuItem>
         </ContextMenu>
     </Window.ContextMenu>
 

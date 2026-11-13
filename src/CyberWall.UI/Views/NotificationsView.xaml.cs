@@ -223,6 +223,23 @@ public partial class NotificationsView : UserControl
         }
     }
 
+    private void Dismiss_Click(object sender, RoutedEventArgs e)
+    {
+        if (_store == null) return;
+        if (sender is not FrameworkElement { Tag: NotificationItemVm vm }) return;
+        if (!vm.CanDismiss) return;
+        DismissNotification(vm.Id);
+    }
+
+    internal bool DismissNotification(Guid id)
+    {
+        if (_store == null || _busy) return false;
+        _store.Remove(id);
+        _openedUnread.Remove(id);
+        BindList();
+        return true;
+    }
+
     private async void Block_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: NotificationItemVm vm }) return;

@@ -80,6 +80,46 @@
             <Setter Property="Background" Value="{DynamicResource BadgeBlockBgBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource BadgeBlockFgBrush}"/>
         </Style>
+
+        <Style x:Key="DismissCardBtn" TargetType="Button">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="6" SnapsToDevicePixels="True">
+                            <Path Data="M 5 5 L 15 15 M 15 5 L 5 15"
+                                  Stroke="{TemplateBinding Foreground}"
+                                  StrokeThickness="1.6"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  Width="10" Height="10" Stretch="Uniform"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectionBgBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.35"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <Grid Margin="0,4,0,0">
@@ -168,7 +208,7 @@
                 <ItemsControl x:Name="NotifList">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Margin="0,0,0,8" CornerRadius="10" BorderThickness="1" Padding="14,11" SnapsToDevicePixels="True">
+                            <Border x:Name="NotifCard" Margin="0,0,0,8" CornerRadius="10" BorderThickness="1" Padding="14,11" SnapsToDevicePixels="True">
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
@@ -193,6 +233,7 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <Grid Width="36" Height="36" Margin="0,0,12,0" VerticalAlignment="Top">
@@ -241,8 +282,26 @@
                                         <Button Style="{StaticResource ItemActionButton}" Tag="{Binding}" Click="Action_Click" IsEnabled="{Binding CanAct}" Visibility="{Binding ShowAction, Converter={StaticResource BoolToVis}}" Content="{Binding ActionLabel}"/>
                                         <Button Style="{StaticResource ItemBlockButton}" Tag="{Binding}" Click="Block_Click" IsEnabled="{Binding CanBlock}" Visibility="{Binding ShowBlockAction, Converter={StaticResource BoolToVis}}" Content="{Binding BlockLabel}"/>
                                     </StackPanel>
+                                    <Button x:Name="DismissBtn" Grid.Column="3"
+                                            Style="{StaticResource DismissCardBtn}"
+                                            Tag="{Binding}"
+                                            Click="Dismiss_Click"
+                                            IsEnabled="{Binding CanDismiss}"
+                                            ToolTip="{Binding DismissToolTip}"
+                                            AutomationProperties.Name="{Binding DismissToolTip}"
+                                            VerticalAlignment="Top" Margin="8,-2,-4,0"/>
                                 </Grid>
                             </Border>
+                            <DataTemplate.Triggers>
+                                <Trigger SourceName="NotifCard" Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="DismissBtn" Property="Opacity" Value="1"/>
+                                    <Setter TargetName="DismissBtn" Property="IsHitTestVisible" Value="True"/>
+                                </Trigger>
+                                <Trigger SourceName="NotifCard" Property="IsKeyboardFocusWithin" Value="True">
+                                    <Setter TargetName="DismissBtn" Property="Opacity" Value="1"/>
+                                    <Setter TargetName="DismissBtn" Property="IsHitTestVisible" Value="True"/>
+                                </Trigger>
+                            </DataTemplate.Triggers>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>

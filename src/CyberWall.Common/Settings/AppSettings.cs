@@ -186,6 +186,13 @@ public sealed class AppSettings
     public DateTime? LastAutoBackupUtc { get; set; } = null;
     public string? LastAutoBackupHash { get; set; } = null;
 
+    /// <summary>
+    /// Optional ID of the network adapter pinned for traffic speed & telemetry.
+    /// Empty means automatic primary-adapter detection.
+    /// </summary>
+    public string PreferredNetworkAdapterId { get; set; } = "";
+    public string PreferredNetworkAdapterName { get; set; } = "";
+
     public static event Action? Saved;
 
     private static string Path => System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "CyberWall", "settings.json");
@@ -224,6 +231,8 @@ public sealed class AppSettings
         AutoBackupEnabled = restored.AutoBackupEnabled;
         AutoBackupFrequency = restored.AutoBackupFrequency;
         BackupRetentionCount = restored.BackupRetentionCount;
+        PreferredNetworkAdapterId = restored.PreferredNetworkAdapterId ?? "";
+        PreferredNetworkAdapterName = restored.PreferredNetworkAdapterName ?? "";
 
         // Keep existing custom backup folder if the restored one points to a missing drive/root.
         if (!string.IsNullOrWhiteSpace(restored.BackupDirectory))

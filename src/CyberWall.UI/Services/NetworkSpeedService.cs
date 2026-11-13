@@ -21,6 +21,13 @@ public sealed record TrafficHistoryPoint(
     double UploadBps
 );
 
+public sealed record NetworkAdapterOption(
+    string Id,
+    string DisplayName,
+    bool IsUp,
+    bool IsVirtualOrVpn
+);
+
 public sealed class NetworkSpeedService
 {
     private static readonly Lazy<NetworkSpeedService> _instance = new(() => new NetworkSpeedService());
@@ -29,6 +36,9 @@ public sealed class NetworkSpeedService
     private readonly System.Threading.Timer _timer;
     private volatile bool _running;
     private int _samplingLock;
+    private readonly object _adapterConfigLock = new();
+    private string? _preferredAdapterId;
+    private string? _preferredAdapterName;
     private string? _lastAdapterId;
     private long _lastBytesReceived = -1;
     private long _lastBytesSent = -1;
@@ -52,11 +62,60 @@ public sealed class NetworkSpeedService
 
     public NetworkSpeedSnapshot CurrentSnapshot { get; private set; } = new(0, 0, 0, 0, "None", false);
 
+    public string PreferredAdapterId
+    {
+        get
+        {
+            lock (_adapterConfigLock)
+                return _preferredAdapterId ?? string.Empty;
+        }
+    }
+
     public event Action<NetworkSpeedSnapshot>? SpeedUpdated;
+    public event Action<string>? PreferredAdapterChanged;
 
     private NetworkSpeedService()
     {
         _timer = new System.Threading.Timer(_ => Sample(), null, Timeout.Infinite, Timeout.Infinite);
+    }
+
+    public void SetPreferredAdapter(string? adapterId, string? fallbackDisplayName = null)
+    {
+        var normalizedId = string.IsNullOrWhiteSpace(adapterId) ? string.Empty : adapterId.Trim();
+        var normalizedName = string.IsNullOrWhiteSpace(fallbackDisplayName) ? string.Empty : fallbackDisplayName.Trim();
+        bool changed;
+        lock (_adapterConfigLock)
+        {
+            changed = !string.Equals(_preferredAdapterId ?? string.Empty, normalizedId, StringComparison.OrdinalIgnoreCase);
+            _preferredAdapterId = string.IsNullOrEmpty(normalizedId) ? null : normalizedId;
+            _preferredAdapterName = string.IsNullOrEmpty(normalizedName) ? null : normalizedName;
+        }
+
+        if (!changed) return;
+
+        lock (_historyLock)
+        {
+            _history.Clear();
+        }
+
+        _lastAdapterId = null;
+        _lastBytesReceived = -1;
+        _lastBytesSent = -1;
+        _lastTime = _stopwatch.Elapsed;
+        Sample(isInitial: true);
+        PreferredAdapterChanged?.Invoke(normalizedId);
+    }
+
+    public IReadOnlyList<NetworkAdapterOption> GetSelectableAdapters()
+    {
+        try
+        {
+            return BuildSelectableAdapters(NetworkInterface.GetAllNetworkInterfaces());
+        }
+        catch
+        {
+            return Array.Empty<NetworkAdapterOption>();
+        }
     }
 
     public void Start()
@@ -85,8 +144,16 @@ public sealed class NetworkSpeedService
 
         try
         {
+            string? preferredId;
+            string? preferredName;
+            lock (_adapterConfigLock)
+            {
+                preferredId = _preferredAdapterId;
+                preferredName = _preferredAdapterName;
+            }
+
             var nics = NetworkInterface.GetAllNetworkInterfaces();
-            var primaryNic = DetectPrimaryAdapter(nics);
+            var primaryNic = SelectTargetAdapter(nics, preferredId);
 
             if (primaryNic == null)
             {
@@ -94,12 +161,25 @@ public sealed class NetworkSpeedService
                 _lastBytesReceived = -1;
                 _lastBytesSent = -1;
 
+                var offlineAdapterName = "Offline";
+                if (!string.IsNullOrWhiteSpace(preferredId))
+                {
+                    var pinnedNic = nics.FirstOrDefault(n => string.Equals(n.Id, preferredId, StringComparison.OrdinalIgnoreCase));
+                    var knownName = pinnedNic != null
+                        ? GetAdapterDisplayName(pinnedNic)
+                        : preferredName;
+                    if (!string.IsNullOrWhiteSpace(knownName))
+                    {
+                        offlineAdapterName = Common.I18n.Strings.T("NetworkAdapterDisconnected", knownName);
+                    }
+                }
+
                 CurrentSnapshot = new NetworkSpeedSnapshot(
                     0,
                     0,
                     _sessionTotalBytesReceived,
                     _sessionTotalBytesSent,
-                    "Offline",
+                    offlineAdapterName,
                     false
                 );
                 SpeedUpdated?.Invoke(CurrentSnapshot);
@@ -109,7 +189,15 @@ public sealed class NetworkSpeedService
             var stats = primaryNic.GetIPStatistics();
             long currentBytesIn = stats.BytesReceived;
             long currentBytesOut = stats.BytesSent;
-            string adapterName = !string.IsNullOrWhiteSpace(primaryNic.Description) ? primaryNic.Description : primaryNic.Name;
+            string adapterName = GetAdapterDisplayName(primaryNic);
+
+            if (!string.IsNullOrWhiteSpace(preferredId))
+            {
+                lock (_adapterConfigLock)
+                {
+                    _preferredAdapterName = adapterName;
+                }
+            }
 
             var now = _stopwatch.Elapsed;
             var elapsedSec = (now - _lastTime).TotalSeconds;
@@ -197,7 +285,59 @@ public sealed class NetworkSpeedService
         return $"{bytes / (1024.0 * 1024.0 * 1024.0):0.00} GB";
     }
 
-    private static bool IsFilterInterface(NetworkInterface nic)
+    private static string GetAdapterDisplayName(NetworkInterface nic) =>
+        !string.IsNullOrWhiteSpace(nic.Description) ? nic.Description : nic.Name;
+
+    internal static NetworkInterface? SelectTargetAdapter(NetworkInterface[] nics, string? preferredAdapterId)
+    {
+        if (!string.IsNullOrWhiteSpace(preferredAdapterId))
+        {
+            return nics.FirstOrDefault(n =>
+                string.Equals(n.Id, preferredAdapterId, StringComparison.OrdinalIgnoreCase) &&
+                n.OperationalStatus == OperationalStatus.Up &&
+                !IsFilterInterface(n, requireUnicastIp: false));
+        }
+
+        return DetectPrimaryAdapter(nics);
+    }
+
+    internal static IReadOnlyList<NetworkAdapterOption> BuildSelectableAdapters(IEnumerable<NetworkInterface> nics)
+    {
+        var list = new List<NetworkAdapterOption>();
+        foreach (var nic in nics)
+        {
+            if (nic.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                continue;
+
+            bool isUp = nic.OperationalStatus == OperationalStatus.Up;
+            if (IsFilterInterface(nic, requireUnicastIp: isUp))
+                continue;
+
+            var desc = nic.Description ?? string.Empty;
+            if (desc.Contains("WAN Miniport", StringComparison.OrdinalIgnoreCase) ||
+                desc.Contains("Kernel Debug", StringComparison.OrdinalIgnoreCase) ||
+                desc.Contains("Teredo", StringComparison.OrdinalIgnoreCase) ||
+                desc.Contains("6to4", StringComparison.OrdinalIgnoreCase) ||
+                desc.Contains("IP-HTTPS", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            list.Add(new NetworkAdapterOption(
+                nic.Id,
+                GetAdapterDisplayName(nic),
+                isUp,
+                IsVirtualOrVpnAdapter(nic)));
+        }
+
+        return list
+            .OrderByDescending(a => a.IsUp)
+            .ThenBy(a => a.IsVirtualOrVpn)
+            .ThenBy(a => a.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static bool IsFilterInterface(NetworkInterface nic, bool requireUnicastIp = true)
     {
         var desc = nic.Description ?? string.Empty;
         var name = nic.Name ?? string.Empty;
@@ -206,6 +346,8 @@ public sealed class NetworkSpeedService
         if (desc.Contains("LightWeight Filter", StringComparison.OrdinalIgnoreCase) ||
             desc.Contains("Packet Scheduler", StringComparison.OrdinalIgnoreCase) ||
             desc.Contains("NDIS Light-Weight", StringComparison.OrdinalIgnoreCase) ||
+            desc.Contains("WFP Native MAC Layer", StringComparison.OrdinalIgnoreCase) ||
+            desc.Contains("WFP 802.3 MAC Layer", StringComparison.OrdinalIgnoreCase) ||
             name.Contains("LightWeight Filter", StringComparison.OrdinalIgnoreCase) ||
             name.Contains("Packet Scheduler", StringComparison.OrdinalIgnoreCase) ||
             name.Contains("-WFP", StringComparison.OrdinalIgnoreCase) ||
@@ -213,6 +355,9 @@ public sealed class NetworkSpeedService
         {
             return true;
         }
+
+        if (!requireUnicastIp)
+            return false;
 
         try
         {
@@ -230,6 +375,22 @@ public sealed class NetworkSpeedService
         }
 
         return false;
+    }
+
+    private static bool IsVirtualOrVpnAdapter(NetworkInterface nic)
+    {
+        if (nic.NetworkInterfaceType == NetworkInterfaceType.Tunnel)
+            return true;
+
+        var desc = nic.Description?.ToLowerInvariant() ?? string.Empty;
+        var name = nic.Name?.ToLowerInvariant() ?? string.Empty;
+
+        return desc.Contains("virtual") || desc.Contains("vpn") || desc.Contains("radmin")
+            || desc.Contains("tap-") || desc.Contains("tap ") || desc.Contains("vmware") || desc.Contains("virtualbox")
+            || desc.Contains("npcap") || desc.Contains("hyper-v") || desc.Contains("host-only") || desc.Contains("bluetooth")
+            || desc.Contains("pcap") || desc.Contains("wsl") || desc.Contains("vethernet") || desc.Contains("wireguard")
+            || desc.Contains("zerotier") || desc.Contains("tailscale") || name.Contains("radmin") || name.Contains("vpn")
+            || name.Contains("tap") || name.Contains("vmware") || name.Contains("vbox") || name.Contains("wsl");
     }
 
     private static NetworkInterface? DetectPrimaryAdapter(NetworkInterface[] nics)
@@ -273,16 +434,9 @@ public sealed class NetworkSpeedService
                 continue;
 
             int score = 0;
-            var desc = nic.Description?.ToLowerInvariant() ?? string.Empty;
-            var name = nic.Name?.ToLowerInvariant() ?? string.Empty;
 
             // Heavily penalize virtual/VPN adapters
-            bool isVirtualOrVpn = desc.Contains("virtual") || desc.Contains("vpn") || desc.Contains("radmin")
-                || desc.Contains("tap-") || desc.Contains("tap ") || desc.Contains("vmware") || desc.Contains("virtualbox")
-                || desc.Contains("npcap") || desc.Contains("hyper-v") || desc.Contains("host-only") || desc.Contains("bluetooth")
-                || desc.Contains("pcap") || desc.Contains("wsl") || desc.Contains("vethernet") || desc.Contains("wireguard")
-                || desc.Contains("zerotier") || desc.Contains("tailscale") || name.Contains("radmin") || name.Contains("vpn")
-                || name.Contains("tap") || name.Contains("vmware") || name.Contains("vbox") || name.Contains("wsl");
+            bool isVirtualOrVpn = IsVirtualOrVpnAdapter(nic);
 
             if (isVirtualOrVpn)
             {

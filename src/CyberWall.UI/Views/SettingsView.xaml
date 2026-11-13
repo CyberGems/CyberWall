@@ -510,6 +510,27 @@
                             </StackPanel>
                             <ComboBox x:Name="TrafficAnimBox" Grid.Column="2" Width="220" Height="35" Style="{StaticResource ModernComboBox}" SelectionChanged="TrafficAnimBox_SelectionChanged"/>
                         </Grid>
+
+                        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,10,0,10"/>
+
+                        <!-- Row 6: Preferred Network Adapter Selector -->
+                        <Grid Margin="0,4,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="34" Height="34" CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                                <Path Data="M 15 20 L 18 17 H 20 C 21.1 17 22 16.1 22 15 V 6 C 22 4.9 21.1 4 20 4 H 4 C 2.9 4 2 4.9 2 6 V 15 C 2 16.1 2.9 17 4 17 H 6 L 9 20 Z M 6 8 V 10 M 10 8 V 10 M 14 8 V 10 M 18 8 V 10"
+                                      Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      Width="14" Height="14" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock x:Name="NetworkAdapterTitleLbl" Text="Adaptador de red" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextBrush}"/>
+                                <TextBlock x:Name="NetworkAdapterDescLbl" Text="Elige qué adaptador de red utiliza CyberWall para los gráficos de velocidad y la telemetría." FontSize="12.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <ComboBox x:Name="NetworkAdapterBox" Grid.Column="2" Width="220" Height="35" Style="{StaticResource ModernComboBox}" SelectionChanged="NetworkAdapterBox_SelectionChanged"/>
+                        </Grid>
                     </StackPanel>
                 </Border>
 

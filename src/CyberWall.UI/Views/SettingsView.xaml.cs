@@ -43,6 +43,7 @@ public partial class SettingsView : UserControl
             if (!_pauseSubscribed)
             {
                 FloatingAlertsController.PauseStateChanged += OnPauseStateChanged;
+                NetworkSpeedService.Instance.PreferredAdapterChanged += OnPreferredAdapterChanged;
                 _pauseSubscribed = true;
             }
             if (_loading)
@@ -52,6 +53,7 @@ public partial class SettingsView : UserControl
             else
             {
                 UpdatePauseUiState();
+                PopulateNetworkAdapters();
             }
         };
 
@@ -60,6 +62,7 @@ public partial class SettingsView : UserControl
             if (_pauseSubscribed)
             {
                 FloatingAlertsController.PauseStateChanged -= OnPauseStateChanged;
+                NetworkSpeedService.Instance.PreferredAdapterChanged -= OnPreferredAdapterChanged;
                 _pauseSubscribed = false;
             }
         };
@@ -68,6 +71,11 @@ public partial class SettingsView : UserControl
     private void OnPauseStateChanged()
     {
         Dispatcher.BeginInvoke(UpdatePauseUiState);
+    }
+
+    private void OnPreferredAdapterChanged(string _)
+    {
+        Dispatcher.BeginInvoke(PopulateNetworkAdapters);
     }
 
     public void Activate()
@@ -289,6 +297,8 @@ public partial class SettingsView : UserControl
         ToastAutoBlockDescLbl.Text = Strings.T("ToastAutoBlockDesc");
         TrafficAnimTitleLbl.Text = Strings.T("TrafficAnimationHdr");
         TrafficAnimDescLbl.Text = Strings.T("TrafficAnimationDesc");
+        NetworkAdapterTitleLbl.Text = Strings.T("NetworkAdapter");
+        NetworkAdapterDescLbl.Text = Strings.T("NetworkAdapterDesc");
         SecSystemLbl.Text = Strings.T("SystemHeader");
         StartupTitleLbl.Text = Strings.T("RunAtStartup");
         StartupDescLbl.Text = Strings.T("RunAtStartupDesc");
@@ -326,6 +336,7 @@ public partial class SettingsView : UserControl
         PopulateMonitors();
         PopulateAutoBlockWait();
         PopulateTrafficAnim();
+        PopulateNetworkAdapters();
         PopulateBackupFrequency();
         PopulateBackupRetention();
         UpdatePauseUiState();
@@ -578,6 +589,74 @@ public partial class SettingsView : UserControl
         {
             _s.TrafficAnimation = mode;
             _s.Save();
+        }
+    }
+
+    private void PopulateNetworkAdapters()
+    {
+        var wasLoading = _loading;
+        _loading = true;
+        try
+        {
+            NetworkAdapterBox.Items.Clear();
+            NetworkAdapterBox.Items.Add(new ComboBoxItem
+            {
+                Content = Strings.T("NetworkAdapterAuto"),
+                Tag = (Id: string.Empty, Name: string.Empty)
+            });
+
+            var adapters = NetworkSpeedService.Instance.GetSelectableAdapters();
+            var savedId = _s.PreferredNetworkAdapterId ?? string.Empty;
+            int selectedIndex = 0;
+            bool foundSaved = false;
+
+            foreach (var adapter in adapters)
+            {
+                var label = adapter.IsUp
+                    ? adapter.DisplayName
+                    : Strings.T("NetworkAdapterDisconnected", adapter.DisplayName);
+                int idx = NetworkAdapterBox.Items.Add(new ComboBoxItem
+                {
+                    Content = label,
+                    Tag = (Id: adapter.Id, Name: adapter.DisplayName)
+                });
+                if (!string.IsNullOrEmpty(savedId) &&
+                    string.Equals(adapter.Id, savedId, StringComparison.OrdinalIgnoreCase))
+                {
+                    selectedIndex = idx;
+                    foundSaved = true;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(savedId) && !foundSaved)
+            {
+                var fallbackName = string.IsNullOrWhiteSpace(_s.PreferredNetworkAdapterName)
+                    ? savedId
+                    : _s.PreferredNetworkAdapterName;
+                selectedIndex = NetworkAdapterBox.Items.Add(new ComboBoxItem
+                {
+                    Content = Strings.T("NetworkAdapterDisconnected", fallbackName),
+                    Tag = (Id: savedId, Name: fallbackName)
+                });
+            }
+
+            NetworkAdapterBox.SelectedIndex = selectedIndex;
+        }
+        finally
+        {
+            _loading = wasLoading;
+        }
+    }
+
+    private void NetworkAdapterBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loading) return;
+        if (NetworkAdapterBox.SelectedItem is ComboBoxItem { Tag: ValueTuple<string, string> selection })
+        {
+            _s.PreferredNetworkAdapterId = selection.Item1;
+            _s.PreferredNetworkAdapterName = selection.Item2;
+            _s.Save();
+            NetworkSpeedService.Instance.SetPreferredAdapter(selection.Item1, selection.Item2);
         }
     }
 

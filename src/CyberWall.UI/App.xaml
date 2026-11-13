@@ -340,9 +340,39 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <ContentPresenter Grid.Column="0" ContentSource="Icon" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <Grid Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,6,0">
+                                    <ContentPresenter ContentSource="Icon" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <Path x:Name="CheckGlyph" Data="M 4 10 L 8.5 14.5 L 16 5.5"
+                                          Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.8"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                          Width="11" Height="11" Stretch="Uniform" Visibility="Collapsed"/>
+                                </Grid>
                                 <ContentPresenter Grid.Column="1" ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center" Margin="4,0,16,0"/>
-                                <TextBlock Grid.Column="2" Text="{TemplateBinding InputGestureText}" Foreground="{DynamicResource SubTextBrush}" FontSize="11" VerticalAlignment="Center" Margin="8,0,4,0"/>
+                                <TextBlock x:Name="GestureText" Grid.Column="2" Text="{TemplateBinding InputGestureText}" Foreground="{DynamicResource SubTextBrush}" FontSize="11" VerticalAlignment="Center" Margin="8,0,4,0"/>
+                                <Path x:Name="SubmenuArrow" Grid.Column="2" Data="M 9 6 L 15 12 L 9 18"
+                                      Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.6"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      Width="10" Height="10" Stretch="Uniform" VerticalAlignment="Center"
+                                      Margin="8,0,2,0" Visibility="Collapsed"/>
+                                <Popup x:Name="PART_Popup"
+                                       AllowsTransparency="True"
+                                       Placement="Right"
+                                       HorizontalOffset="-10"
+                                       VerticalOffset="-16"
+                                       IsOpen="{TemplateBinding IsSubmenuOpen}"
+                                       Focusable="False"
+                                       PopupAnimation="Fade">
+                                    <Grid Margin="12,12,16,16">
+                                        <Border CornerRadius="10" Background="{DynamicResource CardBrush}" IsHitTestVisible="False">
+                                            <Border.Effect>
+                                                <DropShadowEffect Color="#000000" Opacity="0.45" BlurRadius="16" ShadowDepth="3"/>
+                                            </Border.Effect>
+                                        </Border>
+                                        <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10" Padding="5" SnapsToDevicePixels="True">
+                                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                                        </Border>
+                                    </Grid>
+                                </Popup>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -350,6 +380,17 @@
                                 <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource CardSecondaryBrush}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
                             </Trigger>
+                            <Trigger Property="HasItems" Value="True">
+                                <Setter TargetName="GestureText" Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="SubmenuArrow" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsChecked" Value="True"/>
+                                    <Condition Property="Icon" Value="{x:Null}"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="CheckGlyph" Property="Visibility" Value="Visible"/>
+                            </MultiTrigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Foreground" Value="{DynamicResource SubTextBrush}"/>
                                 <Setter Property="Opacity" Value="0.5"/>

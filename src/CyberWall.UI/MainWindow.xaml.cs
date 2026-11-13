@@ -267,6 +267,7 @@ public partial class MainWindow : Window
         GeoCountry.Warm();
         ProcessTrafficTracker.Instance.ActivityUpdated += OnActivityUpdated;
         ProcessTrafficTracker.Instance.Start();
+        NetworkSpeedService.Instance.SetPreferredAdapter(App.Settings.PreferredNetworkAdapterId, App.Settings.PreferredNetworkAdapterName);
         NetworkSpeedService.Instance.SpeedUpdated += OnNetworkSpeedUpdated;
         NetworkSpeedService.Instance.Start();
         RenderStabilityManager.Instance.RenderPausedChanged += OnRenderPausedChanged;
@@ -685,6 +686,7 @@ public partial class MainWindow : Window
         {
             App.Settings.ApplyRestoredPreferences(doc.Payload.Settings);
             App.Settings.Save();
+            NetworkSpeedService.Instance.SetPreferredAdapter(App.Settings.PreferredNetworkAdapterId, App.Settings.PreferredNetworkAdapterName);
 
             Strings.Current = App.Settings.Language;
             ThemeManager.Apply(App.Settings.Theme);
