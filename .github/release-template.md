@@ -6,6 +6,7 @@
 
 ### 🚀 What's new in this release
 
+<!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section and highlights with the ACTUAL release notes for this specific new version before tagging. NEVER leave or copy previous version notes! Use 25-45 words for the summary, lead with user-facing changes, and do not repeat the app name or version. Keep the Spanish mirror inside the details block in sync: translate the summary and rewrite the highlights. -->
 <!-- changelog-summary:start -->
 Adds automatic and manual .cwbackup snapshots with selective restore, network adapter selection across live graphs, embedded Notifications and About tabs, a CyberGems tray suite menu, timed alert pauses, sleep-resume rendering protection, mixed-DPI positioning fixes, and refreshed navigation icons.
 <!-- changelog-summary:end -->
