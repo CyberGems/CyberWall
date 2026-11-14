@@ -185,7 +185,7 @@ CyberWall vive en la bandeja y pregunta antes de que un programa desconocido sal
 
 Las decisiones se convierten en reglas del Cortafuegos de Windows guardadas en `%ProgramData%\CyberWall\rules.json`. Una tarea programada restaura la política original si CyberWall se detiene de forma inesperada, para que el equipo nunca quede bloqueado. También puedes configurar respaldos automáticos `.cwbackup` (de 1 a 7 copias, carpeta personalizable) o restaurar reglas y ajustes desde **Configuración → Respaldos**.
 
-Consulta [¿Cómo se usa CyberWall?](https://github.com/CyberGems/CyberWall/wiki/How-Do-You-Use) para ver ejemplos cotidianos y las guías completas de la wiki (en inglés).
+Consulta [¿Cómo se usa CyberWall?](https://github.com/CyberGems/CyberWall/wiki/How-Do-You-Use-es) para ver ejemplos cotidianos y las guías completas de la wiki.
 
 ---
 
