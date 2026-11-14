@@ -7,9 +7,6 @@ on:
       - 'README.md'
       - 'README.es.md'
   pull_request:
-    paths:
-      - 'README.md'
-      - 'README.es.md'
   workflow_dispatch:
 
 jobs:
