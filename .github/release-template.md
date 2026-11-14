@@ -42,6 +42,8 @@ Adds automatic and manual .cwbackup snapshots with selective restore, network ad
 
 Incorpora copias de seguridad automáticas y manuales `.cwbackup` con restauración selectiva, selección de adaptador de red en gráficos en vivo, pestañas integradas de Notificaciones y Acerca de, menú de la suite CyberGems en la bandeja, pausas temporizadas de alertas, protección tras suspensión y mejoras multi-DPI.
 
+> **¿Nuevo en CyberWall?** Un firewall de Windows en tiempo real para ver el tráfico por aplicación y permitir o bloquear conexiones con un clic.
+
 ---
 
 ### ✨ Novedades destacadas
