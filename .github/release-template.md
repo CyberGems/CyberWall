@@ -111,4 +111,6 @@ Incorpora copias de seguridad automáticas y manuales `.cwbackup` con restauraci
 
 ---
 
+📜 **Full changelog:** browse every version in [CHANGELOG.md](https://github.com/CyberGems/CyberWall/blob/master/CHANGELOG.md).
+
 *Crafted with precision by [CyberGems](https://cybergems.org)*
