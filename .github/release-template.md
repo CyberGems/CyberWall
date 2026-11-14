@@ -36,7 +36,7 @@ Adds automatic and manual .cwbackup snapshots with selective restore, network ad
   - Added `RenderStabilityManager` protection against `UCEERR_RENDERTHREADFAILURE` on sleep/resume, plus hardened mixed-DPI popup positioning, keyboard shortcuts, and higher-contrast unknown country map flags.
 
 <details>
-<summary><b>🌐 Ver notas de la versión en Español</b></summary>
+<summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
 
 ### 🚀 Novedades de esta versión
 
