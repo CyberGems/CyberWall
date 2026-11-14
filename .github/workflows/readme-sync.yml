@@ -1,0 +1,12 @@
+name: README sync
+
+on:
+  pull_request:
+    paths:
+      - 'README.md'
+      - 'README.es.md'
+  workflow_dispatch:
+
+jobs:
+  readme-sync:
+    uses: CyberGems/.github/.github/workflows/readme-sync.yml@main
