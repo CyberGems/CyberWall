@@ -1,6 +1,11 @@
 name: README sync
 
 on:
+  push:
+    branches: [master]
+    paths:
+      - 'README.md'
+      - 'README.es.md'
   pull_request:
     paths:
       - 'README.md'
