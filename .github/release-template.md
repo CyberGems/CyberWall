@@ -90,7 +90,9 @@ Incorpora copias de seguridad automáticas y manuales `.cwbackup` con restauraci
 
 ---
 
-### VirusTotal and SHA256
+### 🔐 VirusTotal and SHA256
+
+> 🛡️ The report opens on VirusTotal and does not download anything.
 
 **Installer**: [View VirusTotal report](https://www.virustotal.com/gui/file/{{INSTALLER_HASH}})
 
@@ -98,7 +100,7 @@ Incorpora copias de seguridad automáticas y manuales `.cwbackup` con restauraci
 {{INSTALLER_HASH}}
 ```
 
-**Portable archive**: [View VirusTotal report](https://www.virustotal.com/gui/file/{{PORTABLE_HASH}})
+**Portable**: [View VirusTotal report](https://www.virustotal.com/gui/file/{{PORTABLE_HASH}})
 
 ```text
 {{PORTABLE_HASH}}
