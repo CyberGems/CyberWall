@@ -12,6 +12,8 @@ on:
       - 'src/CyberWall.UI/Assets/Suite/**'
       - 'src/CyberWall.UI/CyberWall.UI.csproj'
       - '.github/workflows/release.yml'
+      - 'CyberWall.iss'
+      - '.github/scripts/verify-installer-icon.ps1'
   pull_request:
   workflow_dispatch:
 
@@ -24,6 +26,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Verify installer declares the Apps icon
+        shell: pwsh
+        run: ./.github/scripts/verify-installer-icon.ps1
+
       - name: Refresh About icons from official app repositories
         uses: CyberGems/CyberSnap/.github/actions/sync-suite-icons@80266c5b4ad7fa4c5768e2543a4c7c7a461fc8f7
         with:
