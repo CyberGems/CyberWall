@@ -34,7 +34,7 @@ jobs:
           node-version: '24'
 
       - name: Test submission policy
-        run: node --test .github/scripts/submit-winget.test.mjs
+        run: node --test .github/scripts/submit-winget.checks.mjs
 
       - name: Download published release manifests
         shell: pwsh
