@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+PackageIdentifier: CyberGems.CyberWall
+PackageVersion: {{VERSION}}
+PackageLocale: en-US
+Publisher: CyberGems
+PackageName: CyberWall
+PackageUrl: https://cybergems.org/apps/cyberwall/
+License: GPL-3.0-or-later
+LicenseUrl: https://github.com/CyberGems/CyberWall/blob/master/LICENSE
+Copyright: Copyright (C) 2026 CyberGems
+ShortDescription: Default-deny outbound firewall with per-app rules for Windows
+Description: Every program on your PC can reach the internet the moment it runs, and most firewalls either allow it silently or ask you about ports and protocols. CyberWall is a default-deny firewall for Windows. Nothing gets out until you allow that specific executable. Unknown connections raise a simple prompt to allow once, always allow, or block with a persistent rule, and the same window shows live connections, traffic statistics, rule management and a clear identity for each app. It runs on the native Windows Filtering Platform and the built-in Advanced Firewall, with no third-party kernel driver.
+Tags:
+- firewall
+- network
+- security
+- privacy
+- monitoring
+Moniker: cyberwall
+ReleaseNotesUrl: https://github.com/CyberGems/CyberWall/releases/tag/{{TAG}}
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

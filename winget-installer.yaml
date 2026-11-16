@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+PackageIdentifier: CyberGems.CyberWall
+PackageVersion: {{VERSION}}
+InstallerType: inno
+Scope: user
+InstallModes:
+- interactive
+- silent
+- silentWithProgress
+InstallerSwitches:
+  Silent: /VERYSILENT /NORESTART /SUPPRESSMSGBOXES
+  SilentWithProgress: /VERYSILENT /NORESTART /SUPPRESSMSGBOXES
+  Custom: /NORESTART /SUPPRESSMSGBOXES
+Installers:
+- Architecture: x64
+  InstallerUrl: https://github.com/CyberGems/CyberWall/releases/download/{{TAG}}/CyberWall-Setup-{{TAG}}.exe
+  InstallerSha256: {{INSTALLER_HASH}}
+ManifestType: installer
+ManifestVersion: 1.6.0

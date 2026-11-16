@@ -137,6 +137,27 @@ jobs:
           $notes = $template.Replace("{{VERSION}}", "${{ github.ref_name }}").Replace("{{INSTALLER_HASH}}", $installerHash).Replace("{{PORTABLE_HASH}}", $portableHash)
           [System.IO.File]::WriteAllText("release_notes.md", $notes, [System.Text.Encoding]::UTF8)
 
+          $tag = "${{ github.ref_name }}"
+          # winget versions carry no 'v' prefix (2.5.0, not v2.5.0); URLs keep the tag's.
+          $bareVersion = $tag.TrimStart("v")
+          $manifestFiles = @{
+              "winget-version.yaml"   = "CyberGems.CyberWall.yaml"
+              "winget-locale.yaml"    = "CyberGems.CyberWall.locale.en-US.yaml"
+              "winget-installer.yaml" = "CyberGems.CyberWall.installer.yaml"
+          }
+          New-Item -ItemType Directory -Path winget-pkg -Force | Out-Null
+          foreach ($entry in $manifestFiles.GetEnumerator()) {
+              $manifestTemplate = [System.IO.File]::ReadAllText($entry.Key, [System.Text.Encoding]::UTF8)
+              $manifest = $manifestTemplate.Replace("{{VERSION}}", $bareVersion).Replace("{{TAG}}", $tag).Replace("{{INSTALLER_HASH}}", $installerHash)
+              [System.IO.File]::WriteAllText("winget-pkg/$($entry.Value)", $manifest, [System.Text.Encoding]::UTF8)
+          }
+          Write-Host "Generated winget manifests for $tag with installer hash: $installerHash"
+
+      - name: Validate winget manifests
+        shell: pwsh
+        run: |
+          winget validate winget-pkg
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
@@ -145,6 +166,9 @@ jobs:
           files: |
             ./CyberWall-${{ github.ref_name }}-Portable-win-x64.zip
             ./CyberWall-Setup-${{ github.ref_name }}.exe
+            ./winget-pkg/CyberGems.CyberWall.yaml
+            ./winget-pkg/CyberGems.CyberWall.locale.en-US.yaml
+            ./winget-pkg/CyberGems.CyberWall.installer.yaml
           draft: true
           prerelease: false
           body_path: ./release_notes.md

@@ -1,0 +1,67 @@
+name: Submit CyberWall to winget
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published stable release to submit (for example v1.21.0)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: winget-CyberGems.CyberWall
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
+    runs-on: windows-latest
+    steps:
+      - name: Checkout submission automation
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Test submission policy
+        run: node --test .github/scripts/submit-winget.test.mjs
+
+      - name: Download published release manifests
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $releaseJson = gh release view $env:RELEASE_TAG --repo $env:SOURCE_REPOSITORY --json tagName,isDraft,isPrerelease
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read the published release.' }
+          $release = $releaseJson | ConvertFrom-Json
+          if ($release.isDraft -or $release.isPrerelease) { throw 'Only published stable releases can be submitted.' }
+          New-Item -ItemType Directory -Path winget-pkg -Force | Out-Null
+          gh release download $release.tagName --repo $env:SOURCE_REPOSITORY --pattern 'CyberGems.CyberWall*.yaml' --dir winget-pkg
+          if ($LASTEXITCODE -ne 0) { throw 'Could not download release manifests.' }
+
+      - name: Create or update the single pending PR
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.WINGET_PAT }}
+        run: |
+          # Submission phases: the kit stays idle until the WINGET_PAT secret is added
+          # to this repository, which is what arms automated submissions.
+          if (-not $env:GH_TOKEN) {
+            Write-Host 'WINGET_PAT is not configured; skipping winget submission until the secret is added.'
+            exit 0
+          }
+          node .github/scripts/submit-winget.mjs --manifest-directory winget-pkg
+          if ($LASTEXITCODE -ne 0) { throw 'The winget submission failed.' }
