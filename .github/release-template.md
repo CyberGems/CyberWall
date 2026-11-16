@@ -8,7 +8,7 @@
 
 <!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section and highlights with the ACTUAL release notes for this specific new version before tagging. NEVER leave or copy previous version notes! Use 25-45 words for the summary, lead with user-facing changes, and do not repeat the app name or version. Keep the Spanish mirror inside the details block in sync: translate the summary and rewrite the highlights. -->
 <!-- changelog-summary:start -->
-Adds automatic and manual .cwbackup snapshots with selective restore, network adapter selection across live graphs, embedded Notifications and About tabs, a CyberGems tray suite menu, timed alert pauses, sleep-resume rendering protection, mixed-DPI positioning fixes, and refreshed navigation icons.
+The Windows uninstall entry now shows the app icon. Releases ship winget manifests and feed an automated Windows Package Manager submission pipeline, and dependencies are refreshed.
 <!-- changelog-summary:end -->
 
 > **New to CyberWall?** A real-time Windows firewall for viewing per-app traffic and allowing or blocking connections with one click.
@@ -17,31 +17,16 @@ Adds automatic and manual .cwbackup snapshots with selective restore, network ad
 
 ### ✨ Key Features & Highlights
 
-- 💾 **Automatic & Manual Backups (`.cwbackup`)**:
-  - Automatic and on-demand snapshots for firewall rules and preferences with SHA-256 integrity checks, customizable storage folder, and retention between 1 and 7 automatic backups.
-  - Selective restore dialog (`BackupRestoreDialog`) with external file browsing and automatic safety snapshots before clearing or restoring.
-
-- 🌐 **Network Adapter Selection & Live Graph Sync**:
-  - Choose **Automatic** or pin a specific network interface across Settings, Traffic Monitor, and the Floating Traffic Widget.
-  - Switching adapters immediately resets live telemetry series and header graphs.
-
-- 🔔 **Embedded Notifications & About Tabs**:
-  - Notifications and About now live cleanly as integrated main-window tabs instead of standalone dialogs.
-  - Sort notifications by Date, Type, or App, dismiss individual cards on hover, and check for updates directly inline in About alongside the refreshed CyberGems suite footer.
-
-- 🧭 **Refined Menus, Tray Suite View & Navigation Icons**:
-  - Redesigned vector tab icons, neutral-idle More menu items with a grouped Help & Documentation submenu, reliable second-click menu dismissal, and calmer dropdown highlights.
-  - Upgraded system tray menu with timed floating-alert pauses, Floating Traffic Widget toggle, and a **More from CyberGems** suite sub-view.
-
-- 🛡️ **Rendering & Multi-DPI Stability**:
-  - Added `RenderStabilityManager` protection against `UCEERR_RENDERTHREADFAILURE` on sleep/resume, plus hardened mixed-DPI popup positioning, keyboard shortcuts, and higher-contrast unknown country map flags.
+- 🖥️ **Recognizable in Windows**: The Apps uninstall entry displays the CyberWall icon.
+- 📦 **Windows Package Manager ready**: Every release ships validated winget manifests alongside the installer and portable archive, and an automated workflow submits them once the submission pipeline is armed.
+- 🧰 **Maintenance**: Microsoft.Extensions.Hosting and three other dependencies are updated.
 
 <details>
 <summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
 
 ### 🚀 Novedades de esta versión
 
-Incorpora copias de seguridad automáticas y manuales `.cwbackup` con restauración selectiva, selección de adaptador de red en gráficos en vivo, pestañas integradas de Notificaciones y Acerca de, menú de la suite CyberGems en la bandeja, pausas temporizadas de alertas, protección tras suspensión y mejoras multi-DPI.
+La entrada de desinstalación de Windows ya muestra el icono de la app. Los releases publican manifiestos winget y alimentan un envío automatizado al Windows Package Manager, y se actualizan dependencias.
 
 > **¿Nuevo en CyberWall?** Un firewall de Windows en tiempo real para ver el tráfico por aplicación y permitir o bloquear conexiones con un clic.
 
@@ -49,24 +34,9 @@ Incorpora copias de seguridad automáticas y manuales `.cwbackup` con restauraci
 
 ### ✨ Novedades destacadas
 
-- 💾 **Copias de seguridad automáticas y manuales (`.cwbackup`)**:
-  - Instantáneas automáticas y bajo demanda para reglas y preferencias con verificación de integridad SHA-256, carpeta personalizable y retención entre 1 y 7 copias automáticas.
-  - Diálogo de restauración selectiva con exploración de archivos externos y copias preventivas antes de limpiar o restaurar.
-
-- 🌐 **Selección de adaptador de red y sincronización de gráficos**:
-  - Elige **Automático** o fija un adaptador de red específico desde Configuración, Monitor de tráfico o el Widget flotante.
-  - Al cambiar de adaptador, los gráficos en vivo y el encabezado reinician su escala de forma inmediata.
-
-- 🔔 **Pestañas integradas de Notificaciones y Acerca de**:
-  - Notificaciones y Acerca de pasan a estar integradas dentro de la ventana principal en lugar de ventanas modales independientes.
-  - Ordena notificaciones por Fecha, Tipo o Aplicación, descarta tarjetas individuales al pasar el cursor y consulta actualizaciones en línea dentro de la pestaña Acerca de.
-
-- 🧭 **Menús refinados, vista de la suite en bandeja e iconos renovados**:
-  - Nuevos iconos vectoriales de pestañas, iconos neutros en el menú Más opciones con submenú de Ayuda y documentación, cierre fiable al segundo clic y desplegables menos estridentes.
-  - Menú contextual de bandeja mejorado con pausas temporizadas de alertas flotantes, interruptor del Widget flotante y subvista **Más de CyberGems**.
-
-- 🛡️ **Estabilidad gráfica y soporte multi-DPI**:
-  - Protección frente a fallos `UCEERR_RENDERTHREADFAILURE` al reanudar desde suspensión, posicionamiento corregido de popups y bandeja en monitores con distinto DPI, atajos de teclado y mayor contraste en banderas de país no identificado.
+- 🖥️ **Reconocible en Windows**: La entrada de desinstalación en Aplicaciones muestra el icono de CyberWall.
+- 📦 **Listo para el Windows Package Manager**: Cada release publica manifiestos winget validados junto al instalador y el archivo portable, y un workflow automatizado los envía cuando el pipeline se arme.
+- 🧰 **Mantenimiento**: Se actualizan Microsoft.Extensions.Hosting y otras tres dependencias.
 
 ### ⚠️ Antes de instalar
 

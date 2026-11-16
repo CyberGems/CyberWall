@@ -2,6 +2,20 @@
 
 All notable changes to CyberWall are documented here.
 
+## [2.5.1] - 2026-11-16
+
+### 🇺🇸 English
+
+- Show the CyberWall app icon on the Windows uninstall entry.
+- Ship winget manifests with every release and automate Windows Package Manager submissions.
+- Update Microsoft.Extensions.Hosting and three other dependencies.
+
+### 🇪🇸 Español
+
+- Muestra el icono de CyberWall en la entrada de desinstalación de Windows.
+- Publica manifiestos winget con cada release y automatiza los envíos al Windows Package Manager.
+- Actualiza Microsoft.Extensions.Hosting y otras tres dependencias.
+
 ## [2.5.0] - 2026-11-13
 
 ### 🇺🇸 English
