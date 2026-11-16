@@ -22,6 +22,8 @@ DisableProgramGroupPage=yes
 OutputDir=.
 OutputBaseFilename=CyberWall-Setup-{#AppVersion}
 SetupIconFile=.\src\CyberWall.UI\Assets\CyberWall.ico
+; Without this, Inno leaves DisplayIcon empty and Windows shows a generic icon in Apps.
+UninstallDisplayIcon={app}\CyberWall.exe,0
 WizardSmallImageFile=.\installer\installerWizardSmall.bmp
 WizardImageFile=.\installer\installerWizard.bmp
 Compression=lzma
