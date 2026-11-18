@@ -99,8 +99,8 @@ public partial class SettingsView : UserControl
             case AppTheme.CyberWall:
                 CyberWallCard.IsChecked = true;
                 break;
-            case AppTheme.Dark:
-                DarkCard.IsChecked = true;
+            case AppTheme.Gray:
+                GrayCard.IsChecked = true;
                 break;
             case AppTheme.Light:
                 LightCard.IsChecked = true;
@@ -266,7 +266,7 @@ public partial class SettingsView : UserControl
         ThemeSubLbl.Text = es ? "Elige el aspecto visual característico de CyberWall." : "Choose the signature visual appearance of CyberWall.";
 
         CyberWallCard.RefreshCaption("CyberWall");
-        DarkCard.RefreshCaption(es ? "Oscuro" : "Dark");
+        GrayCard.RefreshCaption(es ? "Gris" : "Gray");
         LightCard.RefreshCaption(es ? "Claro" : "Light");
 
         InstantChangeLbl.Text = es ? "Se aplica al instante sin necesidad de reiniciar la aplicación." : "Applied instantly without needing to restart the app.";

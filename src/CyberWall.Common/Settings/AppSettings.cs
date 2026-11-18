@@ -7,7 +7,7 @@ using CyberWall.Common.IO;
 
 namespace CyberWall.Common.Settings;
 
-public enum AppTheme { CyberWall, Dark, Light }
+public enum AppTheme { CyberWall, Gray, Light }
 
 public enum PopupPosition
 {

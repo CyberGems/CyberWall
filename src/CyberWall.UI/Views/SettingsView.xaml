@@ -196,7 +196,7 @@
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <controls:ThemeCard x:Name="CyberWallCard" ThemeMode="CyberWall" Caption="CyberWall" CardWidth="140" Margin="8,0" Checked="ThemeCard_Checked"/>
-                                        <controls:ThemeCard x:Name="DarkCard" ThemeMode="Dark" Caption="Oscuro" CardWidth="140" Margin="8,0" Checked="ThemeCard_Checked"/>
+                                        <controls:ThemeCard x:Name="GrayCard" ThemeMode="Gray" Caption="Gris" CardWidth="140" Margin="8,0" Checked="ThemeCard_Checked"/>
                                         <controls:ThemeCard x:Name="LightCard" ThemeMode="Light" Caption="Claro" CardWidth="140" Margin="8,0" Checked="ThemeCard_Checked"/>
                                     </StackPanel>
                                     <TextBlock x:Name="InstantChangeLbl" Margin="0,12,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource SubTextBrush}" FontSize="12" Text="Se aplica al instante sin necesidad de reiniciar la aplicación."/>

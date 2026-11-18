@@ -58,8 +58,8 @@ public static class ThemeManager
             SwitchActive: "#00E5FF",
             SwitchTrack: "#242F41"),
 
-        // Dark Theme: Refined Neutral Charcoal, Slate & Electric Indigo
-        [AppTheme.Dark] = new(
+        // Gray Theme: Refined Neutral Charcoal, Slate & Electric Indigo
+        [AppTheme.Gray] = new(
             Bg: "#121214",
             Card: "#1A1A1E",
             CardSecondary: "#222228",
