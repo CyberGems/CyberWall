@@ -922,9 +922,6 @@
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter Property="Background" Value="{DynamicResource HeaderBgBrush}"/>
                                     </Trigger>
-                                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Active">
-                                        <Setter Property="Background" Value="{DynamicResource AccentGlowBrush}"/>
-                                    </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Border.Style>

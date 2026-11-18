@@ -75,9 +75,6 @@ public partial class MainWindow : Window
         if (SettingsBtn != null)
             SettingsBtn.Tag = tab == MainTab.Settings ? "Active" : null;
 
-        if (BrandingPanel != null)
-            BrandingPanel.Tag = tab == MainTab.About ? "Active" : null;
-
         if (NotifBtn != null)
             NotifBtn.Tag = tab == MainTab.Notifications ? "Active" : null;
 
