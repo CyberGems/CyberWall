@@ -124,7 +124,6 @@ public static class Strings
         ["SettingsLocationSharedHdr"] = ("On-Screen Location (Shared)", "Ubicación en pantalla (compartida)"),
         ["SettingsPermissionPromptsHdr"] = ("Connection Permission Prompts", "Solicitudes de permiso de conexión"),
         ["SettingsPermissionPromptsNote"] = ("Interactive firewall prompts always appear on screen and are never paused.", "Los avisos interactivos de permisos siempre se muestran y nunca se pausan."),
-        ["TrayBack"] = ("Back", "Volver"),
         ["PauseFloatingAlerts"] = ("Pause floating alerts", "Pausar avisos flotantes"),
         ["ResumeFloatingAlerts"] = ("Resume floating alerts", "Reanudar avisos flotantes"),
         ["PauseAlerts1h"] = ("For 1 hour", "Por 1 hora"),

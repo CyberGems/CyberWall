@@ -141,5 +141,35 @@ public class TrayContextMenuPositioningTests
         Assert.Equal(initTop, returnTop);
         Assert.Equal(1040, returnTop + mainPhysH);
     }
+
+    [Fact]
+    public void PlacesFlyoutOnLeftForBottomRightTaskbarAndOnRightForLeftTaskbar()
+    {
+        var bounds = new Rectangle(0, 0, 1920, 1080);
+        const int cardPhysW = 375;   // 300 DIP * 1.25
+        const int flyoutSpanPx = 335; // 268 DIP * 1.25
+        const int totalPhysW = 710;   // 568 DIP * 1.25
+        const int physH = 550;
+
+        // Bottom taskbar, click near bottom-right tray
+        var bottomWork = new Rectangle(0, 0, 1920, 1040);
+        var (bottomLeft, bottomTop, bottomSide, bottomAlignBottom) = TrayContextMenuWindow.ComputeFlyoutLayout(
+            bottomWork, bounds, new Point(1850, 1060), cardPhysW, flyoutSpanPx, totalPhysW, physH, 1.25, 1.25);
+
+        Assert.Equal(TrayFlyoutSide.Left, bottomSide);
+        Assert.True(bottomAlignBottom);
+        Assert.Equal(1920 - totalPhysW, bottomLeft);
+        Assert.Equal(1040 - physH, bottomTop);
+
+        // Left taskbar, click near top-left tray -> flyout opens to the right of main card
+        var leftWork = new Rectangle(80, 0, 1840, 1080);
+        var (leftX, leftY, leftSide, leftAlignBottom) = TrayContextMenuWindow.ComputeFlyoutLayout(
+            leftWork, bounds, new Point(40, 200), cardPhysW, flyoutSpanPx, totalPhysW, physH, 1.25, 1.25);
+
+        Assert.Equal(TrayFlyoutSide.Right, leftSide);
+        Assert.False(leftAlignBottom);
+        Assert.Equal(80, leftX);
+        Assert.Equal(0, leftY);
+    }
 }
 
