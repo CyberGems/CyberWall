@@ -109,8 +109,8 @@ Así es como CyberWall protege tu equipo frente a amenazas reales, en términos 
 - **Visor de registro de conexiones dedicado**: registro de eventos en tiempo real con filtrado instantáneo (por programa, IP, puerto o PID), copia al portapapeles con un clic y acceso directo al archivo de registro.
 - **Motor de tema visual (`ThemeCard`)**: tarjetas visuales interactivas con vistas previas en vivo y cambio instantáneo:
   - **CyberWall**: obsidiana y azul marino profundos con acentos de cian neón eléctrico y esmeralda.
-  - **Dark**: carbón refinado y pizarra neutra con acentos índigo vibrantes.
-  - **Light**: pizarra nítida y blanco puro con acentos azul real.
+  - **Gris**: carbón refinado y pizarra neutra con acentos índigo vibrantes.
+  - **Claro**: pizarra nítida y blanco puro con acentos azul real.
 - **Selección de adaptador de red**: Monitorea el tráfico en modo **Automático** o fija un adaptador de red específico desde Configuración, el gráfico del encabezado, el Monitor de tráfico y el Widget flotante.
 - **Chrome nativo de Windows 11**: esquinas redondeadas DWM puras con buffers de suavizado de subpíxeles, barra de título personalizada, iconos de navegación renovados y cuadrícula de posicionamiento multi-monitor.
 - **Pestañas integradas de Notificaciones y Acerca de**: Centro de notificaciones integrado con ordenación por Fecha, Tipo o Aplicación, descarte individual de tarjetas en hover y pausas temporizadas de alertas (`15 min`, `1 hora` o hasta reiniciar), junto con una pestaña Acerca de integrada con actualización en línea, verificación SHA256 y la barra de la suite CyberGems.

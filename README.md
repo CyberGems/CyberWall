@@ -108,7 +108,7 @@ Here is how CyberWall protects your computer against real-world threats in plain
 - **Dedicated Connection Log Viewer**: Real-time event log with instant filtering (by program, IP, port, or PID), one-click clipboard copying, and direct log file access.
 - **Visual Theme Engine (`ThemeCard`)**: Interactive visual cards with live UI previews and instant switching:
   - **CyberWall**: Deep obsidian/navy with electric neon cyan and emerald accents.
-  - **Dark**: Refined charcoal and neutral slate with vibrant indigo accents.
+  - **Gray**: Refined charcoal and neutral slate with vibrant indigo accents.
   - **Light**: Crisp slate and pure white with royal blue accents.
 - **Network Adapter Selection**: Monitor **Automatic** active traffic or pin a specific network interface across Settings, the Firewall header graph, Traffic Monitor, and the Floating Traffic Widget.
 - **Native Windows 11 Chrome**: Pure DWM-rounded corners with subpixel anti-aliasing buffers, custom title bar, redesigned navigation icons, and multi-monitor positioning grid.
