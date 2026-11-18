@@ -2,6 +2,18 @@
 
 All notable changes to CyberWall are documented here.
 
+## [2.5.2] - 2026-11-18
+
+### 🇺🇸 English
+
+- Convert the tray submenus (`Pause floating alerts`, `Help`, and `More from CyberGems`) into side-by-side flyout panels with dwell hover, click toggling, automatic left/right taskbar orientation, matching chevron flips, and arrow-key navigation.
+- Rename the Dark theme to Gray (`Gris` in Spanish) across settings and palettes to match suite naming without changing stored user preferences.
+
+### 🇪🇸 Español
+
+- Convierte los submenús de la bandeja (`Pausar avisos flotantes`, `Ayuda` y `Más de CyberGems`) en paneles flyout laterales con retardo hover, alternancia por clic, orientación automática según la barra de tareas, inversión del indicador chevron y navegación por teclado.
+- Renombra el tema Oscuro a Gris (`Gray` en inglés) en ajustes y paletas para unificar nombres con la suite sin afectar la preferencia guardada.
+
 ## [2.5.1] - 2026-11-16
 
 ### 🇺🇸 English

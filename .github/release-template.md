@@ -8,7 +8,7 @@
 
 <!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section and highlights with the ACTUAL release notes for this specific new version before tagging. NEVER leave or copy previous version notes! Use 25-45 words for the summary, lead with user-facing changes, and do not repeat the app name or version. Keep the Spanish mirror inside the details block in sync: translate the summary and rewrite the highlights. -->
 <!-- changelog-summary:start -->
-The Windows uninstall entry now shows the app icon. Releases ship winget manifests and feed an automated Windows Package Manager submission pipeline, and dependencies are refreshed.
+System tray submenus for pausing alerts, Help, and More from CyberGems now open as side-by-side flyout panels beside the main menu card with automatic taskbar orientation and keyboard navigation. Theme naming aligns with the suite by renaming Dark to Gray.
 <!-- changelog-summary:end -->
 
 > **New to CyberWall?** A real-time Windows firewall for viewing per-app traffic and allowing or blocking connections with one click.
@@ -17,16 +17,15 @@ The Windows uninstall entry now shows the app icon. Releases ship winget manifes
 
 ### ✨ Key Features & Highlights
 
-- 🖥️ **Recognizable in Windows**: The Apps uninstall entry displays the CyberWall icon.
-- 📦 **Windows Package Manager ready**: Every release ships validated winget manifests alongside the installer and portable archive, and an automated workflow submits them once the submission pipeline is armed.
-- 🧰 **Maintenance**: Microsoft.Extensions.Hosting and three other dependencies are updated.
+- 🪟 **Side-by-side tray flyout panels**: `Pause floating alerts`, `Help`, and `More from CyberGems` open beside the main tray menu on hover or click, support Left/Right arrow navigation and `Escape`, flip chevrons automatically for left or right placement, and keep the main card anchored.
+- 🎨 **Suite-consistent Gray theme naming**: The Dark theme option is renamed to Gray (`Gris` in Spanish) in settings and palettes while preserving existing saved selections.
 
 <details>
 <summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
 
 ### 🚀 Novedades de esta versión
 
-La entrada de desinstalación de Windows ya muestra el icono de la app. Los releases publican manifiestos winget y alimentan un envío automatizado al Windows Package Manager, y se actualizan dependencias.
+Los submenús de la bandeja para pausar avisos, Ayuda y Más de CyberGems ahora se abren como paneles flyout laterales junto a la tarjeta principal con orientación automática y navegación por teclado. Además, el tema Oscuro pasa a llamarse Gris para alinearse con la suite.
 
 > **¿Nuevo en CyberWall?** Un firewall de Windows en tiempo real para ver el tráfico por aplicación y permitir o bloquear conexiones con un clic.
 
@@ -34,9 +33,8 @@ La entrada de desinstalación de Windows ya muestra el icono de la app. Los rele
 
 ### ✨ Novedades destacadas
 
-- 🖥️ **Reconocible en Windows**: La entrada de desinstalación en Aplicaciones muestra el icono de CyberWall.
-- 📦 **Listo para el Windows Package Manager**: Cada release publica manifiestos winget validados junto al instalador y el archivo portable, y un workflow automatizado los envía cuando el pipeline se arme.
-- 🧰 **Mantenimiento**: Se actualizan Microsoft.Extensions.Hosting y otras tres dependencias.
+- 🪟 **Paneles flyout laterales en la bandeja**: `Pausar avisos flotantes`, `Ayuda` y `Más de CyberGems` se abren junto al menú principal al pasar el cursor o hacer clic, admiten flechas izquierda/derecha y `Escape`, invierten su flecha indicadora según el lado y mantienen fija la tarjeta base.
+- 🎨 **Nombre de tema alineado con la suite**: La opción de tema Oscuro se renombra a Gris (`Gray` en inglés) en ajustes y paletas sin perder la selección guardada del usuario.
 
 ### ℹ️ Antes de instalar
 
