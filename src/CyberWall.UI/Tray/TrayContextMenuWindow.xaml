@@ -79,21 +79,27 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Control">
-                        <Path x:Name="ChevronPath"
-                              Data="M 15 6 L 9 12 L 15 18"
-                              Stroke="{TemplateBinding Foreground}"
-                              StrokeThickness="1.4"
-                              StrokeStartLineCap="Round"
-                              StrokeEndLineCap="Round"
-                              StrokeLineJoin="Round"
-                              Stretch="Uniform">
-                            <Path.RenderTransform>
-                                <TranslateTransform x:Name="ChevronSlide" X="0"/>
-                            </Path.RenderTransform>
-                        </Path>
+                        <Grid x:Name="ChevronFlipHost" RenderTransformOrigin="0.5,0.5">
+                            <Path x:Name="ChevronPath"
+                                  Data="M 15 6 L 9 12 L 15 18"
+                                  Stroke="{TemplateBinding Foreground}"
+                                  StrokeThickness="1.4"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round"
+                                  Stretch="Uniform">
+                                <Path.RenderTransform>
+                                    <TranslateTransform x:Name="ChevronSlide" X="0"/>
+                                </Path.RenderTransform>
+                            </Path>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="Tag" Value="Right">
-                                <Setter TargetName="ChevronPath" Property="Data" Value="M 9 6 L 15 12 L 9 18"/>
+                                <Setter TargetName="ChevronFlipHost" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="-1"/>
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                             <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ButtonBase}}" Value="True">
                                 <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
