@@ -1,0 +1,8 @@
+name: AI signature check
+
+on:
+  pull_request:
+
+jobs:
+  ai-signature-check:
+    uses: CyberGems/.github/.github/workflows/ai-signature-check.yml@main
