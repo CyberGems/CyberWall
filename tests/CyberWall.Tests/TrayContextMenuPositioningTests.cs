@@ -147,8 +147,8 @@ public class TrayContextMenuPositioningTests
     {
         var bounds = new Rectangle(0, 0, 1920, 1080);
         const int cardPhysW = 375;   // 300 DIP * 1.25
-        const int flyoutSpanPx = 335; // 268 DIP * 1.25
-        const int totalPhysW = 710;   // 568 DIP * 1.25
+        const int flyoutSpanPx = 330; // 264 DIP * 1.25
+        const int totalPhysW = 705;   // 564 DIP * 1.25
         const int physH = 550;
 
         // Bottom taskbar, click near bottom-right tray

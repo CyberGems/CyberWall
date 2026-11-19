@@ -28,7 +28,7 @@ public partial class TrayContextMenuWindow : Window
     private const double MainCardDipWidth = 260.0;
     private const double OuterShadowMarginDip = 20.0;
     private const double CardWithMarginDipWidth = MainCardDipWidth + OuterShadowMarginDip * 2.0;
-    private const double FlyoutSpanDipWidth = MainCardDipWidth + 8.0;
+    private const double FlyoutSpanDipWidth = MainCardDipWidth + 4.0;
 
     private readonly MainWindow _mainWindow;
     private readonly FirewallService _svc;
