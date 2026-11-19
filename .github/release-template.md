@@ -8,7 +8,7 @@
 
 <!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section and highlights with the ACTUAL release notes for this specific new version before tagging. NEVER leave or copy previous version notes! Use 25-45 words for the summary, lead with user-facing changes, and do not repeat the app name or version. Keep the Spanish mirror inside the details block in sync: translate the summary and rewrite the highlights. -->
 <!-- changelog-summary:start -->
-System tray submenus for pausing alerts, Help, and More from CyberGems now open as side-by-side flyout panels beside the main menu card with automatic taskbar orientation and keyboard navigation. Theme naming aligns with the suite by renaming Dark to Gray.
+Tightens the horizontal gap between the system tray menu card and its side-by-side flyout panels from 8px to 4px to match the rest of the suite, and removes the active accent tint from branding elements.
 <!-- changelog-summary:end -->
 
 > **New to CyberWall?** A real-time Windows firewall for viewing per-app traffic and allowing or blocking connections with one click.
@@ -17,15 +17,15 @@ System tray submenus for pausing alerts, Help, and More from CyberGems now open 
 
 ### ✨ Key Features & Highlights
 
-- 🪟 **Side-by-side tray flyout panels**: `Pause floating alerts`, `Help`, and `More from CyberGems` open beside the main tray menu on hover or click, support Left/Right arrow navigation and `Escape`, flip chevrons automatically for left or right placement, and keep the main card anchored.
-- 🎨 **Suite-consistent Gray theme naming**: The Dark theme option is renamed to Gray (`Gris` in Spanish) in settings and palettes while preserving existing saved selections.
+- 🎯 **Unified `4px` tray flyout gap**: Reduced the horizontal spacing between the main tray card and its side-by-side flyout panels (`Pause floating alerts`, `Help`, and `More from CyberGems`) from `8px` to `4px` to match the rest of the suite.
+- 🎨 **Cleaner branding**: Removed the active accent tint from branding elements for crisper visual contrast across themes.
 
 <details>
 <summary><b>🇪🇸 Ver notas de la versión en Español</b></summary>
 
 ### 🚀 Novedades de esta versión
 
-Los submenús de la bandeja para pausar avisos, Ayuda y Más de CyberGems ahora se abren como paneles flyout laterales junto a la tarjeta principal con orientación automática y navegación por teclado. Además, el tema Oscuro pasa a llamarse Gris para alinearse con la suite.
+Reduce la separación horizontal entre la tarjeta del menú de bandeja y sus paneles flyout laterales de 8px a 4px para igualar el resto de la suite, y elimina el tinte de acento activo en los elementos de marca.
 
 > **¿Nuevo en CyberWall?** Un firewall de Windows en tiempo real para ver el tráfico por aplicación y permitir o bloquear conexiones con un clic.
 
@@ -33,8 +33,8 @@ Los submenús de la bandeja para pausar avisos, Ayuda y Más de CyberGems ahora 
 
 ### ✨ Novedades destacadas
 
-- 🪟 **Paneles flyout laterales en la bandeja**: `Pausar avisos flotantes`, `Ayuda` y `Más de CyberGems` se abren junto al menú principal al pasar el cursor o hacer clic, admiten flechas izquierda/derecha y `Escape`, invierten su flecha indicadora según el lado y mantienen fija la tarjeta base.
-- 🎨 **Nombre de tema alineado con la suite**: La opción de tema Oscuro se renombra a Gris (`Gray` en inglés) en ajustes y paletas sin perder la selección guardada del usuario.
+- 🎯 **Espaciado unificado de `4px` en flyouts**: Se redujo de `8px` a `4px` la separación horizontal entre la tarjeta principal de la bandeja y los paneles laterales (`Pausar avisos flotantes`, `Ayuda` y `Más de CyberGems`) para igualar el resto de la suite.
+- 🎨 **Marca más limpia**: Se eliminó el tinte de acento activo en los elementos de marca para lograr un contraste más nítido en todos los temas.
 
 ### ℹ️ Antes de instalar
 

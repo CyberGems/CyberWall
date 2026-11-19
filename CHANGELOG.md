@@ -2,6 +2,18 @@
 
 All notable changes to CyberWall are documented here.
 
+## [2.5.3] - 2026-11-19
+
+### 🇺🇸 English
+
+- Tighten the horizontal spacing between the main tray card and its side-by-side flyout panels from `8px` to `4px` to match the rest of the suite.
+- Remove the active accent tint from branding elements.
+
+### 🇪🇸 Español
+
+- Reduce la separación horizontal entre la tarjeta principal de la bandeja y los paneles flyout laterales de `8px` a `4px` para igualar el resto de la suite.
+- Elimina el tinte de acento activo en los elementos de marca.
+
 ## [2.5.2] - 2026-11-18
 
 ### 🇺🇸 English
