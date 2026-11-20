@@ -50,7 +50,6 @@ public static class Strings
         ["SignedBy"] = ("{0} · signed", "{0} · firmado"),
         ["Signed"] = ("Signed", "Firmado"),
         ["Unsigned"] = ("Unsigned", "Sin firma"),
-        ["TrayTooltip"] = ("CyberWall: Real-Time Network Filter", "CyberWall: Filtro de red en tiempo real"),
         ["TrayTooltipActive"] = ("CyberWall · Protection active", "CyberWall · Protección activa"),
         ["TrayTooltipOff"] = ("CyberWall · Protection off", "CyberWall · Protección desactivada"),
         ["TrayTooltipService"] = ("CyberWall · Protection active (Windows service)", "CyberWall · Protección activa (servicio de Windows)"),
