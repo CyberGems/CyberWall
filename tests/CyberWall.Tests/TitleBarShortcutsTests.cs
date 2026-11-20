@@ -24,13 +24,13 @@ public class TitleBarShortcutsTests
     [InlineData(Key.D5, ModifierKeys.Control, TitleBarShortcutAction.OpenSettings)]
     [InlineData(Key.NumPad5, ModifierKeys.Control, TitleBarShortcutAction.OpenSettings)]
     [InlineData(Key.OemComma, ModifierKeys.Control, TitleBarShortcutAction.OpenSettings)]
-    [InlineData(Key.U, ModifierKeys.Control | ModifierKeys.Shift, TitleBarShortcutAction.CheckOrApplyUpdate)]
+    [InlineData(Key.U, ModifierKeys.Alt, TitleBarShortcutAction.CheckOrApplyUpdate)]
     [InlineData(Key.N, ModifierKeys.Alt, TitleBarShortcutAction.OpenNotifications)]
-    [InlineData(Key.W, ModifierKeys.Control | ModifierKeys.Shift, TitleBarShortcutAction.ToggleWidget)]
+    [InlineData(Key.W, ModifierKeys.Alt, TitleBarShortcutAction.ToggleWidget)]
     [InlineData(Key.M, ModifierKeys.Alt, TitleBarShortcutAction.ToggleMoreMenu)]
-    [InlineData(Key.Down, ModifierKeys.Control | ModifierKeys.Alt, TitleBarShortcutAction.MinimizeWindow)]
-    [InlineData(Key.Up, ModifierKeys.Control | ModifierKeys.Alt, TitleBarShortcutAction.MaximizeOrRestoreWindow)]
     [InlineData(Key.F4, ModifierKeys.Alt, TitleBarShortcutAction.CloseWindow)]
+    [InlineData(Key.Up, ModifierKeys.Windows, TitleBarShortcutAction.MaximizeOrRestoreWindow)]
+    [InlineData(Key.Down, ModifierKeys.Windows, TitleBarShortcutAction.MinimizeWindow)]
     public void MapsAllTitleBarShortcutsAndAliases(Key key, ModifierKeys modifiers, TitleBarShortcutAction expected)
     {
         Assert.Equal(expected, KeyboardShortcuts.ResolveTitleBarAction(key, modifiers));
@@ -40,8 +40,10 @@ public class TitleBarShortcutsTests
     [InlineData(Key.M, ModifierKeys.Control | ModifierKeys.Alt)]
     [InlineData(Key.N, ModifierKeys.Control | ModifierKeys.Alt)]
     [InlineData(Key.M, ModifierKeys.None)]
-    [InlineData(Key.W, ModifierKeys.Alt | ModifierKeys.Shift)]
-    [InlineData(Key.U, ModifierKeys.Control)]
+    [InlineData(Key.W, ModifierKeys.Control | ModifierKeys.Shift)]
+    [InlineData(Key.U, ModifierKeys.Control | ModifierKeys.Shift)]
+    [InlineData(Key.Down, ModifierKeys.Control | ModifierKeys.Alt)]
+    [InlineData(Key.Up, ModifierKeys.Control | ModifierKeys.Alt)]
     [InlineData(Key.C, ModifierKeys.Control | ModifierKeys.Shift)]
     public void IgnoresUnmappedAndAltGrKeyCombinations(Key key, ModifierKeys modifiers)
     {

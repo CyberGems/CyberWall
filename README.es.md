@@ -253,11 +253,11 @@ CyberWall se maneja con avisos de conexión y el menú de la bandeja. Los atajos
 | `Alt+Shift+F2` | Muestra u oculta el widget flotante de tráfico desde cualquier aplicación (configurable) |
 | `F1` | Muestra u oculta Acerca de |
 | `Alt+M` / `Alt+N` | Abre el menú Más / las notificaciones |
-| `Ctrl+Shift+U` / `Ctrl+Shift+W` | Busca o aplica una actualización / muestra u oculta el widget de tráfico |
+| `Alt+U` / `Alt+W` | Busca o aplica una actualización / muestra u oculta el widget de tráfico |
 | `Ctrl+1` ... `Ctrl+4` | Cambia a Cortafuegos, Tráfico, Conexiones o Estadísticas |
 | `Ctrl+5` o `Ctrl+,` | Abre Configuración |
-| `Ctrl+Alt+Abajo` / `Ctrl+Alt+Arriba` | Minimiza / maximiza o restaura |
-| `Alt+F4` | Cierra la ventana |
+| `Win+Abajo` / `Win+Arriba` | Minimiza / maximiza o restaura (gestos de Windows) |
+| `Alt+F4` | Cierra la app, incluso si la X está configurada para minimizar a la bandeja |
 
 Referencia completa: [Settings](https://github.com/CyberGems/CyberWall/wiki/Settings-es) y [Atajos de teclado](https://github.com/CyberGems/CyberWall/wiki/Keyboard-Shortcuts-es).
 

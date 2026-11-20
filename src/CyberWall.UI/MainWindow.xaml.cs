@@ -3297,7 +3297,8 @@ public partial class MainWindow : Window
                 Maximize_Click(this, new RoutedEventArgs());
                 break;
             case TitleBarShortcutAction.CloseWindow:
-                Close_Click(this, new RoutedEventArgs());
+                // Alt+F4 closes the app even when the X is set to minimize to tray.
+                _tray?.RequestExit();
                 break;
         }
     }

@@ -32,12 +32,14 @@ internal static class KeyboardShortcuts
     internal const string ConnectionsLog = "Ctrl+3";
     internal const string Statistics = "Ctrl+4";
     internal const string Settings = "Ctrl+5 / Ctrl+,";
-    internal const string Update = "Ctrl+Shift+U";
+    internal const string Update = "Alt+U";
     internal const string Notifications = "Alt+N";
-    internal const string Widget = "Ctrl+Shift+W";
+    internal const string Widget = "Alt+W";
     internal const string More = "Alt+M";
-    internal const string Minimize = "Ctrl+Alt+Down";
-    internal const string Maximize = "Ctrl+Alt+Up";
+    // The Windows gestures, repeated by the app only when the shell does not
+    // take them (a frameless window can be left out of Aero Snap).
+    internal const string Minimize = "Win+Down";
+    internal const string Maximize = "Win+Up";
     internal const string Close = "Alt+F4";
 
     internal static TitleBarShortcutAction ResolveTitleBarAction(Key key, ModifierKeys modifiers) =>
@@ -47,10 +49,12 @@ internal static class KeyboardShortcuts
             (ModifierKeys.Alt, Key.M) => TitleBarShortcutAction.ToggleMoreMenu,
             (ModifierKeys.Alt, Key.N) => TitleBarShortcutAction.OpenNotifications,
             (ModifierKeys.Alt, Key.F4) => TitleBarShortcutAction.CloseWindow,
-            (ModifierKeys.Control | ModifierKeys.Shift, Key.U) => TitleBarShortcutAction.CheckOrApplyUpdate,
-            (ModifierKeys.Control | ModifierKeys.Shift, Key.W) => TitleBarShortcutAction.ToggleWidget,
-            (ModifierKeys.Control | ModifierKeys.Alt, Key.Down) => TitleBarShortcutAction.MinimizeWindow,
-            (ModifierKeys.Control | ModifierKeys.Alt, Key.Up) => TitleBarShortcutAction.MaximizeOrRestoreWindow,
+            (ModifierKeys.Alt, Key.U) => TitleBarShortcutAction.CheckOrApplyUpdate,
+            (ModifierKeys.Alt, Key.W) => TitleBarShortcutAction.ToggleWidget,
+            // Win+Up and Win+Down are handled by Windows: the key only arrives
+            // here when the shell did not consume it, so this is the fallback.
+            (ModifierKeys.Windows, Key.Up) => TitleBarShortcutAction.MaximizeOrRestoreWindow,
+            (ModifierKeys.Windows, Key.Down) => TitleBarShortcutAction.MinimizeWindow,
             (ModifierKeys.Control, Key.D1 or Key.NumPad1) => TitleBarShortcutAction.SelectFirewall,
             (ModifierKeys.Control, Key.D2 or Key.NumPad2 or Key.H) => TitleBarShortcutAction.SelectTraffic,
             (ModifierKeys.Control, Key.D3 or Key.NumPad3 or Key.L) => TitleBarShortcutAction.SelectConnections,

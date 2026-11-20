@@ -1096,7 +1096,7 @@
                                         </MenuItem.Icon>
                                     </MenuItem>
 
-                                    <MenuItem x:Name="MoreWidgetItem" Header="Widget de red..." InputGestureText="Ctrl+Shift+W" Style="{StaticResource ModernMenuItem}" Click="MoreWidget_Click">
+                                    <MenuItem x:Name="MoreWidgetItem" Header="Widget de red..." InputGestureText="Alt+W" Style="{StaticResource ModernMenuItem}" Click="MoreWidget_Click">
                                         <MenuItem.Icon>
                                             <Viewbox Width="13" Height="13" Stretch="Uniform">
                                                 <Canvas Width="24" Height="24">
