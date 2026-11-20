@@ -157,6 +157,7 @@ public partial class MainWindow : Window
     private TrayService? _tray;
     private UpdateCheckResult? _activeUpdateResult;
     private Dialogs.FloatingTrafficWidget? _trafficWidget;
+    private readonly GlobalHotkeyService _hotkeys = new();
     private IntPtr _windowHandle;
 
     private static readonly SolidColorBrush UpdateNormalBgBrush = new(System.Windows.Media.Color.FromRgb(0x1D, 0x26, 0x36));
@@ -187,6 +188,13 @@ public partial class MainWindow : Window
         InitializeComponent();
         AboutTabContent.BackRequested += (_, _) => SelectTab(_previousTab);
         NotificationsTabContent.BackRequested += (_, _) => SelectTab(_previousTab);
+        SettingsTabContent.HotkeyChangeRequested += ApplyHotkeyChange;
+
+        // Register here instead of OnSourceInitialized: when the app starts minimized the
+        // window is never shown, so the shortcuts have to create the handle on their own.
+        // A combination another app already owns stays unregistered; Settings reports it.
+        _hotkeys.HotkeyPressed += OnGlobalHotkeyPressed;
+        _hotkeys.RegisterBoth(this, App.Settings.GlobalHotkey, App.Settings.WidgetHotkey);
         NotificationsTabContent.Initialize(
             _notifications,
             async path =>
@@ -290,6 +298,8 @@ public partial class MainWindow : Window
             PathToIconConverter.IconChanged -= OnAppIconChanged;
             AppInfoMonitorService.Instance.Stop();
             ConnectivityService.Instance.Stop();
+            _hotkeys.HotkeyPressed -= OnGlobalHotkeyPressed;
+            _hotkeys.Dispose();
             ProcessTrafficTracker.Instance.ActivityUpdated -= OnActivityUpdated;
             ProcessTrafficTracker.Instance.Stop();
             NetworkSpeedService.Instance.SpeedUpdated -= OnNetworkSpeedUpdated;
@@ -678,6 +688,10 @@ public partial class MainWindow : Window
             App.Settings.ApplyRestoredPreferences(doc.Payload.Settings);
             App.Settings.Save();
             NetworkSpeedService.Instance.SetPreferredAdapter(App.Settings.PreferredNetworkAdapterId, App.Settings.PreferredNetworkAdapterName);
+
+            // The restored shortcuts differ from the registered ones; swap them in place
+            // instead of asking the user to restart.
+            _hotkeys.RegisterBoth(this, App.Settings.GlobalHotkey, App.Settings.WidgetHotkey);
 
             Strings.Current = App.Settings.Language;
             ThemeManager.Apply(App.Settings.Theme);
@@ -2367,6 +2381,42 @@ public partial class MainWindow : Window
             WindowState = WindowState.Normal;
         Show();
         Activate();
+    }
+
+    /// <summary>
+    /// Registers a shortcut chosen in Settings. The service restores the previous combination
+    /// when the new one is already owned by another application, and false is reported back.
+    /// </summary>
+    private bool ApplyHotkeyChange(int id, string hotkey)
+    {
+        if (!_hotkeys.Register(this, id, hotkey)) return false;
+
+        if (id == GlobalHotkeyService.WidgetHotkeyId)
+            App.Settings.WidgetHotkey = hotkey;
+        else
+            App.Settings.GlobalHotkey = hotkey;
+
+        App.Settings.Save();
+        return true;
+    }
+
+    private void OnGlobalHotkeyPressed(int id)
+    {
+        if (id == GlobalHotkeyService.WidgetHotkeyId)
+        {
+            SetTrafficWidgetVisible(_trafficWidget?.IsVisible != true);
+            return;
+        }
+
+        ToggleWindowFromHotkey();
+    }
+
+    private void ToggleWindowFromHotkey()
+    {
+        if (IsVisible && WindowState != WindowState.Minimized)
+            Hide();
+        else
+            ShowMainWindow();
     }
 
     /// <summary>Shows the window on the Traffic Monitor tab, taking it out of the tray.</summary>

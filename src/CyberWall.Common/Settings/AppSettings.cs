@@ -40,6 +40,16 @@ public sealed class AppSettings
     public bool StartMinimized { get; set; } = true;
     public bool MinimizeToTrayOnClose { get; set; } = true;
     public bool PlaySoundOnPrompt { get; set; } = true;
+
+    /// <summary>
+    /// System-wide shortcut that shows and hides the main window. Empty means disabled.
+    /// </summary>
+    public string GlobalHotkey { get; set; } = "Alt+Shift+W";
+
+    /// <summary>
+    /// System-wide shortcut that shows and hides the floating traffic widget. Empty means disabled.
+    /// </summary>
+    public string WidgetHotkey { get; set; } = "Alt+Shift+F2";
     public string? CustomSoundPath { get; set; } = null;
     public bool PopupAutoBlockEnabled { get; set; } = false;
     public int PopupAutoBlockSeconds { get; set; } = 300;
@@ -215,6 +225,8 @@ public sealed class AppSettings
         StartMinimized = restored.StartMinimized;
         MinimizeToTrayOnClose = restored.MinimizeToTrayOnClose;
         PlaySoundOnPrompt = restored.PlaySoundOnPrompt;
+        GlobalHotkey = restored.GlobalHotkey?.Trim() ?? "";
+        WidgetHotkey = restored.WidgetHotkey?.Trim() ?? "";
         CustomSoundPath = restored.CustomSoundPath;
         PopupAutoBlockEnabled = restored.PopupAutoBlockEnabled;
         PopupAutoBlockSeconds = Math.Clamp(restored.PopupAutoBlockSeconds, 10, 3600);

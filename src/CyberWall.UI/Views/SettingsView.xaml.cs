@@ -21,6 +21,7 @@ using Button = System.Windows.Controls.Button;
 using ComboBox = System.Windows.Controls.ComboBox;
 using ComboBoxItem = System.Windows.Controls.ComboBoxItem;
 using CheckBox = System.Windows.Controls.CheckBox;
+using TextBox = System.Windows.Controls.TextBox;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using OpenFolderDialog = Microsoft.Win32.OpenFolderDialog;
 
@@ -28,9 +29,17 @@ namespace CyberWall.UI.Views;
 
 public partial class SettingsView : UserControl
 {
+    private const string DefaultGlobalHotkey = "Alt+Shift+W";
+    private const string DefaultWidgetHotkey = "Alt+Shift+F2";
+
     private readonly AppSettings _s;
     private bool _loading;
     private bool _pauseSubscribed;
+    private readonly Dictionary<int, string> _committedHotkeys = new();
+    private TextBox? _activeHotkeyBox;
+
+    /// <summary>Asks the main window to register a shortcut. False means the combination is taken.</summary>
+    public event Func<int, string, bool>? HotkeyChangeRequested;
 
     public SettingsView()
     {
@@ -118,6 +127,8 @@ public partial class SettingsView : UserControl
         StartMinimizedToggle.IsChecked = _s.StartMinimized;
         MinimizeToTrayToggle.IsChecked = _s.MinimizeToTrayOnClose;
         ShowRecommendationsToggle.IsChecked = _s.ShowAppRecommendations;
+        LoadHotkeyBox(GlobalHotkeyBox, GlobalHotkeyService.MainHotkeyId, _s.GlobalHotkey);
+        LoadHotkeyBox(WidgetHotkeyBox, GlobalHotkeyService.WidgetHotkeyId, _s.WidgetHotkey);
         AutoBlockToggle.IsChecked = _s.PopupAutoBlockEnabled;
         PopulateAutoBlockWait();
         UpdateAutoBlockUiState();
@@ -247,6 +258,127 @@ public partial class SettingsView : UserControl
         _loading = wasLoading;
     }
 
+    private void LoadHotkeyBox(TextBox box, int id, string hotkey)
+    {
+        _committedHotkeys[id] = hotkey;
+        box.Text = GlobalHotkeyService.FormatDisplay(hotkey);
+        if (id == GlobalHotkeyService.WidgetHotkeyId) WidgetHotkeyErrorLbl.Visibility = Visibility.Collapsed;
+        else GlobalHotkeyErrorLbl.Visibility = Visibility.Collapsed;
+    }
+
+    private void HotkeyBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (_loading || sender is not TextBox box) return;
+
+        _activeHotkeyBox = box;
+        box.Text = Strings.T("GlobalHotkeyCaptureHint");
+        box.SelectAll();
+    }
+
+    private void HotkeyBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (sender is not TextBox box || !ReferenceEquals(box, _activeHotkeyBox)) return;
+
+        _activeHotkeyBox = null;
+        box.Text = GlobalHotkeyService.FormatDisplay(_committedHotkeys[HotkeyIdFor(box)]);
+    }
+
+    private void HotkeyBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is not TextBox box || !ReferenceEquals(box, _activeHotkeyBox)) return;
+
+        e.Handled = true;
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        if (key == Key.Escape)
+        {
+            Keyboard.ClearFocus();
+            return;
+        }
+
+        if (key == Key.None) return;
+
+        var modifier = GlobalHotkeyService.GetModifier(key);
+        var modifiers = Keyboard.Modifiers | modifier;
+        if (modifier != ModifierKeys.None)
+        {
+            UpdateHotkeyPreview(modifiers);
+            return;
+        }
+
+        var candidate = GlobalHotkeyService.FormatHotkey(modifiers, key);
+        box.Text = candidate;
+        if (modifiers == ModifierKeys.None) return;
+
+        TryApplyHotkey(box, candidate);
+        Keyboard.ClearFocus();
+    }
+
+    private void HotkeyBox_PreviewKeyUp(object sender, KeyEventArgs e)
+    {
+        if (_activeHotkeyBox == null) return;
+
+        var modifier = GlobalHotkeyService.GetModifier(e.Key == Key.System ? e.SystemKey : e.Key);
+        if (modifier == ModifierKeys.None) return;
+
+        UpdateHotkeyPreview(Keyboard.Modifiers & ~modifier);
+        e.Handled = true;
+    }
+
+    private void GlobalHotkeyResetBtn_Click(object sender, RoutedEventArgs e) =>
+        ApplyPresetHotkey(GlobalHotkeyBox, DefaultGlobalHotkey);
+
+    private void GlobalHotkeyClearBtn_Click(object sender, RoutedEventArgs e) =>
+        ApplyPresetHotkey(GlobalHotkeyBox, "");
+
+    private void WidgetHotkeyResetBtn_Click(object sender, RoutedEventArgs e) =>
+        ApplyPresetHotkey(WidgetHotkeyBox, DefaultWidgetHotkey);
+
+    private void WidgetHotkeyClearBtn_Click(object sender, RoutedEventArgs e) =>
+        ApplyPresetHotkey(WidgetHotkeyBox, "");
+
+    private void ApplyPresetHotkey(TextBox box, string hotkey)
+    {
+        if (TryApplyHotkey(box, hotkey))
+            box.Text = GlobalHotkeyService.FormatDisplay(hotkey);
+    }
+
+    /// <summary>
+    /// Sends the captured combination to the main window, which registers it and persists it.
+    /// A rejected combination keeps the previous one and shows the error next to the field.
+    /// </summary>
+    private bool TryApplyHotkey(TextBox box, string hotkey)
+    {
+        var id = HotkeyIdFor(box);
+        var error = id == GlobalHotkeyService.WidgetHotkeyId ? WidgetHotkeyErrorLbl : GlobalHotkeyErrorLbl;
+
+        if (HotkeyChangeRequested?.Invoke(id, hotkey) == false)
+        {
+            box.Text = GlobalHotkeyService.FormatDisplay(_committedHotkeys[id]);
+            error.Text = Strings.T("GlobalHotkeyUnavailable");
+            error.Visibility = Visibility.Visible;
+            return false;
+        }
+
+        _committedHotkeys[id] = hotkey;
+        if (id == GlobalHotkeyService.WidgetHotkeyId) _s.WidgetHotkey = hotkey;
+        else _s.GlobalHotkey = hotkey;
+
+        error.Visibility = Visibility.Collapsed;
+        return true;
+    }
+
+    private int HotkeyIdFor(TextBox box) =>
+        ReferenceEquals(box, WidgetHotkeyBox) ? GlobalHotkeyService.WidgetHotkeyId : GlobalHotkeyService.MainHotkeyId;
+
+    private void UpdateHotkeyPreview(ModifierKeys modifiers)
+    {
+        if (_activeHotkeyBox == null) return;
+
+        _activeHotkeyBox.Text = modifiers == ModifierKeys.None
+            ? Strings.T("GlobalHotkeyCaptureHint")
+            : GlobalHotkeyService.FormatHotkey(modifiers, Key.None) + " + ...";
+    }
+
     private void UpdateStartupTogglesState()
     {
         var startupOn = StartupToggle.IsChecked == true;
@@ -306,6 +438,22 @@ public partial class SettingsView : UserControl
         MinimizeToTrayDescLbl.Text = Strings.T("MinimizeToTrayOnCloseDesc");
         ShowRecommendationsTitleLbl.Text = Strings.T("ShowAppRecommendations");
         ShowRecommendationsDescLbl.Text = Strings.T("ShowAppRecommendationsDesc");
+        GlobalHotkeyTitleLbl.Text = Strings.T("GlobalHotkeyTitle");
+        GlobalHotkeyDescLbl.Text = Strings.T("GlobalHotkeyDesc");
+        GlobalHotkeyResetBtn.Content = Strings.T("GlobalHotkeyReset");
+        GlobalHotkeyClearBtn.Content = Strings.T("GlobalHotkeyClear");
+        GlobalHotkeyResetBtn.ToolTip = Strings.T("GlobalHotkeyReset");
+        GlobalHotkeyClearBtn.ToolTip = Strings.T("GlobalHotkeyClear");
+        GlobalHotkeyBox.ToolTip = Strings.T("GlobalHotkeyCaptureHint");
+        System.Windows.Automation.AutomationProperties.SetName(GlobalHotkeyBox, Strings.T("GlobalHotkeyTitle"));
+        WidgetHotkeyTitleLbl.Text = Strings.T("WidgetHotkeyTitle");
+        WidgetHotkeyDescLbl.Text = Strings.T("WidgetHotkeyDesc");
+        WidgetHotkeyResetBtn.Content = Strings.T("GlobalHotkeyReset");
+        WidgetHotkeyClearBtn.Content = Strings.T("GlobalHotkeyClear");
+        WidgetHotkeyResetBtn.ToolTip = Strings.T("GlobalHotkeyReset");
+        WidgetHotkeyClearBtn.ToolTip = Strings.T("GlobalHotkeyClear");
+        WidgetHotkeyBox.ToolTip = Strings.T("GlobalHotkeyCaptureHint");
+        System.Windows.Automation.AutomationProperties.SetName(WidgetHotkeyBox, Strings.T("WidgetHotkeyTitle"));
         AutoBlockTitleLbl.Text = Strings.T("PopupAutoBlock");
         AutoBlockDescLbl.Text = Strings.T("PopupAutoBlockDesc");
         AutoBlockWaitLbl.Text = Strings.T("PopupAutoBlockWait");

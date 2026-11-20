@@ -607,6 +607,86 @@
 
                         <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,14"/>
 
+                        <!-- Global shortcut -->
+                        <Grid MinHeight="44">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Width="34" Height="34" CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                                <Path Data="M 2 6 H 22 V 18 H 2 Z M 5 9 H 7 M 9 9 H 11 M 13 9 H 15 M 17 9 H 19 M 5 14 H 15"
+                                      Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      Width="15" Height="15" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock x:Name="GlobalHotkeyTitleLbl" Text="Atajo global" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextBrush}"/>
+                                <TextBlock x:Name="GlobalHotkeyDescLbl" Text="Muestra u oculta la ventana de CyberWall desde cualquier aplicación." FontSize="12.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Background="{DynamicResource InputBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="10,0" Height="34" Width="160" Margin="0,0,8,0" VerticalAlignment="Center">
+                                    <TextBox x:Name="GlobalHotkeyBox"
+                                             Background="Transparent" BorderThickness="0"
+                                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center" FontSize="12.5"
+                                             Foreground="{DynamicResource TextBrush}"
+                                             CaretBrush="{DynamicResource AccentBrush}"
+                                             controls:TextFieldContextMenu.Enabled="True"
+                                             GotKeyboardFocus="HotkeyBox_GotKeyboardFocus"
+                                             LostKeyboardFocus="HotkeyBox_LostKeyboardFocus"
+                                             PreviewKeyDown="HotkeyBox_PreviewKeyDown"
+                                             PreviewKeyUp="HotkeyBox_PreviewKeyUp"/>
+                                </Border>
+                                <Button x:Name="GlobalHotkeyResetBtn" Content="Restaurar" Height="34" Padding="14,6" Margin="0,0,8,0" Style="{StaticResource SecondaryButtonStyle}" Click="GlobalHotkeyResetBtn_Click"/>
+                                <Button x:Name="GlobalHotkeyClearBtn" Content="Limpiar" Height="34" Padding="14,6" Style="{StaticResource SecondaryButtonStyle}" Click="GlobalHotkeyClearBtn_Click"/>
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock x:Name="GlobalHotkeyErrorLbl" FontSize="11.5" Foreground="{DynamicResource BadgeWarnFgBrush}" Margin="48,6,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+
+                        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,14"/>
+
+                        <!-- Floating widget shortcut -->
+                        <Grid MinHeight="44">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Width="34" Height="34" CornerRadius="8" Background="{DynamicResource CardSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                                <Path Data="M 4 5 H 20 V 15 H 4 Z M 8 19 H 16 M 8 15 V 19 M 16 15 V 19"
+                                      Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      Width="15" Height="15" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Transparent"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock x:Name="WidgetHotkeyTitleLbl" Text="Atajo del widget" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextBrush}"/>
+                                <TextBlock x:Name="WidgetHotkeyDescLbl" Text="Muestra u oculta el widget flotante de tráfico desde cualquier aplicación." FontSize="12.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Background="{DynamicResource InputBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="10,0" Height="34" Width="160" Margin="0,0,8,0" VerticalAlignment="Center">
+                                    <TextBox x:Name="WidgetHotkeyBox"
+                                             Background="Transparent" BorderThickness="0"
+                                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center" FontSize="12.5"
+                                             Foreground="{DynamicResource TextBrush}"
+                                             CaretBrush="{DynamicResource AccentBrush}"
+                                             controls:TextFieldContextMenu.Enabled="True"
+                                             GotKeyboardFocus="HotkeyBox_GotKeyboardFocus"
+                                             LostKeyboardFocus="HotkeyBox_LostKeyboardFocus"
+                                             PreviewKeyDown="HotkeyBox_PreviewKeyDown"
+                                             PreviewKeyUp="HotkeyBox_PreviewKeyUp"/>
+                                </Border>
+                                <Button x:Name="WidgetHotkeyResetBtn" Content="Restaurar" Height="34" Padding="14,6" Margin="0,0,8,0" Style="{StaticResource SecondaryButtonStyle}" Click="WidgetHotkeyResetBtn_Click"/>
+                                <Button x:Name="WidgetHotkeyClearBtn" Content="Limpiar" Height="34" Padding="14,6" Style="{StaticResource SecondaryButtonStyle}" Click="WidgetHotkeyClearBtn_Click"/>
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock x:Name="WidgetHotkeyErrorLbl" FontSize="11.5" Foreground="{DynamicResource BadgeWarnFgBrush}" Margin="48,6,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+
+                        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,14"/>
+
                         <!-- Clear all rules -->
                         <Grid MinHeight="44">
                             <Grid.ColumnDefinitions>

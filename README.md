@@ -242,10 +242,12 @@ dotnet test
 
 ## ⌨️ Keyboard Shortcuts
 
-CyberWall is driven by connection prompts and the tray menu; its shortcuts act on the main window's title bar.
+CyberWall is driven by connection prompts and the tray menu. The global shortcuts work from any application; the rest act on the main window's title bar.
 
 | Shortcut | Action |
 |---|---|
+| `Alt+Shift+W` | Show or hide CyberWall from any application (configurable) |
+| `Alt+Shift+F2` | Show or hide the floating traffic widget from any application (configurable) |
 | `F1` | Toggle About |
 | `Alt+M` / `Alt+N` | Open the More menu / notifications |
 | `Ctrl+Shift+U` / `Ctrl+Shift+W` | Check or apply an update / toggle the floating traffic widget |

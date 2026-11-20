@@ -243,10 +243,12 @@ dotnet test
 
 ## ⌨️ Atajos de teclado
 
-CyberWall se maneja con avisos de conexión y el menú de la bandeja; sus atajos actúan sobre la barra de título de la ventana principal.
+CyberWall se maneja con avisos de conexión y el menú de la bandeja. Los atajos globales funcionan desde cualquier aplicación; el resto actúa sobre la barra de título de la ventana principal.
 
 | Atajo | Acción |
 |---|---|
+| `Alt+Shift+W` | Muestra u oculta CyberWall desde cualquier aplicación (configurable) |
+| `Alt+Shift+F2` | Muestra u oculta el widget flotante de tráfico desde cualquier aplicación (configurable) |
 | `F1` | Muestra u oculta Acerca de |
 | `Alt+M` / `Alt+N` | Abre el menú Más / las notificaciones |
 | `Ctrl+Shift+U` / `Ctrl+Shift+W` | Busca o aplica una actualización / muestra u oculta el widget de tráfico |

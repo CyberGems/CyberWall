@@ -2,6 +2,20 @@
 
 All notable changes to CyberWall are documented here.
 
+## [Unreleased]
+
+### 🇺🇸 English
+
+- Add `Alt+Shift+W` as the global shortcut that shows or hides the CyberWall window from any application, and `Alt+Shift+F2` for the floating traffic widget. Both are configurable in Settings → System, with restore, clear and a per-field notice when another application owns the combination.
+- Show the current global shortcut next to the show/hide row of the tray menu.
+- Apply restored shortcuts immediately after restoring a backup, without restarting the app.
+
+### 🇪🇸 Español
+
+- Añade `Alt+Shift+W` como atajo global que muestra u oculta la ventana de CyberWall desde cualquier aplicación, y `Alt+Shift+F2` para el widget flotante de tráfico. Ambos se configuran en Configuración → Sistema, con restablecer, limpiar y un aviso por campo cuando la combinación ya pertenece a otra aplicación.
+- Muestra el atajo global actual junto a la fila de mostrar/ocultar del menú de la bandeja.
+- Aplica los atajos restaurados al instante tras restaurar un respaldo, sin reiniciar la aplicación.
+
 ## [2.5.3] - 2026-11-19
 
 ### 🇺🇸 English

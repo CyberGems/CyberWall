@@ -375,6 +375,12 @@ public partial class TrayContextMenuWindow : Window
     private void UpdateOpenAppState()
     {
         OpenAppText.Text = Strings.T(IsMainWindowCurrentlyVisible() ? "HideCyberWall" : "ShowCyberWall");
+
+        // Mirrors the configurable global shortcut so the row teaches the key combination.
+        OpenAppGestureText.Text = GlobalHotkeyService.FormatDisplay(App.Settings.GlobalHotkey);
+        OpenAppGestureText.Visibility = string.IsNullOrEmpty(OpenAppGestureText.Text)
+            ? Visibility.Collapsed
+            : Visibility.Visible;
     }
 
     private Grid? GetFlyoutPanel(TrayFlyoutKind kind) => kind switch
