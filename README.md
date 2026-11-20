@@ -62,7 +62,9 @@
 
 Every program on your PC can reach the internet the moment it runs, and most firewalls either let it happen silently or ask you about ports and protocols. CyberWall flips that: nothing gets out unless you allow that specific executable. It runs on the Windows Filtering Platform and the built-in Advanced Firewall — no third-party kernel driver — and turns unknown activity into a simple prompt: allow once, always allow, or block with a persistent rule. The same window shows live connections, traffic statistics, rule management and a clear identity for each app. Built with **.NET 10** and **WPF**.
 
-*Free and open source (GPLv3): no ads, no tracking, and no data collection. Just enjoy it.*
+*Free and open source (GPLv3): no ads, no tracking, no telemetry and no analytics SDK. Just enjoy it.*
+
+- **Privacy:** see [PRIVACY.md](PRIVACY.md). CyberWall does not send your data anywhere by itself. The only automatic connections are listed there, and none of them carries personal data.
 
 ---
 

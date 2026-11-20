@@ -62,7 +62,9 @@
 
 Cualquier programa de tu PC puede salir a internet en cuanto se ejecuta, y la mayoría de los firewalls lo permiten en silencio o te preguntan por puertos y protocolos. CyberWall lo invierte: nada sale si no autorizas ese ejecutable concreto. Funciona sobre Windows Filtering Platform y el Firewall avanzado del sistema —sin drivers de terceros— y convierte la actividad desconocida en una pregunta simple: permitir una vez, permitir siempre o bloquear con una regla persistente. La misma ventana muestra conexiones en vivo, estadísticas de tráfico, gestión de reglas e identidad clara de cada aplicación. Construido con **.NET 10** y **WPF**.
 
-*Gratuito y de código abierto (GPLv3): sin anuncios, sin rastreo y sin recogida de datos. Solo disfrútalo.*
+*Gratuito y de código abierto (GPLv3): sin anuncios, sin rastreo, sin telemetría y sin SDK de analítica. Solo disfrútalo.*
+
+- **Privacidad:** consulta [PRIVACY.es.md](PRIVACY.es.md). CyberWall no envía tus datos por su cuenta. Las únicas conexiones automáticas están listadas ahí y ninguna contiene datos personales.
 
 ---
 
