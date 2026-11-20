@@ -1,0 +1,10 @@
+name: Tray tooltip check
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tray-tooltip:
+    uses: CyberGems/.github/.github/workflows/tray-tooltip-check.yml@main
