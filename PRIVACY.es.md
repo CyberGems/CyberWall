@@ -14,7 +14,7 @@ Estas son todas las conexiones que CyberWall hace por su cuenta. Ninguna envía 
 | Al iniciar y al abrir la vista de registros o estadísticas | `cdn.jsdelivr.net`, con `unpkg.com` como alternativa | Descargar la tabla pública de IP a país para etiquetar las conexiones. Las consultas se hacen en local; las IP de destino no se envían | Sin ajuste específico |
 | Cada 15 segundos y al cambiar la red | `www.msftconnecttest.com`, `www.google.com`, `1.1.1.1` | Sondas de alcance para el indicador de conexión | Sin ajuste específico |
 
-Los enlaces que abres tú (una búsqueda web, un enlace a la wiki o al sitio) no están en esta lista.
+Una búsqueda web o un enlace a la wiki o al sitio que pulsas tú es una acción tuya, no una conexión que la app haga por su cuenta.
 
 ## Qué lee CyberWall de tu PC
 

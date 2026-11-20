@@ -14,7 +14,7 @@ These are all the connections CyberWall makes by itself. None of them sends your
 | On launch, and when the log or statistics view opens | `cdn.jsdelivr.net`, with `unpkg.com` as fallback | Download the public IP-to-country table used to label connections. Lookups happen locally; destination IPs are not uploaded | No dedicated setting |
 | Every 15 seconds and on network changes | `www.msftconnecttest.com`, `www.google.com`, `1.1.1.1` | Reachability probes for the online indicator | No dedicated setting |
 
-Links you open yourself (a web search, a link to the wiki or the website) are not part of this list.
+A web search, or a link to the wiki or the website that you click yourself, is your own action and is not a connection the app makes by itself.
 
 ## What CyberWall reads on your PC
 
