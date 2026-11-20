@@ -255,7 +255,7 @@ CyberWall se maneja con avisos de conexión y el menú de la bandeja; sus atajos
 | `Ctrl+Alt+Abajo` / `Ctrl+Alt+Arriba` | Minimiza / maximiza o restaura |
 | `Alt+F4` | Cierra la ventana |
 
-Referencia completa: [Settings](https://github.com/CyberGems/CyberWall/wiki/Settings-es).
+Referencia completa: [Settings](https://github.com/CyberGems/CyberWall/wiki/Settings-es) y [Atajos de teclado](https://github.com/CyberGems/CyberWall/wiki/Keyboard-Shortcuts-es).
 
 ---
 

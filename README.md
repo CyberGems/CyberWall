@@ -254,7 +254,7 @@ CyberWall is driven by connection prompts and the tray menu; its shortcuts act o
 | `Ctrl+Alt+Down` / `Ctrl+Alt+Up` | Minimize / maximize or restore |
 | `Alt+F4` | Close the window |
 
-Full reference: [Settings](https://github.com/CyberGems/CyberWall/wiki/Settings).
+Full reference: [Settings](https://github.com/CyberGems/CyberWall/wiki/Settings) and [Keyboard Shortcuts](https://github.com/CyberGems/CyberWall/wiki/Keyboard-Shortcuts).
 
 ---
 
