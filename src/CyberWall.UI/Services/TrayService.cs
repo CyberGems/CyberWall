@@ -42,7 +42,7 @@ public sealed class TrayService : IDisposable
         _icon = new WF.NotifyIcon
         {
             Visible = true,
-            Text = SafeTrayText(Strings.T("TrayTooltipActive")),
+            Text = Common.TrayTooltipText.Format(Strings.T("TrayTooltipActive")),
             Icon = AppIconHelper.CreateShieldIcon(32),
             ContextMenuStrip = null // Using custom premium WPF menu
         };
@@ -104,7 +104,7 @@ public sealed class TrayService : IDisposable
                 : active
                     ? Strings.T("TrayTooltipActive")
                     : Strings.T("TrayTooltipOff");
-            _icon.Text = SafeTrayText(tooltip);
+            _icon.Text = Common.TrayTooltipText.Format(tooltip);
         }
         catch { }
     }
@@ -117,11 +117,6 @@ public sealed class TrayService : IDisposable
         }
         catch { }
     }
-
-    private static string SafeTrayText(string text) =>
-        string.IsNullOrEmpty(text)
-            ? "CyberWall"
-            : (text.Length <= 63 ? text : text[..62] + "…");
 
     public void NotifyAutoBlock(string appName)
     {
