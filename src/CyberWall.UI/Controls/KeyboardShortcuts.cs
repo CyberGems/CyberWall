@@ -38,8 +38,8 @@ internal static class KeyboardShortcuts
     internal const string More = "Alt+M";
     // The Windows gestures, repeated by the app only when the shell does not
     // take them (a frameless window can be left out of Aero Snap).
-    internal const string Minimize = "Win+Down";
-    internal const string Maximize = "Win+Up";
+    internal const string Minimize = "Win+↓";
+    internal const string Maximize = "Win+↑";
     internal const string Close = "Alt+F4";
 
     internal static TitleBarShortcutAction ResolveTitleBarAction(Key key, ModifierKeys modifiers) =>

@@ -117,7 +117,7 @@ public partial class FloatingTrafficWidget : Window
         GraphLegendUpText.Text = Strings.T("LegendUpload");
         MoreButton.ToolTip = Strings.T("WidgetMore");
         AutomationProperties.SetName(MoreButton, Strings.T("WidgetMore"));
-        CloseButton.ToolTip = Strings.T("WidgetClose");
+        CloseButton.ToolTip = HotkeyToolTipContent.WithShortcut(Strings.T("WidgetClose"), KeyboardShortcuts.Close);
         AutomationProperties.SetName(CloseButton, Strings.T("WidgetClose"));
         AutomationProperties.SetName(PinButton, Strings.T("WidgetAlwaysOnTop"));
         UpdatePinToolTip();
