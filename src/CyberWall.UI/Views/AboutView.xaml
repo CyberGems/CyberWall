@@ -228,11 +228,11 @@
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0">
-                                <TextBlock x:Name="AutoUpdateTitleLbl" Text="Buscar actualizaciones al iniciar" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextBrush}"/>
-                                <TextBlock x:Name="AutoUpdateDescLbl" Text="Comprobar automáticamente si hay nuevas versiones al iniciar CyberWall." FontSize="11.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                <TextBlock x:Name="AutoUpdateTitleLbl" Text="Avisos de actualización" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextBrush}"/>
+                                <TextBlock x:Name="AutoUpdateDescLbl" Text="Busca nuevas versiones al iniciar y avisa si hay una disponible." FontSize="11.5" Foreground="{DynamicResource SubTextBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
 
-                            <CheckBox x:Name="AutoCheckUpdateCheck" IsChecked="True" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}"
+                            <CheckBox x:Name="AutoCheckUpdateCheck" AutomationProperties.LabeledBy="{Binding ElementName=AutoUpdateTitleLbl}" IsChecked="True" Grid.Column="2" Style="{StaticResource ModernToggleSwitch}"
                                       VerticalAlignment="Center" Click="AutoCheckUpdateCheck_Click"/>
                         </Grid>
 
