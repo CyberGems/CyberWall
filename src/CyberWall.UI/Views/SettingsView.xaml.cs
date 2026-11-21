@@ -126,6 +126,7 @@ public partial class SettingsView : UserControl
         StartupToggle.IsChecked = StartupHelper.IsStartupEnabled();
         StartMinimizedToggle.IsChecked = _s.StartMinimized;
         MinimizeToTrayToggle.IsChecked = _s.MinimizeToTrayOnClose;
+        UpdateNotificationsToggle.IsChecked = _s.AutoCheckForUpdates;
         ShowRecommendationsToggle.IsChecked = _s.ShowAppRecommendations;
         LoadHotkeyBox(GlobalHotkeyBox, GlobalHotkeyService.MainHotkeyId, _s.GlobalHotkey);
         LoadHotkeyBox(WidgetHotkeyBox, GlobalHotkeyService.WidgetHotkeyId, _s.WidgetHotkey);
@@ -436,6 +437,8 @@ public partial class SettingsView : UserControl
         StartMinimizedDescLbl.Text = Strings.T("StartMinimizedDesc");
         MinimizeToTrayTitleLbl.Text = Strings.T("MinimizeToTrayOnClose");
         MinimizeToTrayDescLbl.Text = Strings.T("MinimizeToTrayOnCloseDesc");
+        UpdateNotificationsTitleLbl.Text = Strings.T("AutoUpdateTitle");
+        UpdateNotificationsDescLbl.Text = Strings.T("AutoUpdateDesc");
         ShowRecommendationsTitleLbl.Text = Strings.T("ShowAppRecommendations");
         ShowRecommendationsDescLbl.Text = Strings.T("ShowAppRecommendationsDesc");
         GlobalHotkeyTitleLbl.Text = Strings.T("GlobalHotkeyTitle");
@@ -600,6 +603,12 @@ public partial class SettingsView : UserControl
         {
             mw.UpdateCloseButtonTooltip();
         }
+    }
+
+    private void UpdateNotificationsToggle_Click(object sender, RoutedEventArgs e)
+    {
+        _s.AutoCheckForUpdates = UpdateNotificationsToggle.IsChecked == true;
+        _s.Save();
     }
 
     private void ShowRecommendationsToggle_Click(object sender, RoutedEventArgs e)
