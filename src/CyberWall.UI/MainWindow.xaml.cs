@@ -638,16 +638,28 @@ public partial class MainWindow : Window
         if (MinimizeBtn != null)
         {
             var minLabel = Strings.T("Minimize");
-            MinimizeBtn.ToolTip = HotkeyToolTipContent.WithShortcut(minLabel, KeyboardShortcuts.Minimize);
+            // With the window maximized Win+Down restores it, so the minimize
+            // button no longer advertises that gesture.
+            MinimizeBtn.ToolTip = IsWindowMaximized
+                ? minLabel
+                : HotkeyToolTipContent.WithShortcut(minLabel, KeyboardShortcuts.Minimize);
             AutomationProperties.SetName(MinimizeBtn, minLabel);
             AutomationProperties.SetAcceleratorKey(MinimizeBtn, KeyboardShortcuts.Minimize);
         }
     }
 
+    private bool IsWindowMaximized => WorkAreaMaximize.IsFilled(this) || WindowState == WindowState.Maximized;
+
     private void UpdateMaximizeButtonIcon()
     {
         if (MaximizeBtn == null || MaximizeIconPath == null) return;
-        bool isMaximized = WorkAreaMaximize.IsFilled(this) || WindowState == WindowState.Maximized;
+        bool isMaximized = IsWindowMaximized;
+        if (MinimizeBtn != null)
+        {
+            MinimizeBtn.ToolTip = isMaximized
+                ? Strings.T("Minimize")
+                : HotkeyToolTipContent.WithShortcut(Strings.T("Minimize"), KeyboardShortcuts.Minimize);
+        }
         var label = Strings.T(isMaximized ? "Restore" : "Maximize");
         MaximizeBtn.ToolTip = HotkeyToolTipContent.WithShortcut(label, isMaximized ? KeyboardShortcuts.Restore : KeyboardShortcuts.Maximize);
         AutomationProperties.SetName(MaximizeBtn, label);
