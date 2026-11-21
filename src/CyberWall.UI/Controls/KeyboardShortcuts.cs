@@ -15,8 +15,8 @@ public enum TitleBarShortcutAction
     OpenNotifications,
     ToggleWidget,
     ToggleMoreMenu,
-    MinimizeWindow,
-    MaximizeOrRestoreWindow,
+    RestoreOrMinimizeWindow,
+    MaximizeWindow,
     CloseWindow
 }
 
@@ -37,8 +37,10 @@ internal static class KeyboardShortcuts
     internal const string Widget = "Alt+W";
     internal const string More = "Alt+M";
     // The Windows gestures, repeated by the app only when the shell does not
-    // take them (a frameless window can be left out of Aero Snap).
+    // take them (a frameless window can be left out of Aero Snap). Win+Down
+    // restores a maximized window and minimizes a normal one.
     internal const string Minimize = "Win+↓";
+    internal const string Restore = "Win+↓";
     internal const string Maximize = "Win+↑";
     internal const string Close = "Alt+F4";
 
@@ -53,8 +55,9 @@ internal static class KeyboardShortcuts
             (ModifierKeys.Alt, Key.W) => TitleBarShortcutAction.ToggleWidget,
             // Win+Up and Win+Down are handled by Windows: the key only arrives
             // here when the shell did not consume it, so this is the fallback.
-            (ModifierKeys.Windows, Key.Up) => TitleBarShortcutAction.MaximizeOrRestoreWindow,
-            (ModifierKeys.Windows, Key.Down) => TitleBarShortcutAction.MinimizeWindow,
+            // Win+Down restores a maximized window instead of minimizing it.
+            (ModifierKeys.Windows, Key.Up) => TitleBarShortcutAction.MaximizeWindow,
+            (ModifierKeys.Windows, Key.Down) => TitleBarShortcutAction.RestoreOrMinimizeWindow,
             (ModifierKeys.Control, Key.D1 or Key.NumPad1) => TitleBarShortcutAction.SelectFirewall,
             (ModifierKeys.Control, Key.D2 or Key.NumPad2 or Key.H) => TitleBarShortcutAction.SelectTraffic,
             (ModifierKeys.Control, Key.D3 or Key.NumPad3 or Key.L) => TitleBarShortcutAction.SelectConnections,

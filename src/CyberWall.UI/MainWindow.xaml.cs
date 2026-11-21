@@ -627,7 +627,11 @@ public partial class MainWindow : Window
         if (CloseBtn == null) return;
         bool toTray = App.Settings.MinimizeToTrayOnClose;
         var closeLabel = Strings.T(toTray ? "CloseToTray" : "CloseApp");
-        CloseBtn.ToolTip = HotkeyToolTipContent.WithShortcut(closeLabel, KeyboardShortcuts.Close);
+        // Alt+F4 exits even when the X only hides the window, so the chip is
+        // attached only when the button performs that same action.
+        CloseBtn.ToolTip = toTray
+            ? closeLabel
+            : HotkeyToolTipContent.WithShortcut(closeLabel, KeyboardShortcuts.Close);
         AutomationProperties.SetName(CloseBtn, closeLabel);
         AutomationProperties.SetAcceleratorKey(CloseBtn, KeyboardShortcuts.Close);
 
@@ -645,7 +649,7 @@ public partial class MainWindow : Window
         if (MaximizeBtn == null || MaximizeIconPath == null) return;
         bool isMaximized = WorkAreaMaximize.IsFilled(this) || WindowState == WindowState.Maximized;
         var label = Strings.T(isMaximized ? "Restore" : "Maximize");
-        MaximizeBtn.ToolTip = HotkeyToolTipContent.WithShortcut(label, KeyboardShortcuts.Maximize);
+        MaximizeBtn.ToolTip = HotkeyToolTipContent.WithShortcut(label, isMaximized ? KeyboardShortcuts.Restore : KeyboardShortcuts.Maximize);
         AutomationProperties.SetName(MaximizeBtn, label);
         AutomationProperties.SetAcceleratorKey(MaximizeBtn, KeyboardShortcuts.Maximize);
         MaximizeIconPath.Data = Geometry.Parse(isMaximized
@@ -3290,11 +3294,15 @@ public partial class MainWindow : Window
             case TitleBarShortcutAction.ToggleMoreMenu:
                 MoreBtn_Click(MoreBtn, new RoutedEventArgs());
                 break;
-            case TitleBarShortcutAction.MinimizeWindow:
-                Minimize_Click(this, new RoutedEventArgs());
+            case TitleBarShortcutAction.RestoreOrMinimizeWindow:
+                if (WorkAreaMaximize.IsFilled(this) || WindowState == WindowState.Maximized)
+                    Maximize_Click(this, new RoutedEventArgs());
+                else
+                    Minimize_Click(this, new RoutedEventArgs());
                 break;
-            case TitleBarShortcutAction.MaximizeOrRestoreWindow:
-                Maximize_Click(this, new RoutedEventArgs());
+            case TitleBarShortcutAction.MaximizeWindow:
+                if (!WorkAreaMaximize.IsFilled(this) && WindowState != WindowState.Maximized)
+                    Maximize_Click(this, new RoutedEventArgs());
                 break;
             case TitleBarShortcutAction.CloseWindow:
                 // Alt+F4 closes the app even when the X is set to minimize to tray.
