@@ -469,7 +469,9 @@ public partial class MainWindow : Window
         try
         {
             await Task.Delay(3000);
-            var result = await UpdateService.CheckForUpdatesAsync();
+            if (!App.Settings.AutoCheckForUpdates) return;
+            var result = await UpdateService.CheckForUpdatesAsync(shouldPublish: () => App.Settings.AutoCheckForUpdates);
+            if (!App.Settings.AutoCheckForUpdates) return;
             if (result.IsUpdateAvailable)
             {
                 _activeUpdateResult = result;

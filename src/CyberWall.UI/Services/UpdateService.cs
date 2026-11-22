@@ -73,7 +73,14 @@ public static class UpdateService
         GitHubHttp.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
     }
 
-    public static async Task<UpdateCheckResult> CheckForUpdatesAsync(bool forceRefresh = false, CancellationToken cancellationToken = default)
+    public static async Task<UpdateCheckResult> CheckForUpdatesAsync(
+        bool forceRefresh = false, Func<bool>? shouldPublish = null, CancellationToken cancellationToken = default)
+    {
+        var result = await CheckCoreAsync(cancellationToken).ConfigureAwait(false);
+        return shouldPublish is null || shouldPublish() ? RecordResult(result) : result;
+    }
+
+    private static async Task<UpdateCheckResult> CheckCoreAsync(CancellationToken cancellationToken)
     {
         var currentVersion = GetCurrentVersion();
         var currentLabel = GetCurrentVersionLabel();
@@ -148,7 +155,7 @@ public static class UpdateService
                 ? Strings.T("UpdateAvailable", tagName)
                 : Strings.T("UpToDate", currentLabel);
 
-            return RecordResult(new UpdateCheckResult(
+            return new UpdateCheckResult(
                 currentVersion,
                 latestVersion,
                 tagName,
@@ -158,25 +165,25 @@ public static class UpdateService
                 assetSha256,
                 publishedAt,
                 isAvailable,
-                status));
+                status);
         }
         catch (HttpRequestException)
         {
-            return RecordResult(new UpdateCheckResult(
+            return new UpdateCheckResult(
                 currentVersion, null, currentLabel, string.Empty, null, null, null, null, false,
-                Strings.Current == Lang.Es ? "No se pudo comprobar actualizaciones. Comprueba tu conexión a internet." : "Could not check for updates. Check your internet connection."));
+                Strings.Current == Lang.Es ? "No se pudo comprobar actualizaciones. Comprueba tu conexión a internet." : "Could not check for updates. Check your internet connection.");
         }
         catch (TaskCanceledException)
         {
-            return RecordResult(new UpdateCheckResult(
+            return new UpdateCheckResult(
                 currentVersion, null, currentLabel, string.Empty, null, null, null, null, false,
-                Strings.Current == Lang.Es ? "La comprobación de actualizaciones expiró." : "Update check timed out. Try again later."));
+                Strings.Current == Lang.Es ? "La comprobación de actualizaciones expiró." : "Update check timed out. Try again later.");
         }
         catch (JsonException)
         {
-            return RecordResult(new UpdateCheckResult(
+            return new UpdateCheckResult(
                 currentVersion, null, currentLabel, string.Empty, null, null, null, null, false,
-                Strings.Current == Lang.Es ? "Respuesta inesperada del servidor de actualizaciones." : "Unexpected response from update server."));
+                Strings.Current == Lang.Es ? "Respuesta inesperada del servidor de actualizaciones." : "Unexpected response from update server.");
         }
     }
 
