@@ -255,7 +255,7 @@ CyberWall is driven by connection prompts and the tray menu. The global shortcut
 | `Alt+U` / `Alt+W` | Check or apply an update / toggle the floating traffic widget |
 | `Ctrl+1` ... `Ctrl+4` | Switch to Firewall, Traffic, Connections or Statistics |
 | `Ctrl+5` or `Ctrl+,` | Open Settings |
-| `Win+Down` / `Win+Up` | Minimize / maximize or restore (Windows gestures) |
+| `Win+Up` / `Win+Down` | Maximize / restore or minimize (Windows gestures) |
 | `Alt+F4` | Close the app, even when the X is set to minimize to the tray |
 
 Full reference: [Settings](https://github.com/CyberGems/CyberWall/wiki/Settings) and [Keyboard Shortcuts](https://github.com/CyberGems/CyberWall/wiki/Keyboard-Shortcuts).

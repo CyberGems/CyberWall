@@ -256,7 +256,7 @@ CyberWall se maneja con avisos de conexión y el menú de la bandeja. Los atajos
 | `Alt+U` / `Alt+W` | Busca o aplica una actualización / muestra u oculta el widget de tráfico |
 | `Ctrl+1` ... `Ctrl+4` | Cambia a Cortafuegos, Tráfico, Conexiones o Estadísticas |
 | `Ctrl+5` o `Ctrl+,` | Abre Configuración |
-| `Win+Abajo` / `Win+Arriba` | Minimiza / maximiza o restaura (gestos de Windows) |
+| `Win+Arriba` / `Win+Abajo` | Maximiza / restaura o minimiza (gestos de Windows) |
 | `Alt+F4` | Cierra la app, incluso si la X está configurada para minimizar a la bandeja |
 
 Referencia completa: [Settings](https://github.com/CyberGems/CyberWall/wiki/Settings-es) y [Atajos de teclado](https://github.com/CyberGems/CyberWall/wiki/Keyboard-Shortcuts-es).
