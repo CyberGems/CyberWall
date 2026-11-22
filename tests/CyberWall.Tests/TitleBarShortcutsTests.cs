@@ -29,8 +29,8 @@ public class TitleBarShortcutsTests
     [InlineData(Key.W, ModifierKeys.Alt, TitleBarShortcutAction.ToggleWidget)]
     [InlineData(Key.M, ModifierKeys.Alt, TitleBarShortcutAction.ToggleMoreMenu)]
     [InlineData(Key.F4, ModifierKeys.Alt, TitleBarShortcutAction.CloseWindow)]
-    [InlineData(Key.Up, ModifierKeys.Windows, TitleBarShortcutAction.MaximizeOrRestoreWindow)]
-    [InlineData(Key.Down, ModifierKeys.Windows, TitleBarShortcutAction.MinimizeWindow)]
+    [InlineData(Key.Up, ModifierKeys.Windows, TitleBarShortcutAction.MaximizeWindow)]
+    [InlineData(Key.Down, ModifierKeys.Windows, TitleBarShortcutAction.RestoreOrMinimizeWindow)]
     public void MapsAllTitleBarShortcutsAndAliases(Key key, ModifierKeys modifiers, TitleBarShortcutAction expected)
     {
         Assert.Equal(expected, KeyboardShortcuts.ResolveTitleBarAction(key, modifiers));
