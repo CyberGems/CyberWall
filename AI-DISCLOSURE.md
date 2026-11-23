@@ -2,11 +2,11 @@
 
 # AI disclosure
 
-CyberGems is developed with the help of AI coding assistants. Architecture,
-design decisions, code review, testing and releases are carried out by the
-maintainer. AI output is treated as a draft: every change is read, verified
-and committed deliberately. Commit messages intentionally carry no automated
-AI signatures.
+CyberWall is developed with the help of frontier AI coding assistants.
+Architecture, design decisions, code review, testing and releases are
+carried out by the maintainer. AI output is treated as a draft: every change
+is read, verified and committed deliberately. Commit messages intentionally
+carry no automated AI signatures.
 
 This statement covers the source code and documentation in this repository.
 Third-party dependencies keep their own licenses. The repository LICENSE is

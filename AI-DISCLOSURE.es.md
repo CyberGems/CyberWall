@@ -2,11 +2,11 @@
 
 # Declaración de uso de IA
 
-CyberGems se desarrolla con ayuda de asistentes de programación con IA. La
-arquitectura, las decisiones de diseño, la revisión del código, las pruebas
-y los lanzamientos los realiza el mantenedor. La salida de la IA se trata
-como un borrador: cada cambio se lee, se verifica y se commitea de forma
-deliberada. Los mensajes de commit no incluyen firmas automáticas de IA,
+CyberWall se desarrolla con ayuda de asistentes de programación con IA de
+vanguardia. La arquitectura, las decisiones de diseño, la revisión del código,
+las pruebas y los lanzamientos los realiza el mantenedor. La salida de la IA
+se trata como un borrador: cada cambio se lee, se verifica y se commitea de
+forma deliberada. Los mensajes de commit no incluyen firmas automáticas de IA,
 por diseño.
 
 Esta declaración cubre el código fuente y la documentación de este
