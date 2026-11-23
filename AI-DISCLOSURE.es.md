@@ -7,7 +7,12 @@ vanguardia. La arquitectura, las decisiones de diseño, la revisión del código
 las pruebas y los lanzamientos los realiza el mantenedor. La salida de la IA
 se trata como un borrador: cada cambio se lee, se verifica y se commitea de
 forma deliberada. Los mensajes de commit no incluyen firmas automáticas de IA,
-por diseño.
+por diseño. Las comprobaciones automatizadas (compilaciones, pruebas y
+convenciones del repositorio) se ejecutan en CI en cada push; complementan,
+pero no sustituyen, la revisión humana.
+
+Esta declaración trata de cómo se construye el software. CyberWall no incluye
+funciones de IA propias: no hace llamadas a modelos en tiempo de ejecución.
 
 Esta declaración cubre el código fuente y la documentación de este
 repositorio. Las dependencias de terceros conservan sus propias licencias.
