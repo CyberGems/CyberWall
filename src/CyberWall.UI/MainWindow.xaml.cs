@@ -155,7 +155,6 @@ public partial class MainWindow : Window
     private readonly Dictionary<string, string> _lastRemoteByApp = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, List<string>> _recentCountriesByApp = new(StringComparer.OrdinalIgnoreCase);
     private TrayService? _tray;
-    private UpdateCheckResult? _activeUpdateResult;
     private Dialogs.FloatingTrafficWidget? _trafficWidget;
     private readonly GlobalHotkeyService _hotkeys = new();
     private IntPtr _windowHandle;
@@ -186,6 +185,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        AboutTabContent.CheckForUpdates = CheckForUpdateFromAboutAsync;
         AboutTabContent.BackRequested += (_, _) => SelectTab(_previousTab);
         NotificationsTabContent.BackRequested += (_, _) => SelectTab(_previousTab);
         SettingsTabContent.HotkeyChangeRequested += ApplyHotkeyChange;
@@ -280,9 +280,7 @@ public partial class MainWindow : Window
         ConnectivityService.Instance.Start(_notifications);
         AppInfoMonitorService.Instance.Start(_notifications, _svc);
         PathToIconConverter.IconChanged += OnAppIconChanged;
-        UpdateService.UpdateAvailabilityChanged += OnUpdateAvailabilityChanged;
         FloatingAlertsController.PauseStateChanged += OnFloatingAlertsPauseStateChanged;
-        _activeUpdateResult = UpdateService.LastCheckResult;
         UpdateAvailableButtonState();
         UpdateNotifPauseIndicator();
         MenuToggleHelper.Attach(MoreBtn, MoreOptionsMenu);
@@ -294,7 +292,7 @@ public partial class MainWindow : Window
             _alertsPauseExpiryTimer?.Stop();
             FloatingAlertsController.PauseStateChanged -= OnFloatingAlertsPauseStateChanged;
             TopBandwidthFlyout.Close();
-            UpdateService.UpdateAvailabilityChanged -= OnUpdateAvailabilityChanged;
+            CloseUpdateFlow();
             PathToIconConverter.IconChanged -= OnAppIconChanged;
             AppInfoMonitorService.Instance.Stop();
             ConnectivityService.Instance.Stop();
@@ -457,45 +455,6 @@ public partial class MainWindow : Window
         catch { }
     }
 
-    private bool _hasCheckedUpdates;
-
-    internal async void CheckForUpdatesOnStartup()
-    {
-        _notifications.PurgeObsoleteUpdateNotifications(UpdateService.GetCurrentVersion());
-        if (_svc.IsMasterOn)
-            _notifications.PurgeObsoleteProtectionOffNotifications();
-        if (_hasCheckedUpdates || !App.Settings.AutoCheckForUpdates) return;
-        _hasCheckedUpdates = true;
-        try
-        {
-            await Task.Delay(3000);
-            if (!App.Settings.AutoCheckForUpdates) return;
-            var result = await UpdateService.CheckForUpdatesAsync(shouldPublish: () => App.Settings.AutoCheckForUpdates);
-            if (!App.Settings.AutoCheckForUpdates) return;
-            if (result.IsUpdateAvailable)
-            {
-                _activeUpdateResult = result;
-                Dispatcher.Invoke(() =>
-                {
-                    UpdateAvailableButtonState();
-                    _notifications.PurgeObsoleteUpdateNotifications(UpdateService.GetCurrentVersion());
-                    _notifications.Add(AppNotificationKind.UpdateAvailable, detail: result.LatestVersionLabel);
-                    AboutTabContent?.ApplyCheckResult(result, addNotification: false);
-                });
-            }
-            else
-            {
-                _activeUpdateResult = null;
-                Dispatcher.Invoke(() =>
-                {
-                    UpdateAvailableButtonState();
-                    _notifications.PurgeObsoleteUpdateNotifications(UpdateService.GetCurrentVersion());
-                });
-            }
-        }
-        catch { }
-    }
-
     public void RefreshLanguage()
     {
         bool isLanguageSwitch = !_loading;
@@ -592,6 +551,7 @@ public partial class MainWindow : Window
         TopBandwidthFlyout.RefreshLanguage();
         _trafficWidget?.RefreshLanguage();
         _tray?.RefreshLanguage();
+        _updateNotice?.RefreshLocalization();
         UpdateAvailableButtonState();
         if (RulesLoadingTitle != null) RulesLoadingTitle.Text = Strings.T("RulesLoadingTitle");
         if (RulesLoadingSub != null) RulesLoadingSub.Text = Strings.T("RulesLoadingSub");
@@ -1040,19 +1000,6 @@ public partial class MainWindow : Window
         SelectTab(MainTab.Notifications);
     }
 
-    private async void OpenUpdateFromNotification()
-    {
-        try
-        {
-            var result = await UpdateService.CheckForUpdatesAsync();
-            if (!result.IsUpdateAvailable) return;
-            _notifications.MarkRelatedRead(AppNotificationKind.UpdateAvailable, null);
-            OpenAbout(checkUpdatesNow: false);
-            await AboutTabContent.StartUpdateDownloadAsync(result);
-        }
-        catch { }
-    }
-
     private void Notifications_Click(object sender, RoutedEventArgs e)
     {
         if (sender == NotifBtn && CurrentTab == MainTab.Notifications)
@@ -1089,15 +1036,6 @@ public partial class MainWindow : Window
             AutomationProperties.SetName(UpdateAvailableBtn, announcement);
             AutomationProperties.SetAcceleratorKey(UpdateAvailableBtn, KeyboardShortcuts.Update);
         }
-    }
-
-    private void OnUpdateAvailabilityChanged(UpdateCheckResult res)
-    {
-        Dispatcher.BeginInvoke(() =>
-        {
-            _activeUpdateResult = res.IsUpdateAvailable ? res : null;
-            UpdateAvailableButtonState();
-        });
     }
 
     private void UpdateAvailableBtn_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
@@ -1143,25 +1081,7 @@ public partial class MainWindow : Window
         UpdateTextWrapper.BeginAnimation(UIElement.OpacityProperty, opacityAnim);
     }
 
-    private async void UpdateAvailableBtn_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var result = _activeUpdateResult ?? await UpdateService.CheckForUpdatesAsync();
-            if (result == null || !result.IsUpdateAvailable)
-            {
-                _activeUpdateResult = null;
-                UpdateAvailableButtonState();
-                return;
-            }
-
-            _activeUpdateResult = result;
-            _notifications.MarkRelatedRead(AppNotificationKind.UpdateAvailable, null);
-            OpenAbout(checkUpdatesNow: false);
-            AboutTabContent?.ApplyCheckResult(result, addNotification: false);
-        }
-        catch { }
-    }
+    private void UpdateAvailableBtn_Click(object sender, RoutedEventArgs e) => OpenUpdateFromNotification();
 
     private string _sortBy = "DisplayName";
     private bool _sortAsc = true;
@@ -2383,6 +2303,8 @@ public partial class MainWindow : Window
 
     public void OpenAbout(bool checkUpdatesNow = false)
     {
+        if (checkUpdatesNow && TryOpenPendingUpdate()) return;
+
         ShowMainWindow();
         SelectTab(MainTab.About);
         if (checkUpdatesNow)

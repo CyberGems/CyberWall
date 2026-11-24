@@ -13,7 +13,7 @@ public class PromptStackWindowTests
     private static readonly object StaLock = new();
     private static Dispatcher? _staDispatcher;
 
-    private static void RunInSta(Action action)
+    internal static void RunInSta(Action action)
     {
         var dispatcher = GetOrStartStaDispatcher();
         Exception? captured = null;

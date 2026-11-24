@@ -20,25 +20,22 @@ public sealed record UpdateCheckResult(
     string? AssetSha256,
     DateTimeOffset? PublishedAt,
     bool IsUpdateAvailable,
-    string StatusMessage)
+    string? CheckErrorKey,
+    string? ReleaseNotes = null)
 {
-    public bool IsCheckError => !IsUpdateAvailable && LatestVersion is null && string.IsNullOrEmpty(ReleaseUrl);
+    public bool IsCheckError => CheckErrorKey is not null;
+    public string StatusMessage => CheckErrorKey is { } key ? Strings.T(key) : "";
+    public string? PackageError =>
+        !UpdateService.IsGitHubUrl(DownloadUrl) || !UpdateService.IsPackageName(AssetName) ? "UpdateNoPackage" :
+        !UpdateService.IsSha256(AssetSha256) ? "UpdateVerifyUnavailable" : null;
 }
+
+public readonly record struct UpdateDownloadProgress(long Downloaded, long? Total);
 
 public static class UpdateService
 {
     private const string RepoOwner = "CyberGems";
     private const string RepoName = "CyberWall";
-
-    public static UpdateCheckResult? LastCheckResult { get; private set; }
-    public static event Action<UpdateCheckResult>? UpdateAvailabilityChanged;
-
-    private static UpdateCheckResult RecordResult(UpdateCheckResult res)
-    {
-        LastCheckResult = res;
-        try { UpdateAvailabilityChanged?.Invoke(res); } catch { }
-        return res;
-    }
 
     public static Version GetCurrentVersion()
     {
@@ -73,17 +70,9 @@ public static class UpdateService
         GitHubHttp.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
     }
 
-    public static async Task<UpdateCheckResult> CheckForUpdatesAsync(
-        bool forceRefresh = false, Func<bool>? shouldPublish = null, CancellationToken cancellationToken = default)
-    {
-        var result = await CheckCoreAsync(cancellationToken).ConfigureAwait(false);
-        return shouldPublish is null || shouldPublish() ? RecordResult(result) : result;
-    }
-
-    private static async Task<UpdateCheckResult> CheckCoreAsync(CancellationToken cancellationToken)
+    public static async Task<UpdateCheckResult> CheckForUpdatesAsync(CancellationToken cancellationToken = default)
     {
         var currentVersion = GetCurrentVersion();
-        var currentLabel = GetCurrentVersionLabel();
 
         try
         {
@@ -92,100 +81,97 @@ public static class UpdateService
                 $"https://api.github.com/repos/{RepoOwner}/{RepoName}/releases/latest",
                 cancellationToken).ConfigureAwait(false);
 
+            return ParseRelease(json, currentVersion);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return CheckFailed("UpdateCheckTimeout");
+        }
+        catch (HttpRequestException ex)
+        {
+            Debug.WriteLine($"Update check: {ex}");
+            return CheckFailed("UpdateCheckConnectionError");
+        }
+    }
+
+    internal static UpdateCheckResult CheckFailed(string errorKey) =>
+        new(GetCurrentVersion(), null, GetCurrentVersionLabel(), "", null, null, null, null, false, errorKey);
+
+    internal static UpdateCheckResult ParseRelease(string json, Version currentVersion)
+    {
+        try
+        {
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
-            var tagName = root.GetProperty("tag_name").GetString() ?? "";
-            var releaseUrl = root.GetProperty("html_url").GetString() ?? "";
-            DateTimeOffset? publishedAt = root.TryGetProperty("published_at", out var pub) ? pub.GetDateTimeOffset() : null;
+            var tag = root.GetProperty("tag_name").GetString() ?? "";
+            if (!Version.TryParse(tag.TrimStart('v', 'V'), out var version))
+                return CheckFailed("UpdateCheckResponseError");
 
-            var latestVersionStr = tagName.TrimStart('v');
-            if (!Version.TryParse(latestVersionStr, out var latestVersion))
-                latestVersion = null;
+            var latest = new Version(version.Major, version.Minor, Math.Max(version.Build, 0), Math.Max(version.Revision, 0));
+            var installed = new Version(currentVersion.Major, currentVersion.Minor,
+                Math.Max(currentVersion.Build, 0), Math.Max(currentVersion.Revision, 0));
+            var releaseUrl = root.GetProperty("html_url").GetString() ?? "";
+            DateTimeOffset? publishedAt = root.TryGetProperty("published_at", out var published) &&
+                published.ValueKind == JsonValueKind.String && published.TryGetDateTimeOffset(out var date) ? date : null;
+            var notes = root.TryGetProperty("body", out var body) && body.ValueKind == JsonValueKind.String
+                ? body.GetString() : null;
 
             string? downloadUrl = null;
             string? assetName = null;
-            string? assetSha256 = null;
-
-            if (root.TryGetProperty("assets", out var assets))
+            string? sha256 = null;
+            if (root.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
             {
-                // Search for the setup installer first
+                int bestPriority = int.MaxValue;
                 foreach (var asset in assets.EnumerateArray())
                 {
-                    var name = asset.GetProperty("name").GetString() ?? "";
-                    if (name.StartsWith("CyberWall-Setup-", StringComparison.OrdinalIgnoreCase) &&
-                        name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                    {
-                        downloadUrl = asset.GetProperty("browser_download_url").GetString();
-                        assetName = name;
-                        assetSha256 = ReadAssetDigest(asset);
-                        break;
-                    }
-                }
+                    var name = asset.GetProperty("name").GetString();
+                    if (!IsPackageName(name)) continue;
+                    var candidate = asset.GetProperty("browser_download_url").GetString();
+                    if (!IsGitHubUrl(candidate)) continue;
+                    int priority = PackagePriority(name!);
+                    if (priority >= bestPriority) continue;
 
-                // Fallback to architecture-specific channel (e.g. portable or channel zip)
-                if (downloadUrl is null)
-                {
-                    var channel = GetRuntimeChannel();
-                    foreach (var asset in assets.EnumerateArray())
-                    {
-                        var name = asset.GetProperty("name").GetString() ?? "";
-                        if (name.Contains(channel, StringComparison.OrdinalIgnoreCase))
-                        {
-                            downloadUrl = asset.GetProperty("browser_download_url").GetString();
-                            assetName = name;
-                            assetSha256 = ReadAssetDigest(asset);
-                            break;
-                        }
-                    }
+                    bestPriority = priority;
+                    downloadUrl = candidate;
+                    assetName = name;
+                    sha256 = ReadAssetDigest(asset) ?? ExtractHashFromBody(notes, name!);
                 }
             }
 
-            // The release body also carries the checksum published by CI, used when the
-            // API does not expose the asset digest.
-            if (string.IsNullOrEmpty(assetSha256) && root.TryGetProperty("body", out var body))
-            {
-                assetSha256 = ExtractHashFromBody(body.GetString() ?? "", assetName);
-            }
-
-            if (downloadUrl is null && root.TryGetProperty("zipball_url", out var zip))
-                downloadUrl = zip.GetString();
-
-            var isAvailable = latestVersion is not null && latestVersion > currentVersion;
-            var status = isAvailable
-                ? Strings.T("UpdateAvailable", tagName)
-                : Strings.T("UpToDate", currentLabel);
-
-            return new UpdateCheckResult(
-                currentVersion,
-                latestVersion,
-                tagName,
-                releaseUrl,
-                downloadUrl,
-                assetName,
-                assetSha256,
-                publishedAt,
-                isAvailable,
-                status);
+            return new UpdateCheckResult(installed, latest, tag, releaseUrl,
+                downloadUrl, assetName, sha256, publishedAt, latest > installed, null, notes);
         }
-        catch (HttpRequestException)
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException)
         {
-            return new UpdateCheckResult(
-                currentVersion, null, currentLabel, string.Empty, null, null, null, null, false,
-                Strings.Current == Lang.Es ? "No se pudo comprobar actualizaciones. Comprueba tu conexión a internet." : "Could not check for updates. Check your internet connection.");
-        }
-        catch (TaskCanceledException)
-        {
-            return new UpdateCheckResult(
-                currentVersion, null, currentLabel, string.Empty, null, null, null, null, false,
-                Strings.Current == Lang.Es ? "La comprobación de actualizaciones expiró." : "Update check timed out. Try again later.");
-        }
-        catch (JsonException)
-        {
-            return new UpdateCheckResult(
-                currentVersion, null, currentLabel, string.Empty, null, null, null, null, false,
-                Strings.Current == Lang.Es ? "Respuesta inesperada del servidor de actualizaciones." : "Unexpected response from update server.");
+            Debug.WriteLine($"Unexpected release data: {ex}");
+            return CheckFailed("UpdateCheckResponseError");
         }
     }
+
+    private static int PackagePriority(string name)
+    {
+        var channel = GetRuntimeChannel();
+        bool matchesChannel = name.Contains(channel, StringComparison.OrdinalIgnoreCase);
+        if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            return matchesChannel ? 2 : int.MaxValue;
+        if (matchesChannel) return 0;
+        return name.Contains("win-", StringComparison.OrdinalIgnoreCase) ? int.MaxValue : 1;
+    }
+
+    internal static bool IsGitHubUrl(string? url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps &&
+        string.Equals(uri.Host, "github.com", StringComparison.OrdinalIgnoreCase) && uri.IsDefaultPort &&
+        uri.AbsolutePath.StartsWith($"/{RepoOwner}/{RepoName}/releases/", StringComparison.OrdinalIgnoreCase);
+
+    internal static bool IsPackageName(string? name) =>
+        !string.IsNullOrEmpty(name) && name.IndexOfAny(Path.GetInvalidFileNameChars()) < 0 &&
+        (name.StartsWith("CyberWall-Setup-", StringComparison.OrdinalIgnoreCase) &&
+            name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ||
+         name.StartsWith("CyberWall", StringComparison.OrdinalIgnoreCase) &&
+            name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
+
+    internal static bool IsSha256(string? value) =>
+        value is { Length: 64 } && value.All(Uri.IsHexDigit);
 
     /// <summary>
     /// Reads the checksum published for a release asset. GitHub exposes it as "digest"
@@ -193,125 +179,121 @@ public static class UpdateService
     /// </summary>
     private static string? ReadAssetDigest(JsonElement asset)
     {
-        if (asset.TryGetProperty("digest", out var digest))
+        if (asset.TryGetProperty("digest", out var digest) && digest.ValueKind == JsonValueKind.String)
         {
-            var value = digest.GetString();
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                var separator = value.IndexOf(':');
-                return separator >= 0 ? value[(separator + 1)..].Trim() : value.Trim();
-            }
+            var value = digest.GetString()?.Trim();
+            if (value?.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) == true)
+                value = value["sha256:".Length..].Trim();
+            if (IsSha256(value)) return value;
         }
         if (asset.TryGetProperty("sha256", out var legacy) && legacy.ValueKind == JsonValueKind.String)
         {
-            var value = legacy.GetString();
-            if (!string.IsNullOrWhiteSpace(value)) return value.Trim();
+            var value = legacy.GetString()?.Trim();
+            if (IsSha256(value)) return value;
         }
         return null;
     }
 
-    /// <summary>Extracts the checksum published in the release notes for the chosen asset.</summary>
-    private static string? ExtractHashFromBody(string body, string? assetName)
+    private static string? ExtractHashFromBody(string? body, string assetName)
     {
-        if (string.IsNullOrEmpty(body)) return null;
-        var isInstaller = assetName != null && assetName.Contains("Setup", StringComparison.OrdinalIgnoreCase);
-        var anchor = isInstaller ? "Setup Installer" : null;
-        var pattern = anchor != null
-            ? $@"{Regex.Escape(anchor)}[^\r\n]*?([0-9a-fA-F]{{64}})"
-            : @"([0-9a-fA-F]{64})";
-        var match = Regex.Match(body, pattern, RegexOptions.Singleline);
-        return match.Success ? match.Groups[1].Value.ToLowerInvariant() : null;
+        if (string.IsNullOrWhiteSpace(body)) return null;
+        var match = Regex.Match(body,
+            $@"{Regex.Escape(assetName)}[^\r\n]*?\b([0-9a-f]{{64}})\b", RegexOptions.IgnoreCase);
+        if (match.Success) return match.Groups[1].Value;
+
+        // The suite release template publishes separate installer and portable hashes.
+        var label = assetName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+            ? @"(?:\*\*Installer\*\*|Setup Installer)"
+            : @"\*\*Portable\*\*";
+        match = Regex.Match(body, $@"^{label}[^\r\n]*?\b([0-9a-f]{{64}})\b",
+            RegexOptions.IgnoreCase | RegexOptions.Multiline);
+        return match.Success ? match.Groups[1].Value : null;
     }
 
-    /// <summary>
-    /// Computes the SHA256 of a downloaded file and compares it with the checksum
-    /// published for the release. The installer is never launched when it does not match.
-    /// </summary>
-    public static async Task<bool> VerifyDownloadAsync(string path, string? expectedSha256)
+    public static async Task<bool> VerifyDownloadAsync(string path, string? expectedSha256,
+        CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(expectedSha256)) return false;
+        if (!IsSha256(expectedSha256)) return false;
         await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 64 * 1024, useAsync: true);
-        using var sha = SHA256.Create();
-        var hash = await sha.ComputeHashAsync(stream);
-        var actual = Convert.ToHexString(hash).ToLowerInvariant();
-        return string.Equals(actual, expectedSha256.Trim().ToLowerInvariant(), StringComparison.OrdinalIgnoreCase);
+        var hash = await SHA256.HashDataAsync(stream, cancellationToken).ConfigureAwait(false);
+        return string.Equals(Convert.ToHexString(hash), expectedSha256, StringComparison.OrdinalIgnoreCase);
     }
 
-    public static async Task DownloadUpdateAsync(string downloadUrl, string destinationPath, IProgress<double> progress, CancellationToken cancellationToken = default)
+    public static Task DownloadVerifiedAsync(string downloadUrl, string destinationPath, string? expectedSha256,
+        IProgress<UpdateDownloadProgress> progress, CancellationToken cancellationToken = default)
     {
-        var dir = Path.GetDirectoryName(destinationPath);
-        if (!string.IsNullOrEmpty(dir))
+        if (!IsGitHubUrl(downloadUrl))
+            throw new InvalidOperationException(Strings.T("UpdateNoPackage"));
+
+        return DownloadAssetAsync(GitHubHttp, new Uri(downloadUrl), destinationPath, expectedSha256, progress,
+            cancellationToken);
+    }
+
+    internal static async Task DownloadAssetAsync(HttpClient http, Uri url, string destinationPath,
+        string? expectedSha256, IProgress<UpdateDownloadProgress> progress, CancellationToken cancellationToken = default)
+    {
+        if (!IsSha256(expectedSha256))
+            throw new InvalidOperationException(Strings.T("UpdateVerifyUnavailable"));
+
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(destinationPath))!);
+        var stagingPath = $"{destinationPath}.{Guid.NewGuid():N}.download";
+        try
         {
-            Directory.CreateDirectory(dir);
-        }
+            using var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                .ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
 
-        using var response = await GitHubHttp.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-
-        var totalBytes = response.Content.Headers.ContentLength ?? -1L;
-        using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        using var fileStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
-
-        var buffer = new byte[8192];
-        var totalRead = 0L;
-        int bytesRead;
-
-        while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false)) > 0)
-        {
-            await fileStream.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
-            totalRead += bytesRead;
-
-            if (totalBytes > 0)
+            var total = response.Content.Headers.ContentLength;
+            long downloaded = 0;
+            progress.Report(new(0, total));
+            var timer = Stopwatch.StartNew();
+            await using (var content = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
+            await using (var file = new FileStream(stagingPath, FileMode.CreateNew, FileAccess.Write, FileShare.None,
+                64 * 1024, useAsync: true))
             {
-                var percentage = (double)totalRead / totalBytes * 100.0;
-                progress.Report(percentage);
+                var buffer = new byte[64 * 1024];
+                int count;
+                while ((count = await content.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
+                {
+                    await file.WriteAsync(buffer.AsMemory(0, count), cancellationToken).ConfigureAwait(false);
+                    downloaded += count;
+                    if (timer.ElapsedMilliseconds < 120) continue;
+                    progress.Report(new(downloaded, total));
+                    timer.Restart();
+                }
+            }
+
+            if (total is { } size && size != downloaded)
+                throw new IOException("The update download ended before the expected size.");
+            progress.Report(new(downloaded, total));
+            if (!await VerifyDownloadAsync(stagingPath, expectedSha256, cancellationToken).ConfigureAwait(false))
+                throw new InvalidDataException(Strings.T("UpdateVerifyFailed"));
+
+            cancellationToken.ThrowIfCancellationRequested();
+            File.Move(stagingPath, destinationPath, overwrite: true);
+        }
+        finally
+        {
+            try { File.Delete(stagingPath); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Debug.WriteLine($"Cannot remove the partial update: {ex}");
             }
         }
     }
 
-    /// <summary>
-    /// Downloads a release asset and verifies its checksum before it is used.
-    /// The file is discarded when the checksum does not match or cannot be verified.
-    /// </summary>
-    public static async Task DownloadVerifiedAsync(
-        string downloadUrl,
-        string destinationPath,
-        string? expectedSha256,
-        IProgress<double> progress,
-        CancellationToken cancellationToken = default)
-    {
-        await DownloadUpdateAsync(downloadUrl, destinationPath, progress, cancellationToken);
-
-        if (string.IsNullOrWhiteSpace(expectedSha256))
-        {
-            TryDelete(destinationPath);
-            throw new InvalidOperationException(Strings.T("UpdateVerifyUnavailable"));
-        }
-
-        if (!await VerifyDownloadAsync(destinationPath, expectedSha256))
-        {
-            TryDelete(destinationPath);
-            throw new InvalidOperationException(Strings.T("UpdateVerifyFailed"));
-        }
-    }
-
-    private static void TryDelete(string path)
-    {
-        try { if (File.Exists(path)) File.Delete(path); } catch { }
-    }
-
     public static void LaunchInstallerAndExit(string installerPath)
     {
-        var psi = new ProcessStartInfo
+        if (!File.Exists(installerPath) || !Path.GetExtension(installerPath).Equals(".exe", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("The update installer is missing or invalid.");
+
+        using var installer = Process.Start(new ProcessStartInfo
         {
             FileName = installerPath,
             Arguments = "/SILENT /SP- /SUPPRESSMSGBOXES /NORESTART",
             UseShellExecute = true
-        };
-        Process.Start(psi);
-        System.Windows.Application.Current.Dispatcher.Invoke(() =>
-        {
-            System.Windows.Application.Current.Shutdown();
-        });
+        }) ?? throw new InvalidOperationException("The update installer did not start.");
+
+        System.Windows.Application.Current.Shutdown();
     }
 }

@@ -24,9 +24,7 @@ public partial class AboutView : UserControl
         Checking,
         UpToDate,
         UpdateAvailable,
-        CheckError,
-        DownloadComplete,
-        DownloadError
+        CheckError
     }
 
     private const string RepoUrl = "https://github.com/CyberGems/CyberWall";
@@ -37,13 +35,12 @@ public partial class AboutView : UserControl
     private readonly AppSettings _settings;
     private readonly IReadOnlyList<SuiteApp> _suiteApps = SuiteCatalog.Pick(5);
     private bool _isChecking;
-    private bool _isDownloading;
     private InlineUpdateState _inlineState;
     private UpdateCheckResult? _lastResult;
-    private string? _lastDownloadError;
     private DispatcherTimer? _diagTipTimer;
 
     public event EventHandler? BackRequested;
+    internal Func<Task<UpdateCheckResult>>? CheckForUpdates { get; set; }
 
     public AboutView()
         : this(App.Settings ?? new AppSettings())
@@ -74,12 +71,7 @@ public partial class AboutView : UserControl
 
     private void LoadContent()
     {
-        AutoCheckUpdateCheck.IsChecked = _settings.AutoCheckForUpdates;
         SuiteSection.Visibility = _settings.ShowAppRecommendations ? Visibility.Visible : Visibility.Collapsed;
-        if (!_isChecking && !_isDownloading && _inlineState == InlineUpdateState.None && UpdateService.LastCheckResult is { } cached)
-        {
-            ApplyCheckResult(cached, addNotification: false);
-        }
         RefreshLanguage();
     }
 
@@ -99,11 +91,9 @@ public partial class AboutView : UserControl
         RefreshSuiteApps();
 
         UpdatesSectionLbl.Text = Strings.T("UpdatesMaintenance");
-        AutoUpdateTitleLbl.Text = Strings.T("AutoUpdateTitle");
-        AutoUpdateDescLbl.Text = Strings.T("AutoUpdateDesc");
         CheckUpdateTitleLbl.Text = Strings.T("CheckUpdates");
         CheckUpdateDescLbl.Text = Strings.T("CheckUpdatesDesc");
-        if (!_isChecking && !_isDownloading)
+        if (!_isChecking)
         {
             UpdateBtn.Content = Strings.T("CheckNow");
         }
@@ -167,10 +157,10 @@ public partial class AboutView : UserControl
 
     public void CheckUpdatesNow()
     {
-        if (_isChecking || _isDownloading) return;
+        if (_isChecking) return;
         Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, () =>
         {
-            if (!_isChecking && !_isDownloading)
+            if (!_isChecking)
                 UpdateCheckButton_Click(UpdateBtn, new RoutedEventArgs());
         });
     }
@@ -181,66 +171,32 @@ public partial class AboutView : UserControl
 
     private void SuiteMoreBtn_Click(object sender, RoutedEventArgs e) => OpenUrl("https://cybergems.org/#apps");
 
-    private void AutoCheckUpdateCheck_Click(object sender, RoutedEventArgs e)
-    {
-        _settings.AutoCheckForUpdates = AutoCheckUpdateCheck.IsChecked == true;
-        _settings.Save();
-    }
-
     private async void UpdateCheckButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_isChecking || _isDownloading) return;
+        if (_isChecking || CheckForUpdates is not { } check) return;
         _isChecking = true;
         UpdateBtn.IsEnabled = false;
         UpdateBtn.Content = Strings.T("CheckingUpdates");
         _inlineState = InlineUpdateState.Checking;
-        _lastDownloadError = null;
         RenderInlineUpdateState();
 
         try
         {
-            var result = await UpdateService.CheckForUpdatesAsync();
-            _isChecking = false;
-            UpdateBtn.IsEnabled = true;
-            UpdateBtn.Content = Strings.T("CheckNow");
-            ApplyCheckResult(result, addNotification: true);
+            ApplyCheckResult(await check());
         }
-        catch (Exception ex)
+        finally
         {
             _isChecking = false;
             UpdateBtn.IsEnabled = true;
             UpdateBtn.Content = Strings.T("CheckNow");
-            _lastResult = new UpdateCheckResult(
-                UpdateService.GetCurrentVersion(), null, UpdateService.GetCurrentVersionLabel(),
-                string.Empty, null, null, null, null, false, ex.Message);
-            _inlineState = InlineUpdateState.CheckError;
-            RenderInlineUpdateState();
         }
     }
 
-    internal void ApplyCheckResult(UpdateCheckResult result, bool addNotification)
+    internal void ApplyCheckResult(UpdateCheckResult result)
     {
         _lastResult = result;
-        _lastDownloadError = null;
-
-        if (result.IsUpdateAvailable)
-        {
-            if (addNotification)
-            {
-                new CyberWall.Common.Notifications.NotificationStore()
-                    .Add(CyberWall.Common.Models.AppNotificationKind.UpdateAvailable, detail: result.LatestVersionLabel);
-            }
-            _inlineState = InlineUpdateState.UpdateAvailable;
-        }
-        else if (result.IsCheckError)
-        {
-            _inlineState = InlineUpdateState.CheckError;
-        }
-        else
-        {
-            _inlineState = InlineUpdateState.UpToDate;
-        }
-
+        _inlineState = result.IsUpdateAvailable ? InlineUpdateState.UpdateAvailable :
+            result.IsCheckError ? InlineUpdateState.CheckError : InlineUpdateState.UpToDate;
         RenderInlineUpdateState();
     }
 
@@ -253,8 +209,6 @@ public partial class AboutView : UserControl
         }
 
         UpdateStatusBanner.Visibility = Visibility.Visible;
-        UpdateDownloadBtn.Visibility = Visibility.Collapsed;
-        UpdateOpenReleaseBtn.Visibility = Visibility.Collapsed;
 
         switch (_inlineState)
         {
@@ -277,16 +231,7 @@ public partial class AboutView : UserControl
                     "M 12 4 V 15 M 7 10 L 12 15 L 17 10 M 5 20 H 19");
                 var verLabel = _lastResult?.LatestVersionLabel ?? "";
                 UpdateStatusTitle.Text = Strings.T("UpdateAvailable", verLabel);
-                var currentPart = $"{Strings.T("Current")} {UpdateService.GetCurrentVersionLabel()}";
-                var latestPart = $"{Strings.T("Latest")} {verLabel}";
-                UpdateStatusDetail.Text = _lastResult?.PublishedAt is { } pub
-                    ? Strings.T("UpdatePublishedFmt", currentPart, latestPart, pub.ToLocalTime().ToString("d"))
-                    : $"{currentPart}  ·  {latestPart}";
-                if (!_isDownloading)
-                {
-                    UpdateDownloadBtn.Content = Strings.T("Download");
-                    UpdateDownloadBtn.Visibility = Visibility.Visible;
-                }
+                UpdateStatusDetail.Text = "";
                 break;
 
             case InlineUpdateState.CheckError:
@@ -294,30 +239,6 @@ public partial class AboutView : UserControl
                     "M 12 3 L 22 20 H 2 Z M 12 10 V 14 M 12 17 V 17.5");
                 UpdateStatusTitle.Text = Strings.T("UpdateCheckErrorTitle");
                 UpdateStatusDetail.Text = _lastResult?.StatusMessage ?? "";
-                break;
-
-            case InlineUpdateState.DownloadComplete:
-                SetBannerStyle("BadgeAllowBgBrush", "BadgeAllowFgBrush", "CardBrush", "BadgeAllowFgBrush", "BadgeAllowFgBrush", "BadgeAllowFgBrush",
-                    "M 5 13 L 10 18 L 19 7");
-                UpdateStatusTitle.Text = Strings.T("DownloadComplete");
-                UpdateStatusDetail.Text = Strings.T("DownloadCompleteDesc");
-                break;
-
-            case InlineUpdateState.DownloadError:
-                SetBannerStyle("BadgeBlockBgBrush", "BadgeBlockFgBrush", "CardBrush", "BadgeBlockFgBrush", "BadgeBlockFgBrush", "BadgeBlockFgBrush",
-                    "M 12 3 L 22 20 H 2 Z M 12 10 V 14 M 12 17 V 17.5");
-                UpdateStatusTitle.Text = Strings.T("DownloadFailed");
-                UpdateStatusDetail.Text = _lastDownloadError ?? "";
-                if (_lastResult != null)
-                {
-                    UpdateDownloadBtn.Content = Strings.T("Retry");
-                    UpdateDownloadBtn.Visibility = Visibility.Visible;
-                }
-                if (!string.IsNullOrEmpty(_lastResult?.ReleaseUrl))
-                {
-                    UpdateOpenReleaseBtn.Content = Strings.T("OpenReleasePage");
-                    UpdateOpenReleaseBtn.Visibility = Visibility.Visible;
-                }
                 break;
         }
     }
@@ -338,71 +259,6 @@ public partial class AboutView : UserControl
         UpdateStatusIconPath.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, iconStrokeKey);
         UpdateStatusTitle.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, titleFgKey);
         UpdateStatusIconPath.Data = Geometry.Parse(pathData);
-    }
-
-    private async void UpdateDownloadBtn_Click(object sender, RoutedEventArgs e)
-    {
-        if (_lastResult != null)
-            await StartUpdateDownloadAsync(_lastResult);
-    }
-
-    private void UpdateOpenReleaseBtn_Click(object sender, RoutedEventArgs e)
-    {
-        if (!string.IsNullOrEmpty(_lastResult?.ReleaseUrl))
-            OpenUrl(_lastResult.ReleaseUrl);
-    }
-
-    public async Task StartUpdateDownloadAsync(UpdateCheckResult result)
-    {
-        if (_isDownloading) return;
-        _isDownloading = true;
-        _lastResult = result;
-        _lastDownloadError = null;
-        _inlineState = InlineUpdateState.UpdateAvailable;
-        RenderInlineUpdateState();
-        UpdateProgressPanel.Visibility = Visibility.Visible;
-        UpdateBtn.IsEnabled = false;
-
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var updatesFolder = Path.Combine(appData, "CyberWall", "Updates");
-        var filename = result.AssetName ?? $"CyberWall_setup_{UpdateService.GetRuntimeChannel()}.exe";
-        var installerPath = Path.Combine(updatesFolder, filename);
-
-        var progress = new Progress<double>(val =>
-        {
-            UpdateProgressBar.Value = val;
-            UpdateProgressText.Text = string.Format(Strings.T("DownloadingUpdate"), val);
-        });
-
-        try
-        {
-            UpdateProgressBar.Value = 0;
-            UpdateProgressText.Text = string.Format(Strings.T("DownloadingUpdate"), 0.0);
-
-            if (string.IsNullOrEmpty(result.DownloadUrl))
-                throw new Exception("Direct download link is not available for this release.");
-
-            await UpdateService.DownloadVerifiedAsync(result.DownloadUrl, installerPath, result.AssetSha256, progress);
-
-            UpdateProgressText.Text = Strings.T("DownloadCompleted");
-            _inlineState = InlineUpdateState.DownloadComplete;
-            RenderInlineUpdateState();
-
-            UpdateService.LaunchInstallerAndExit(installerPath);
-        }
-        catch (Exception ex)
-        {
-            UpdateProgressPanel.Visibility = Visibility.Collapsed;
-            UpdateBtn.IsEnabled = true;
-            _lastDownloadError = ex.Message;
-            _inlineState = InlineUpdateState.DownloadError;
-            RenderInlineUpdateState();
-        }
-        finally
-        {
-            _isDownloading = false;
-            RenderInlineUpdateState();
-        }
     }
 
     private void AboutFooterWebsite_Click(object sender, MouseButtonEventArgs e)

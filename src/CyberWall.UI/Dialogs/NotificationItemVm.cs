@@ -200,7 +200,7 @@ public sealed class NotificationItemVm : INotifyPropertyChanged
             ActionLabel = n.Kind switch
             {
                 AppNotificationKind.ProtectionOff => Strings.T("TurnProtectionOn"),
-                AppNotificationKind.UpdateAvailable => Strings.T("Download"),
+                AppNotificationKind.UpdateAvailable => Strings.T("OpenUpdateNotice"),
                 AppNotificationKind.InternetLost => Strings.T("NotifInternetRecheck"),
                 AppNotificationKind.PendingDecision => Strings.T("Allow"),
                 _ => Strings.T("AutoBlockedUndo")

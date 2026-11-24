@@ -36,6 +36,7 @@ public sealed class AppSettings
     public PopupPosition NotificationPosition { get; set; } = PopupPosition.BottomRight;
     public int NotificationMonitor { get; set; } = -1; // -1 = Active monitor under cursor
     public bool AutoCheckForUpdates { get; set; } = true;
+    public string? SkippedUpdateVersion { get; set; }
     public bool RunAtStartup { get; set; } = true;
     public bool StartMinimized { get; set; } = true;
     public bool MinimizeToTrayOnClose { get; set; } = true;
@@ -296,16 +297,22 @@ public sealed class AppSettings
         return true;
     }
 
-    public void Save()
+    public void Save() => TrySave();
+
+    public bool TrySave()
     {
         try
         {
             AtomicFile.WriteAllText(Path, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
-            Saved?.Invoke();
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"AppSettings: could not save settings: {ex.Message}");
+            return false;
         }
+
+        try { Saved?.Invoke(); }
+        catch (Exception ex) { Debug.WriteLine($"AppSettings: settings saved but subscriber failed: {ex.Message}"); }
+        return true;
     }
 }

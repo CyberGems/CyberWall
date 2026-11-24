@@ -189,33 +189,115 @@ public class ViewsSmokeTests
             view.ApplyCheckResult(new UpdateCheckResult(
                 current, current, UpdateService.GetCurrentVersionLabel(),
                 "https://github.com/CyberGems/CyberWall/releases/tag/v2.4.0",
-                null, null, null, null, false, "Up to date"), addNotification: false);
+                null, null, null, null, false, null));
             Assert.Equal(Visibility.Visible, view.UpdateStatusBanner.Visibility);
-            Assert.Equal(Visibility.Collapsed, view.UpdateDownloadBtn.Visibility);
             var enUpToDate = view.UpdateStatusTitle.Text;
 
             var newer = new Version(current.Major + 1, 0, 0);
-            view.ApplyCheckResult(new UpdateCheckResult(
-                current, newer, $"v{newer}",
-                "https://github.com/CyberGems/CyberWall/releases/tag/v99.0.0",
-                "https://example.invalid/setup.exe", "setup.exe", "abc",
-                new DateTimeOffset(2026, 11, 13, 12, 0, 0, TimeSpan.Zero),
-                true, "Update available"), addNotification: false);
+            var checkCount = 0;
+            view.CheckForUpdates = () =>
+            {
+                checkCount++;
+                return Task.FromResult(new UpdateCheckResult(
+                    current, newer, $"v{newer}",
+                    "https://github.com/CyberGems/CyberWall/releases/tag/v99.0.0",
+                    "https://example.invalid/setup.exe", "setup.exe", "abc",
+                    new DateTimeOffset(2026, 11, 13, 12, 0, 0, TimeSpan.Zero),
+                    true, null));
+            };
+            view.UpdateBtn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.Equal(1, checkCount);
             Assert.Equal(Visibility.Visible, view.UpdateStatusBanner.Visibility);
-            Assert.Equal(Visibility.Visible, view.UpdateDownloadBtn.Visibility);
+            Assert.Null(view.FindName("UpdateDownloadBtn"));
+            Assert.Null(view.FindName("UpdateProgressPanel"));
+            Assert.Null(view.FindName("UpdateOpenReleaseBtn"));
             var enAvail = view.UpdateStatusTitle.Text;
 
             Strings.Current = Lang.Es;
             view.RefreshLanguage();
             Assert.NotEqual(enAvail, view.UpdateStatusTitle.Text);
 
-            view.ApplyCheckResult(new UpdateCheckResult(
-                current, null, UpdateService.GetCurrentVersionLabel(),
-                string.Empty, null, null, null, null, false, "Network offline"), addNotification: false);
+            view.ApplyCheckResult(UpdateService.CheckFailed("UpdateCheckConnectionError"));
             Assert.Equal(Visibility.Visible, view.UpdateStatusBanner.Visibility);
-            Assert.Equal(Visibility.Collapsed, view.UpdateDownloadBtn.Visibility);
-            Assert.Equal("Network offline", view.UpdateStatusDetail.Text);
+            Assert.Equal(Strings.T("UpdateCheckConnectionError"), view.UpdateStatusDetail.Text);
             Assert.NotEqual(enUpToDate, view.UpdateStatusTitle.Text);
+        });
+    }
+
+    [Fact]
+    public void UpdateNotice_ShowsLocalizedStagesAndReleaseNotesInEveryTheme()
+    {
+        PromptStackWindowTests.RunInSta(() =>
+        {
+            var previousLanguage = Strings.Current;
+            var notice = new UpdateNoticeWindow();
+            try
+            {
+                var release = new UpdateCheckResult(new Version(1, 0), new Version(2, 0), "v2.0",
+                    "https://github.com/CyberGems/CyberWall/releases/tag/v2.0",
+                    "https://github.com/CyberGems/CyberWall/releases/download/v2.0/CyberWall-Setup-v2.0.exe",
+                    "CyberWall-Setup-v2.0.exe", new string('a', 64), null, true, null, """
+                    ### Highlights
+                    - **Faster** searches
+                    <details>
+                    <summary>Español</summary>
+                    - Búsquedas más rápidas
+                    </details>
+                    """);
+                var root = Assert.IsType<Border>(notice.Content);
+
+                foreach (var theme in Enum.GetValues<AppTheme>())
+                {
+                    ThemeManager.Apply(theme);
+                    foreach (var language in new[] { Lang.En, Lang.Es })
+                    {
+                        Strings.Current = language;
+                        notice.Render(release, UpdatePhase.Available, default, false, false, null);
+                        Assert.Equal(Strings.T("UpdateViewGitHub"), notice.GitHubButton.Content);
+                        Assert.Equal(Strings.T("UpdateSkipVersion"), notice.SkipButton.Content);
+                        Assert.Equal(Strings.T("Later"), notice.LaterButton.Content);
+                        Assert.Equal(Strings.T("UpdateNow"), notice.PrimaryButton.Content);
+                        Assert.True(notice.PrimaryButton.IsEnabled);
+                        Assert.Equal(Visibility.Collapsed, notice.DownloadPanel.Visibility);
+                        Assert.Equal(language == Lang.En ? "Faster searches" : "Búsquedas más rápidas",
+                            Assert.Single(notice.NotesList.Items.Cast<string>()));
+
+                        notice.Render(release, UpdatePhase.Downloading, new(4_000_000, 8_000_000), false, false, null);
+                        Assert.Equal(Strings.T("UpdateDownloadBackground"), notice.LaterButton.Content);
+                        Assert.Equal(Strings.T("UpdateCancelDownload"), notice.CancelButton.Content);
+                        Assert.Equal(Visibility.Visible, notice.DownloadPanel.Visibility);
+                        Assert.Equal(Visibility.Collapsed, notice.PrimaryButton.Visibility);
+                        Assert.Equal(50, notice.DownloadProgressBar.Value);
+                        Assert.Single(notice.NotesList.Items);
+
+                        notice.Render(release, UpdatePhase.Ready, default, false, false, null);
+                        Assert.Equal(Strings.T("UpdateRestart"), notice.PrimaryButton.Content);
+                        Assert.Equal(Strings.T("Later"), notice.LaterButton.Content);
+                        Assert.Equal(Visibility.Collapsed, notice.CancelButton.Visibility);
+                        Assert.Single(notice.NotesList.Items);
+
+                        root.Measure(new Size(480, 600));
+                        root.Arrange(new Rect(0, 0, 480, root.DesiredSize.Height));
+                        root.UpdateLayout();
+                        var surface = Assert.IsType<System.Windows.Media.SolidColorBrush>(root.Background);
+                        var expected = System.Windows.Media.ColorConverter.ConvertFromString(ThemeManager.Get(theme).CardSecondary);
+                        Assert.Equal(expected, surface.Color);
+                        Assert.True(notice.PrimaryButton.ActualWidth > 0);
+                    }
+                }
+
+                notice.Render(release with { AssetSha256 = null, ReleaseNotes = null },
+                    UpdatePhase.Available, default, false, false, null);
+                Assert.False(notice.PrimaryButton.IsEnabled);
+                Assert.Equal(Visibility.Visible, notice.NotesUnavailable.Visibility);
+                Assert.Equal(Visibility.Visible, notice.ErrorText.Visibility);
+            }
+            finally
+            {
+                notice.Close();
+                Strings.Current = previousLanguage;
+                ThemeManager.Apply(AppTheme.CyberWall);
+            }
         });
     }
 

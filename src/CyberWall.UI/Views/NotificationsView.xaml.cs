@@ -20,7 +20,7 @@ public partial class NotificationsView : UserControl
     private Func<string, Task>? _onAllow;
     private Func<string, Task>? _onBlock;
     private Action? _onEnableProtection;
-    private Action? _onDownloadUpdate;
+    private Action? _onOpenUpdate;
     private Action? _onBeforeActivate;
     private Func<bool>? _isProtectionOn;
     private Func<bool>? _isOnline;
@@ -43,7 +43,7 @@ public partial class NotificationsView : UserControl
         Func<string, Task> onAllow,
         Func<string, Task> onBlock,
         Action onEnableProtection,
-        Action onDownloadUpdate,
+        Action onOpenUpdate,
         Action? onBeforeActivate = null,
         Func<bool>? isProtectionOn = null,
         Func<bool>? isOnline = null)
@@ -52,7 +52,7 @@ public partial class NotificationsView : UserControl
         _onAllow = onAllow ?? throw new ArgumentNullException(nameof(onAllow));
         _onBlock = onBlock ?? throw new ArgumentNullException(nameof(onBlock));
         _onEnableProtection = onEnableProtection ?? throw new ArgumentNullException(nameof(onEnableProtection));
-        _onDownloadUpdate = onDownloadUpdate ?? throw new ArgumentNullException(nameof(onDownloadUpdate));
+        _onOpenUpdate = onOpenUpdate ?? throw new ArgumentNullException(nameof(onOpenUpdate));
         _onBeforeActivate = onBeforeActivate;
         _isProtectionOn = isProtectionOn;
         _isOnline = isOnline;
@@ -191,7 +191,7 @@ public partial class NotificationsView : UserControl
                 await EnableAsync(vm);
                 break;
             case AppNotificationKind.UpdateAvailable:
-                _onDownloadUpdate?.Invoke();
+                _onOpenUpdate?.Invoke();
                 break;
             case AppNotificationKind.InternetLost:
                 await CheckInternetAsync(vm);
