@@ -592,11 +592,9 @@ public partial class MainWindow : Window
         if (CloseBtn == null) return;
         bool toTray = App.Settings.MinimizeToTrayOnClose;
         var closeLabel = Strings.T(toTray ? "CloseToTray" : "CloseApp");
-        // Alt+F4 exits even when the X only hides the window, so the chip is
-        // attached only when the button performs that same action.
-        CloseBtn.ToolTip = toTray
-            ? closeLabel
-            : HotkeyToolTipContent.WithShortcut(closeLabel, KeyboardShortcuts.Close);
+        // The X and Alt+F4 share one action (see ExecuteTitleBarShortcut), so the
+        // chip stays visible in both tray modes instead of leaving the button bare.
+        CloseBtn.ToolTip = HotkeyToolTipContent.WithShortcut(closeLabel, KeyboardShortcuts.Close);
         AutomationProperties.SetName(CloseBtn, closeLabel);
         AutomationProperties.SetAcceleratorKey(CloseBtn, KeyboardShortcuts.Close);
 
@@ -3257,8 +3255,9 @@ public partial class MainWindow : Window
                     Maximize_Click(this, new RoutedEventArgs());
                 break;
             case TitleBarShortcutAction.CloseWindow:
-                // Alt+F4 closes the app even when the X is set to minimize to tray.
-                _tray?.RequestExit();
+                // Same action as the X: with Send to tray on close enabled this hides
+                // the window, otherwise it exits. The tray menu keeps a real Exit.
+                Close();
                 break;
         }
     }
