@@ -2,19 +2,23 @@
 
 All notable changes to CyberWall are documented here.
 
-## [Unreleased]
+## [2.5.4] - 2026-11-23
 
 ### 🇺🇸 English
 
-- Add `Alt+Shift+W` as the global shortcut that shows or hides the CyberWall window from any application, and `Alt+Shift+F2` for the floating traffic widget. Both are configurable in Settings → System, with restore, clear and a per-field notice when another application owns the combination.
-- Show the current global shortcut next to the show/hide row of the tray menu.
-- Apply restored shortcuts immediately after restoring a backup, without restarting the app.
+- Dramatically reduce idle CPU usage and device IOCTLs by caching active network adapter LUIDs for 1-second speed sampling (`GetIfEntry2`) and 15-second connectivity probes, skipping main-window telemetry and rule-row refreshes while hidden or minimized, and idling 30 FPS traffic graph animations when series are flat.
+- Introduce a unified floating update notice window (`UpdateNoticeWindow`) with bilingual release highlights, live download progress, SHA-256 verification, skip-version persistence, one-click installer restart, and a Settings → System toggle for automatic update notices.
+- Add `Alt+Shift+W` as the global shortcut to show or hide the CyberWall window from any application, and `Alt+Shift+F2` for the floating traffic widget. Both are configurable in Settings → System, shown in the tray menu, and applied immediately after restoring a backup.
+- Standardize window titles app-first, unify titlebar hotkeys (`Win+Up` maximize, `Win+Down` restore or minimize with matching glyphs, hide minimize chip while maximized, `Alt+F4` close, and `Ctrl+W` on the floating widget), and align the tray tooltip with the suite format.
+- Add root `PRIVACY` and `AI-DISCLOSURE` notices and link them in both READMEs.
 
 ### 🇪🇸 Español
 
-- Añade `Alt+Shift+W` como atajo global que muestra u oculta la ventana de CyberWall desde cualquier aplicación, y `Alt+Shift+F2` para el widget flotante de tráfico. Ambos se configuran en Configuración → Sistema, con restablecer, limpiar y un aviso por campo cuando la combinación ya pertenece a otra aplicación.
-- Muestra el atajo global actual junto a la fila de mostrar/ocultar del menú de la bandeja.
-- Aplica los atajos restaurados al instante tras restaurar un respaldo, sin reiniciar la aplicación.
+- Reduce drásticamente el consumo de CPU y las operaciones IOCTL en reposo al cachear el LUID de la tarjeta de red activa para el muestreo cada segundo (`GetIfEntry2`) y las comprobaciones de conectividad cada 15 segundos, omitir refrescos de telemetría y filas cuando la ventana principal está oculta o minimizada, y pausar la animación de 30 FPS en gráficas planas.
+- Añade una ventana flotante unificada para avisos de actualización (`UpdateNoticeWindow`) con novedades bilingües de la versión, progreso de descarga en segundo plano, verificación SHA-256, opción para omitir versión, reinicio directo al instalador y ajuste en Configuración → Sistema para avisos automáticos.
+- Añade `Alt+Shift+W` como atajo global para mostrar u ocultar la ventana de CyberWall desde cualquier aplicación, y `Alt+Shift+F2` para el widget flotante de tráfico. Ambos se configuran en Configuración → Sistema, aparecen en el menú de la bandeja y se aplican al instante tras restaurar un respaldo.
+- Estandariza los títulos de ventana con la app primero, unifica los atajos de la barra de título (`Win+Up` maximizar, `Win+Down` restaurar o minimizar con glifos acordes, ocultar el chip de minimizar al estar maximizada, `Alt+F4` cerrar y `Ctrl+W` en el widget flotante), y alinea el tooltip de bandeja al formato de la suite.
+- Incorpora avisos de privacidad (`PRIVACY`) y transparencia de IA (`AI-DISCLOSURE`) enlazados en ambos README.
 
 ## [2.5.3] - 2026-11-19
 
