@@ -458,7 +458,7 @@ public partial class MainWindow : Window
     public void RefreshLanguage()
     {
         bool isLanguageSwitch = !_loading;
-        Title = Strings.T("AppTitle");
+        Title = "CyberWall";
         TitleText.Text = "CyberWall";
         WfpBadgeText.Text = Strings.T("WfpEngineBadge");
         SubtitleText.Text = Strings.T("AppSubtitle");

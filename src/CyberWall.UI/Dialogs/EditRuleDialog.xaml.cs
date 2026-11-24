@@ -95,7 +95,7 @@ public partial class EditRuleDialog : Window, IModalAttentionWindow
 
     private void RefreshLanguage()
     {
-        Title = $"CyberWall — {Strings.T("EditRuleTitle")}";
+        Title = $"CyberWall · {Strings.T("EditRuleTitle")}";
         DialogTitleLbl.Text = Strings.T("EditRuleTitle");
         DialogSubtitleLbl.Text = Strings.T("EditRuleSubtitle");
         IncomingTitleLbl.Text = Strings.T("IncomingTraffic");
