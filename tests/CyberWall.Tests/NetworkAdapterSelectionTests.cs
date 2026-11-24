@@ -229,5 +229,13 @@ public class NetworkAdapterSelectionTests
         if (captured != null)
             System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(captured).Throw();
     }
+
+    [Fact]
+    public void ConnectivityService_HasActiveNetworkInterface_MatchesConsistentRepeatedCalls()
+    {
+        bool first = ConnectivityService.HasActiveNetworkInterface();
+        bool second = ConnectivityService.HasActiveNetworkInterface();
+        Assert.Equal(first, second);
+    }
 }
 

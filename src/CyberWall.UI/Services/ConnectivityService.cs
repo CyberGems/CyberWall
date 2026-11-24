@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Windows.Threading;
@@ -21,6 +22,12 @@ public sealed class ConnectivityService
     private int _isChecking;
     private bool _isOnline = true;
     private bool _hasCheckedAtLeastOnce;
+
+    private static readonly object NicCacheLock = new();
+    private static ulong[] _cachedActiveLuids = Array.Empty<ulong>();
+    private static long _lastNicEnumTicks;
+    private static volatile bool _nicsDirty = true;
+    private static readonly long NicRefreshIntervalTicks = Stopwatch.Frequency * 120;
 
     public bool IsOnline => _isOnline;
     public bool HasCheckedAtLeastOnce => _hasCheckedAtLeastOnce;
@@ -53,6 +60,7 @@ public sealed class ConnectivityService
 
     private void OnNetworkAvailabilityChanged(object? sender, NetworkAvailabilityEventArgs e)
     {
+        _nicsDirty = true;
         if (!e.IsAvailable)
         {
             UpdateState(false);
@@ -65,6 +73,7 @@ public sealed class ConnectivityService
 
     private void OnNetworkAddressChanged(object? sender, EventArgs e)
     {
+        _nicsDirty = true;
         _ = CheckConnectivityAsync();
     }
 
@@ -91,16 +100,7 @@ public sealed class ConnectivityService
     {
         try
         {
-            if (!NetworkInterface.GetIsNetworkAvailable())
-                return false;
-
-            var nics = NetworkInterface.GetAllNetworkInterfaces();
-            bool hasActiveNic = nics.Any(nic =>
-                nic.OperationalStatus == OperationalStatus.Up &&
-                nic.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
-                nic.NetworkInterfaceType != NetworkInterfaceType.Tunnel);
-
-            if (!hasActiveNic)
+            if (!HasActiveNetworkInterface())
                 return false;
 
             // Probe 1: Windows NCSI endpoint
@@ -139,6 +139,58 @@ public sealed class ConnectivityService
         {
             return false;
         }
+    }
+
+    internal static bool HasActiveNetworkInterface()
+    {
+        if (!NetworkInterface.GetIsNetworkAvailable())
+            return false;
+
+        long now = Stopwatch.GetTimestamp();
+        if (!_nicsDirty)
+        {
+            ulong[] snapshot;
+            long lastEnum;
+            lock (NicCacheLock)
+            {
+                snapshot = _cachedActiveLuids;
+                lastEnum = _lastNicEnumTicks;
+            }
+
+            if (snapshot.Length > 0 && (now - lastEnum) < NicRefreshIntervalTicks)
+            {
+                foreach (var luid in snapshot)
+                {
+                    if (NetworkSpeedService.TryReadInterfaceOctets(luid, out bool isUp, out _, out _) && isUp)
+                        return true;
+                }
+            }
+        }
+
+        var nics = NetworkInterface.GetAllNetworkInterfaces();
+        var activeLuids = new List<ulong>();
+        bool hasActiveNic = false;
+
+        foreach (var nic in nics)
+        {
+            if (nic.OperationalStatus == OperationalStatus.Up &&
+                nic.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
+                nic.NetworkInterfaceType != NetworkInterfaceType.Tunnel)
+            {
+                hasActiveNic = true;
+                if (NetworkSpeedService.TryResolveInterfaceLuid(nic.Id, out var luid))
+                    activeLuids.Add(luid);
+            }
+        }
+
+        lock (NicCacheLock)
+        {
+            _cachedActiveLuids = activeLuids.Count > 0 ? activeLuids.ToArray() : Array.Empty<ulong>();
+            _lastNicEnumTicks = Stopwatch.GetTimestamp();
+            _nicsDirty = false;
+        }
+
+        return hasActiveNic;
     }
 
     private void UpdateState(bool online)
