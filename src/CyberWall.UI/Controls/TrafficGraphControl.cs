@@ -80,6 +80,10 @@ public class TrafficGraphControl : AnimatedHistoryGraph
         nameof(ShowUpload), typeof(bool), typeof(TrafficGraphControl),
         new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
 
+    public static readonly DependencyProperty PausedBadgeTopOffsetProperty = DependencyProperty.Register(
+        nameof(PausedBadgeTopOffset), typeof(double), typeof(TrafficGraphControl),
+        new FrameworkPropertyMetadata(8.0, FrameworkPropertyMetadataOptions.AffectsRender));
+
     public Color DownloadColor
     {
         get => (Color)GetValue(DownloadColorProperty);
@@ -156,6 +160,12 @@ public class TrafficGraphControl : AnimatedHistoryGraph
     {
         get => (bool)GetValue(ShowDownloadProperty);
         set => SetValue(ShowDownloadProperty, value);
+    }
+
+    public double PausedBadgeTopOffset
+    {
+        get => (double)GetValue(PausedBadgeTopOffsetProperty);
+        set => SetValue(PausedBadgeTopOffsetProperty, value);
     }
 
     public bool ShowUpload
@@ -509,7 +519,12 @@ public class TrafficGraphControl : AnimatedHistoryGraph
                 PausedTextBrush,
                 dpi);
 
-            var badgeRect = new Rect(plotRect.Left + 10, plotRect.Top + 8, pauseFt.Width + 14, pauseFt.Height + 5);
+            double badgeWidth = pauseFt.Width + 14;
+            double badgeHeight = pauseFt.Height + 5;
+            double badgeTop = Math.Min(
+                plotRect.Top + PausedBadgeTopOffset,
+                Math.Max(plotRect.Top + 2, plotRect.Bottom - badgeHeight - 4));
+            var badgeRect = new Rect(plotRect.Left + 10, badgeTop, badgeWidth, badgeHeight);
             dc.DrawRoundedRectangle(PausedBgBrush, PausedBorderPen, badgeRect, 5, 5);
             dc.DrawText(pauseFt, new Point(badgeRect.Left + 7, badgeRect.Top + 2.5));
         }

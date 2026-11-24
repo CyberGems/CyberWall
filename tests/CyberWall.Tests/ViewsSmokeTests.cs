@@ -422,5 +422,43 @@ public class ViewsSmokeTests
             Assert.Equal(string.Empty, settings.PreferredNetworkAdapterId);
         });
     }
+
+    [Fact]
+    public void TrafficGraphControl_PausedBadgeTopOffset_DefaultsAndCanBeConfigured()
+    {
+        RunOnSta(() =>
+        {
+            var graph = new TrafficGraphControl();
+            Assert.Equal(8.0, graph.PausedBadgeTopOffset);
+
+            graph.PausedBadgeTopOffset = 20.0;
+            Assert.Equal(20.0, graph.PausedBadgeTopOffset);
+
+            graph.IsPaused = true;
+            graph.Measure(new System.Windows.Size(260, 54));
+            graph.Arrange(new System.Windows.Rect(0, 0, 260, 54));
+        });
+    }
+
+    [Fact]
+    public void TrafficMonitorView_OnSpeedUpdated_OffUiThread_DoesNotThrow()
+    {
+        RunOnSta(() =>
+        {
+            var view = new TrafficMonitorView(new AppSettings());
+            view.Activate();
+            try
+            {
+                var snapshot = new NetworkSpeedSnapshot(12_000, 4_000, 12_000, 4_000, "Test Adapter", true);
+                var ex = Record.Exception(() =>
+                    Task.Run(() => view.OnSpeedUpdated(snapshot)).GetAwaiter().GetResult());
+                Assert.Null(ex);
+            }
+            finally
+            {
+                view.Deactivate();
+            }
+        });
+    }
 }
 

@@ -46,9 +46,20 @@ public partial class MainWindow : Window
 {
     public MainTab CurrentTab { get; private set; } = MainTab.Firewall;
 
+    // Mirror UI-thread visibility/tab state into volatile fields so background telemetry callbacks
+    // never touch WPF DependencyProperties (IsVisible / WindowState) off the UI thread.
+    private volatile bool _isWindowForeground;
+    private volatile int _currentTabOrdinal = (int)MainTab.Firewall;
+
+    private void RefreshUiVisibilityFlags()
+    {
+        _isWindowForeground = IsVisible && WindowState != WindowState.Minimized;
+    }
+
     public void SelectTab(MainTab tab)
     {
         CurrentTab = tab;
+        _currentTabOrdinal = (int)tab;
 
         TabFirewallBtn.IsChecked = tab == MainTab.Firewall;
         TabTrafficBtn.IsChecked = tab == MainTab.TrafficMonitor;
@@ -331,13 +342,19 @@ public partial class MainWindow : Window
         };
         StateChanged += (_, _) =>
         {
+            RefreshUiVisibilityFlags();
             Dispatcher.InvokeAsync(UpdateMaximizeButtonIcon);
             UpdateStatusDotState();
         };
-        IsVisibleChanged += (_, _) => UpdateStatusDotState();
+        IsVisibleChanged += (_, _) =>
+        {
+            RefreshUiVisibilityFlags();
+            UpdateStatusDotState();
+        };
         UpdateMaximizeButtonIcon();
         Loaded += (_, _) =>
         {
+            RefreshUiVisibilityFlags();
             if (!_layoutRestored)
             {
                 WindowLayoutPersistence.Restore(this, App.Settings);
@@ -1523,24 +1540,28 @@ public partial class MainWindow : Window
             foreach (var r in blocked) r.InvalidateTooltip();
     }
 
+    private bool CanDispatchActivityUpdate =>
+        _isWindowForeground && _currentTabOrdinal == (int)MainTab.Firewall;
+
     private bool IsActivityGridVisible =>
         IsVisible && WindowState != WindowState.Minimized && CurrentTab == MainTab.Firewall;
 
     private bool IsFirewallTelemetryVisible =>
         IsActivityGridVisible && !RenderStabilityManager.Instance.IsRenderPaused;
 
-    private void OnActivityUpdated()
+    internal void OnActivityUpdated()
     {
-        if (!IsActivityGridVisible) return;
-
         if (!Dispatcher.CheckAccess())
         {
+            if (!CanDispatchActivityUpdate) return;
             Dispatcher.BeginInvoke(() =>
             {
                 if (IsActivityGridVisible) OnActivityUpdated();
             });
             return;
         }
+
+        if (!IsActivityGridVisible) return;
 
         if (AllowedGrid.ItemsSource is IEnumerable<AppRuleRow> allowedRows)
         {
@@ -1761,12 +1782,11 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OnNetworkSpeedUpdated(NetworkSpeedSnapshot snapshot)
+    internal void OnNetworkSpeedUpdated(NetworkSpeedSnapshot snapshot)
     {
-        if (!IsFirewallTelemetryVisible) return;
-
         if (!Dispatcher.CheckAccess())
         {
+            if (!CanDispatchActivityUpdate || RenderStabilityManager.Instance.IsRenderPaused) return;
             Dispatcher.BeginInvoke(() =>
             {
                 if (IsFirewallTelemetryVisible)
@@ -1775,6 +1795,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (!IsFirewallTelemetryVisible) return;
         UpdateFirewallTelemetry(snapshot);
     }
 

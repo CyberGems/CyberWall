@@ -1382,6 +1382,7 @@
                                                                   ShowTimeLabels="False"
                                                                   ShowHoverInspection="True"
                                                                   ShowScaleLabels="False"
+                                                                  PausedBadgeTopOffset="20"
                                                                   VerticalAlignment="Bottom"/>
                                     </Grid>
                                 </Border>

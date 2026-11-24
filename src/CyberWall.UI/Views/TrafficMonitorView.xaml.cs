@@ -40,6 +40,7 @@ public partial class TrafficMonitorView : UserControl
     private readonly DispatcherTimer _refreshTimer;
     private readonly AppSettings? _overrideSettings;
     private bool _isActive;
+    private volatile bool _isViewVisible;
     private int _timeWindowSeconds = 60;
     private bool _isChartPaused;
     private Border? _activeRowBorder;
@@ -65,6 +66,7 @@ public partial class TrafficMonitorView : UserControl
 
         Loaded += (_, _) =>
         {
+            _isViewVisible = IsVisible;
             RenderStabilityManager.Instance.RenderPausedChanged -= OnRenderPausedChanged;
             RenderStabilityManager.Instance.RenderPausedChanged += OnRenderPausedChanged;
             UpdateAdapterModeBadge();
@@ -72,10 +74,12 @@ public partial class TrafficMonitorView : UserControl
         };
         IsVisibleChanged += (_, _) =>
         {
+            _isViewVisible = IsVisible;
             if (_isActive && IsVisible && !RenderStabilityManager.Instance.IsRenderPaused) UpdateData();
         };
         Unloaded += (_, _) =>
         {
+            _isViewVisible = false;
             RenderStabilityManager.Instance.RenderPausedChanged -= OnRenderPausedChanged;
         };
     }
@@ -99,6 +103,7 @@ public partial class TrafficMonitorView : UserControl
     {
         if (_isActive) return;
         _isActive = true;
+        _isViewVisible = IsVisible;
         NetworkSpeedService.Instance.SpeedUpdated += OnSpeedUpdated;
         NetworkSpeedService.Instance.PreferredAdapterChanged += OnPreferredAdapterChanged;
         UpdateAdapterModeBadge();
@@ -131,12 +136,11 @@ public partial class TrafficMonitorView : UserControl
         UpdateData();
     }
 
-    private void OnSpeedUpdated(NetworkSpeedSnapshot snapshot)
+    internal void OnSpeedUpdated(NetworkSpeedSnapshot snapshot)
     {
-        if (!_isActive || !IsVisible || RenderStabilityManager.Instance.IsRenderPaused) return;
-
         if (!Dispatcher.CheckAccess())
         {
+            if (!_isActive || !_isViewVisible || RenderStabilityManager.Instance.IsRenderPaused) return;
             Dispatcher.BeginInvoke(() =>
             {
                 if (_isActive && IsVisible && !RenderStabilityManager.Instance.IsRenderPaused) UpdateData();
@@ -144,6 +148,7 @@ public partial class TrafficMonitorView : UserControl
             return;
         }
 
+        if (!_isActive || !IsVisible || RenderStabilityManager.Instance.IsRenderPaused) return;
         UpdateData();
     }
 
