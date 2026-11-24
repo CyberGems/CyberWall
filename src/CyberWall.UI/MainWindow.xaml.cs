@@ -83,7 +83,10 @@ public partial class MainWindow : Window
 
         // Lifecycle hooks
         if (tab == MainTab.Firewall)
+        {
             UpdateFirewallTelemetry();
+            OnActivityUpdated();
+        }
 
         if (tab == MainTab.TrafficMonitor)
             TrafficMonitorTabContent.Activate();
@@ -1522,11 +1525,22 @@ public partial class MainWindow : Window
             foreach (var r in blocked) r.InvalidateTooltip();
     }
 
+    private bool IsActivityGridVisible =>
+        IsVisible && WindowState != WindowState.Minimized && CurrentTab == MainTab.Firewall;
+
+    private bool IsFirewallTelemetryVisible =>
+        IsActivityGridVisible && !RenderStabilityManager.Instance.IsRenderPaused;
+
     private void OnActivityUpdated()
     {
+        if (!IsActivityGridVisible) return;
+
         if (!Dispatcher.CheckAccess())
         {
-            Dispatcher.BeginInvoke(OnActivityUpdated);
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (IsActivityGridVisible) OnActivityUpdated();
+            });
             return;
         }
 
@@ -1751,13 +1765,13 @@ public partial class MainWindow : Window
 
     private void OnNetworkSpeedUpdated(NetworkSpeedSnapshot snapshot)
     {
-        if (CurrentTab != MainTab.Firewall || RenderStabilityManager.Instance.IsRenderPaused) return;
+        if (!IsFirewallTelemetryVisible) return;
 
         if (!Dispatcher.CheckAccess())
         {
             Dispatcher.BeginInvoke(() =>
             {
-                if (CurrentTab == MainTab.Firewall && !RenderStabilityManager.Instance.IsRenderPaused)
+                if (IsFirewallTelemetryVisible)
                     UpdateFirewallTelemetry(snapshot);
             });
             return;
@@ -1774,9 +1788,10 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (CurrentTab == MainTab.Firewall && IsVisible && WindowState != WindowState.Minimized)
+        if (IsFirewallTelemetryVisible)
         {
             UpdateFirewallTelemetry();
+            OnActivityUpdated();
         }
     }
 
@@ -1832,7 +1847,8 @@ public partial class MainWindow : Window
         }
         else if (CurrentTab == MainTab.Firewall)
         {
-            UpdateStatusDotAnimation(NetworkSpeedService.Instance.CurrentSnapshot);
+            UpdateFirewallTelemetry();
+            OnActivityUpdated();
         }
     }
 

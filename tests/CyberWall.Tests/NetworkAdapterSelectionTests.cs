@@ -174,5 +174,60 @@ public class NetworkAdapterSelectionTests
             svc.SetPreferredAdapter(previous);
         }
     }
+
+    [Fact]
+    public void TryResolveInterfaceLuid_And_TryReadInterfaceOctets_WorkForLiveUpAdapters()
+    {
+        Assert.False(NetworkSpeedService.TryResolveInterfaceLuid(null, out _));
+        Assert.False(NetworkSpeedService.TryResolveInterfaceLuid("not-a-guid", out _));
+        Assert.False(NetworkSpeedService.TryReadInterfaceOctets(0, out _, out _, out _));
+
+        foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            if (nic.OperationalStatus != OperationalStatus.Up || nic.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                continue;
+            if (!Guid.TryParse(nic.Id, out _))
+                continue;
+
+            Assert.True(NetworkSpeedService.TryResolveInterfaceLuid(nic.Id, out var luid));
+            Assert.NotEqual(0UL, luid);
+            Assert.True(NetworkSpeedService.TryReadInterfaceOctets(luid, out bool isUp, out long bytesIn, out long bytesOut));
+            Assert.True(isUp);
+            Assert.True(bytesIn >= 0);
+            Assert.True(bytesOut >= 0);
+        }
+    }
+
+    [Fact]
+    public void TrafficGraphControl_FlatSeriesHasNoMotionOrDelta_NonZeroSpikeTriggersMotion()
+    {
+        Exception? captured = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var graph = new CyberWall.UI.Controls.TrafficGraphControl { MaxSamples = 10 };
+                var flat = new float[10];
+                var active = new float[10];
+                active[9] = 2048f;
+
+                Assert.False(graph.HasVisualMotion(flat, flat, 10));
+                Assert.True(graph.HasVisualDelta(null, null, flat, flat, 10));
+                Assert.False(graph.HasVisualDelta(flat, flat, flat, flat, 10));
+
+                Assert.True(graph.HasVisualMotion(active, flat, 10));
+                Assert.True(graph.HasVisualDelta(flat, flat, active, flat, 10));
+            }
+            catch (Exception ex)
+            {
+                captured = ex;
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (captured != null)
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(captured).Throw();
+    }
 }
 

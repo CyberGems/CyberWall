@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Windows.Threading;
 
 namespace CyberWall.UI.Services;
@@ -47,6 +48,18 @@ public sealed class NetworkSpeedService
     private readonly Stopwatch _stopwatch = new();
     private TimeSpan _lastTime;
 
+    private string? _cachedAdapterId;
+    private string? _cachedAdapterName;
+    private ulong _cachedAdapterLuid;
+    private string _cachedForPreferredId = string.Empty;
+    private bool _cachedPinnedOffline;
+    private NetworkSpeedSnapshot? _cachedOfflineSnapshot;
+    private long _lastFullEnumTimestamp;
+    private volatile bool _adaptersDirty = true;
+
+    private static readonly long AutoRedetectIntervalTicks = Stopwatch.Frequency * 15;
+    private static readonly long PinnedOfflineRetryTicks = Stopwatch.Frequency * 5;
+
     private readonly List<TrafficHistoryPoint> _history = new();
     private readonly object _historyLock = new();
 
@@ -77,6 +90,15 @@ public sealed class NetworkSpeedService
     private NetworkSpeedService()
     {
         _timer = new System.Threading.Timer(_ => Sample(), null, Timeout.Infinite, Timeout.Infinite);
+        try
+        {
+            NetworkChange.NetworkAddressChanged += (_, _) => _adaptersDirty = true;
+            NetworkChange.NetworkAvailabilityChanged += (_, _) => _adaptersDirty = true;
+        }
+        catch
+        {
+            // Ignore in restricted environments without network-change notifications.
+        }
     }
 
     public void SetPreferredAdapter(string? adapterId, string? fallbackDisplayName = null)
@@ -101,9 +123,21 @@ public sealed class NetworkSpeedService
         _lastAdapterId = null;
         _lastBytesReceived = -1;
         _lastBytesSent = -1;
+        InvalidateAdapterCache();
         _lastTime = _stopwatch.Elapsed;
         Sample(isInitial: true);
         PreferredAdapterChanged?.Invoke(normalizedId);
+    }
+
+    private void InvalidateAdapterCache()
+    {
+        _adaptersDirty = true;
+        _cachedAdapterId = null;
+        _cachedAdapterName = null;
+        _cachedAdapterLuid = 0;
+        _cachedPinnedOffline = false;
+        _cachedOfflineSnapshot = null;
+        _lastFullEnumTimestamp = 0;
     }
 
     public IReadOnlyList<NetworkAdapterOption> GetSelectableAdapters()
@@ -152,44 +186,99 @@ public sealed class NetworkSpeedService
                 preferredName = _preferredAdapterName;
             }
 
-            var nics = NetworkInterface.GetAllNetworkInterfaces();
-            var primaryNic = SelectTargetAdapter(nics, preferredId);
-
-            if (primaryNic == null)
+            if (TrySampleFastPath(
+                    preferredId,
+                    isInitial,
+                    out var fastOfflineSnapshot,
+                    out var adapterId,
+                    out var adapterName,
+                    out var currentBytesIn,
+                    out var currentBytesOut))
             {
-                _lastAdapterId = null;
-                _lastBytesReceived = -1;
-                _lastBytesSent = -1;
-
-                var offlineAdapterName = "Offline";
-                if (!string.IsNullOrWhiteSpace(preferredId))
+                if (fastOfflineSnapshot != null)
                 {
-                    var pinnedNic = nics.FirstOrDefault(n => string.Equals(n.Id, preferredId, StringComparison.OrdinalIgnoreCase));
-                    var knownName = pinnedNic != null
-                        ? GetAdapterDisplayName(pinnedNic)
-                        : preferredName;
-                    if (!string.IsNullOrWhiteSpace(knownName))
+                    _lastAdapterId = null;
+                    _lastBytesReceived = -1;
+                    _lastBytesSent = -1;
+                    CurrentSnapshot = fastOfflineSnapshot with
                     {
-                        offlineAdapterName = Common.I18n.Strings.T("NetworkAdapterDisconnected", knownName);
+                        TotalBytesReceived = _sessionTotalBytesReceived,
+                        TotalBytesSent = _sessionTotalBytesSent
+                    };
+                    SpeedUpdated?.Invoke(CurrentSnapshot);
+                    return;
+                }
+            }
+            else
+            {
+                var nics = NetworkInterface.GetAllNetworkInterfaces();
+                var primaryNic = SelectTargetAdapter(nics, preferredId);
+                _adaptersDirty = false;
+                _lastFullEnumTimestamp = Stopwatch.GetTimestamp();
+                _cachedForPreferredId = preferredId ?? string.Empty;
+
+                if (primaryNic == null)
+                {
+                    _cachedAdapterId = null;
+                    _cachedAdapterName = null;
+                    _cachedAdapterLuid = 0;
+                    _lastAdapterId = null;
+                    _lastBytesReceived = -1;
+                    _lastBytesSent = -1;
+
+                    var offlineAdapterName = "Offline";
+                    if (!string.IsNullOrWhiteSpace(preferredId))
+                    {
+                        var pinnedNic = nics.FirstOrDefault(n => string.Equals(n.Id, preferredId, StringComparison.OrdinalIgnoreCase));
+                        var knownName = pinnedNic != null
+                            ? GetAdapterDisplayName(pinnedNic)
+                            : preferredName;
+                        if (!string.IsNullOrWhiteSpace(knownName))
+                        {
+                            offlineAdapterName = Common.I18n.Strings.T("NetworkAdapterDisconnected", knownName);
+                        }
                     }
+
+                    var offlineSnap = new NetworkSpeedSnapshot(
+                        0,
+                        0,
+                        _sessionTotalBytesReceived,
+                        _sessionTotalBytesSent,
+                        offlineAdapterName,
+                        false
+                    );
+                    _cachedPinnedOffline = !string.IsNullOrWhiteSpace(preferredId);
+                    _cachedOfflineSnapshot = _cachedPinnedOffline ? offlineSnap : null;
+                    CurrentSnapshot = offlineSnap;
+                    SpeedUpdated?.Invoke(CurrentSnapshot);
+                    return;
                 }
 
-                CurrentSnapshot = new NetworkSpeedSnapshot(
-                    0,
-                    0,
-                    _sessionTotalBytesReceived,
-                    _sessionTotalBytesSent,
-                    offlineAdapterName,
-                    false
-                );
-                SpeedUpdated?.Invoke(CurrentSnapshot);
-                return;
-            }
+                _cachedPinnedOffline = false;
+                _cachedOfflineSnapshot = null;
 
-            var stats = primaryNic.GetIPStatistics();
-            long currentBytesIn = stats.BytesReceived;
-            long currentBytesOut = stats.BytesSent;
-            string adapterName = GetAdapterDisplayName(primaryNic);
+                adapterId = primaryNic.Id;
+                adapterName = GetAdapterDisplayName(primaryNic);
+                if (TryResolveInterfaceLuid(adapterId, out var luid) &&
+                    TryReadInterfaceOctets(luid, out var isUp, out var fastIn, out var fastOut) &&
+                    isUp)
+                {
+                    _cachedAdapterId = adapterId;
+                    _cachedAdapterName = adapterName;
+                    _cachedAdapterLuid = luid;
+                    currentBytesIn = fastIn;
+                    currentBytesOut = fastOut;
+                }
+                else
+                {
+                    _cachedAdapterId = null;
+                    _cachedAdapterName = null;
+                    _cachedAdapterLuid = 0;
+                    var stats = primaryNic.GetIPStatistics();
+                    currentBytesIn = stats.BytesReceived;
+                    currentBytesOut = stats.BytesSent;
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(preferredId))
             {
@@ -206,11 +295,11 @@ public sealed class NetworkSpeedService
             double downBps = 0;
             double upBps = 0;
 
-            bool isNewAdapter = _lastAdapterId != primaryNic.Id;
+            bool isNewAdapter = _lastAdapterId != adapterId;
 
             if (isNewAdapter)
             {
-                _lastAdapterId = primaryNic.Id;
+                _lastAdapterId = adapterId;
                 _lastBytesReceived = currentBytesIn;
                 _lastBytesSent = currentBytesOut;
             }
@@ -494,5 +583,163 @@ public sealed class NetworkSpeedService
         }
 
         return bestNic;
+    }
+
+    private bool TrySampleFastPath(
+        string? preferredId,
+        bool isInitial,
+        out NetworkSpeedSnapshot? fastOfflineSnapshot,
+        out string adapterId,
+        out string adapterName,
+        out long bytesIn,
+        out long bytesOut)
+    {
+        fastOfflineSnapshot = null;
+        adapterId = string.Empty;
+        adapterName = string.Empty;
+        bytesIn = 0;
+        bytesOut = 0;
+
+        if (isInitial || _adaptersDirty)
+            return false;
+
+        if (!string.Equals(_cachedForPreferredId, preferredId ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        long nowTicks = Stopwatch.GetTimestamp();
+
+        if (_cachedPinnedOffline)
+        {
+            if (!string.IsNullOrWhiteSpace(preferredId) &&
+                _cachedOfflineSnapshot != null &&
+                (nowTicks - _lastFullEnumTimestamp) < PinnedOfflineRetryTicks)
+            {
+                fastOfflineSnapshot = _cachedOfflineSnapshot;
+                return true;
+            }
+            return false;
+        }
+
+        if (_cachedAdapterLuid == 0 || string.IsNullOrEmpty(_cachedAdapterId) || string.IsNullOrEmpty(_cachedAdapterName))
+            return false;
+
+        if (string.IsNullOrWhiteSpace(preferredId) &&
+            (nowTicks - _lastFullEnumTimestamp) >= AutoRedetectIntervalTicks)
+        {
+            return false;
+        }
+
+        if (TryReadInterfaceOctets(_cachedAdapterLuid, out bool isUp, out bytesIn, out bytesOut) && isUp)
+        {
+            adapterId = _cachedAdapterId;
+            adapterName = _cachedAdapterName;
+            return true;
+        }
+
+        _cachedAdapterLuid = 0;
+        _adaptersDirty = true;
+        return false;
+    }
+
+    internal static bool TryResolveInterfaceLuid(string? adapterId, out ulong luid)
+    {
+        luid = 0;
+        if (!OperatingSystem.IsWindows() || string.IsNullOrWhiteSpace(adapterId))
+            return false;
+
+        if (!Guid.TryParse(adapterId, out var guid))
+            return false;
+
+        try
+        {
+            return ConvertInterfaceGuidToLuid(ref guid, out luid) == 0 && luid != 0;
+        }
+        catch
+        {
+            luid = 0;
+            return false;
+        }
+    }
+
+    internal static bool TryReadInterfaceOctets(ulong luid, out bool isUp, out long bytesReceived, out long bytesSent)
+    {
+        isUp = false;
+        bytesReceived = 0;
+        bytesSent = 0;
+        if (!OperatingSystem.IsWindows() || luid == 0)
+            return false;
+
+        try
+        {
+            var row = new MIB_IF_ROW2 { InterfaceLuid = luid };
+            if (GetIfEntry2(ref row) != 0)
+                return false;
+
+            const int IfOperStatusUp = 1;
+            isUp = row.OperStatus == IfOperStatusUp;
+            bytesReceived = (long)Math.Min(row.InOctets, (ulong)long.MaxValue);
+            bytesSent = (long)Math.Min(row.OutOctets, (ulong)long.MaxValue);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    [DllImport("iphlpapi.dll", ExactSpelling = true)]
+    private static extern int ConvertInterfaceGuidToLuid(ref Guid interfaceGuid, out ulong interfaceLuid);
+
+    [DllImport("iphlpapi.dll", ExactSpelling = true)]
+    private static extern int GetIfEntry2(ref MIB_IF_ROW2 row);
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct MIB_IF_ROW2
+    {
+        public ulong InterfaceLuid;
+        public uint InterfaceIndex;
+        public Guid InterfaceGuid;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 257)]
+        public string Alias;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 257)]
+        public string Description;
+        public uint PhysicalAddressLength;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
+        public byte[] PhysicalAddress;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
+        public byte[] PermanentPhysicalAddress;
+        public uint Mtu;
+        public uint Type;
+        public uint TunnelType;
+        public uint MediaType;
+        public uint PhysicalMediumType;
+        public uint AccessType;
+        public uint DirectionType;
+        public byte InterfaceAndOperStatusFlags;
+        public int OperStatus;
+        public int AdminStatus;
+        public int MediaConnectState;
+        public Guid NetworkGuid;
+        public int ConnectionType;
+        public ulong TransmitLinkSpeed;
+        public ulong ReceiveLinkSpeed;
+        public ulong InOctets;
+        public ulong InUcastPkts;
+        public ulong InNUcastPkts;
+        public ulong InDiscards;
+        public ulong InErrors;
+        public ulong InUnknownProtos;
+        public ulong InUcastOctets;
+        public ulong InMulticastOctets;
+        public ulong InBroadcastOctets;
+        public ulong OutOctets;
+        public ulong OutUcastPkts;
+        public ulong OutNUcastPkts;
+        public ulong OutDiscards;
+        public ulong OutErrors;
+        public ulong OutUcastOctets;
+        public ulong OutMulticastOctets;
+        public ulong OutBroadcastOctets;
+        public ulong OutQLen;
     }
 }

@@ -27,6 +27,7 @@ public abstract class AnimatedHistoryGraph : FrameworkElement
     private double _startOffsetSamples;
     private double _stepWidth;
     private bool _animating;
+    private bool _hasRenderedSample;
     private float[] _primaryPrefix = Array.Empty<float>();
     private float[] _secondaryPrefix = Array.Empty<float>();
 
@@ -57,20 +58,23 @@ public abstract class AnimatedHistoryGraph : FrameworkElement
     protected void BeginSample(object sample, TimeSpan interval, float[]? primary, float[]? secondary, int capacity)
     {
         if (ReferenceEquals(_lastSample, sample)) return;
-        var consecutive = _lastSample is not null && IsNextHistory(_previousPrimary, primary, capacity);
+        var previousPrimary = _previousPrimary;
+        var previousSecondary = _previousSecondary;
+        var consecutive = _lastSample is not null && IsNextHistory(previousPrimary, primary, capacity);
         var startOffset = 1 + (_animating && _stepWidth > 0 ? _historyTransform.X / _stepWidth : 0);
         var prefixCount = Math.Max(1, (int)Math.Ceiling(startOffset));
 
         // Keep outgoing points still inside the clip if a sample arrives before the previous slide finishes
-        _primaryPrefix = RetainPrefix(_primaryPrefix, _previousPrimary, primary, capacity, consecutive, prefixCount);
-        _secondaryPrefix = RetainPrefix(_secondaryPrefix, _previousSecondary, secondary, capacity,
-            consecutive && IsNextHistory(_previousSecondary, secondary, capacity), prefixCount);
+        _primaryPrefix = RetainPrefix(_primaryPrefix, previousPrimary, primary, capacity, consecutive, prefixCount);
+        _secondaryPrefix = RetainPrefix(_secondaryPrefix, previousSecondary, secondary, capacity,
+            consecutive && IsNextHistory(previousSecondary, secondary, capacity), prefixCount);
 
         _lastSample = sample;
         _previousPrimary = primary;
         _previousSecondary = secondary;
 
-        if (consecutive && CanAnimate && interval > TimeSpan.Zero)
+        bool hasMotion = consecutive && CanAnimate && interval > TimeSpan.Zero && HasVisualMotion(primary, secondary, capacity);
+        if (hasMotion)
         {
             _startOffsetSamples = startOffset;
             _durationSeconds = interval.TotalSeconds;
@@ -85,10 +89,58 @@ public abstract class AnimatedHistoryGraph : FrameworkElement
             FinishAnimation(invalidate: false);
         }
 
-        if (!RenderStabilityManager.Instance.IsRenderPaused)
+        bool needsInvalidate = !_hasRenderedSample || hasMotion || !consecutive ||
+                               HasVisualDelta(previousPrimary, previousSecondary, primary, secondary, capacity);
+        _hasRenderedSample = true;
+
+        if (needsInvalidate && !RenderStabilityManager.Instance.IsRenderPaused)
         {
             InvalidateVisual();
         }
+    }
+
+    protected internal virtual bool HasVisualMotion(float[]? primary, float[]? secondary, int capacity) =>
+        HasSeriesVariation(primary, _primaryPrefix, capacity) ||
+        HasSeriesVariation(secondary, _secondaryPrefix, capacity);
+
+    protected internal virtual bool HasVisualDelta(
+        float[]? previousPrimary,
+        float[]? previousSecondary,
+        float[]? primary,
+        float[]? secondary,
+        int capacity) =>
+        !SeriesMatches(previousPrimary, primary, capacity) ||
+        !SeriesMatches(previousSecondary, secondary, capacity);
+
+    private static bool HasSeriesVariation(float[]? series, IReadOnlyList<float> prefix, int capacity)
+    {
+        const float epsilon = 0.01f;
+        if (series is null || series.Length == 0 || capacity <= 0) return prefix.Count > 0;
+        int len = Math.Min(series.Length, capacity);
+        float baseline = series[0];
+        for (int i = 1; i < len; i++)
+        {
+            if (MathF.Abs(series[i] - baseline) > epsilon) return true;
+        }
+        for (int i = 0; i < prefix.Count; i++)
+        {
+            if (MathF.Abs(prefix[i] - baseline) > epsilon) return true;
+        }
+        return false;
+    }
+
+    private static bool SeriesMatches(float[]? a, float[]? b, int capacity)
+    {
+        if (ReferenceEquals(a, b)) return true;
+        if (a is null || b is null) return false;
+        int len = Math.Min(capacity, Math.Min(a.Length, b.Length));
+        if (Math.Min(a.Length, capacity) != Math.Min(b.Length, capacity)) return false;
+        const float epsilon = 0.01f;
+        for (int i = 0; i < len; i++)
+        {
+            if (MathF.Abs(a[i] - b[i]) > epsilon) return false;
+        }
+        return true;
     }
 
     protected void SetHistoryWidth(double width, int capacity)

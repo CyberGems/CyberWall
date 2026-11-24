@@ -358,9 +358,26 @@ public class TrafficGraphControl : AnimatedHistoryGraph
     protected override void OnAnimationFrame(double elapsedSeconds, bool finished)
     {
         if (_isPaused) return;
+        if (finished || Math.Abs(_targetMax - _renderedMax) < 1.0)
+        {
+            _renderedMax = _targetMax;
+            return;
+        }
         // Smooth scale transition so scale adjustments don't jump vertically
         _renderedMax += (_targetMax - _renderedMax) * 0.18;
     }
+
+    protected internal override bool HasVisualMotion(float[]? primary, float[]? secondary, int capacity) =>
+        base.HasVisualMotion(primary, secondary, capacity) || Math.Abs(_targetMax - _renderedMax) >= 1.0;
+
+    protected internal override bool HasVisualDelta(
+        float[]? previousPrimary,
+        float[]? previousSecondary,
+        float[]? primary,
+        float[]? secondary,
+        int capacity) =>
+        base.HasVisualDelta(previousPrimary, previousSecondary, primary, secondary, capacity) ||
+        Math.Abs(_targetMax - _renderedMax) >= 1.0;
 
     protected override void OnMouseMove(MouseEventArgs e)
     {

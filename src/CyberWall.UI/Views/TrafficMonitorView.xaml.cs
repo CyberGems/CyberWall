@@ -60,7 +60,7 @@ public partial class TrafficMonitorView : UserControl
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1000) };
         _refreshTimer.Tick += (_, _) =>
         {
-            if (_isActive && !RenderStabilityManager.Instance.IsRenderPaused) UpdateData();
+            if (_isActive && IsVisible && !RenderStabilityManager.Instance.IsRenderPaused) UpdateData();
         };
 
         Loaded += (_, _) =>
@@ -68,7 +68,11 @@ public partial class TrafficMonitorView : UserControl
             RenderStabilityManager.Instance.RenderPausedChanged -= OnRenderPausedChanged;
             RenderStabilityManager.Instance.RenderPausedChanged += OnRenderPausedChanged;
             UpdateAdapterModeBadge();
-            if (_isActive && !RenderStabilityManager.Instance.IsRenderPaused) UpdateData();
+            if (_isActive && IsVisible && !RenderStabilityManager.Instance.IsRenderPaused) UpdateData();
+        };
+        IsVisibleChanged += (_, _) =>
+        {
+            if (_isActive && IsVisible && !RenderStabilityManager.Instance.IsRenderPaused) UpdateData();
         };
         Unloaded += (_, _) =>
         {
@@ -84,7 +88,7 @@ public partial class TrafficMonitorView : UserControl
             return;
         }
 
-        if (_isActive)
+        if (_isActive && IsVisible)
         {
             UpdateData();
             _refreshTimer.Start();
@@ -129,13 +133,13 @@ public partial class TrafficMonitorView : UserControl
 
     private void OnSpeedUpdated(NetworkSpeedSnapshot snapshot)
     {
-        if (!_isActive || RenderStabilityManager.Instance.IsRenderPaused) return;
+        if (!_isActive || !IsVisible || RenderStabilityManager.Instance.IsRenderPaused) return;
 
         if (!Dispatcher.CheckAccess())
         {
             Dispatcher.BeginInvoke(() =>
             {
-                if (_isActive && !RenderStabilityManager.Instance.IsRenderPaused) UpdateData();
+                if (_isActive && IsVisible && !RenderStabilityManager.Instance.IsRenderPaused) UpdateData();
             });
             return;
         }
