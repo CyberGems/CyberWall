@@ -2,6 +2,20 @@
 
 All notable changes to CyberWall are documented here.
 
+## [2.5.5] - 2026-11-24
+
+### 🇺🇸 English
+
+- Restore live updates for the Firewall header traffic graph, download/upload speed gauges, and rule-row activity dots by checking thread-safe cached visibility and active-tab flags before dispatching from background telemetry callbacks.
+- Reposition the `PAUSADO` / `PAUSED` badge inside `FirewallTrafficGraph` using a configurable `PausedBadgeTopOffset` (`20px` on the Firewall header card) so it clears the graph title overlay.
+- Keep the close button's `Alt+F4` shortcut chip visible in both tray and direct-exit modes.
+
+### 🇪🇸 Español
+
+- Restaura las actualizaciones en vivo del gráfico de tráfico principal, los medidores de velocidad de descarga y subida, y los puntos de actividad de las filas mediante indicadores seguros de visibilidad y pestaña activa antes de despachar desde hilos en segundo plano.
+- Reubica el badge `PAUSADO` / `PAUSED` dentro de `FirewallTrafficGraph` con la propiedad configurable `PausedBadgeTopOffset` (`20px` en la tarjeta principal) para que no tape el título de la gráfica.
+- Mantiene visible el indicador de atajo `Alt+F4` en el botón de cierre en ambos modos de bandeja.
+
 ## [2.5.4] - 2026-11-23
 
 ### 🇺🇸 English
