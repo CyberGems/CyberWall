@@ -290,11 +290,11 @@ Full reference: [Settings](https://github.com/CyberGems/CyberWall/wiki/Settings)
 
 | Asset | Address | QR |
 |---|---|---|
-| **BTC** | <pre><code>bc1q5mxzz05nmvsheqzx7970euswta3fksxzcfzag4</code></pre> | <img src="src/CyberWall.UI/Assets/donate/qr-btc.png" width="90" height="90" alt="BTC QR" /> |
-| **ETH** | <pre><code>0x79b703Ec0f77493679Fcd280aF3b983E20c580B8</code></pre> | <img src="src/CyberWall.UI/Assets/donate/qr-eth.png" width="90" height="90" alt="ETH QR" /> |
-| **USDT (ERC20 / BEP20)** | <pre><code>0x79b703Ec0f77493679Fcd280aF3b983E20c580B8</code></pre> | <img src="src/CyberWall.UI/Assets/donate/qr-eth.png" width="90" height="90" alt="USDT QR" /> |
-| **USDT (TRC20)** | <pre><code>TSVbSk1HSyZ1NprCnAYiw56ECwXgH887mD</code></pre> | <img src="src/CyberWall.UI/Assets/donate/qr-usdt-tron.png" width="90" height="90" alt="USDT TRC20 QR" /> |
-| **LTC** | <pre><code>LWGnEHgcFCE2BRkzLnsdPDD8Y8ZeDK577X</code></pre> | <img src="src/CyberWall.UI/Assets/donate/qr-ltc.png" width="90" height="90" alt="LTC QR" /> |
+| **<img src="src/CyberWall.UI/Assets/donate/btc.svg" width="18" height="18" alt="" />&nbsp;&nbsp;BTC** | <pre><code>bc1q5mxzz05nmvsheqzx7970euswta3fksxzcfzag4</code></pre> | <img src="src/CyberWall.UI/Assets/donate/qr-btc.png" width="90" height="90" alt="BTC QR" /> |
+| **<img src="src/CyberWall.UI/Assets/donate/eth.svg" width="18" height="18" alt="" />&nbsp;&nbsp;ETH** | <pre><code>0x79b703Ec0f77493679Fcd280aF3b983E20c580B8</code></pre> | <img src="src/CyberWall.UI/Assets/donate/qr-eth.png" width="90" height="90" alt="ETH QR" /> |
+| **<img src="src/CyberWall.UI/Assets/donate/usdt.svg" width="18" height="18" alt="" />&nbsp;&nbsp;USDT (ERC20 / BEP20)** | <pre><code>0x79b703Ec0f77493679Fcd280aF3b983E20c580B8</code></pre> | <img src="src/CyberWall.UI/Assets/donate/qr-eth.png" width="90" height="90" alt="USDT QR" /> |
+| **<img src="src/CyberWall.UI/Assets/donate/usdt.svg" width="18" height="18" alt="" />&nbsp;&nbsp;USDT (TRC20)** | <pre><code>TSVbSk1HSyZ1NprCnAYiw56ECwXgH887mD</code></pre> | <img src="src/CyberWall.UI/Assets/donate/qr-usdt-tron.png" width="90" height="90" alt="USDT TRC20 QR" /> |
+| **<img src="src/CyberWall.UI/Assets/donate/ltc.svg" width="18" height="18" alt="" />&nbsp;&nbsp;LTC** | <pre><code>LWGnEHgcFCE2BRkzLnsdPDD8Y8ZeDK577X</code></pre> | <img src="src/CyberWall.UI/Assets/donate/qr-ltc.png" width="90" height="90" alt="LTC QR" /> |
 
 > ⚠️ Send only the selected asset on the indicated network. Using the wrong network will result in permanent loss of funds.
 
