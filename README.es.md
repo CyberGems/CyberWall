@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cybergems.org/es/apps/cyberwall/">
-    <img src="https://cybergems.org/banners/es/cyberwall.png" alt="Bloquea conexiones no deseadas en tiempo real" />
+    <img src="https://cybergems.org/banners/es/cyberwall.png" alt="Controla qué apps pueden conectarse" />
   </a>
 </p>
 
@@ -25,7 +25,7 @@
 
 <div align="center">
 
-### Un firewall de denegación por defecto que pregunta antes de que un programa salga a internet
+### Elige qué apps pueden conectarse, revisa las conexiones nuevas y conserva las reglas que te convengan.
 
 </div>
 
