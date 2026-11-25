@@ -268,6 +268,10 @@ Full reference: [Settings](https://github.com/CyberGems/CyberWall/wiki/Settings)
 **CyberWall** is 100% free and open source. If it helps you, please consider [donating](https://cybergems.org/donate) or [starring the repo on GitHub](https://github.com/CyberGems/CyberWall) to support continued development. [Read the full story](https://cybergems.org/about/) behind the project. Thank you! 🙏
 
 <p align="center">
+  <a href="https://github.com/sponsors/CyberGems"><img src="https://img.shields.io/badge/Sponsor-GitHub-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white" alt="Sponsor CyberGems on GitHub" /></a>
+</p>
+
+<p align="center">
   <a href="https://www.paypal.com/donate/?hosted_button_id=M4PY3UPJA5Y6Q"><img src="https://img.shields.io/badge/Donate-PayPal-0070BA?style=for-the-badge&logo=paypal" alt="Donate via PayPal" /></a>
 </p>
 

@@ -268,6 +268,10 @@ Referencia completa: [Settings](https://github.com/CyberGems/CyberWall/wiki/Sett
 **CyberWall** es 100% gratis y de código abierto. Si te resulta útil, por favor considera [donar](https://cybergems.org/es/donate) o [dar una estrella al repo en GitHub](https://github.com/CyberGems/CyberWall) para apoyar el desarrollo continuo. [Lee la historia completa](https://cybergems.org/es/about/) del proyecto. ¡Gracias! 🙏
 
 <p align="center">
+  <a href="https://github.com/sponsors/CyberGems"><img src="https://img.shields.io/badge/Sponsor-GitHub-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white" alt="Patrocinar CyberGems en GitHub" /></a>
+</p>
+
+<p align="center">
   <a href="https://www.paypal.com/donate/?hosted_button_id=M4PY3UPJA5Y6Q"><img src="https://img.shields.io/badge/Donar-PayPal-0070BA?style=for-the-badge&logo=paypal" alt="Donar con PayPal" /></a>
 </p>
 
