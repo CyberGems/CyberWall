@@ -314,7 +314,7 @@ test('updates the managed description while preserving reviewer notes', () => {
   assert.ok(after.endsWith('\nReviewer note'));
   assert.equal(after.includes('1.18.0'), false);
   assert.equal(submissionBody('1.21.0', after), after);
-  assert.throws(() => submissionBody('1.21.0', '<!-- cybersnap-winget:start -->'), /Malformed/);
+  assert.throws(() => submissionBody('1.21.0', '<!-- cyberwall-winget:start -->'), /Malformed/);
 });
 
 test('compares numeric versions and rejects unsafe path components', () => {
@@ -325,7 +325,7 @@ test('compares numeric versions and rejects unsafe path components', () => {
 });
 
 test('only accepts the complete set of manifests for one CyberWall version', () => {
-  const directory = mkdtempSync(join(tmpdir(), 'cybersnap-winget-test-'));
+  const directory = mkdtempSync(join(tmpdir(), 'cyberwall-winget-test-'));
   try {
     for (const file of manifests('1.21.0').files) writeFileSync(join(directory, file.name), file.content);
     assert.equal(loadManifests(directory).version, '1.21.0');

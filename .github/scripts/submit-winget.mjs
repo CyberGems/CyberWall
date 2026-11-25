@@ -11,8 +11,8 @@ const sourceRepository = 'CyberGems/CyberWall';
 const manifestNames = [
   `${packageId}.installer.yaml`, `${packageId}.locale.en-US.yaml`, `${packageId}.yaml`,
 ];
-const startMarker = '<!-- cybersnap-winget:start -->';
-const endMarker = '<!-- cybersnap-winget:end -->';
+const startMarker = '<!-- cyberwall-winget:start -->';
+const endMarker = '<!-- cyberwall-winget:end -->';
 const packageMention = /(?:^|[^A-Za-z0-9_.])CyberGems\.CyberWall(?=$|[^A-Za-z0-9_.])/;
 
 export function compareVersions(left, right) {
