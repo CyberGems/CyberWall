@@ -7,6 +7,7 @@
 ### 🚀 What's new in this release
 
 <!-- IMPORTANT FOR AGENTS & MAINTAINERS: Always rewrite this entire section and highlights with the ACTUAL release notes for this specific new version before tagging. NEVER leave or copy previous version notes! Use 25-45 words for the summary, lead with user-facing changes, and do not repeat the app name or version. Keep the Spanish mirror inside the details block in sync: translate the summary and rewrite the highlights. -->
+<!-- COVERAGE: list every commit since the previous tag before drafting. Give every user-facing change at least one highlight and group related commits into one. Skip internal refactors, CI, tests and dependency bumps with no visible effect; keep small visible fixes such as copy, tooltips, shortcuts, themes, icons, spacing, stability and perceptible performance. Review the draft if 15+ user-facing commits produce fewer than 6 highlights, or 40+ total commits fewer than 8. Patch releases may have 1-3 highlights or a plain maintenance-only note. -->
 <!-- changelog-summary:start -->
 Fixes a cross-thread UI guard regression that froze the main Firewall traffic graph, speed gauges, and activity dots, repositions the paused chart badge below the header label, and keeps the close button's Alt+F4 shortcut chip visible in tray mode.
 <!-- changelog-summary:end -->
