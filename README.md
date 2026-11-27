@@ -68,11 +68,12 @@ Every program on your PC can reach the internet the moment it runs, and most fir
 
 ---
 
-<!-- Screenshots: pending the bilingual EN/ES gallery in the capture plan at https://github.com/CyberGems/CyberGems.github.io/blob/main/docs/screenshots.md — replace the blockquote, keep this heading and the TOC entry. -->
-
 ## 🖼️ Screenshots
 
-> Coming soon...
+<p align="center">
+  <img src="./docs/screenshots/main-en.png" alt="CyberWall main window with live 60s network traffic graph, Allowed and Blocked rule groups, country flags and active throughput pills" />
+</p>
+<p align="center"><em>Real-time Windows Filtering Platform dashboard with live upload/download traffic chart, rule toggles, destination country indicators and bandwidth activity badges.</em></p>
 
 ---
 

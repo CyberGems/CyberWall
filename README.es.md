@@ -68,11 +68,12 @@ Cualquier programa de tu PC puede salir a internet en cuanto se ejecuta, y la ma
 
 ---
 
-<!-- Capturas: pendiente de la galería bilingüe ES/EN del plan en https://github.com/CyberGems/CyberGems.github.io/blob/main/docs/screenshots.md — sustituir la cita, conservar este título y su entrada en el índice. -->
-
 ## 🖼️ Capturas
 
-> Próximamente...
+<p align="center">
+  <img src="./docs/screenshots/main-es.png" alt="Ventana principal de CyberWall con gráfico de tráfico de red en vivo de 60s, grupos de reglas Permitidas y Bloqueadas, banderas por país y consumo activo" />
+</p>
+<p align="center"><em>Panel en tiempo real sobre Windows Filtering Platform con gráfica de subida y bajada en vivo, interruptores por regla, país de destino e indicadores de ancho de banda.</em></p>
 
 ---
 
