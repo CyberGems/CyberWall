@@ -1,3 +1,6 @@
 # Shared dependency exclusion
 node_modules/
 artifacts/
+
+# Frontend build output
+out/
