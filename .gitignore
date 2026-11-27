@@ -4,3 +4,12 @@ artifacts/
 
 # Frontend build output
 out/
+
+# Native build output
+bin/
+obj/
+
+# Publisher and test output
+publish/
+publish-win64/
+TestResults/
