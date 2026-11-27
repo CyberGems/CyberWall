@@ -175,3 +175,36 @@ jobs:
           body_path: ./release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Publish a downloadable checksum file so users can verify assets with
+      # sha256sum -c without copying hashes from the release notes.
+      - name: Publish SHA256SUMS.txt
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = "${{ github.ref_name }}"
+          $dir = Join-Path $env:RUNNER_TEMP 'sha256sums'
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+
+          $assetNames = @(gh release view $tag --json assets --jq '.assets[].name')
+          if ($LASTEXITCODE -ne 0) { throw "Could not list release assets for $tag." }
+          $portable = $assetNames | Where-Object { $_ -match 'portable' } | Select-Object -First 1
+          $installer = $assetNames | Where-Object { $_ -match '\.(exe|msi)$' -and $_ -notmatch 'portable' } | Select-Object -First 1
+          $wanted = @($installer, $portable) | Where-Object { $_ }
+          if (-not $wanted) { throw "No installer or portable asset found for $tag." }
+
+          gh release download $tag --dir $dir --clobber $(foreach ($name in $wanted) { "--pattern=$name" })
+          if ($LASTEXITCODE -ne 0) { throw "Could not download release assets for $tag." }
+
+          $lines = @()
+          foreach ($name in $wanted) {
+            $path = Join-Path $dir $name
+            $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+            $lines += "$hash  $name"
+          }
+          $checksumPath = Join-Path $dir 'SHA256SUMS.txt'
+          [System.IO.File]::WriteAllText($checksumPath, ($lines -join "`n") + "`n", [System.Text.UTF8Encoding]::new($false))
+          gh release upload $tag $checksumPath --clobber
+          if ($LASTEXITCODE -ne 0) { throw "Could not upload SHA256SUMS.txt for $tag." }
