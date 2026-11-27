@@ -75,6 +75,16 @@ Every program on your PC can reach the internet the moment it runs, and most fir
 </p>
 <p align="center"><em>Real-time Windows Filtering Platform dashboard with live upload/download traffic chart, rule toggles, destination country indicators and bandwidth activity badges.</em></p>
 
+<p align="center">
+  <img src="./docs/screenshots/traffic-en.png" alt="CyberWall Traffic Monitor tab showing live download and upload speed cards, 60s telemetry spline graph, and top bandwidth-consuming apps" />
+</p>
+<p align="center"><em>Traffic Monitor tab tracking real-time download and upload throughput, session transfer totals, and the top bandwidth-consuming applications.</em></p>
+
+<p align="center">
+  <img src="./docs/screenshots/connections-en.png" alt="CyberWall Connections Log tab listing Allowed and Blocked outbound and inbound attempts with country flags, endpoints, and PIDs" />
+</p>
+<p align="center"><em>Connections Log tab auditing allowed and blocked network events with direction badges, destination countries, endpoints, and quick log filters.</em></p>
+
 ---
 
 ## 🛡️ Why CyberWall?

@@ -75,6 +75,16 @@ Cualquier programa de tu PC puede salir a internet en cuanto se ejecuta, y la ma
 </p>
 <p align="center"><em>Panel en tiempo real sobre Windows Filtering Platform con gráfica de subida y bajada en vivo, interruptores por regla, país de destino e indicadores de ancho de banda.</em></p>
 
+<p align="center">
+  <img src="./docs/screenshots/traffic-es.png" alt="Pestaña Tráfico de CyberWall con tarjetas de velocidad de subida y descarga, gráfico spline de telemetría de 60s y procesos con mayor consumo activo" />
+</p>
+<p align="center"><em>Pestaña Tráfico con velocidades en vivo de bajada y subida, totales transferidos de la sesión y las aplicaciones con mayor consumo de ancho de banda.</em></p>
+
+<p align="center">
+  <img src="./docs/screenshots/connections-es.png" alt="Pestaña Conexiones de CyberWall mostrando eventos permitidos y bloqueados de salida y entrada con banderas por país, destinos y PID" />
+</p>
+<p align="center"><em>Registro de Conexiones para auditar eventos permitidos y bloqueados con indicadores de dirección, país de destino, endpoint y filtros rápidos.</em></p>
+
 ---
 
 ## 🛡️ ¿Por qué CyberWall?
