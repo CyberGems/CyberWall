@@ -135,6 +135,7 @@ jobs:
 
           $template = [System.IO.File]::ReadAllText(".github/release-template.md", [System.Text.Encoding]::UTF8)
           $notes = $template.Replace("{{VERSION}}", "${{ github.ref_name }}").Replace("{{INSTALLER_HASH}}", $installerHash).Replace("{{PORTABLE_HASH}}", $portableHash)
+          $notes = [regex]::Replace($notes, '(?s)<!--.*?-->', '').Trim()
           [System.IO.File]::WriteAllText("release_notes.md", $notes, [System.Text.Encoding]::UTF8)
 
           $tag = "${{ github.ref_name }}"
