@@ -1,0 +1,10 @@
+name: Shortcut check
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  shortcut-check:
+    uses: CyberGems/.github/.github/workflows/shortcut-check.yml@main
