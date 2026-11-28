@@ -516,6 +516,7 @@ public partial class MainWindow : Window
             MoreSettingsItem.Header = Strings.T("MoreSettings");
             MoreResetWindowSizeItem.Header = Strings.T("ResetWindowSize");
             MoreHelpItem.Header = Strings.T("HelpDocumentation");
+            MoreStarItem.Header = Strings.T("GitHubStar");
             MoreDocsItem.Header = Strings.T("DocumentationWiki");
             MoreFaqItem.Header = Strings.T("Faq");
             MoreChangelogItem.Header = Strings.T("Changelog");
@@ -2437,6 +2438,8 @@ public partial class MainWindow : Window
     {
         WindowLayoutPersistence.ResetToDefault(this, App.Settings);
     }
+
+    private async void MoreStar_Click(object sender, RoutedEventArgs e) => await GitHubStarService.StarAsync();
 
     private void MoreDocs_Click(object sender, RoutedEventArgs e)
         => OpenExternalUrl("https://github.com/CyberGems/CyberWall/wiki");

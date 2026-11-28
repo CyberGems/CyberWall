@@ -345,6 +345,7 @@ public partial class TrayContextMenuWindow : Window
         SuiteMenuText.Text = Strings.T("MoreFromCyberGems");
         SuiteBtn.Visibility = App.Settings.ShowAppRecommendations ? Visibility.Visible : Visibility.Collapsed;
         HelpSubTitleText.Text = Strings.T("Help");
+        SubStarText.Text = Strings.T("GitHubStar");
         SubHelpText.Text = Strings.T("Help");
         SubFaqText.Text = Strings.T("Faq");
         SubChangelogText.Text = Strings.T("Changelog");
@@ -891,6 +892,12 @@ public partial class TrayContextMenuWindow : Window
             foreach (var desc in FindVisualChildren<T>(child))
                 yield return desc;
         }
+    }
+
+    private async void SubStar_Click(object sender, RoutedEventArgs e)
+    {
+        CloseMenu();
+        await GitHubStarService.StarAsync();
     }
 
     private void SubHelp_Click(object sender, RoutedEventArgs e)

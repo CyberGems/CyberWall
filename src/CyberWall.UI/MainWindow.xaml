@@ -1163,6 +1163,10 @@
                                             </Viewbox>
                                         </MenuItem.Icon>
 
+                                        <MenuItem x:Name="MoreStarItem" Header="Star on GitHub" Style="{StaticResource ModernMenuItem}" Click="MoreStar_Click">
+                                            <MenuItem.Icon><Viewbox Width="13" Height="13"><Path Data="M 12 3 L 14.8 8.7 L 21 9.6 L 16.5 14 L 17.6 20.2 L 12 17.3 L 6.4 20.2 L 7.5 14 L 3 9.6 L 9.2 8.7 Z" Stroke="{DynamicResource SubTextBrush}" StrokeThickness="1.7" Fill="Transparent" /></Viewbox></MenuItem.Icon>
+                                        </MenuItem>
+                                        <Separator Style="{StaticResource ModernMenuSeparator}"/>
                                         <MenuItem x:Name="MoreDocsItem" Header="Documentación y Wiki" Style="{StaticResource ModernMenuItem}" Click="MoreDocs_Click">
                                             <MenuItem.Icon>
                                                 <Viewbox Width="13" Height="13" Stretch="Uniform">

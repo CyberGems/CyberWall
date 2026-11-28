@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 // Minimal deterministic smoke check for CyberWall.
 // Verifies that the repo still has its entry points and the core domain vocabulary.
 import fs from 'node:fs';
@@ -200,3 +201,5 @@ if (problems.length) {
   process.exit(1);
 }
 console.log(`SMOKE PASS ${APP} (${cfg.files.length} paths, ${cfg.keywords.length} keywords)`);
+
+execFileSync(process.execPath, ['scripts/check-github-star.mjs'], { stdio: 'inherit' });

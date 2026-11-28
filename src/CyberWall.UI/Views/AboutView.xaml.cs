@@ -27,6 +27,7 @@ public partial class AboutView : UserControl
         CheckError
     }
 
+    private string _gitHubStarStatusKey = "GitHubStar";
     private const string RepoUrl = "https://github.com/CyberGems/CyberWall";
     private const string WebsiteUrl = "https://cybergems.org";
     private const string WikiUrl = "https://github.com/CyberGems/CyberWall/wiki";
@@ -109,6 +110,8 @@ public partial class AboutView : UserControl
         AboutFooterDocsBtn.ToolTip = Strings.T("OnlineDocs");
         AutomationProperties.SetName(AboutFooterDocsBtn, Strings.T("OnlineDocs"));
         AboutFooterGithubBtn.ToolTip = Strings.T("ViewGitHub");
+        AboutFooterStarBtn.ToolTip = Strings.T(_gitHubStarStatusKey);
+        System.Windows.Automation.AutomationProperties.SetName(AboutFooterStarBtn, Strings.T(_gitHubStarStatusKey));
         AutomationProperties.SetName(AboutFooterGithubBtn, Strings.T("ViewGitHub"));
         AboutFooterIssuesBtn.ToolTip = Strings.T("ReportIssue");
         AutomationProperties.SetName(AboutFooterIssuesBtn, Strings.T("ReportIssue"));
@@ -270,6 +273,25 @@ public partial class AboutView : UserControl
     private void AboutFooterWebsiteBtn_Click(object sender, RoutedEventArgs e) => OpenUrl(WebsiteUrl);
 
     private void AboutFooterDocs_Click(object sender, RoutedEventArgs e) => OpenUrl(WikiUrl);
+
+    private async void AboutFooterStar_Click(object sender, RoutedEventArgs e)
+    {
+        AboutFooterStarBtn.IsEnabled = false;
+        _gitHubStarStatusKey = "GitHubStarBusy";
+        AboutFooterStarBtn.ToolTip = Strings.T(_gitHubStarStatusKey);
+        var result = await GitHubStarService.StarAsync();
+        _gitHubStarStatusKey = $"GitHubStar{result}";
+        var label = Strings.T(_gitHubStarStatusKey);
+        AboutFooterStarBtn.ToolTip = label;
+        System.Windows.Automation.AutomationProperties.SetName(AboutFooterStarBtn, label);
+        if (result == GitHubStarResult.Starred && AboutFooterStarBtn.Content is System.Windows.Controls.Viewbox viewbox
+            && viewbox.Child is System.Windows.Shapes.Path icon)
+        {
+            icon.SetBinding(System.Windows.Shapes.Shape.FillProperty,
+                new System.Windows.Data.Binding("Foreground") { Source = AboutFooterStarBtn });
+        }
+        AboutFooterStarBtn.IsEnabled = result != GitHubStarResult.Starred;
+    }
 
     private void AboutFooterGithub_Click(object sender, RoutedEventArgs e) => OpenUrl(RepoUrl);
 

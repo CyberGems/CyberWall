@@ -711,6 +711,10 @@
                             <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,0,0,6"/>
 
                             <!-- 1. Help (Wiki) -->
+                            <Button x:Name="SubStarBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,6" Click="SubStar_Click">
+                                <StackPanel Orientation="Horizontal"><ContentControl Style="{StaticResource MenuRowIcon}"><Viewbox Width="13" Height="13"><Path Data="M 12 3 L 14.8 8.7 L 21 9.6 L 16.5 14 L 17.6 20.2 L 12 17.3 L 6.4 20.2 L 7.5 14 L 3 9.6 L 9.2 8.7 Z" Stroke="{DynamicResource SubTextBrush}" Fill="Transparent" StrokeThickness="1.7" /></Viewbox></ContentControl><TextBlock x:Name="SubStarText" Text="Star on GitHub" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center" /></StackPanel>
+                            </Button>
+                            <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="4,4,4,4"/>
                             <Button x:Name="SubHelpBtn" Style="{StaticResource MenuActionButtonStyle}" Padding="8,6" Click="SubHelp_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <ContentControl Style="{StaticResource MenuRowIcon}">

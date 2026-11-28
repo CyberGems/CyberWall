@@ -10,6 +10,11 @@ public static class Strings
 
     private static readonly Dictionary<string, (string En, string Es)> Map = new()
     {
+        ["GitHubStar"] = ("Star on GitHub", "Dar una estrella en GitHub"),
+        ["GitHubStarBusy"] = ("Starring…", "Enviando estrella…"),
+        ["GitHubStarStarred"] = ("Starred, thank you", "Estrella añadida, gracias"),
+        ["GitHubStarOpened"] = ("Complete your star on GitHub", "Completa la estrella en GitHub"),
+        ["GitHubStarFailed"] = ("Could not open GitHub. Retry", "No se pudo abrir GitHub. Reintentar"),
         ["AppTitle"] = ("CyberWall: Real-Time Network Filter", "CyberWall: Filtro de red en tiempo real"),
         ["AppSubtitle"] = ("Real-time network filter protection", "Protección con filtro en tiempo real"),
         ["Country"] = ("Country", "País"),
